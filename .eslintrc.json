@@ -1,0 +1,47 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true,
+    "jest": true
+  },
+  "ignorePatterns": ["src/**/*.d.ts"],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "project": "./tsconfig.json"
+  },
+  "plugins": ["@typescript-eslint", "react"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:react/recommended"
+  ],
+  "rules": {
+    "react/no-unknown-property": ["error", { "ignore": ["css"] }],
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/**/*.spec.tsx"],
+      "env": {
+        "jest": true
+      },
+      "extends": ["plugin:testing-library/react", "plugin:jest/style", "plugin:jest/recommended"],
+      "rules": {
+        "jest/consistent-test-it": ["error", { "withinDescribe": "it" }],
+        "jest/no-duplicate-hooks": ["error"],
+        "jest/require-top-level-describe": ["error"],
+        "jest/prefer-each": ["error"],
+        "jest/prefer-hooks-on-top": ["error"],
+        "jest/prefer-hooks-in-order": ["error"],
+        "jest/prefer-mock-promise-shorthand": ["error"],
+        "testing-library/prefer-user-event": ["error", { "allowedMethods": ["blur"] }]
+      }
+    }
+  ]
+}
