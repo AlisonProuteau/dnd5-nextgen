@@ -17,7 +17,14 @@ const queryClient = new QueryClient({
       );
     }
   }),
-  defaultOptions: { queries: { staleTime: Infinity, retry: false, refetchOnWindowFocus: false } }
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+      retry: false,
+      refetchOnWindowFocus: false,
+      onSuccess: console.debug
+    }
+  }
 });
 const router = createBrowserRouter([
   {

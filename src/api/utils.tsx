@@ -4,6 +4,8 @@ myHeaders.append('Accept', 'application/json');
 const capitalizeFirstLetter = (stringToCapitilize: string) =>
   stringToCapitilize.charAt(0).toUpperCase() + stringToCapitilize.slice(1);
 
+export const apiLink = 'https://www.dnd5eapi.co/api';
+
 export async function get(name: string, url: string) {
   const requestOptions: RequestInit = {
     method: 'GET',
@@ -17,5 +19,5 @@ export async function get(name: string, url: string) {
       `Bad fetch response for ${capitalizeFirstLetter(name)}: (${res.status}) ${res.statusText}`
     );
 
-  return res.json();
+  return res;
 }

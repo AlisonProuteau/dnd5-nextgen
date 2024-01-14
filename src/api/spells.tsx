@@ -1,12 +1,13 @@
-import { get } from './utils';
+import { DefaultInstance } from '../representations/default.representation';
+import { apiLink, get } from './utils';
 
 export async function getSpellsForClass(
   classIndex: string,
   level?: number
-): Promise<{ count: number; results: unknown }> {
+): Promise<{ count: number; results: [DefaultInstance] }> {
   const url = level
-    ? `https://www.dnd5eapi.co/api/classes/${classIndex}/levels/${level}/spells`
-    : `https://www.dnd5eapi.co/api/classes/${classIndex}/spells`;
+    ? `/classes/${classIndex}/levels/${level}/spells`
+    : `/classes/${classIndex}/spells`;
 
-  return get(`${classIndex} Spells${level ? ` ${level}` : ''}`, url);
+  return (await get('Class Spells', apiLink + url)).json();
 }
