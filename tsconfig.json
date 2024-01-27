@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "outDir": "./dist/",
-    "target": "es5",
+    "target": "esnext",
+    "module": "commonjs",
+    "moduleResolution": "node",
     "lib": ["dom", "dom.iterable", "esnext"],
     "types": ["@emotion/react", "jest", "@testing-library/jest-dom"],
     "jsx": "react-jsx",
     "jsxImportSource": "@emotion/react",
-    "module": "esnext",
-    "moduleResolution": "node",
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
@@ -18,5 +17,5 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src/**/*", "public"]
+  "include": ["./src/**/*", "public", ".eslintrc.json"]
 }

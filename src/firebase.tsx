@@ -1,5 +1,16 @@
 import { getAnalytics } from 'firebase/analytics';
 import { initializeApp } from 'firebase/app';
+import {
+  CompleteFn,
+  ErrorFn,
+  NextOrObserver,
+  User,
+  createUserWithEmailAndPassword,
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration
@@ -15,5 +26,13 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
 export const analytics = getAnalytics(app);
 export const database = getFirestore(app);
+export const createUserInFirebase = (email: string, password: string) =>
+  createUserWithEmailAndPassword(auth, email, password);
+export const signInFirebase = (email: string, password: string) =>
+  signInWithEmailAndPassword(auth, email, password);
+export const signOutInFirebase = () => signOut(auth);
+export const onAuthChange = (fn: NextOrObserver<User>, error?: ErrorFn, completed?: CompleteFn) =>
+  onAuthStateChanged(auth, fn, error, completed);
