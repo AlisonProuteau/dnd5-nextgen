@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 
 interface ControledInputProps {
   id: string;
-  type: string;
-  label: string;
+  type?: string;
+  label?: string;
   endAdornment?: ReactNode;
   onChange?: (arg: string | boolean | undefined) => void;
   errorMessage?: string;
@@ -21,7 +21,7 @@ export function ControledInput({
   hasError = false
 }: ControledInputProps) {
   return (
-    <FormControl error={hasError} fullWidth autoFocus margin="dense">
+    <FormControl error={hasError} fullWidth margin="dense">
       <InputLabel htmlFor={id}>{label}</InputLabel>
       <OutlinedInput
         id={id}
