@@ -16,6 +16,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.3",
     "@emotion/styled": "^11.11.0",
+    "lodash": "4.17.21",
     "@mui/icons-material": "^5.15.6",
     "@mui/material": "^5.15.6",
     "@testing-library/jest-dom": "^6.3.0",
@@ -40,6 +41,7 @@
     "eslint": "^8.56.0",
     "eslint-plugin-jest": "^27.6.3",
     "eslint-plugin-react": "^7.33.2",
+    "@types/lodash": "4.14.202",
     "react-scripts": "5.0.1"
   },
   "browserslist": {
