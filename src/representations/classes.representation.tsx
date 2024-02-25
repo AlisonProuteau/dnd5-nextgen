@@ -20,3 +20,17 @@ export interface ClassInfo extends DefaultInstance {
   saving_throws?: [DefaultInstance];
   subclasses?: [DefaultInstance];
 }
+
+export interface RaceInfo extends DefaultInstance {
+  speed?: number;
+  ability_bonuses?: [{ ability_score: DefaultInstance; bonus: number }];
+  alignment?: string;
+  age?: string;
+  size?: string;
+  size_description?: string;
+  starting_proficiencies?: [DefaultInstance];
+  languages?: [DefaultInstance];
+  language_desc?: string;
+  traits?: [DefaultInstance];
+  subraces?: [DefaultInstance];
+}
