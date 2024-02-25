@@ -7,5 +7,10 @@ export interface OptionChoices {
   desc: string;
   choose: number;
   type: string;
-  from: { options: [{ item: DefaultInstance }] };
+  from: { options: [OptionFrom] };
+}
+
+export interface OptionFrom {
+  item?: DefaultInstance;
+  choice?: OptionChoices;
 }
