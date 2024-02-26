@@ -1,4 +1,4 @@
-import { Button, Container } from '@mui/material';
+import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
 import type { DefaultInstance } from '../../representations/default.representation';
@@ -17,6 +17,12 @@ export interface CharacterFormData {
 export function CharacterCreation() {
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({});
   const [formError, setFormErrorState] = useState<{ name?: boolean }>({});
+  const [activeStep, setActiveStep] = useState(0);
+  const steps = [
+    { id: 'race', label: 'Race' },
+    { id: 'class', label: 'Class' },
+    { id: 'info', label: 'Character Info' }
+  ];
 
   const setFormData = (values: Partial<CharacterFormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -48,6 +54,14 @@ export function CharacterCreation() {
 
   return (
     <Container>
+      <Stepper activeStep={activeStep} sx={{ marginBottom: '15px' }}>
+        {steps.map(({ id, label }) => (
+          <Step key={id} active={steps[activeStep].id === id}>
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
+
       <form
         onSubmit={handleSubmit}
         onFocus={({ target }) => setFormError({ [target.id]: false })}
@@ -57,27 +71,50 @@ export function CharacterCreation() {
           setFormErrorState({});
         }}
       >
-        <ControledInput
-          id="email"
-          label="Name"
-          onChange={(value) => setFormData({ name: value as string })}
-          errorMessage="Invalid Email"
-          hasError={formError.name}
-        />
+        <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
+          <CharacterRaceForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+          />
+        </Box>
 
-        <CharacterRaceForm setFormData={setFormData} />
+        <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
+          <CharacterClassForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+          />
+        </Box>
 
-        <CharacterClassForm setFormData={setFormData} />
+        <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
+          <ControledInput
+            id="email"
+            label="Name"
+            onChange={(value) => setFormData({ name: value as string })}
+            errorMessage="Invalid Email"
+            hasError={formError.name}
+          />
+        </Box>
 
-        <Button
-          disabled={!isFormValid()}
-          sx={{ marginTop: '1rem' }}
-          fullWidth
-          type="submit"
-          variant="contained"
-        >
-          Create
-        </Button>
+        {activeStep > 0 && (
+          <Button onClick={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}>
+            Back
+          </Button>
+        )}
+
+        {activeStep === steps.length - 1 && (
+          <Button
+            sx={{ float: 'right' }}
+            variant="contained"
+            type="submit"
+            disabled={!isFormValid()}
+          >
+            Create
+          </Button>
+        )}
       </form>
     </Container>
   );

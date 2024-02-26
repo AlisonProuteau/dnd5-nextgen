@@ -1,31 +1,19 @@
-import {
-  Box,
-  Button,
-  Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography
-} from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getAllRaces, getRaceInfo } from '../../api/characters';
 import type { DefaultInstance } from '../../representations/default.representation';
 import type { CharacterFormData } from './CharacterCreation';
 
-export function CharacterRaceForm({
-  setFormData
-}: {
-  setFormData: (raceInfo: Partial<CharacterFormData>) => void;
-}) {
+interface CharacterRaceFormProps {
+  onNext: (raceInfo: Partial<CharacterFormData>) => void;
+}
+
+export function CharacterRaceForm({ onNext }: CharacterRaceFormProps) {
   const [selectedRace, setselectedRace] = useState<DefaultInstance>();
   const [selectedSubrace, setselectedSubrace] = useState<DefaultInstance>();
 
-  const { data: races } = useQuery('fetchRaces', async () => {
-    return (await getAllRaces()).results;
-  });
-
+  const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
   const { data: raceInfo } = useQuery(
     ['fetchRaceInfo', selectedRace?.index],
     async () => {
@@ -42,9 +30,6 @@ export function CharacterRaceForm({
 
   return (
     <Box>
-      <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
-        <Typography>Race Selection</Typography>
-      </Divider>
       {races && (
         <FormControl fullWidth margin="dense">
           <InputLabel htmlFor="race">Race</InputLabel>
@@ -93,14 +78,11 @@ export function CharacterRaceForm({
       )}
 
       <Button
+        sx={{ float: 'right' }}
         disabled={!selectedRace?.index && (!raceInfo?.subraces?.length || !selectedSubrace?.index)}
-        sx={{ marginTop: '1rem' }}
-        fullWidth
-        type="button"
-        variant="contained"
         onClick={() => {
-          if (selectedSubrace?.index) setFormData({ race: selectedRace, subrace: selectedSubrace });
-          else setFormData({ race: selectedRace });
+          if (selectedSubrace?.index) onNext({ race: selectedRace, subrace: selectedSubrace });
+          else onNext({ race: selectedRace });
         }}
       >
         Next

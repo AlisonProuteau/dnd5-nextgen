@@ -12,25 +12,22 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/characters';
 import type { DefaultInstance, OptionFrom } from '../../representations/default.representation';
 import type { CharacterFormData } from './CharacterCreation';
 
-export function CharacterClassForm({
-  setFormData
-}: {
-  setFormData: (raceInfo: Partial<CharacterFormData>) => void;
-}) {
+interface CharacterClassFormProps {
+  onNext: (raceInfo: Partial<CharacterFormData>) => void;
+}
+
+export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
   const [selectedClass, setselectedClass] = useState<DefaultInstance>();
   const [selectedProficiencies, setSelectedProficiencies] =
     useState<(DefaultInstance & { type: number })[]>();
 
-  const { data: classes } = useQuery('fetchClasses', async () => {
-    return (await getAllClasses()).results;
-  });
-
+  const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
   const { data: classInfo } = useQuery(
     ['fetchClassInfo', selectedClass?.index],
     async () => {
@@ -51,9 +48,14 @@ export function CharacterClassForm({
     }
   };
 
-  const generateProficiencyChoices = (i: number, choose: number, options: [OptionFrom]) =>
-    options[0].item ? (
-      <FormGroup id={`proficiencies-${i}`}>
+  const generateProficiencyChoices = (
+    i: number,
+    choose: number,
+    options: [OptionFrom],
+    desc: string
+  ) => {
+    return options[0].item ? (
+      <FormGroup key={`proficiencies-${i}-${desc})}`}>
         {options.map(
           ({ item }) =>
             item && (
@@ -81,10 +83,11 @@ export function CharacterClassForm({
       <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
         {options.map(
           ({ choice }) =>
-            choice && generateProficiencyChoices(i, choice.choose, choice.from.options)
+            choice && generateProficiencyChoices(i, choice.choose, choice.from.options, choice.desc)
         )}
       </Box>
     );
+  };
 
   const isValid = () => {
     return (
@@ -98,9 +101,6 @@ export function CharacterClassForm({
 
   return (
     <Box>
-      <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
-        <Typography>Class Selection</Typography>
-      </Divider>
       {classes && (
         <FormControl fullWidth margin="dense">
           <InputLabel htmlFor="class">Class</InputLabel>
@@ -123,27 +123,27 @@ export function CharacterClassForm({
           </Select>
         </FormControl>
       )}
-      {classInfo?.proficiency_choices && (
-        <Box marginY="8px">
-          <Typography>Proficiencies</Typography>
+
+      {selectedClass && classInfo?.proficiency_choices && (
+        <Fragment>
+          <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
+            <Typography>Choose proficiencies</Typography>
+          </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
             {classInfo.proficiency_choices.map(({ desc, choose, from: { options } }, i) => (
               <FormControl key={`proficiencies-${i}`} fullWidth margin="dense" component="fieldset">
                 <FormLabel component="legend">{desc}</FormLabel>
-                {generateProficiencyChoices(i, choose, options)}
+                {generateProficiencyChoices(i, choose, options, desc)}
               </FormControl>
             ))}
           </Box>
-        </Box>
+        </Fragment>
       )}
 
       <Button
+        sx={{ float: 'right' }}
         disabled={!isValid()}
-        sx={{ marginTop: '1rem' }}
-        fullWidth
-        type="button"
-        variant="contained"
-        onClick={() => setFormData({ class: selectedClass, proficiencies: selectedProficiencies })}
+        onClick={() => onNext({ class: selectedClass, proficiencies: selectedProficiencies })}
       >
         Next
       </Button>
