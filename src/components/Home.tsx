@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { useAuth } from '../providers/AuthProvider';
-import { CharacterCreation } from './CharacterCreation';
+import { CharacterCreation } from './CharacterCreation/CharacterCreation';
 
 export function Home() {
   const user = useAuth();
