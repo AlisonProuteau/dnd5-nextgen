@@ -11,6 +11,7 @@ export interface CharacterFormData {
   race: DefaultInstance;
   subrace?: DefaultInstance;
   class: DefaultInstance;
+  subclass?: DefaultInstance;
   proficiencies: (DefaultInstance & { type: number })[];
 }
 

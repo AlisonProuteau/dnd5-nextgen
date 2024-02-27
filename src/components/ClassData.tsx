@@ -18,7 +18,7 @@ import {
 import { Fragment, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getAllClasses, getAllRaces, getClassInfo, getRaceInfo } from '../api/characters';
-import { getSpellsForClass } from '../api/spells';
+import { getFeaturesForClass, getProficiencies, getSpellsForClass } from '../api/ressources';
 import { ClassInfo, type RaceInfo } from '../representations/classes.representation';
 
 export function ClassData() {
@@ -73,6 +73,21 @@ export function ClassData() {
       return await getSpellsForClass(selectedClass.index, level);
     },
     { enabled: !!selectedClass?.index }
+  );
+
+  const { data: features, isLoading: isFeaturesLoading } = useQuery(
+    ['fetchFeatures', selectedClass?.index],
+    async () => {
+      if (!selectedClass?.index) return;
+
+      return await getFeaturesForClass(selectedClass?.index);
+    },
+    { enabled: !!selectedClass?.index }
+  );
+
+  const { data: proficiencies, isLoading: isProficienciesLoading } = useQuery(
+    'fetchProficiencies',
+    async () => await getProficiencies()
   );
 
   useEffect(() => {
@@ -146,6 +161,37 @@ export function ClassData() {
         </TableContainer>
       )}
 
+      {proficiencies && (
+        <Accordion>
+          <AccordionSummary
+            expandIcon={<ExpandMore />}
+            aria-controls="panel1-content"
+            id="panel1-header"
+          >
+            Proficiencies -{' '}
+            {isProficienciesLoading ? (
+              <CircularProgress size={12} />
+            ) : (
+              proficiencies?.count || 'none'
+            )}
+          </AccordionSummary>
+          <AccordionDetails>
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                <TableBody>
+                  {proficiencies?.results?.map((prof) => (
+                    <TableRow key={`spell-${prof.index}`}>
+                      <TableCell>{prof.index}</TableCell>
+                      <TableCell>{prof.name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
       {selectedClass && (
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 650 }} aria-label="simple table">
@@ -178,6 +224,33 @@ export function ClassData() {
                     <TableRow key={`spell-${spell.index}`}>
                       <TableCell>{spell.index}</TableCell>
                       <TableCell>{spell.name}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {features && (
+        <Accordion>
+          <AccordionSummary
+            expandIcon={<ExpandMore />}
+            aria-controls="panel1-content"
+            id="panel1-header"
+          >
+            Features -{' '}
+            {isFeaturesLoading ? <CircularProgress size={12} /> : features?.count || 'none'}
+          </AccordionSummary>
+          <AccordionDetails>
+            <TableContainer component={Paper}>
+              <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                <TableBody>
+                  {features?.results?.map((feat) => (
+                    <TableRow key={`spell-${feat.index}`}>
+                      <TableCell>{feat.index}</TableCell>
+                      <TableCell>{feat.name}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

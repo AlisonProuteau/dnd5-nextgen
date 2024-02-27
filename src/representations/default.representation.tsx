@@ -7,7 +7,7 @@ export interface OptionChoices {
   desc: string;
   choose: number;
   type: string;
-  from: { options: [OptionFrom] };
+  from: { options: OptionFrom[] };
 }
 
 export interface OptionFrom {

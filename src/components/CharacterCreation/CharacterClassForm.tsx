@@ -12,7 +12,7 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/characters';
 import type { DefaultInstance, OptionFrom } from '../../representations/default.representation';
@@ -24,6 +24,7 @@ interface CharacterClassFormProps {
 
 export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
   const [selectedClass, setselectedClass] = useState<DefaultInstance>();
+  const [selectedSubclass, setselectedSubclass] = useState<DefaultInstance>();
   const [selectedProficiencies, setSelectedProficiencies] =
     useState<(DefaultInstance & { type: number })[]>();
 
@@ -38,6 +39,13 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
     { enabled: !!selectedClass?.index }
   );
 
+  // TODO features
+
+  useEffect(() => {
+    if (classInfo?.subclasses?.length && !selectedSubclass)
+      setselectedSubclass(classInfo.subclasses[0]);
+  }, [classInfo?.subclasses?.map((r) => r.index).join(' ')]);
+
   const onProficiencySelect = (checked: boolean, item: DefaultInstance, i: number) => {
     if (checked) {
       setSelectedProficiencies([...(selectedProficiencies || []), { ...item, type: i }]);
@@ -51,7 +59,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
   const generateProficiencyChoices = (
     i: number,
     choose: number,
-    options: [OptionFrom],
+    options: OptionFrom[],
     desc: string
   ) => {
     return options[0].item ? (
@@ -124,6 +132,31 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
         </FormControl>
       )}
 
+      {!!classInfo?.subclasses?.length && (
+        <FormControl fullWidth margin="dense">
+          <InputLabel htmlFor="subRace">Sub-Race</InputLabel>
+          <Select
+            fullWidth
+            id="subRace"
+            label="Sub-Race"
+            value={selectedSubclass?.index || classInfo.subclasses[0].index}
+            onChange={({ target }) =>
+              setselectedSubclass(classInfo.subclasses?.find((e) => e.index === target.value))
+            }
+          >
+            {classInfo.subclasses.map((currentSubclass) => (
+              <MenuItem
+                key={currentSubclass.index}
+                id={currentSubclass.index}
+                value={currentSubclass.index}
+              >
+                {currentSubclass.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      )}
+
       {selectedClass && classInfo?.proficiency_choices && (
         <Fragment>
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
@@ -143,7 +176,15 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
       <Button
         sx={{ float: 'right' }}
         disabled={!isValid()}
-        onClick={() => onNext({ class: selectedClass, proficiencies: selectedProficiencies })}
+        onClick={() => {
+          if (selectedSubclass?.index)
+            onNext({
+              class: selectedClass,
+              subclass: selectedSubclass,
+              proficiencies: selectedProficiencies
+            });
+          else onNext({ class: selectedClass, proficiencies: selectedProficiencies });
+        }}
       >
         Next
       </Button>
