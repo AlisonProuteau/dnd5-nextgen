@@ -17,14 +17,23 @@ import {
 } from '@mui/material';
 import { Fragment, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { getAllClasses, getAllRaces, getClassInfo, getRaceInfo } from '../api/characters';
-import { getFeaturesForClass, getProficiencies, getSpellsForClass } from '../api/ressources';
-import { ClassInfo, type RaceInfo } from '../representations/classes.representation';
+import {
+  getAllClasses,
+  getAllRaces,
+  getClassInfo,
+  getFeaturesForClass,
+  getProficiencies,
+  getRaceInfo,
+  getSpellsForClass
+} from '../api/ressources';
+import type { Class } from '../representations/character/class.representation';
+import type { Race } from '../representations/character/race.representation';
+import type { DefaultRepresentation } from '../representations/common.representation';
 
 export function ClassData() {
   const [level, setLevel] = useState<number>();
-  const [selectedClass, setSelectedClass] = useState<ClassInfo>();
-  const [selectedRace, setSelectedRace] = useState<RaceInfo>();
+  const [selectedClass, setSelectedClass] = useState<Class | DefaultRepresentation>();
+  const [selectedRace, setSelectedRace] = useState<Race | DefaultRepresentation>();
 
   const { data: races } = useQuery('fetchRaces', async () => {
     return (await getAllRaces()).results;
@@ -153,7 +162,9 @@ export function ClassData() {
               {Object.keys(selectedRace).map((key) => (
                 <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                   <TableCell>{key}</TableCell>
-                  <TableCell>{JSON.stringify(selectedRace[key as keyof RaceInfo])}</TableCell>
+                  <TableCell>
+                    {JSON.stringify(selectedRace[key as keyof (DefaultRepresentation | Race)])}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -199,7 +210,9 @@ export function ClassData() {
               {Object.keys(selectedClass).map((key) => (
                 <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                   <TableCell>{key}</TableCell>
-                  <TableCell>{JSON.stringify(selectedClass[key as keyof ClassInfo])}</TableCell>
+                  <TableCell>
+                    {JSON.stringify(selectedClass[key as keyof (DefaultRepresentation | Class)])}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -207,7 +220,7 @@ export function ClassData() {
         </TableContainer>
       )}
 
-      {selectedClass?.spellcasting && (
+      {(selectedClass as Class)?.spellcasting && (
         <Accordion>
           <AccordionSummary
             expandIcon={<ExpandMore />}

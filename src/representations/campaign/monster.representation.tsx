@@ -1,0 +1,174 @@
+import type { Choice, DefaultRepresentation } from '../common.representation';
+import type { ActionDamage, Damage, DifficultyClass } from './adventure.representation';
+
+type ActionOption = {
+  action_name: string;
+  count: number | string;
+  type: 'melee' | 'ranged' | 'ability' | 'magic';
+};
+
+type ActionUsage = {
+  type: string;
+  dice?: string;
+  min_value?: number;
+};
+
+type Action = {
+  name: string;
+  desc: string;
+  attack_bonus?: number;
+  damage?: Damage[];
+  dc?: DifficultyClass;
+  options?: Choice;
+  usage?: ActionUsage;
+  multiattack_type: 'actions' | 'action_options';
+  actions: ActionOption[];
+  action_options: Choice;
+};
+
+type ArmorClass =
+  | ArmorClassDex
+  | ArmorClassNatural
+  | ArmorClassArmor
+  | ArmorClassSpell
+  | ArmorClassCondition;
+
+type ArmorClassDex = {
+  type: 'dex';
+  value: number;
+  desc?: string;
+};
+
+type ArmorClassNatural = {
+  type: 'natural';
+  value: number;
+  desc?: string;
+};
+
+type ArmorClassArmor = {
+  type: 'armor';
+  value: number;
+  armor?: DefaultRepresentation[]; // Equipment
+  desc?: string;
+};
+
+type ArmorClassSpell = {
+  type: 'spell';
+  value: number;
+  spell: DefaultRepresentation; // Spell
+  desc?: string;
+};
+
+type ArmorClassCondition = {
+  type: 'condition';
+  value: number;
+  condition: DefaultRepresentation; // Condition
+  desc?: string;
+};
+
+type LegendaryAction = {
+  name: string;
+  desc: string;
+  attack_bonus?: number;
+  damage?: ActionDamage[];
+  dc?: DifficultyClass;
+};
+
+type Proficiency = {
+  proficiency: DefaultRepresentation;
+  value: number;
+};
+
+type Reaction = {
+  name: string;
+  desc: string;
+  dc?: DifficultyClass;
+};
+
+type Sense = {
+  blindsight?: string;
+  darkvision?: string;
+  passive_perception: number;
+  tremorsense?: string;
+  truesight?: string;
+};
+
+type SpecialAbilityUsage = {
+  type: string;
+  times?: number;
+  rest_types?: string[];
+};
+
+type SpecialAbilitySpell = {
+  name: string;
+  level: number;
+
+  notes?: string;
+  usage?: SpecialAbilityUsage;
+};
+
+type SpecialAbilitySpellcasting = {
+  level?: number;
+  ability: DefaultRepresentation;
+  dc?: number;
+  modifier?: number;
+  components_required: string[];
+  school?: string;
+  slots?: Record<string, number>;
+  spells: SpecialAbilitySpell[];
+};
+
+type SpecialAbility = {
+  name: string;
+  desc: string;
+  attack_bonus?: number;
+  damage?: ActionDamage[];
+  dc?: DifficultyClass;
+  spellcasting?: SpecialAbilitySpellcasting;
+  usage: SpecialAbilityUsage;
+};
+
+type Speed = {
+  burrow?: string;
+  climb?: string;
+  fly?: string;
+  hover?: string;
+  swim?: string;
+  walk?: string;
+};
+
+export type Monster = {
+  actions?: Action[];
+  alignment: string;
+  armor_class: ArmorClass[];
+  challenge_rating: number;
+  charisma: number;
+  condition_immunities: DefaultRepresentation[];
+  constitution: number;
+  damage_immunities: string[];
+  damage_resistances: string[];
+  damage_vulnerabilities: string[];
+  dexterity: number;
+  forms?: DefaultRepresentation[];
+  hit_dice: string;
+  hit_points: number;
+  hit_points_roll: string;
+  image?: string;
+  index: string;
+  intelligence: number;
+  languages: string;
+  legendary_actions?: LegendaryAction[];
+  name: string;
+  proficiencies: Proficiency[];
+  reactions?: Reaction[];
+  senses: Sense;
+  size: string;
+  special_abilities?: SpecialAbility[];
+  speed: Speed;
+  strength: number;
+  subtype?: string;
+  type: string;
+
+  wisdom: number;
+  xp: number;
+};

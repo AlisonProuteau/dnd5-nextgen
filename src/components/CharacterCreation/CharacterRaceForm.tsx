@@ -1,8 +1,8 @@
 import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { getAllRaces, getRaceInfo } from '../../api/characters';
-import type { DefaultInstance } from '../../representations/default.representation';
+import { getAllRaces, getRaceInfo } from '../../api/ressources';
+import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from './CharacterCreation';
 
 interface CharacterRaceFormProps {
@@ -10,8 +10,8 @@ interface CharacterRaceFormProps {
 }
 
 export function CharacterRaceForm({ onNext }: CharacterRaceFormProps) {
-  const [selectedRace, setselectedRace] = useState<DefaultInstance>();
-  const [selectedSubrace, setselectedSubrace] = useState<DefaultInstance>();
+  const [selectedRace, setselectedRace] = useState<DefaultRepresentation>();
+  const [selectedSubrace, setselectedSubrace] = useState<DefaultRepresentation>();
 
   const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
   const { data: raceInfo } = useQuery(

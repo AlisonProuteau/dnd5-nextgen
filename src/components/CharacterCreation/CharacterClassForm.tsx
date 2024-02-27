@@ -14,8 +14,8 @@ import {
 } from '@mui/material';
 import { Fragment, useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
-import { getAllClasses, getClassInfo } from '../../api/characters';
-import type { DefaultInstance, OptionFrom } from '../../representations/default.representation';
+import { getAllClasses, getClassInfo } from '../../api/ressources';
+import type { DefaultRepresentation, Option } from '../../representations/common.representation';
 import type { CharacterFormData } from './CharacterCreation';
 
 interface CharacterClassFormProps {
@@ -23,10 +23,10 @@ interface CharacterClassFormProps {
 }
 
 export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
-  const [selectedClass, setselectedClass] = useState<DefaultInstance>();
-  const [selectedSubclass, setselectedSubclass] = useState<DefaultInstance>();
+  const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
+  const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] =
-    useState<(DefaultInstance & { type: number })[]>();
+    useState<(DefaultRepresentation & { type: number })[]>();
 
   const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
   const { data: classInfo } = useQuery(
@@ -46,7 +46,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
       setselectedSubclass(classInfo.subclasses[0]);
   }, [classInfo?.subclasses?.map((r) => r.index).join(' ')]);
 
-  const onProficiencySelect = (checked: boolean, item: DefaultInstance, i: number) => {
+  const onProficiencySelect = (checked: boolean, item: DefaultRepresentation, i: number) => {
     if (checked) {
       setSelectedProficiencies([...(selectedProficiencies || []), { ...item, type: i }]);
     } else if (selectedProficiencies?.length) {
@@ -59,42 +59,54 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
   const generateProficiencyChoices = (
     i: number,
     choose: number,
-    options: OptionFrom[],
+    options: Option[],
     desc: string
   ) => {
-    return options[0].item ? (
-      <FormGroup key={`proficiencies-${i}-${desc})}`}>
-        {options.map(
-          ({ item }) =>
-            item && (
-              <FormControlLabel
-                key={`proficiency-${i}-${item.index}`}
-                control={
-                  <Checkbox
-                    id={`proficiency-${i}-${item.index}`}
-                    disabled={
-                      !selectedProficiencies?.find(({ index }) => index === item.index) &&
-                      (selectedProficiencies?.filter(({ type }) => type === i).length || 0) >=
-                        choose
-                    }
-                    onChange={(_, checked) => {
-                      onProficiencySelect(checked, item, i);
-                    }}
-                  />
-                }
-                label={item?.name}
-              />
-            )
-        )}
-      </FormGroup>
-    ) : (
-      <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-        {options.map(
-          ({ choice }) =>
-            choice && generateProficiencyChoices(i, choice.choose, choice.from.options, choice.desc)
-        )}
-      </Box>
-    );
+    if (options[0].option_type === 'reference') {
+      return (
+        <FormGroup key={`proficiencies-${i}-${desc})}`}>
+          {options.map(
+            ({ item }) =>
+              item && (
+                <FormControlLabel
+                  key={`proficiency-${i}-${item.index}`}
+                  control={
+                    <Checkbox
+                      id={`proficiency-${i}-${item.index}`}
+                      disabled={
+                        !selectedProficiencies?.find(({ index }) => index === item.index) &&
+                        (selectedProficiencies?.filter(({ type }) => type === i).length || 0) >=
+                          choose
+                      }
+                      onChange={(_, checked) => {
+                        onProficiencySelect(checked, item, i);
+                      }}
+                    />
+                  }
+                  label={item?.name}
+                />
+              )
+          )}
+        </FormGroup>
+      );
+    } else if (options[0]?.option_type === 'choice') {
+      return (
+        <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+          {options.map(
+            ({ choice }, index) =>
+              choice &&
+              generateProficiencyChoices(
+                i,
+                choice.choose,
+                choice.from.options,
+                choice.desc || index.toString()
+              )
+          )}
+        </Box>
+      );
+    } else {
+      throw new Error('Option type not handled');
+    }
   };
 
   const isValid = () => {
@@ -166,7 +178,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
             {classInfo.proficiency_choices.map(({ desc, choose, from: { options } }, i) => (
               <FormControl key={`proficiencies-${i}`} fullWidth margin="dense" component="fieldset">
                 <FormLabel component="legend">{desc}</FormLabel>
-                {generateProficiencyChoices(i, choose, options, desc)}
+                {generateProficiencyChoices(i, choose, options, desc || i.toString())}
               </FormControl>
             ))}
           </Box>

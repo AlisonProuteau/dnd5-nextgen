@@ -1,40 +1,11 @@
-import { ClassInfo, type RaceInfo } from '../representations/classes.representation';
-import { DefaultInstance } from '../representations/default.representation';
-import { apiLink, get } from './utils';
+import type { Subrace } from '../representations/character/race.representation';
 
-export async function getAllRaces(): Promise<{
-  count: number;
-  results: DefaultInstance[];
-}> {
-  return (await get('All Races', apiLink + '/races')).json();
-}
-
-export async function getRaceInfo(raceIndex: string): Promise<RaceInfo> {
-  return (await get('Race info', apiLink + `/races/${raceIndex}`)).json().then((raceData) => {
-    raceData.subraces =
-      subraces.find(({ index }) => index === raceIndex)?.data || raceData.subraces;
-    return raceData;
-  });
-}
-
-export async function getAllClasses(): Promise<{
-  count: number;
-  results: DefaultInstance[];
-}> {
-  return (await get('All Classes', apiLink + '/classes')).json();
-}
-
-export async function getClassInfo(classIndex: string, level?: number): Promise<ClassInfo> {
-  const url = level ? `/classes/${classIndex}/levels/${level}` : `/classes/${classIndex}`;
-
-  return (await get('Class Level Ressources', apiLink + url)).json();
-}
-
-const subraces: { index: string; data: RaceInfo[] }[] = [
+export const subraces: { index: string; data: Subrace[] }[] = [
   {
     index: 'dwarf',
     data: [
       {
+        race: { index: 'dwarf', name: 'Dwarf' },
         index: 'hill-dwarf',
         name: 'Hill Dwarf',
         desc: 'As a hill dwarf, you have keen senses, deep intuition, and remarkable resilience.',
@@ -47,10 +18,12 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
         ]
       },
       {
+        race: { index: 'dwarf', name: 'Dwarf' },
         index: 'mountain-dwarf',
         name: 'Mountain Dwarf',
         desc: 'As a mountain dwarf, you’re strong and hardy, accustomed to a difficult life in rugged terrain. ',
-        ability_bonuses: [{ ability_score: { index: 'str', name: 'STR' }, bonus: 2 }]
+        ability_bonuses: [{ ability_score: { index: 'str', name: 'STR' }, bonus: 2 }],
+        racial_traits: []
       }
     ]
   },
@@ -58,6 +31,7 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
     index: 'elf',
     data: [
       {
+        race: { index: 'elf', name: 'Elf' },
         index: 'high-elf',
         name: 'High Elf',
         desc: 'As a high elf, you have a keen mind and a mastery of at least the basics of magic. In many fantasy gaming worlds, there are two kinds of high elves. One type is haughty and reclusive, believing themselves to be superior to non-elves and even other elves. The other type is more common and more friendly, and often encountered among humans and other races.',
@@ -92,86 +66,101 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
           choose: 1,
           desc: '',
           from: {
+            option_set_type: 'options_array',
             options: [
               {
+                option_type: 'reference',
                 item: {
                   index: 'dwarvish',
                   name: 'Dwarvish'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'giant',
                   name: 'Giant'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'gnomish',
                   name: 'Gnomish'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'goblin',
                   name: 'Goblin'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'halfling',
                   name: 'Halfling'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'orc',
                   name: 'Orc'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'abyssal',
                   name: 'Abyssal'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'celestial',
                   name: 'Celestial'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'draconic',
                   name: 'Draconic'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'deep-speech',
                   name: 'Deep Speech'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'infernal',
                   name: 'Infernal'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'primordial',
                   name: 'Primordial'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'sylvan',
                   name: 'Sylvan'
                 }
               },
               {
+                option_type: 'reference',
                 item: {
                   index: 'undercommon',
                   name: 'Undercommon'
@@ -197,17 +186,18 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
         ]
       },
       {
+        race: { index: 'elf', name: 'Elf' },
         index: 'wood-elf',
         name: 'Wood Elf',
         desc: 'As a wood elf, you have keen senses and intuition, and your fleet feet carry you quickly and stealthily through your native forests. ',
         ability_bonuses: [{ ability_score: { index: 'wis', name: 'WIS' }, bonus: 1 }],
+        speed: 35,
         starting_proficiencies: [
           { index: 'longsword', name: 'Longsword' },
           { index: 'shortsword', name: 'Shortsword' },
           { index: 'shortbow', name: 'Shortbow' },
           { index: 'longbow', name: 'Longbow' }
         ],
-        speed: 35,
         racial_traits: [{ index: 'mask-of-the-wild', name: 'Mask of the Wild' }]
       }
     ]
@@ -216,6 +206,7 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
     index: 'gnome',
     data: [
       {
+        race: { index: 'gnome', name: 'gnome' },
         index: 'rock-gnome',
         name: 'Rock Gnome',
         desc: 'As a rock gnome, you have a natural inventiveness and hardiness beyond that of other gnomes.',
@@ -234,7 +225,6 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
             name: "Tinker's Tools"
           }
         ],
-        languages: [],
         racial_traits: [
           {
             index: 'artificers-lore',
@@ -252,6 +242,7 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
     index: 'halfling',
     data: [
       {
+        race: { index: 'halfling', name: 'Halfling' },
         index: 'lightfoot-halfling',
         name: 'Lightfoot Halfling',
 
@@ -266,7 +257,6 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
           }
         ],
         starting_proficiencies: [],
-        languages: [],
         racial_traits: [
           {
             index: 'naturally-stealthy',
@@ -275,6 +265,7 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
         ]
       },
       {
+        race: { index: 'halfling', name: 'Halfling' },
         index: 'stout-halfling',
         name: 'Stout Halfling',
 
@@ -289,7 +280,6 @@ const subraces: { index: string; data: RaceInfo[] }[] = [
           }
         ],
         starting_proficiencies: [{ index: 'stout-resilience', name: 'Stout Resilience' }],
-        languages: [],
         racial_traits: [
           {
             index: 'naturally-stealthy',

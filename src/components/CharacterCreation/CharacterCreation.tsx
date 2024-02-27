@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
-import type { DefaultInstance } from '../../representations/default.representation';
+import type { DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterRaceForm } from './CharacterRaceForm';
@@ -20,17 +20,17 @@ import { CharacterRaceForm } from './CharacterRaceForm';
 export interface CharacterFormData {
   name: string;
   age?: string;
-  sex: DefaultInstance;
+  sex: DefaultRepresentation;
   appearance?: string;
   personality?: string;
   ideals?: string;
   bonds?: string;
   flaws?: string;
-  race: DefaultInstance;
-  subrace?: DefaultInstance;
-  class: DefaultInstance;
-  subclass?: DefaultInstance;
-  proficiencies: (DefaultInstance & { type: number })[];
+  race: DefaultRepresentation;
+  subrace?: DefaultRepresentation;
+  class: DefaultRepresentation;
+  subclass?: DefaultRepresentation;
+  proficiencies: (DefaultRepresentation & { type: number })[];
 }
 
 export function CharacterCreation() {
@@ -43,7 +43,7 @@ export function CharacterCreation() {
     { id: 'info', label: 'Character Info' }
   ];
 
-  const genderInstances: DefaultInstance[] = [
+  const genderInstances: DefaultRepresentation[] = [
     { index: 'F', name: 'Female' },
     { index: 'M', name: 'Male' },
     { index: 'O', name: 'Other' }
@@ -97,6 +97,9 @@ export function CharacterCreation() {
         }}
       >
         {/* Choose your race/species */}
+        {/* Choosing your proficiencies // TODO: Make common? */}
+        {/* Choosing your ability_bonus */}
+        {/* Choosing your subrace language */}
         <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
           <CharacterRaceForm
             onNext={(input) => {
@@ -106,9 +109,10 @@ export function CharacterCreation() {
           />
         </Box>
 
-        {/* Choose your class (archetype?)  // TODO: Missing subclasses */}
-        {/* Choosing your proficiencies // TODO: Disable already added ones */}
-        {/* Choosing your feats */}
+        {/* Choose your class (archetype? -> Subclass ?)  // TODO: Missing subclasses */}
+        {/* Choosing your proficiencies // TODO: Disable already added ones, fix representation and selection */}
+        {/* Choosing your multiclassing? */}
+        {/* Choosing your starting_equipment */}
         <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
           <CharacterClassForm
             onNext={(input) => {
@@ -126,8 +130,9 @@ export function CharacterCreation() {
         {/* Calculate your skill points */}
         {/* Choosing your spells (C level, spellattack, spell DC)? */}
         {/* Choosing your equipment */}
+        {/* Choosing your feats */}
 
-        {/* Alignment -  Background - Gender */}
+        {/* Alignment -  Background - Gender // TODO: Use representations*/}
         <Box
           display={steps[activeStep].id === 'info' ? 'flex' : 'none'}
           flexWrap="wrap"
@@ -157,7 +162,7 @@ export function CharacterCreation() {
                 setFormData({ sex: genderInstances.find(({ index }) => index === target.value) })
               }
             >
-              {genderInstances.map((currentSex: DefaultInstance) => (
+              {genderInstances.map((currentSex: DefaultRepresentation) => (
                 <MenuItem key={currentSex.index} id={currentSex.index} value={currentSex.index}>
                   {currentSex.name}
                 </MenuItem>
