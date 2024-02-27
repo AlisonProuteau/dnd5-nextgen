@@ -109,6 +109,7 @@ export function AuthPage() {
         }}
       >
         <ControledInput
+          fullWidth
           id="email"
           type="email"
           label="Email address"
@@ -118,6 +119,7 @@ export function AuthPage() {
         />
 
         <ControledInput
+          fullWidth
           id="password"
           type={formData.showPassword ? 'input' : 'password'}
           label="Password"
@@ -135,6 +137,7 @@ export function AuthPage() {
 
         {!hasAccount && (
           <ControledInput
+            fullWidth
             id="passwordConfrim"
             type={formData.showPassword ? 'input' : 'password'}
             label="Confrim Password"
