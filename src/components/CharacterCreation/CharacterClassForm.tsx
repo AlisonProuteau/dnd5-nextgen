@@ -95,6 +95,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
           {options.map(
             ({ choice }, index) =>
               choice &&
+              choice.from.option_set_type === 'options_array' &&
               generateProficiencyChoices(
                 i,
                 choice.choose,
@@ -175,10 +176,11 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
             <Typography>Choose proficiencies</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-            {classInfo.proficiency_choices.map(({ desc, choose, from: { options } }, i) => (
+            {classInfo.proficiency_choices.map(({ desc, choose, from }, i) => (
               <FormControl key={`proficiencies-${i}`} fullWidth margin="dense" component="fieldset">
                 <FormLabel component="legend">{desc}</FormLabel>
-                {generateProficiencyChoices(i, choose, options, desc || i.toString())}
+                {from?.option_set_type === 'options_array' &&
+                  generateProficiencyChoices(i, choose, from.options, desc || i.toString())}
               </FormControl>
             ))}
           </Box>
