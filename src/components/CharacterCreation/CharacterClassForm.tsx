@@ -34,7 +34,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
     async () => {
       if (!selectedClass?.index) return;
 
-      return await getClassInfo(selectedClass?.index);
+      return await getClassInfo(selectedClass.index);
     },
     { enabled: !!selectedClass?.index }
   );

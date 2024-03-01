@@ -20,7 +20,7 @@ export function AuthPage() {
     password?: boolean;
     passwordConfrim?: boolean;
   }>({});
-  const [hasAccount, setHasAccount] = useState(false);
+  const [hasAccount, setHasAccount] = useState(true);
   const navigate = useNavigate();
 
   const setFormData = (values: Partial<FormData>) => {

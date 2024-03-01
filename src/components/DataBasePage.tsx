@@ -35,12 +35,12 @@ export function DataBasePage() {
               let formattedItem: unknown = { ...item };
 
               if (docID === 'classes') {
-                formattedItem = omit(item, ['subclasses', 'class_levels']);
+                formattedItem = omit(item, ['class_levels']);
               } else if (docID === 'subclasses') {
-                path = `classes/${(item as Subclass).class.index}/subclasses`;
+                path = `classes/${
+                  (item as Subclass & { class: DefaultRepresentation }).class.index
+                }/subclasses`;
                 formattedItem = omit(item, ['class', 'subclass_levels']);
-              } else if (docID === 'races') {
-                formattedItem = omit(item, ['subraces']);
               } else if (docID === 'subraces' && (item as Subrace).race.index) {
                 path = `races/${(item as Subrace).race.index}/subraces`;
                 formattedItem = omit(item, ['race']);

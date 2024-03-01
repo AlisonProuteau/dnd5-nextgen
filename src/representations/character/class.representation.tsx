@@ -56,7 +56,6 @@ type Spell = {
 };
 
 export type Subclass = {
-  class: DefaultRepresentation;
   desc: string[];
   index: string;
   name: string;

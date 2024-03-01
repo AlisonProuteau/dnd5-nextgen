@@ -1,23 +1,25 @@
+import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { database } from '../firebase';
+
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
 
 const capitalizeFirstLetter = (stringToCapitilize: string) =>
   stringToCapitilize.charAt(0).toUpperCase() + stringToCapitilize.slice(1);
 
-export const apiLink = 'https://www.dnd5eapi.co/api';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getAll(name: string, path: string): Promise<any> {
+  const res = await getDocs(collection(database, path));
+  if (res.empty) throw new Error(`Not found ${capitalizeFirstLetter(name)}`);
 
-export async function get(name: string, url: string) {
-  const requestOptions: RequestInit = {
-    method: 'GET',
-    headers: myHeaders,
-    redirect: 'follow'
-  };
+  return res.docs.map((item) => item.data());
+}
 
-  const res = await fetch(url, requestOptions);
-  if (!res.ok)
-    throw new Error(
-      `Bad fetch response for ${capitalizeFirstLetter(name)}: (${res.status}) ${res.statusText}`
-    );
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function get(name: string, path: string, index: string): Promise<any> {
+  const res = await getDoc(doc(database, path, index));
 
-  return res;
+  if (!res.exists()) throw new Error(`Not found ${capitalizeFirstLetter(name)}`);
+
+  return res.data();
 }
