@@ -3,19 +3,24 @@ import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
+  Box,
   Checkbox,
   CircularProgress,
+  Container,
   MenuItem,
   Paper,
   Select,
   Slider,
+  Tab,
   Table,
   TableBody,
   TableCell,
   TableContainer,
-  TableRow
+  TableRow,
+  Tabs,
+  Typography
 } from '@mui/material';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from 'react-query';
 import {
   getAllClasses,
@@ -30,7 +35,15 @@ import type { Classes } from '../representations/character/class.representation'
 import type { Race } from '../representations/character/race.representation';
 import type { DefaultRepresentation } from '../representations/common.representation';
 
+const AvailableTabs = [
+  { id: 'races', label: 'Races' },
+  { id: 'classes', label: 'Classes' },
+  { id: 'proficiencies', label: 'Proficiencies' },
+  { id: 'features', label: 'Features' }
+];
+
 export function ClassData() {
+  const [selectedTab, setSelectedTab] = useState(AvailableTabs[0].id);
   const [level, setLevel] = useState<number>();
   const [selectedClass, setSelectedClass] = useState<Classes | DefaultRepresentation>();
   const [selectedRace, setSelectedRace] = useState<Race | DefaultRepresentation>();
@@ -110,170 +123,194 @@ export function ClassData() {
     }
   }, [selectedClass?.index, classInfoUpdatedAt]);
 
-  return classes && races ? (
-    <Fragment>
-      <Select
-        label="Races"
-        value={selectedRace?.index || ''}
-        onChange={({ target }) => setSelectedRace(races?.find((e) => e.index === target.value))}
+  return (
+    <Container>
+      <Tabs
+        value={selectedTab}
+        onChange={(_, value) => setSelectedTab(value)}
+        aria-label="wrapped label tabs example"
       >
-        {races.map((currentRace) => (
-          <MenuItem key={currentRace.index} value={currentRace.index}>
-            {currentRace.name}
-          </MenuItem>
+        {AvailableTabs.map(({ id, label }) => (
+          <Tab key={id} value={id} label={label} />
         ))}
-      </Select>
+      </Tabs>
 
-      <Select
-        label="Classes"
-        value={selectedClass?.index || ''}
-        onChange={({ target }) => setSelectedClass(classes?.find((e) => e.index === target.value))}
-      >
-        {classes.map((currentClass) => (
-          <MenuItem key={currentClass.index} value={currentClass.index}>
-            {currentClass.name}
-          </MenuItem>
-        ))}
-      </Select>
+      <Box padding="15px">
+        {selectedTab === 'races' &&
+          (!races ? (
+            <CircularProgress />
+          ) : (
+            <Box display="flex" flexDirection="column" gap="15px">
+              <Select
+                value={selectedRace?.index || ''}
+                onChange={({ target }) =>
+                  setSelectedRace(races?.find((e) => e.index === target.value))
+                }
+              >
+                {races.map((currentRace) => (
+                  <MenuItem key={currentRace.index} value={currentRace.index}>
+                    {currentRace.name}
+                  </MenuItem>
+                ))}
+              </Select>
 
-      <Checkbox
-        aria-label="All Levels"
-        title="All levels"
-        defaultChecked={true}
-        onChange={(_, checked) => (checked ? setLevel(undefined) : setLevel(1))}
-      />
-      {!!level && (
-        <Slider
-          style={{ marginTop: '30px' }}
-          aria-label="Levels"
-          valueLabelDisplay="auto"
-          marks
-          min={1}
-          max={9}
-          value={level}
-          onChange={(_, value) => setLevel(typeof value === 'number' ? value : undefined)}
-        />
-      )}
+              {selectedRace && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                    <TableBody>
+                      {Object.keys(selectedRace).map((key) => (
+                        <TableRow
+                          key={key}
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>{key}</TableCell>
+                          <TableCell>
+                            {JSON.stringify(
+                              selectedRace[key as keyof (DefaultRepresentation | Race)]
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          ))}
 
-      {selectedRace && (
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableBody>
-              {Object.keys(selectedRace).map((key) => (
-                <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                  <TableCell>{key}</TableCell>
-                  <TableCell>
-                    {JSON.stringify(selectedRace[key as keyof (DefaultRepresentation | Race)])}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
-
-      {proficiencies && (
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            aria-controls="panel1-content"
-            id="panel1-header"
-          >
-            Proficiencies -{' '}
-            {isProficienciesLoading ? (
-              <CircularProgress size={12} />
-            ) : (
-              proficiencies?.count || 'none'
-            )}
-          </AccordionSummary>
-          <AccordionDetails>
-            <TableContainer component={Paper}>
-              <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                <TableBody>
-                  {proficiencies?.results?.map((prof) => (
-                    <TableRow key={`spell-${prof.index}`}>
-                      <TableCell>{prof.index}</TableCell>
-                      <TableCell>{prof.name}</TableCell>
-                    </TableRow>
+        {selectedTab === 'classes' &&
+          (!classes ? (
+            <CircularProgress />
+          ) : (
+            <Box display="flex" flexDirection="column" gap="15px">
+              <Box display="flex">
+                <Select
+                  fullWidth
+                  value={selectedClass?.index || ''}
+                  onChange={({ target }) =>
+                    setSelectedClass(classes?.find((e) => e.index === target.value))
+                  }
+                >
+                  {classes.map((currentClass) => (
+                    <MenuItem key={currentClass.index} value={currentClass.index}>
+                      {currentClass.name}
+                    </MenuItem>
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </AccordionDetails>
-        </Accordion>
-      )}
+                </Select>
+                <Checkbox
+                  aria-label="All Levels"
+                  title="All levels"
+                  defaultChecked={true}
+                  onChange={(_, checked) => (checked ? setLevel(undefined) : setLevel(1))}
+                />
+              </Box>
 
-      {selectedClass && (
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label="simple table">
-            <TableBody>
-              {Object.keys(selectedClass).map((key) => (
-                <TableRow key={key} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
-                  <TableCell>{key}</TableCell>
-                  <TableCell>
-                    {JSON.stringify(selectedClass[key as keyof (DefaultRepresentation | Classes)])}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+              {!!level && !!(selectedClass as Classes)?.spellcasting && (
+                <Slider
+                  style={{ marginTop: '30px' }}
+                  aria-label="Levels"
+                  valueLabelDisplay="auto"
+                  marks
+                  min={1}
+                  max={9}
+                  value={level}
+                  onChange={(_, value) => setLevel(typeof value === 'number' ? value : undefined)}
+                />
+              )}
 
-      {(selectedClass as Classes)?.spellcasting && (
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            aria-controls="panel1-content"
-            id="panel1-header"
-          >
-            Spells - {isSpellsLoading ? <CircularProgress size={12} /> : spells?.count || 'none'}
-          </AccordionSummary>
-          <AccordionDetails>
-            <TableContainer component={Paper}>
-              <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                <TableBody>
-                  {spells?.results?.map((spell) => (
-                    <TableRow key={`spell-${spell.index}`}>
-                      <TableCell>{spell.index}</TableCell>
-                      <TableCell>{spell.name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </AccordionDetails>
-        </Accordion>
-      )}
+              {selectedClass && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                    <TableBody>
+                      {Object.keys(selectedClass).map((key) => (
+                        <TableRow
+                          key={key}
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>{key}</TableCell>
+                          <TableCell>
+                            {JSON.stringify(
+                              selectedClass[key as keyof (DefaultRepresentation | Classes)]
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
 
-      {features && (
-        <Accordion>
-          <AccordionSummary
-            expandIcon={<ExpandMore />}
-            aria-controls="panel1-content"
-            id="panel1-header"
-          >
-            Features -{' '}
-            {isFeaturesLoading ? <CircularProgress size={12} /> : features?.count || 'none'}
-          </AccordionSummary>
-          <AccordionDetails>
-            <TableContainer component={Paper}>
-              <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                <TableBody>
-                  {features?.results?.map((feat) => (
-                    <TableRow key={`spell-${feat.index}`}>
-                      <TableCell>{feat.index}</TableCell>
-                      <TableCell>{feat.name}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </AccordionDetails>
-        </Accordion>
-      )}
-    </Fragment>
-  ) : (
-    <CircularProgress />
+              {(selectedClass as Classes)?.spellcasting && (
+                <Accordion>
+                  <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                  >
+                    Spells -{' '}
+                    {isSpellsLoading ? <CircularProgress size={12} /> : spells?.count || 'none'}
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <TableContainer component={Paper}>
+                      <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                        <TableBody>
+                          {spells?.results?.map((spell) => (
+                            <TableRow key={`spell-${spell.index}`}>
+                              <TableCell>{spell.index}</TableCell>
+                              <TableCell>{spell.name}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </AccordionDetails>
+                </Accordion>
+              )}
+            </Box>
+          ))}
+
+        {selectedTab === 'proficiencies' &&
+          (isProficienciesLoading || !proficiencies?.count ? (
+            <CircularProgress />
+          ) : (
+            <Box display="flex" flexDirection="column" gap="15px">
+              <Typography variant="h5">Proficiencies - {proficiencies?.count || 'none'}</Typography>
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                  <TableBody>
+                    {proficiencies?.results?.map((prof) => (
+                      <TableRow key={`spell-${prof.index}`}>
+                        <TableCell>{prof.index}</TableCell>
+                        <TableCell>{prof.name}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          ))}
+
+        {selectedTab === 'features' &&
+          (isFeaturesLoading || !features?.count ? (
+            <CircularProgress />
+          ) : (
+            <Box display="flex" flexDirection="column" gap="15px">
+              <Typography variant="h5">Features - {features?.count || 'none'}</Typography>
+              <TableContainer component={Paper}>
+                <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                  <TableBody>
+                    {features?.results?.map((feat) => (
+                      <TableRow key={`spell-${feat.index}`}>
+                        <TableCell>{feat.index}</TableCell>
+                        <TableCell>{feat.name}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          ))}
+      </Box>
+    </Container>
   );
 }
