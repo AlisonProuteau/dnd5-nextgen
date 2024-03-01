@@ -49,6 +49,9 @@ export function Header() {
             >
               <MenuItem onClick={() => navigationMenuClick('/')}>Home</MenuItem>
               <MenuItem onClick={() => navigationMenuClick('/infos')}>Infos</MenuItem>
+              {user && (
+                <MenuItem onClick={() => navigationMenuClick('/database')}>Database</MenuItem>
+              )}
             </Menu>
             <IconButton
               size="large"
