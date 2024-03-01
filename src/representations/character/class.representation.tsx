@@ -28,7 +28,7 @@ type MultiClassing = {
   proficiency_choices?: Choice[];
 };
 
-export type Class = {
+export type Classes = {
   class_levels: string;
   multi_classing: MultiClassing;
   hit_die: number;

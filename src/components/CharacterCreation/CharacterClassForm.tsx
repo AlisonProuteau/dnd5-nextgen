@@ -124,11 +124,11 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
     <Box>
       {classes && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="class">Class</InputLabel>
+          <InputLabel htmlFor="class">Classes</InputLabel>
           <Select
             fullWidth
             id="class"
-            label="Class"
+            label="Classes"
             disabled={!classes}
             value={selectedClass?.index || ''}
             onChange={({ target }) => {
