@@ -79,7 +79,6 @@ export function AuthPage() {
       default:
         break;
     }
-    console.log(target.id, 'has error ', !isValid);
     setFormError({ [target.id]: !isValid });
   };
 

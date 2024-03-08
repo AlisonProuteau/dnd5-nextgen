@@ -29,24 +29,26 @@ import {
   getFeaturesForClass,
   getProficiencies,
   getRaceInfo,
-  getSpellsForClass
+  getSpellsForClass,
+  getSubclassInfo
 } from '../api/ressources';
-import type { Classes } from '../representations/character/class.representation';
+import type { Spell } from '../representations/abilities/magic.representation';
+import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race } from '../representations/character/race.representation';
-import type { DefaultRepresentation } from '../representations/common.representation';
 
 const AvailableTabs = [
   { id: 'races', label: 'Races' },
   { id: 'classes', label: 'Classes' },
-  { id: 'proficiencies', label: 'Proficiencies' },
-  { id: 'features', label: 'Features' }
+  { id: 'proficiencies', label: 'Proficiencies' }
 ];
 
 export function ClassData() {
   const [selectedTab, setSelectedTab] = useState(AvailableTabs[0].id);
   const [level, setLevel] = useState<number>();
-  const [selectedClass, setSelectedClass] = useState<Classes | DefaultRepresentation>();
-  const [selectedRace, setSelectedRace] = useState<Race | DefaultRepresentation>();
+  const [selectedClass, setSelectedClass] = useState<Partial<Classes>>();
+  const [selectedSubclass, setSelectedSubclass] = useState<Partial<Subclass>>();
+  const [selectedRace, setSelectedRace] = useState<Partial<Race>>();
+  // const [selectedRace, setSelectedRace] = useState<Partial<Race>>();
 
   const { data: races } = useQuery('fetchRaces', async () => {
     return (await getAllRaces()).results;
@@ -55,7 +57,7 @@ export function ClassData() {
   const { data: raceInfo, dataUpdatedAt: raceInfoUpdatedAt } = useQuery(
     ['fetchRaceInfo', selectedRace?.index],
     async () => {
-      if (!selectedRace) return {};
+      if (!selectedRace?.index) return {};
 
       return await getRaceInfo(selectedRace.index);
     },
@@ -78,31 +80,41 @@ export function ClassData() {
   });
 
   const { data: classInfo, dataUpdatedAt: classInfoUpdatedAt } = useQuery(
-    ['fetchClassInfo', selectedClass?.index],
+    ['fetchClassInfo', selectedClass?.index, selectedSubclass?.index],
     async () => {
-      if (!selectedClass) return {};
+      if (!selectedClass?.index) return {};
 
       return await getClassInfo(selectedClass.index);
     },
     { enabled: !!selectedClass?.index }
   );
 
-  const { data: spells, isLoading: isSpellsLoading } = useQuery(
-    ['fetchSpells', selectedClass?.index, level],
+  const { data: subclassInfo, dataUpdatedAt: subclassInfoUpdatedAt } = useQuery(
+    ['fetchSubclassInfo', selectedClass?.index, selectedSubclass?.index],
     async () => {
-      if (!selectedClass) return { count: 0, results: undefined };
+      if (!selectedClass?.index || !selectedSubclass?.index) return {};
 
-      return await getSpellsForClass(selectedClass.index, level);
+      return await getSubclassInfo(selectedClass.index, selectedSubclass.index);
+    },
+    { enabled: !!(selectedClass?.index && selectedSubclass?.index) }
+  );
+
+  const { data: spells, isLoading: isSpellsLoading } = useQuery(
+    ['fetchSpells', selectedClass?.index, selectedSubclass?.index, level],
+    async () => {
+      if (!selectedClass?.index) return { count: 0, results: undefined };
+
+      return await getSpellsForClass(selectedClass.index, selectedSubclass?.index, level);
     },
     { enabled: !!selectedClass?.index }
   );
 
   const { data: features, isLoading: isFeaturesLoading } = useQuery(
-    ['fetchFeatures', selectedClass?.index],
+    ['fetchFeatures', selectedClass?.index, selectedSubclass?.index, level],
     async () => {
       if (!selectedClass?.index) return;
 
-      return await getFeaturesForClass(selectedClass?.index);
+      return await getFeaturesForClass(selectedClass?.index, selectedSubclass?.index, level);
     },
     { enabled: !!selectedClass?.index }
   );
@@ -117,11 +129,22 @@ export function ClassData() {
   }, [!selectedClass?.index ? JSON.stringify(classes) : '']);
 
   useEffect(() => {
-    if (selectedClass) {
+    setSelectedSubclass(selectedClass?.subclasses?.[0]);
+  }, [selectedClass?.index, JSON.stringify(selectedClass?.subclasses)]);
+
+  useEffect(() => {
+    if (selectedClass?.index) {
       const expandedClass = { ...selectedClass, ...classInfo };
       setSelectedClass(expandedClass);
     }
   }, [selectedClass?.index, classInfoUpdatedAt]);
+
+  useEffect(() => {
+    if (selectedSubclass?.index) {
+      const expandedSubclass = { ...selectedSubclass, ...subclassInfo };
+      setSelectedSubclass(expandedSubclass);
+    }
+  }, [selectedSubclass?.index, subclassInfoUpdatedAt]);
 
   return (
     <Container>
@@ -164,11 +187,7 @@ export function ClassData() {
                           sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                         >
                           <TableCell>{key}</TableCell>
-                          <TableCell>
-                            {JSON.stringify(
-                              selectedRace[key as keyof (DefaultRepresentation | Race)]
-                            )}
-                          </TableCell>
+                          <TableCell>{JSON.stringify(selectedRace[key as keyof Race])}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -187,9 +206,10 @@ export function ClassData() {
                 <Select
                   fullWidth
                   value={selectedClass?.index || ''}
-                  onChange={({ target }) =>
-                    setSelectedClass(classes?.find((e) => e.index === target.value))
-                  }
+                  onChange={({ target }) => {
+                    setSelectedSubclass(undefined);
+                    setSelectedClass(classes?.find((e) => e.index === target.value));
+                  }}
                 >
                   {classes.map((currentClass) => (
                     <MenuItem key={currentClass.index} value={currentClass.index}>
@@ -197,6 +217,23 @@ export function ClassData() {
                     </MenuItem>
                   ))}
                 </Select>
+                {selectedClass?.subclasses?.length && (
+                  <Select
+                    fullWidth
+                    value={selectedSubclass?.index || selectedClass.subclasses[0].index}
+                    onChange={({ target }) =>
+                      setSelectedSubclass(
+                        selectedClass.subclasses?.find((e) => e.index === target.value)
+                      )
+                    }
+                  >
+                    {selectedClass.subclasses?.map((currentSubclass) => (
+                      <MenuItem key={currentSubclass.index} value={currentSubclass.index}>
+                        {currentSubclass.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
                 <Checkbox
                   aria-label="All Levels"
                   title="All levels"
@@ -205,7 +242,7 @@ export function ClassData() {
                 />
               </Box>
 
-              {!!level && !!(selectedClass as Classes)?.spellcasting && (
+              {!!level && (
                 <Slider
                   style={{ marginTop: '30px' }}
                   aria-label="Levels"
@@ -229,9 +266,26 @@ export function ClassData() {
                         >
                           <TableCell>{key}</TableCell>
                           <TableCell>
-                            {JSON.stringify(
-                              selectedClass[key as keyof (DefaultRepresentation | Classes)]
-                            )}
+                            {JSON.stringify(selectedClass[key as keyof Classes])}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+              {selectedSubclass && (
+                <TableContainer component={Paper}>
+                  <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                    <TableBody>
+                      {Object.keys(selectedSubclass).map((key) => (
+                        <TableRow
+                          key={key}
+                          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                          <TableCell>{key}</TableCell>
+                          <TableCell>
+                            {JSON.stringify(selectedSubclass[key as keyof Subclass])}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -240,32 +294,61 @@ export function ClassData() {
                 </TableContainer>
               )}
 
-              {(selectedClass as Classes)?.spellcasting && (
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="panel1-content"
-                    id="panel1-header"
-                  >
-                    Spells -{' '}
-                    {isSpellsLoading ? <CircularProgress size={12} /> : spells?.count || 'none'}
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <TableContainer component={Paper}>
-                      <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                        <TableBody>
-                          {spells?.results?.map((spell) => (
-                            <TableRow key={`spell-${spell.index}`}>
-                              <TableCell>{spell.index}</TableCell>
-                              <TableCell>{spell.name}</TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </AccordionDetails>
-                </Accordion>
-              )}
+              <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMore />}
+                  aria-controls="panel1-content"
+                  id="panel1-header"
+                >
+                  {`Spells - ${
+                    isSpellsLoading ? <CircularProgress size={12} /> : spells?.count || 'none'
+                  }`}
+                </AccordionSummary>
+                <AccordionDetails>
+                  <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                      <TableBody>
+                        {spells?.results?.map((spell) => (
+                          <TableRow key={`spell-${spell.index}`}>
+                            <TableCell>{spell.index}</TableCell>
+                            {Object.keys(spell).map((key) => (
+                              <TableCell key={key}>
+                                {key}: {JSON.stringify(spell[key as keyof Spell])}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
+
+              <Accordion>
+                <AccordionSummary
+                  expandIcon={<ExpandMore />}
+                  aria-controls="panel1-content"
+                  id="panel1-header"
+                >
+                  {`Features - ${
+                    isFeaturesLoading ? <CircularProgress size={12} /> : features?.count || 'none'
+                  }`}
+                </AccordionSummary>
+                <AccordionDetails>
+                  <TableContainer component={Paper}>
+                    <Table sx={{ minWidth: 650 }} aria-label="simple table">
+                      <TableBody>
+                        {features?.results?.map((feat) => (
+                          <TableRow key={`feature-${feat.index}`}>
+                            <TableCell>{feat.index}</TableCell>
+                            <TableCell>{feat.name}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </AccordionDetails>
+              </Accordion>
             </Box>
           ))}
 
@@ -282,27 +365,6 @@ export function ClassData() {
                       <TableRow key={`spell-${prof.index}`}>
                         <TableCell>{prof.index}</TableCell>
                         <TableCell>{prof.name}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
-          ))}
-
-        {selectedTab === 'features' &&
-          (isFeaturesLoading || !features?.count ? (
-            <CircularProgress />
-          ) : (
-            <Box display="flex" flexDirection="column" gap="15px">
-              <Typography variant="h5">Features - {features?.count || 'none'}</Typography>
-              <TableContainer component={Paper}>
-                <Table sx={{ minWidth: 650 }} aria-label="simple table">
-                  <TableBody>
-                    {features?.results?.map((feat) => (
-                      <TableRow key={`spell-${feat.index}`}>
-                        <TableCell>{feat.index}</TableCell>
-                        <TableCell>{feat.name}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

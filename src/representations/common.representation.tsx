@@ -32,7 +32,6 @@ export type OptionSet =
       resource_list_url: string;
     };
 
-// TODO: Add optionnals
 export type Option =
   | {
       option_type: 'reference';

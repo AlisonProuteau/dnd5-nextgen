@@ -1,0 +1,29 @@
+{
+  "subracesToAdd": [
+    {
+      "races": [
+        {
+          "index: ": "tiefling",
+          "data": [
+            { "index: ": "infernal-legacy", "name: ": "Infernal Legacy" },
+            { "index: ": "variant-winged", "name: ": "Variant: Winged" }
+          ]
+        }
+      ]
+    },
+    {
+      "subraces": [
+        {
+          "race": { "index: ": "tiefling" },
+          "index: ": "infernal-legacy",
+          "name: ": "Infernal Legacy"
+        },
+        {
+          "race": { "index: ": "tiefling" },
+          "index: ": "variant-winged",
+          "name: ": "Variant: Winged"
+        }
+      ]
+    }
+  ]
+}

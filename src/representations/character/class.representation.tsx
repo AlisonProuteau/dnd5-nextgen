@@ -38,7 +38,6 @@ export type Classes = {
   proficiency_choices: Choice[];
   saving_throws: DefaultRepresentation[];
   spellcasting?: Spellcasting;
-  spells?: string;
   starting_equipment?: Equipment[];
   starting_equipment_options: Choice[];
   subclasses: DefaultRepresentation[];
@@ -51,8 +50,9 @@ type SpellPrerequisite = {
 };
 
 type Spell = {
+  index: string;
+  name: string;
   prerequisites: SpellPrerequisite[];
-  spell: DefaultRepresentation;
 };
 
 export type Subclass = {

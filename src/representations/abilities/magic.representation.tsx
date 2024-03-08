@@ -11,7 +11,6 @@ export interface Spell {
   area_of_effect?: AreaOfEffect;
   attack_type?: string;
   casting_time: string;
-  classes: DefaultRepresentation[];
   components: string[];
   concentration: boolean;
   damage?: ActionDamage;
@@ -27,7 +26,8 @@ export interface Spell {
   range: string;
   ritual: boolean;
   school: DefaultRepresentation;
-  subclasses?: DefaultRepresentation[];
+  classes: string[];
+  subclasses?: string[];
 }
 
 export type MagicItem = {
