@@ -30,7 +30,8 @@ export interface CharacterFormData {
   subrace?: DefaultRepresentation;
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
-  proficiencies: (DefaultRepresentation & { type: number })[];
+  proficiencies: DefaultRepresentation[];
+  languages: DefaultRepresentation[];
 }
 
 export function CharacterCreation() {
@@ -96,22 +97,23 @@ export function CharacterCreation() {
           setFormErrorState({});
         }}
       >
-        {/* Choose your race/species */}
-        {/* Choosing your proficiencies // TODO: Make common? */}
+        {/* //TODO Make proficiencies or race/class components common? */}
+
         {/* Choosing your ability_bonus */}
-        {/* Choosing your subrace language */}
+        {/* Choosing your features? */}
         <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
           <CharacterRaceForm
             onNext={(input) => {
               setFormData(input);
               setActiveStep((prevActiveStep) => prevActiveStep + 1);
             }}
+            proficiencies={formData.proficiencies}
           />
         </Box>
 
-        {/* Choose your class (archetype? -> Subclass ?)  // TODO: Missing subclasses */}
-        {/* Choosing your proficiencies // TODO: Disable already added ones, fix representation and selection */}
+        {/* Choose your class (archetype? -> Subclass ?) */}
         {/* Choosing your multiclassing? */}
+        {/* Choosing your features? */}
         {/* Choosing your starting_equipment */}
         <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
           <CharacterClassForm
@@ -119,6 +121,7 @@ export function CharacterCreation() {
               setFormData(input);
               setActiveStep((prevActiveStep) => prevActiveStep + 1);
             }}
+            proficiencies={formData.proficiencies}
           />
         </Box>
 

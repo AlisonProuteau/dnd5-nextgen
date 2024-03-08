@@ -34,7 +34,7 @@ export type Subrace = {
   index: string;
   name: string;
   desc: string;
-  speed?: number; // OK: Added
+  speed?: number;
   ability_bonuses: AbilityBonus[];
   language_options?: Choice;
   racial_traits: DefaultRepresentation[];

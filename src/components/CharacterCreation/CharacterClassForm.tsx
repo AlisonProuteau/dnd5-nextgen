@@ -20,9 +20,10 @@ import type { CharacterFormData } from './CharacterCreation';
 
 interface CharacterClassFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
+  proficiencies?: DefaultRepresentation[];
 }
 
-export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
+export function CharacterClassForm({ onNext, proficiencies = [] }: CharacterClassFormProps) {
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
   const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] =
@@ -73,10 +74,16 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
                   control={
                     <Checkbox
                       id={`proficiency-${i}-${item.index}`}
+                      checked={
+                        proficiencies.some(({ index }) => index === item.index) ||
+                        selectedProficiencies?.some(({ index }) => index === item.index) ||
+                        false
+                      }
                       disabled={
-                        !selectedProficiencies?.find(({ index }) => index === item.index) &&
-                        (selectedProficiencies?.filter(({ type }) => type === i).length || 0) >=
-                          choose
+                        proficiencies.some(({ index }) => index === item.index) ||
+                        (!selectedProficiencies?.find(({ index }) => index === item.index) &&
+                          (selectedProficiencies?.filter(({ type }) => type === i).length || 0) >=
+                            choose)
                       }
                       onChange={(_, checked) => {
                         onProficiencySelect(checked, item, i);
@@ -133,6 +140,7 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
             value={selectedClass?.index || ''}
             onChange={({ target }) => {
               setSelectedProficiencies(undefined);
+              setselectedSubclass(undefined);
               setselectedClass(classes.find((e) => e.index === target.value));
             }}
           >
@@ -195,7 +203,10 @@ export function CharacterClassForm({ onNext }: CharacterClassFormProps) {
             onNext({
               class: selectedClass,
               subclass: selectedSubclass,
-              proficiencies: selectedProficiencies
+              proficiencies: selectedProficiencies?.map((proficiency) => ({
+                index: proficiency.index,
+                name: proficiency.name
+              }))
             });
           else onNext({ class: selectedClass, proficiencies: selectedProficiencies });
         }}
