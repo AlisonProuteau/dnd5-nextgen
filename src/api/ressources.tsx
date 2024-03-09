@@ -2,6 +2,7 @@ import { uniqBy } from 'lodash';
 import type { Feature } from '../representations/abilities/feature.representation';
 import type { Spell } from '../representations/abilities/magic.representation';
 import type { Proficiency } from '../representations/campaign/adventure.representation';
+import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race } from '../representations/character/race.representation';
 import type { DefaultRepresentation } from '../representations/common.representation';
@@ -47,6 +48,14 @@ export async function getSubclassInfo(
         `${subclassIndex}-${level}`
       )
     : get(`Subclass Ressources`, `/classes/${classIndex}/subclasses`, subclassIndex);
+}
+
+export function getAllAligmenents(): Promise<{ count: number; results: Alignment[] }> {
+  return getAll('Alignments', '/alignments');
+}
+
+export function getAllBackgrounds(): Promise<{ count: number; results: Background[] }> {
+  return getAll('Backgrounds', '/backgrounds');
 }
 
 function getQueryForIndexAndLevel(

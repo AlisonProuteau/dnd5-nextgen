@@ -12,18 +12,36 @@ import {
 } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
+import type {
+  Alignment,
+  Background
+} from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
+import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterRaceForm } from './CharacterRaceForm';
 
+const steps = [
+  { id: 'race', label: 'Race' },
+  { id: 'class', label: 'Class' },
+  { id: 'background', label: 'Background' },
+  { id: 'info', label: 'Character Info' }
+];
+const genderInstances: DefaultRepresentation[] = [
+  { index: 'F', name: 'Female' },
+  { index: 'M', name: 'Male' },
+  { index: 'O', name: 'Other' }
+];
 export interface CharacterFormData {
   name: string;
   age?: string;
   sex: DefaultRepresentation;
   appearance?: string;
   personality?: string;
+  background: Background;
+  alignment: Alignment;
   ideals?: string;
   bonds?: string;
   flaws?: string;
@@ -40,17 +58,6 @@ export function CharacterCreation() {
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({});
   const [formError, setFormErrorState] = useState({});
   const [activeStep, setActiveStep] = useState(0);
-  const steps = [
-    { id: 'race', label: 'Race' },
-    { id: 'class', label: 'Class' },
-    { id: 'info', label: 'Character Info' }
-  ];
-
-  const genderInstances: DefaultRepresentation[] = [
-    { index: 'F', name: 'Female' },
-    { index: 'M', name: 'Male' },
-    { index: 'O', name: 'Other' }
-  ];
 
   const setFormData = (values: Partial<CharacterFormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -71,7 +78,10 @@ export function CharacterCreation() {
   };
 
   const isFormValid = () => {
-    return formData.name && !Object.values(formError).some((v) => v);
+    return (
+      Object.values(formData).some((value) => value === undefined) &&
+      !Object.values(formError).some((v) => v)
+    );
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -112,9 +122,9 @@ export function CharacterCreation() {
         </Box>
 
         {/* Choose your class (archetype? -> Subclass ?) */}
-        {/* Choosing your multiclassing? */}
-        {/* Choosing your features? */}
         {/* Choosing your starting_equipment */}
+        {/* Choosing your features? */}
+        {/* Choosing your multiclassing? */}
         <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
           <CharacterClassForm
             onNext={(input) => {
@@ -135,7 +145,19 @@ export function CharacterCreation() {
         {/* Choosing your equipment */}
         {/* Choosing your feats */}
 
-        {/* Alignment -  Background - Gender // TODO: Use representations*/}
+        {/*  Background // TODO: Use DB/repr*/}
+
+        <Box display={steps[activeStep].id === 'background' ? 'revert' : 'none'}>
+          <CharacterBackgroundForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+            proficiencies={formData.proficiencies}
+            languages={formData.languages}
+          />
+        </Box>
+
         <Box
           display={steps[activeStep].id === 'info' ? 'flex' : 'none'}
           flexWrap="wrap"
@@ -145,16 +167,17 @@ export function CharacterCreation() {
           <ControledInput
             id="name"
             label="Name"
-            sx={{ flexGrow: 1 }}
+            sx={{ flexGrow: 1, flexBasis: '50%' }}
             onChange={(value) => setFormData({ name: value as string })}
           />
           <ControledInput
             id="age"
             type="number"
             label="Age"
+            sx={{ width: '85px' }}
             onChange={(value) => setFormData({ age: value as string })}
           />
-          <FormControl margin="dense">
+          <FormControl margin="dense" sx={{ width: '100px' }}>
             <InputLabel htmlFor="sex">Sex</InputLabel>
             <Select
               fullWidth
@@ -185,27 +208,6 @@ export function CharacterCreation() {
             multiline
             label="Personality Traits"
             onChange={(value) => setFormData({ personality: value as string })}
-          />
-          <ControledInput
-            fullWidth
-            id="ideals"
-            multiline
-            label="Ideals"
-            onChange={(value) => setFormData({ ideals: value as string })}
-          />
-          <ControledInput
-            fullWidth
-            id="bonds"
-            multiline
-            label="Bonds"
-            onChange={(value) => setFormData({ bonds: value as string })}
-          />
-          <ControledInput
-            fullWidth
-            id="flaws"
-            multiline
-            label="Flaws"
-            onChange={(value) => setFormData({ flaws: value as string })}
           />
         </Box>
 
