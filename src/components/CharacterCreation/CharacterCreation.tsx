@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
+import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
 import { CharacterClassForm } from './CharacterClassForm';
@@ -32,6 +33,7 @@ export interface CharacterFormData {
   subclass?: DefaultRepresentation;
   proficiencies: DefaultRepresentation[];
   languages: DefaultRepresentation[];
+  abilities: RaceAbilityBonus[];
 }
 
 export function CharacterCreation() {
@@ -99,8 +101,6 @@ export function CharacterCreation() {
       >
         {/* //TODO Make proficiencies or race/class components common? */}
 
-        {/* Choosing your ability_bonus */}
-        {/* Choosing your features? */}
         <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
           <CharacterRaceForm
             onNext={(input) => {

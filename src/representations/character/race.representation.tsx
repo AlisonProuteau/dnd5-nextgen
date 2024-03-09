@@ -1,6 +1,6 @@
 import type { Choice, DefaultRepresentation } from '../common.representation';
 
-type RaceAbilityBonus = {
+export type RaceAbilityBonus = {
   ability_score: DefaultRepresentation;
   bonus: number;
 };
