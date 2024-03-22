@@ -1,15 +1,4 @@
-import {
-  Box,
-  Button,
-  Container,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Step,
-  StepLabel,
-  Stepper
-} from '@mui/material';
+import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
 import type {
@@ -18,9 +7,9 @@ import type {
 } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
-import { ControledInput } from '../ControledInput';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
+import { CharacterDescription } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
 
 const steps = [
@@ -28,11 +17,6 @@ const steps = [
   { id: 'class', label: 'Class' },
   { id: 'background', label: 'Background' },
   { id: 'info', label: 'Character Info' }
-];
-const genderInstances: DefaultRepresentation[] = [
-  { index: 'F', name: 'Female' },
-  { index: 'M', name: 'Male' },
-  { index: 'O', name: 'Other' }
 ];
 
 export type ChoiceSelection = DefaultRepresentation & { type: 'class' | 'race' };
@@ -122,10 +106,6 @@ export function CharacterCreation() {
           />
         </Box>
 
-        {/* Choose your class (archetype? -> Subclass ?) */}
-        {/* Choosing your starting_equipment */}
-        {/* Choosing your features? */}
-        {/* Choosing your multiclassing? */}
         <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
           <CharacterClassForm
             onNext={(input) => {
@@ -140,18 +120,6 @@ export function CharacterCreation() {
           />
         </Box>
 
-        {/* Calculate your ability scores ?(custom, simple, point buy, roll)? + bonuses */}
-        {/* Calculate your hit points with modifiers */}
-        {/* Calculate your armor class */}
-        {/* Figuring out your proficiency modifier */}
-
-        {/* Calculate your skill points */}
-        {/* Choosing your spells (C level, spellattack, spell DC)? */}
-        {/* Choosing your equipment */}
-        {/* Choosing your feats */}
-
-        {/*  Background // TODO: Use DB/repr*/}
-
         <Box display={steps[activeStep].id === 'background' ? 'revert' : 'none'}>
           <CharacterBackgroundForm
             onNext={(input) => {
@@ -163,57 +131,8 @@ export function CharacterCreation() {
           />
         </Box>
 
-        <Box
-          display={steps[activeStep].id === 'info' ? 'flex' : 'none'}
-          flexWrap="wrap"
-          gap="15px"
-          justifyContent="space-between"
-        >
-          <ControledInput
-            id="name"
-            label="Name"
-            sx={{ flexGrow: 1, flexBasis: '50%' }}
-            onChange={(value) => setFormData({ name: value as string })}
-          />
-          <ControledInput
-            id="age"
-            type="number"
-            label="Age"
-            sx={{ width: '85px' }}
-            onChange={(value) => setFormData({ age: value as string })}
-          />
-          <FormControl margin="dense" sx={{ width: '100px' }}>
-            <InputLabel htmlFor="sex">Sex</InputLabel>
-            <Select
-              fullWidth
-              id="sex"
-              label="Sex"
-              defaultValue="O"
-              onChange={({ target }) =>
-                setFormData({ sex: genderInstances.find(({ index }) => index === target.value) })
-              }
-            >
-              {genderInstances.map((currentSex: DefaultRepresentation) => (
-                <MenuItem key={currentSex.index} id={currentSex.index} value={currentSex.index}>
-                  {currentSex.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <ControledInput
-            fullWidth
-            id="apperance"
-            multiline
-            label="Appearance"
-            onChange={(value) => setFormData({ appearance: value as string })}
-          />
-          <ControledInput
-            fullWidth
-            id="personality"
-            multiline
-            label="Personality Traits"
-            onChange={(value) => setFormData({ personality: value as string })}
-          />
+        <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
+          <CharacterDescription setFormData={setFormData} />
         </Box>
 
         {activeStep > 1 && (
@@ -222,9 +141,6 @@ export function CharacterCreation() {
           </Button>
         )}
 
-        {/* TODO: Create an edge case test class/race */}
-        {/* TODO: Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates */}
-        {/* TODO: Save to DB */}
         {activeStep === steps.length - 1 && (
           <Button
             sx={{ float: 'right' }}
