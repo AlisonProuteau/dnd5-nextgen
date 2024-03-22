@@ -1,33 +1,37 @@
 import {
   Box,
   Button,
-  Checkbox,
   Divider,
   FormControl,
-  FormControlLabel,
-  FormGroup,
-  FormLabel,
   InputLabel,
   MenuItem,
   Select,
   Typography
 } from '@mui/material';
 import { Fragment, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
-import type { DefaultRepresentation, Option } from '../../representations/common.representation';
-import type { CharacterFormData } from './CharacterCreation';
+import type { DefaultRepresentation } from '../../representations/common.representation';
+import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
+import { Choices } from './Choices';
 
 interface CharacterClassFormProps {
-  onNext: (raceInfo: Partial<CharacterFormData>) => void;
-  proficiencies?: DefaultRepresentation[];
+  onNext: (classInfo: Partial<CharacterFormData>) => void;
+  onPrev: (classInfo: Partial<CharacterFormData>) => void;
+  proficiencies?: ChoiceSelection[];
 }
 
-export function CharacterClassForm({ onNext, proficiencies = [] }: CharacterClassFormProps) {
+export function CharacterClassForm({
+  onNext,
+  onPrev,
+  proficiencies = []
+}: CharacterClassFormProps) {
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
   const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
-  const [selectedProficiencies, setSelectedProficiencies] =
-    useState<(DefaultRepresentation & { type: number })[]>();
+  const [selectedProficiencies, setSelectedProficiencies] = useState<
+    (DefaultRepresentation & { type: number })[]
+  >([]);
 
   const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
   const { data: classInfo } = useQuery(
@@ -39,92 +43,61 @@ export function CharacterClassForm({ onNext, proficiencies = [] }: CharacterClas
     },
     { enabled: !!selectedClass?.index }
   );
+  // const { data: subclassInfo } = useQuery(
+  //   ['fetchSubclassInfo', selectedClass?.index, selectedSubclass?.index],
+  //   async () => {
+  //     if (!selectedClass?.index || !selectedSubclass?.index) return;
 
-  // TODO features
+  //     return await getSubclassInfo(selectedClass.index, selectedSubclass.index);
+  //   },
+  //   { enabled: !!selectedClass?.index }
+  // );
 
   useEffect(() => {
     if (classInfo?.subclasses?.length && !selectedSubclass)
       setselectedSubclass(classInfo.subclasses[0]);
   }, [classInfo?.subclasses?.map((r) => r.index).join(' ')]);
 
-  const onProficiencySelect = (checked: boolean, item: DefaultRepresentation, i: number) => {
-    if (checked) {
-      setSelectedProficiencies([...(selectedProficiencies || []), { ...item, type: i }]);
-    } else if (selectedProficiencies?.length) {
-      const proficiencyIndex = selectedProficiencies.findIndex(({ index }) => index === item.index);
+  useEffect(() => {
+    const newProficiencies = selectedProficiencies.filter(
+      (item) => !proficiencies.includes({ index: item.index, name: item.name, type: 'class' })
+    );
 
-      setSelectedProficiencies(selectedProficiencies.toSpliced(proficiencyIndex, 1));
+    if (newProficiencies.length !== selectedProficiencies.length) {
+      setSelectedProficiencies(newProficiencies);
+      toast('Something changed in your class');
     }
-  };
-
-  const generateProficiencyChoices = (
-    i: number,
-    choose: number,
-    options: Option[],
-    desc: string
-  ) => {
-    if (options[0].option_type === 'reference') {
-      return (
-        <FormGroup key={`proficiencies-${i}-${desc})}`}>
-          {options.map(
-            ({ item }) =>
-              item && (
-                <FormControlLabel
-                  key={`proficiency-${i}-${item.index}`}
-                  control={
-                    <Checkbox
-                      id={`proficiency-${i}-${item.index}`}
-                      checked={
-                        proficiencies.some(({ index }) => index === item.index) ||
-                        selectedProficiencies?.some(({ index }) => index === item.index) ||
-                        false
-                      }
-                      disabled={
-                        proficiencies.some(({ index }) => index === item.index) ||
-                        (!selectedProficiencies?.find(({ index }) => index === item.index) &&
-                          (selectedProficiencies?.filter(({ type }) => type === i).length || 0) >=
-                            choose)
-                      }
-                      onChange={(_, checked) => {
-                        onProficiencySelect(checked, item, i);
-                      }}
-                    />
-                  }
-                  label={item?.name}
-                />
-              )
-          )}
-        </FormGroup>
-      );
-    } else if (options[0]?.option_type === 'choice') {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-          {options.map(
-            ({ choice }, index) =>
-              choice &&
-              choice.from.option_set_type === 'options_array' &&
-              generateProficiencyChoices(
-                i,
-                choice.choose,
-                choice.from.options,
-                choice.desc || index.toString()
-              )
-          )}
-        </Box>
-      );
-    } else {
-      throw new Error('Option type not handled');
-    }
-  };
+  }, [proficiencies.map(({ index }) => index).join(', ')]);
 
   const isValid = () => {
     return (
       selectedClass?.index &&
       classInfo?.proficiency_choices?.every(
         ({ choose }, i) =>
-          (selectedProficiencies?.filter(({ type }) => type === i).length || 0) === choose
+          (selectedProficiencies.filter(({ type }) => type === i).length || 0) === choose
       )
     );
+  };
+
+  const handleSubmit = (fn: (classInfo: Partial<CharacterFormData>) => void) => {
+    const formattedProficiencies = selectedProficiencies
+      .map(
+        (proficiency) =>
+          ({
+            index: proficiency.index,
+            name: proficiency.name,
+            type: 'class'
+          } as ChoiceSelection)
+      )
+      .concat(proficiencies.filter(({ type }) => type !== 'class'));
+
+    if (selectedSubclass?.index)
+      fn({
+        class: selectedClass,
+        subclass: selectedSubclass,
+        proficiencies: formattedProficiencies
+      });
+    else fn({ class: selectedClass, proficiencies: formattedProficiencies });
   };
 
   return (
@@ -139,7 +112,7 @@ export function CharacterClassForm({ onNext, proficiencies = [] }: CharacterClas
             disabled={!classes}
             value={selectedClass?.index || ''}
             onChange={({ target }) => {
-              setSelectedProficiencies(undefined);
+              setSelectedProficiencies([]);
               setselectedSubclass(undefined);
               setselectedClass(classes.find((e) => e.index === target.value));
             }}
@@ -183,34 +156,19 @@ export function CharacterClassForm({ onNext, proficiencies = [] }: CharacterClas
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>Choose proficiencies</Typography>
           </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-            {classInfo.proficiency_choices.map(({ desc, choose, from }, i) => (
-              <FormControl key={`proficiencies-${i}`} fullWidth margin="dense" component="fieldset">
-                <FormLabel component="legend">{desc}</FormLabel>
-                {from?.option_set_type === 'options_array' &&
-                  generateProficiencyChoices(i, choose, from.options, desc || i.toString())}
-              </FormControl>
-            ))}
-          </Box>
+          <Choices
+            choices={classInfo.proficiency_choices}
+            inherited={proficiencies.filter(({ type }) => type !== 'class')}
+            selected={selectedProficiencies}
+            setSelected={setSelectedProficiencies}
+          />
         </Fragment>
       )}
 
-      <Button
-        sx={{ float: 'right' }}
-        disabled={!isValid()}
-        onClick={() => {
-          if (selectedSubclass?.index)
-            onNext({
-              class: selectedClass,
-              subclass: selectedSubclass,
-              proficiencies: selectedProficiencies?.map((proficiency) => ({
-                index: proficiency.index,
-                name: proficiency.name
-              }))
-            });
-          else onNext({ class: selectedClass, proficiencies: selectedProficiencies });
-        }}
-      >
+      <Button sx={{ float: 'left' }} disabled={!isValid()} onClick={() => handleSubmit(onPrev)}>
+        Back
+      </Button>
+      <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>
         Next
       </Button>
     </Box>

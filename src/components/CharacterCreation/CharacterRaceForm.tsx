@@ -1,28 +1,26 @@
 import {
   Box,
   Button,
-  Checkbox,
   Divider,
   FormControl,
-  FormControlLabel,
-  FormGroup,
-  FormLabel,
   InputLabel,
   MenuItem,
   Select,
   Typography
 } from '@mui/material';
 import { Fragment, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllRaces, getRaceInfo, getSubraceInfo } from '../../api/ressources';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
-import type { DefaultRepresentation, Option } from '../../representations/common.representation';
-import type { CharacterFormData } from './CharacterCreation';
+import type { DefaultRepresentation } from '../../representations/common.representation';
+import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
+import { Choices } from './Choices';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
-  proficiencies?: DefaultRepresentation[];
-  languages?: DefaultRepresentation[];
+  proficiencies?: ChoiceSelection[];
+  languages?: ChoiceSelection[];
 }
 
 export function CharacterRaceForm({
@@ -35,7 +33,9 @@ export function CharacterRaceForm({
   const [selectedProficiencies, setSelectedProficiencies] = useState<
     (DefaultRepresentation & { type: number })[]
   >([]);
-  const [selectedLanguages, setSelectedLanguages] = useState<DefaultRepresentation[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<
+    (DefaultRepresentation & { type: number })[]
+  >([]);
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
 
   const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
@@ -62,161 +62,27 @@ export function CharacterRaceForm({
     if (raceInfo?.subraces?.length && !selectedSubrace) setselectedSubrace(raceInfo.subraces[0]);
   }, [raceInfo?.subraces?.map((r) => r.index).join(' ')]);
 
-  const isChecked = (type: 'proficiency' | 'language' | 'ability', item: DefaultRepresentation) => {
-    if (type === 'proficiency')
-      return (
-        proficiencies.some(({ index }) => index === item.index) ||
-        selectedProficiencies.some(({ index }) => index === item.index) ||
-        false
-      );
-    else if (type === 'language')
-      return (
-        languages.some(({ index }) => index === item.index) ||
-        selectedLanguages.some(({ index }) => index === item.index) ||
-        false
-      );
-    else if (type === 'ability')
-      return (
-        selectedAbilities.some(({ ability_score }) => ability_score.index === item.index) || false
-      );
+  useEffect(() => {
+    const newProficiencies = selectedProficiencies.filter(
+      (item) => !proficiencies.includes({ index: item.index, name: item.name, type: 'class' })
+    );
 
-    return false;
-  };
-
-  const isDisabled = (
-    itemType: 'proficiency' | 'language' | 'ability',
-    item: DefaultRepresentation,
-    choose: number,
-    i?: number
-  ) => {
-    if (itemType === 'proficiency')
-      return (
-        !isChecked(itemType, item) &&
-        (selectedProficiencies.filter(({ type }) => type === i).length || 0) >= choose
-      );
-    else if (itemType === 'language')
-      return !isChecked(itemType, item) && (selectedLanguages.length || 0) >= choose;
-    else if (itemType === 'ability')
-      return !isChecked(itemType, item) && (selectedAbilities.length || 0) >= choose;
-    return false;
-  };
-
-  const onChange = (
-    type: 'proficiency' | 'language' | 'ability',
-    checked: boolean,
-    item: DefaultRepresentation | RaceAbilityBonus,
-    i?: number
-  ) => {
-    const onProficiencySelect = (checked: boolean, item: DefaultRepresentation, i: number) => {
-      if (checked) {
-        setSelectedProficiencies([...(selectedProficiencies || []), { ...item, type: i }]);
-      } else if (selectedProficiencies.length) {
-        const proficiencyIndex = selectedProficiencies.findIndex(
-          ({ index }) => index === item.index
-        );
-
-        setSelectedProficiencies(selectedProficiencies.toSpliced(proficiencyIndex, 1));
-      }
-    };
-    const onLanguageSelect = (checked: boolean, item: DefaultRepresentation) => {
-      if (checked) {
-        setSelectedLanguages([...(selectedLanguages || []), item]);
-      } else if (selectedLanguages.length) {
-        const languageIndex = selectedLanguages.findIndex(({ index }) => index === item.index);
-        setSelectedLanguages(selectedLanguages.toSpliced(languageIndex, 1));
-      }
-    };
-    const onAbilitySelect = (checked: boolean, item: RaceAbilityBonus) => {
-      if (checked) {
-        setSelectedAbilities([...(selectedAbilities || []), item]);
-      } else if (selectedAbilities.length) {
-        const abilityIndex = selectedAbilities.findIndex(
-          ({ ability_score }) => ability_score.index === item.ability_score.index
-        );
-        setSelectedAbilities(selectedAbilities.toSpliced(abilityIndex, 1));
-      }
-    };
-
-    if (type === 'proficiency') onProficiencySelect(checked, item as DefaultRepresentation, i || 0);
-    else if (type === 'language') onLanguageSelect(checked, item as DefaultRepresentation);
-    else if (type === 'ability') onAbilitySelect(checked, item as RaceAbilityBonus);
-  };
-
-  const generateChoices = (
-    i: number,
-    choose: number,
-    options: Option[],
-    desc: string,
-    type: 'proficiency' | 'language' | 'ability'
-  ) => {
-    if (options[0].option_type === 'reference') {
-      return (
-        <FormGroup key={`${type}-${i}-${desc})}`}>
-          {options.map(
-            ({ item }) =>
-              item && (
-                <FormControlLabel
-                  key={`${type}-${i}-${item.index || item}`}
-                  control={
-                    <Checkbox
-                      id={`${type}-${i}-${item.index}`}
-                      checked={isChecked(type, item)}
-                      disabled={isDisabled(type, item, choose, i)}
-                      onChange={(_, checked) => onChange(type, checked, item, i)}
-                    />
-                  }
-                  label={item?.name}
-                />
-              )
-          )}
-        </FormGroup>
-      );
-    } else if (options[0].option_type === 'ability_bonus') {
-      return (
-        <FormGroup key={`${type}-${i}-${desc})}`}>
-          {options.map(
-            ({ ability_score, bonus }) =>
-              ability_score &&
-              bonus && (
-                <FormControlLabel
-                  key={`${type}-${i}-${ability_score.index}`}
-                  control={
-                    <Checkbox
-                      id={`${type}-${i}-${ability_score.index}`}
-                      checked={isChecked(type, ability_score)}
-                      disabled={isDisabled(type, ability_score, choose, i)}
-                      onChange={(_, checked) =>
-                        onChange(type, checked, { ability_score, bonus }, i)
-                      }
-                    />
-                  }
-                  label={ability_score?.name}
-                />
-              )
-          )}
-        </FormGroup>
-      );
-    } else if (options[0]?.option_type === 'choice') {
-      return (
-        <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-          {options.map(
-            ({ choice }, index) =>
-              choice &&
-              choice.from.option_set_type === 'options_array' &&
-              generateChoices(
-                i,
-                choice.choose,
-                choice.from.options,
-                choice.desc || index.toString(),
-                type
-              )
-          )}
-        </Box>
-      );
-    } else {
-      throw new Error('Option type not handled');
+    if (newProficiencies.length !== selectedProficiencies.length) {
+      setSelectedProficiencies(newProficiencies);
+      toast('Something changed in your race');
     }
-  };
+  }, [proficiencies.map(({ index }) => index).join(', ')]);
+
+  useEffect(() => {
+    const newLanguages = selectedLanguages.filter(
+      (item) => !languages.includes({ index: item.index, name: item.name, type: 'class' })
+    );
+
+    if (newLanguages.length !== selectedLanguages.length) {
+      setSelectedLanguages(newLanguages);
+      toast('Something changed in your race');
+    }
+  }, [languages.map(({ index }) => index).join(', ')]);
 
   const isValid = () => {
     return (
@@ -230,6 +96,41 @@ export function CharacterRaceForm({
         (subraceInfo?.ability_bonus_options?.choose || 0) ===
         selectedAbilities.length
     );
+  };
+
+  const handleSubmit = () => {
+    const data = {
+      race: selectedRace,
+      proficiencies: (selectedProficiencies as DefaultRepresentation[])
+        .concat(raceInfo?.starting_proficiencies || [])
+        .concat(subraceInfo?.starting_proficiencies || [])
+        .map(
+          (proficiency) =>
+            ({
+              index: proficiency.index,
+              name: proficiency.name,
+              type: 'race'
+            } as ChoiceSelection)
+        )
+        .concat(proficiencies.filter(({ type }) => type !== 'race')),
+      languages: (selectedLanguages as DefaultRepresentation[])
+        .concat(raceInfo?.languages || [])
+        .concat(subraceInfo?.languages || [])
+        .map(
+          (language) =>
+            ({
+              index: language.index,
+              name: language.name,
+              type: 'race'
+            } as ChoiceSelection)
+        )
+        .concat(languages.filter(({ type }) => type !== 'race')),
+      abilities: selectedAbilities
+        .concat(raceInfo?.ability_bonuses || [])
+        .concat(subraceInfo?.ability_bonuses || [])
+    };
+
+    selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
   };
 
   return (
@@ -305,38 +206,15 @@ export function CharacterRaceForm({
               </Typography>
             </Divider>
             <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-              {raceInfo?.starting_proficiency_options && (
-                <FormControl fullWidth margin="dense" component="fieldset">
-                  <FormLabel component="legend">
-                    {raceInfo.starting_proficiency_options.desc}
-                  </FormLabel>
-                  {raceInfo.starting_proficiency_options.from?.option_set_type ===
-                    'options_array' &&
-                    generateChoices(
-                      0,
-                      raceInfo.starting_proficiency_options.choose,
-                      raceInfo.starting_proficiency_options.from.options,
-                      raceInfo.starting_proficiency_options.desc || '0',
-                      'proficiency'
-                    )}
-                </FormControl>
-              )}
-              {subraceInfo?.starting_proficiency_options && (
-                <FormControl fullWidth margin="dense" component="fieldset">
-                  <FormLabel component="legend">
-                    {subraceInfo.starting_proficiency_options.desc}
-                  </FormLabel>
-                  {subraceInfo.starting_proficiency_options.from?.option_set_type ===
-                    'options_array' &&
-                    generateChoices(
-                      1,
-                      subraceInfo.starting_proficiency_options.choose,
-                      subraceInfo.starting_proficiency_options.from.options,
-                      subraceInfo.starting_proficiency_options.desc || '0',
-                      'proficiency'
-                    )}
-                </FormControl>
-              )}
+              <Choices
+                choices={[
+                  raceInfo?.starting_proficiency_options,
+                  subraceInfo?.starting_proficiency_options
+                ]}
+                inherited={proficiencies.filter(({ type }) => type !== 'race')}
+                selected={selectedProficiencies}
+                setSelected={setSelectedProficiencies}
+              />
             </Box>
           </Fragment>
         )}
@@ -352,32 +230,12 @@ export function CharacterRaceForm({
             </Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-            {raceInfo?.language_options && (
-              <FormControl fullWidth margin="dense" component="fieldset">
-                <FormLabel component="legend">{raceInfo.language_options.desc}</FormLabel>
-                {raceInfo.language_options.from?.option_set_type === 'options_array' &&
-                  generateChoices(
-                    0,
-                    raceInfo.language_options.choose,
-                    raceInfo.language_options.from.options,
-                    raceInfo.language_options.desc || '0',
-                    'language'
-                  )}
-              </FormControl>
-            )}
-            {subraceInfo?.language_options && (
-              <FormControl fullWidth margin="dense" component="fieldset">
-                <FormLabel component="legend">{subraceInfo.language_options.desc}</FormLabel>
-                {subraceInfo.language_options.from?.option_set_type === 'options_array' &&
-                  generateChoices(
-                    1,
-                    subraceInfo.language_options.choose,
-                    subraceInfo.language_options.from.options,
-                    subraceInfo.language_options.desc || '0',
-                    'language'
-                  )}
-              </FormControl>
-            )}
+            <Choices
+              choices={[raceInfo?.language_options, subraceInfo?.language_options]}
+              inherited={languages.filter(({ type }) => type !== 'race')}
+              selected={selectedLanguages}
+              setSelected={setSelectedLanguages}
+            />
           </Box>
         </Fragment>
       )}
@@ -393,60 +251,16 @@ export function CharacterRaceForm({
             </Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-            {raceInfo?.ability_bonus_options && (
-              <FormControl fullWidth margin="dense" component="fieldset">
-                <FormLabel component="legend">{raceInfo.ability_bonus_options.desc}</FormLabel>
-                {raceInfo.ability_bonus_options.from?.option_set_type === 'options_array' &&
-                  generateChoices(
-                    0,
-                    raceInfo.ability_bonus_options.choose,
-                    raceInfo.ability_bonus_options.from.options,
-                    raceInfo.ability_bonus_options.desc || '0',
-                    'ability'
-                  )}
-              </FormControl>
-            )}
-            {subraceInfo?.ability_bonus_options && (
-              <FormControl fullWidth margin="dense" component="fieldset">
-                <FormLabel component="legend">{subraceInfo.ability_bonus_options.desc}</FormLabel>
-                {subraceInfo.ability_bonus_options.from?.option_set_type === 'options_array' &&
-                  generateChoices(
-                    1,
-                    subraceInfo.ability_bonus_options.choose,
-                    subraceInfo.ability_bonus_options.from.options,
-                    subraceInfo.ability_bonus_options.desc || '0',
-                    'ability'
-                  )}
-              </FormControl>
-            )}
+            <Choices
+              choices={[raceInfo?.ability_bonus_options, subraceInfo?.ability_bonus_options]}
+              selected={selectedAbilities}
+              setSelected={setSelectedAbilities}
+            />
           </Box>
         </Fragment>
       )}
 
-      <Button
-        sx={{ float: 'right' }}
-        disabled={!isValid()}
-        onClick={() => {
-          const data = {
-            race: selectedRace,
-            proficiencies: selectedProficiencies
-              .map((proficiency) => ({
-                index: proficiency.index,
-                name: proficiency.name
-              }))
-              .concat(raceInfo?.starting_proficiencies || [])
-              .concat(subraceInfo?.starting_proficiencies || []),
-            languages: selectedLanguages
-              .concat(raceInfo?.languages || [])
-              .concat(subraceInfo?.languages || []),
-            abilities: selectedAbilities
-              .concat(raceInfo?.ability_bonuses || [])
-              .concat(subraceInfo?.ability_bonuses || [])
-          };
-
-          selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
-        }}
-      >
+      <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={handleSubmit}>
         Next
       </Button>
     </Box>

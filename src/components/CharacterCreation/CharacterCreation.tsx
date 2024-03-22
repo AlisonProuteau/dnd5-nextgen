@@ -34,6 +34,9 @@ const genderInstances: DefaultRepresentation[] = [
   { index: 'M', name: 'Male' },
   { index: 'O', name: 'Other' }
 ];
+
+export type ChoiceSelection = DefaultRepresentation & { type: 'class' | 'race' };
+
 export interface CharacterFormData {
   name: string;
   age?: string;
@@ -49,8 +52,8 @@ export interface CharacterFormData {
   subrace?: DefaultRepresentation;
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
-  proficiencies: DefaultRepresentation[];
-  languages: DefaultRepresentation[];
+  proficiencies: ChoiceSelection[];
+  languages: ChoiceSelection[];
   abilities: RaceAbilityBonus[];
 }
 
@@ -109,8 +112,6 @@ export function CharacterCreation() {
           setFormErrorState({});
         }}
       >
-        {/* //TODO Make proficiencies or race/class components common? */}
-
         <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
           <CharacterRaceForm
             onNext={(input) => {
@@ -130,6 +131,10 @@ export function CharacterCreation() {
             onNext={(input) => {
               setFormData(input);
               setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+            onPrev={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep - 1);
             }}
             proficiencies={formData.proficiencies}
           />
@@ -211,13 +216,15 @@ export function CharacterCreation() {
           />
         </Box>
 
-        {/* TODO: Save all known data (proficiencies, skills, equipments, etc) and save to DB */}
-        {activeStep > 0 && (
+        {activeStep > 1 && (
           <Button onClick={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}>
             Back
           </Button>
         )}
 
+        {/* TODO: Create an edge case test class/race */}
+        {/* TODO: Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates */}
+        {/* TODO: Save to DB */}
         {activeStep === steps.length - 1 && (
           <Button
             sx={{ float: 'right' }}
