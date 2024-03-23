@@ -12,6 +12,7 @@ import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
+import type { Equipment } from '../../representations/campaign/equipment.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
 import { Choices } from './Choices';
@@ -32,6 +33,9 @@ export function CharacterClassForm({
   const [selectedProficiencies, setSelectedProficiencies] = useState<
     (DefaultRepresentation & { type: number })[]
   >([]);
+  const [selectedEquipments, setSelectedEquipments] = useState<
+    (DefaultRepresentation & { type: number })[]
+  >([]);
 
   const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
   const { data: classInfo } = useQuery(
@@ -43,15 +47,6 @@ export function CharacterClassForm({
     },
     { enabled: !!selectedClass?.index }
   );
-  // const { data: subclassInfo } = useQuery(
-  //   ['fetchSubclassInfo', selectedClass?.index, selectedSubclass?.index],
-  //   async () => {
-  //     if (!selectedClass?.index || !selectedSubclass?.index) return;
-
-  //     return await getSubclassInfo(selectedClass.index, selectedSubclass.index);
-  //   },
-  //   { enabled: !!selectedClass?.index }
-  // );
 
   useEffect(() => {
     if (classInfo?.subclasses?.length && !selectedSubclass)
@@ -80,24 +75,41 @@ export function CharacterClassForm({
   };
 
   const handleSubmit = (fn: (classInfo: Partial<CharacterFormData>) => void) => {
-    const formattedProficiencies = selectedProficiencies
-      .map(
-        (proficiency) =>
-          ({
-            index: proficiency.index,
-            name: proficiency.name,
-            type: 'class'
-          } as ChoiceSelection)
-      )
-      .concat(proficiencies.filter(({ type }) => type !== 'class'));
+    const data = {
+      class: selectedClass,
+      proficiencies: (selectedProficiencies as DefaultRepresentation[])
+        .concat(classInfo?.proficiencies || [])
+        .map(
+          (proficiency) =>
+            ({
+              index: proficiency.index,
+              name: proficiency.name,
+              type: 'class'
+            } as ChoiceSelection)
+        )
+        .concat(proficiencies.filter(({ type }) => type !== 'class')),
+      equipments: (selectedEquipments as DefaultRepresentation[])
+        .concat(
+          classInfo?.starting_equipment?.map(
+            ({ index, name }: Partial<Equipment>) =>
+              ({
+                index,
+                name
+              } as DefaultRepresentation)
+          ) || []
+        )
+        .map(
+          (equipment) =>
+            ({
+              index: equipment.index,
+              name: equipment.name,
+              type: 'class'
+            } as ChoiceSelection)
+        )
+    };
 
-    if (selectedSubclass?.index)
-      fn({
-        class: selectedClass,
-        subclass: selectedSubclass,
-        proficiencies: formattedProficiencies
-      });
-    else fn({ class: selectedClass, proficiencies: formattedProficiencies });
+    if (selectedSubclass?.index) fn({ ...data, subclass: selectedSubclass });
+    else fn(data);
   };
 
   return (
@@ -161,6 +173,22 @@ export function CharacterClassForm({
             inherited={proficiencies.filter(({ type }) => type !== 'class')}
             selected={selectedProficiencies}
             setSelected={setSelectedProficiencies}
+          />
+        </Fragment>
+      )}
+
+      {selectedClass && classInfo?.starting_equipment_options && (
+        <Fragment>
+          <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
+            <Typography>Choose equipments</Typography>
+          </Divider>
+          <Choices
+            choices={classInfo.starting_equipment_options}
+            proficiencies={[...proficiencies, ...selectedProficiencies].map(
+              ({ index, name }) => ({ index, name } as DefaultRepresentation)
+            )}
+            selected={selectedEquipments}
+            setSelected={setSelectedEquipments}
           />
         </Fragment>
       )}

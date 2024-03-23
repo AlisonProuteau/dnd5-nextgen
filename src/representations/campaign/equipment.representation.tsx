@@ -38,18 +38,18 @@ type TwoHandedDamage = {
 };
 
 export type Equipment = {
+  index: string;
+  name: string;
+  desc: string[];
+  cost: Cost;
+  equipment_category: DefaultRepresentation;
   armor_category?: string;
   armor_class?: ArmorClass;
   capacity?: number;
   category_range?: string;
   contents?: Content[];
-  cost: Cost;
   damage?: Damage;
-  desc: string[];
-  equipment_category: DefaultRepresentation;
   gear_category?: DefaultRepresentation;
-  index: string;
-  name: string;
   properties?: DefaultRepresentation[];
   quantity?: number;
   range?: Range;
@@ -60,7 +60,6 @@ export type Equipment = {
   throw_range?: ThrowRange;
   tool_category?: string;
   two_handed_damage?: TwoHandedDamage;
-
   vehicle_category?: string;
   weapon_category?: string;
   weapon_range?: string;

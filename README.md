@@ -4,10 +4,8 @@ TODO List:
 
 Class:
 
-- Choose your class (archetype? -> Subclass ?)
-- Choosing your starting_equipment
+- Choosing your starting_equipment -> Make the querying work
 - Choosing your features?
-- Choosing your multiclassing?
 
 Race:
 
@@ -31,6 +29,15 @@ Background:
 
 Submit:
 
-- TODO: Create an edge case test class/race
-- TODO: Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates
-- TODO: Save to DB
+- Create an edge case test class/race
+- Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates
+- Save to DB
+
+To figure out:
+
+- Class archetype?
+- More race info?
+
+Stretch goals:
+
+- Choosing your multiclassing?

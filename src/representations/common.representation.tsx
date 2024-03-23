@@ -21,8 +21,8 @@ export type OptionSet =
     }
   | {
       option_set_type: 'equipment_category';
-      options?: never;
       equipment_category: DefaultRepresentation;
+      options?: never;
       resource_list_url?: never;
     }
   | {
