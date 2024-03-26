@@ -12,10 +12,10 @@ import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
-import type { Equipment } from '../../representations/campaign/equipment.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
 import { Choices } from './Choices';
+import { mapDataForForm } from './utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -31,10 +31,10 @@ export function CharacterClassForm({
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
   const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] = useState<
-    (DefaultRepresentation & { type: number })[]
+    (DefaultRepresentation & { type: number; count?: number })[]
   >([]);
   const [selectedEquipments, setSelectedEquipments] = useState<
-    (DefaultRepresentation & { type: number })[]
+    (DefaultRepresentation & { type: number; count?: number })[]
   >([]);
 
   const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
@@ -70,6 +70,10 @@ export function CharacterClassForm({
       classInfo?.proficiency_choices?.every(
         ({ choose }, i) =>
           (selectedProficiencies.filter(({ type }) => type === i).length || 0) === choose
+      ) &&
+      classInfo?.starting_equipment_options?.every(
+        ({ choose }, i) =>
+          (selectedEquipments.filter(({ type }) => type === i).length || 0) === choose
       )
     );
   };
@@ -77,35 +81,12 @@ export function CharacterClassForm({
   const handleSubmit = (fn: (classInfo: Partial<CharacterFormData>) => void) => {
     const data = {
       class: selectedClass,
-      proficiencies: (selectedProficiencies as DefaultRepresentation[])
-        .concat(classInfo?.proficiencies || [])
-        .map(
-          (proficiency) =>
-            ({
-              index: proficiency.index,
-              name: proficiency.name,
-              type: 'class'
-            } as ChoiceSelection)
-        )
+      proficiencies: mapDataForForm(selectedProficiencies)
+        .concat(mapDataForForm(classInfo?.proficiencies || []))
         .concat(proficiencies.filter(({ type }) => type !== 'class')),
-      equipments: (selectedEquipments as DefaultRepresentation[])
-        .concat(
-          classInfo?.starting_equipment?.map(
-            ({ index, name }: Partial<Equipment>) =>
-              ({
-                index,
-                name
-              } as DefaultRepresentation)
-          ) || []
-        )
-        .map(
-          (equipment) =>
-            ({
-              index: equipment.index,
-              name: equipment.name,
-              type: 'class'
-            } as ChoiceSelection)
-        )
+      equipments: mapDataForForm(selectedEquipments).concat(
+        mapDataForForm(classInfo?.starting_equipment?.map((equipment) => equipment.equipment) || [])
+      )
     };
 
     if (selectedSubclass?.index) fn({ ...data, subclass: selectedSubclass });

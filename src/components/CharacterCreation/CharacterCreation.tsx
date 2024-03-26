@@ -19,7 +19,7 @@ const steps = [
   { id: 'info', label: 'Character Info' }
 ];
 
-export type ChoiceSelection = DefaultRepresentation & { type: 'class' | 'race' };
+export type ChoiceSelection = DefaultRepresentation & { type: 'class' | 'race'; count?: number };
 
 export interface CharacterFormData {
   name: string;

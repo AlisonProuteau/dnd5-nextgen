@@ -4,34 +4,30 @@ TODO List:
 
 Class:
 
-- Choosing your starting_equipment -> Make the querying work
 - Choosing your features?
-
-Race:
-
-- None ?
+- Test equipment for proficiencies
 
 Other:
 
-- Calculate your ability scores ?(custom, simple, point buy, roll)? + bonuses
+- Calculate your ability scores (custom, simple, point buy, roll)? + bonuses
 - Calculate your hit points with modifiers
 - Calculate your armor class
 - Figuring out your proficiency modifier
 
 - Calculate your skill points
 - Choosing your spells (C level, spellattack, spell DC)?
-- Choosing your equipment
 - Choosing your feats
 
 Background:
 
 - Use DB/repr
+- Choosing your equipment/language...
 
 Submit:
 
 - Create an edge case test class/race
 - Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates
-- Save to DB
+- Save to DB with user info?
 
 To figure out:
 
@@ -40,4 +36,6 @@ To figure out:
 
 Stretch goals:
 
-- Choosing your multiclassing?
+- Choosing your multiclassing
+- Choosing your starting_equipment -> Make the DB querying work
+- Make it look good

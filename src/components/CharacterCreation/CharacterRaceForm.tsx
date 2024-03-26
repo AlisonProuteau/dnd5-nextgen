@@ -16,6 +16,7 @@ import type { RaceAbilityBonus } from '../../representations/character/race.repr
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
 import { Choices } from './Choices';
+import { mapDataForForm } from './utils';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -31,10 +32,10 @@ export function CharacterRaceForm({
   const [selectedRace, setselectedRace] = useState<DefaultRepresentation>();
   const [selectedSubrace, setselectedSubrace] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] = useState<
-    (DefaultRepresentation & { type: number })[]
+    (DefaultRepresentation & { type: number; count?: number })[]
   >([]);
   const [selectedLanguages, setSelectedLanguages] = useState<
-    (DefaultRepresentation & { type: number })[]
+    (DefaultRepresentation & { type: number; count?: number })[]
   >([]);
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
 
@@ -101,29 +102,13 @@ export function CharacterRaceForm({
   const handleSubmit = () => {
     const data = {
       race: selectedRace,
-      proficiencies: (selectedProficiencies as DefaultRepresentation[])
-        .concat(raceInfo?.starting_proficiencies || [])
-        .concat(subraceInfo?.starting_proficiencies || [])
-        .map(
-          (proficiency) =>
-            ({
-              index: proficiency.index,
-              name: proficiency.name,
-              type: 'race'
-            } as ChoiceSelection)
-        )
+      proficiencies: mapDataForForm(selectedProficiencies)
+        .concat(mapDataForForm(raceInfo?.starting_proficiencies || []))
+        .concat(mapDataForForm(subraceInfo?.starting_proficiencies || []))
         .concat(proficiencies.filter(({ type }) => type !== 'race')),
-      languages: (selectedLanguages as DefaultRepresentation[])
-        .concat(raceInfo?.languages || [])
-        .concat(subraceInfo?.languages || [])
-        .map(
-          (language) =>
-            ({
-              index: language.index,
-              name: language.name,
-              type: 'race'
-            } as ChoiceSelection)
-        )
+      languages: mapDataForForm(selectedLanguages)
+        .concat(mapDataForForm(raceInfo?.languages || []))
+        .concat(mapDataForForm(subraceInfo?.languages || []))
         .concat(languages.filter(({ type }) => type !== 'race')),
       abilities: selectedAbilities
         .concat(raceInfo?.ability_bonuses || [])

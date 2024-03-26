@@ -2,7 +2,6 @@ import { uniqBy } from 'lodash';
 import type { Feature } from '../representations/abilities/feature.representation';
 import type { Spell } from '../representations/abilities/magic.representation';
 import type { Proficiency } from '../representations/campaign/adventure.representation';
-import type { Equipment } from '../representations/campaign/equipment.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race } from '../representations/character/race.representation';
@@ -154,15 +153,19 @@ export async function getProficiencies(): Promise<{
   return getAll('Proficiencies', '/proficiencies');
 }
 
-// TODO
 export async function getEquipmentList(id: string): Promise<{
   count: number;
   results: DefaultRepresentation[];
 }> {
-  return getAll(`Equipment list ${id}`, '/equipment', [
-    { fieldPath: 'equipment_category.index', opStr: '==', value: id }
-  ]).then((res) => ({
-    count: res.count,
-    results: (res.results as Equipment[]).map(({ index, name }) => ({ index, name }))
-  }));
+  const data = await (await fetch(`https://www.dnd5eapi.co/api/equipment-categories/${id}`)).json();
+
+  return { count: data?.equipment?.length || 0, results: data?.equipment || [] };
+
+  // TODO: Update the database to use for fetching
+  // return getAll(`Equipment list ${id}`, '/equipment', [
+  //   { fieldPath: 'equipment_category.index', opStr: '==', value: id }
+  // ]).then((res) => ({
+  //   count: res.count,
+  //   results: (res.results as Equipment[]).map(({ index, name }) => ({ index, name }))
+  // }));
 }

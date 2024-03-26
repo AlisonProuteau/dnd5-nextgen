@@ -1,4 +1,13 @@
-import { Box, Checkbox, FormControl, FormControlLabel, FormGroup, FormLabel } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  CircularProgress,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormLabel
+} from '@mui/material';
+import { isArray } from 'lodash';
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
 import { getEquipmentList } from '../../api/ressources';
@@ -11,8 +20,8 @@ import type {
 
 interface ChoicesProps {
   choices: (Choice | undefined)[];
-  inherited?: (DefaultRepresentation | RaceAbilityBonus)[];
-  selected?: ((DefaultRepresentation & { type: number }) | RaceAbilityBonus)[];
+  inherited?: ((DefaultRepresentation & { count?: number }) | RaceAbilityBonus)[];
+  selected?: ((DefaultRepresentation & { type: number; count?: number }) | RaceAbilityBonus)[];
   proficiencies?: DefaultRepresentation[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setSelected: (data: any) => void;
@@ -30,48 +39,64 @@ export function Choices({
 
   const onSelect = (
     checked: boolean,
-    item: DefaultRepresentation | RaceAbilityBonus,
-    i: number
+    item: DefaultRepresentation | RaceAbilityBonus | (DefaultRepresentation & { count?: number })[],
+    i: number,
+    count?: number
   ) => {
     if (checked) {
-      setSelected([...(selected || []), { ...item, type: i }]);
+      const mapData = (data: DefaultRepresentation | RaceAbilityBonus, currentCount?: number) =>
+        currentCount ? { ...data, type: i, count: currentCount } : { ...data, type: i };
+
+      if (isArray(item))
+        setSelected([...(selected || []), ...item.map((i) => mapData(i, i.count))]);
+      else setSelected([...(selected || []), mapData(item, count)]);
     } else if (selected?.length) {
-      const selectedIndex = selected.findIndex((current) => {
-        if ('index' in current && 'index' in item) return current.index === item.index || false;
-        if ('ability_score' in current && 'ability_score' in item)
-          return current.ability_score.index === item.ability_score.index || false;
+      const findIndexFn = (current: (typeof selected)[0], toSearch: typeof item) => {
+        if ('index' in current && 'index' in toSearch)
+          return current.index === toSearch.index || false;
+        if ('ability_score' in current && 'ability_score' in toSearch)
+          return current.ability_score.index === toSearch.ability_score.index || false;
 
         return false;
-      });
+      };
 
-      setSelected(selected.toSpliced(selectedIndex, 1));
+      if (isArray(item)) {
+        let newArray = [...selected];
+        item.forEach((i) => {
+          const selectedIndex = newArray.findIndex((current) => findIndexFn(current, i));
+          newArray = newArray.toSpliced(selectedIndex, 1);
+        });
+        setSelected(newArray);
+      } else {
+        const selectedIndex = selected.findIndex((current) => findIndexFn(current, item));
+        setSelected(selected.toSpliced(selectedIndex, 1));
+      }
     }
   };
 
   const isChecked = (
     item: DefaultRepresentation,
-    selection: (
-      | (DefaultRepresentation & { type: number })
-      | DefaultRepresentation
-      | RaceAbilityBonus
-    )[]
+    selection: ((DefaultRepresentation & { type?: number; count?: number }) | RaceAbilityBonus)[],
+    i: number,
+    count?: number
   ) => {
     return selection.some((current) => {
-      if ('index' in current) return current.index === item.index || false;
+      if ('index' in current)
+        return (current.index === item.index && (current.count || 0) === (count || 0)) || false;
       if ('ability_score' in current) return current.ability_score.index === item.index || false;
 
       return false;
     });
   };
 
-  const isDisabled = (item: DefaultRepresentation, choose: number, i?: number) => {
+  const isDisabled = (item: DefaultRepresentation, choose: number, i: number, count?: number) => {
     const filteredSelection = selected.filter((selection) =>
       'type' in selection ? selection.type === i : true
     );
 
     return (
-      isChecked(item, inherited) ||
-      (!isChecked(item, selected) && (filteredSelection.length || 0) >= choose)
+      isChecked(item, inherited, i, count) ||
+      (!isChecked(item, filteredSelection, i, count) && (filteredSelection.length || 0) >= choose)
     );
   };
 
@@ -84,118 +109,161 @@ export function Choices({
     );
 
   const generateChoices = (i: number, choose: number, options: Option[], desc: string) => {
-    return (
-      <FormGroup>
-        {options.map((option) => {
-          if (option.option_type === 'reference') {
-            return (
-              option.item && (
-                <FormControlLabel
-                  key={`choice-${i}-${option.item.index}`}
-                  control={
-                    <Checkbox
-                      id={`choice-${i}-${option.item.index}`}
-                      checked={
-                        isChecked(option.item, selected) || isChecked(option.item, inherited)
-                      }
-                      disabled={isDisabled(option.item, choose, i)}
-                      onChange={(_, checked) => onSelect(checked, option.item, i)}
-                    />
+    return options.map((option) => {
+      if (option.option_type === 'reference') {
+        return (
+          option.item && (
+            <FormControlLabel
+              key={`choice-${i}-${option.item.index}`}
+              control={
+                <Checkbox
+                  id={`choice-${i}-${option.item.index}`}
+                  checked={
+                    isChecked(option.item, selected, i) || isChecked(option.item, inherited, i)
                   }
-                  label={option.item?.name}
+                  disabled={isDisabled(option.item, choose, i)}
+                  onChange={(_, checked) => onSelect(checked, option.item, i)}
                 />
-              )
-            );
-          } else if (option.option_type === 'counted_reference') {
-            return (
-              option.of &&
-              (option.prerequisites?.every(({ proficiency }) =>
-                proficiency ? proficiencies.includes(proficiency) : true
-              ) ??
-                true) && (
-                <FormControlLabel
-                  key={`choice-${i}-${option.of.index}`}
-                  control={
-                    <Checkbox
-                      id={`choice-${i}-${option.of.index}`}
-                      checked={isChecked(option.of, selected) || isChecked(option.of, inherited)}
-                      disabled={isDisabled(option.of, choose, i)}
-                      onChange={(_, checked) => onSelect(checked, option.of, i)}
-                    />
-                  }
-                  label={option.of?.name}
-                />
-              )
-            );
-          } else if (option.option_type === 'ability_bonus') {
-            return (
-              option.ability_score &&
-              option.bonus && (
-                <FormControlLabel
-                  key={`choice-${i}-${option.ability_score.index}`}
-                  control={
-                    <Checkbox
-                      id={`choice-${i}-${option.ability_score.index}`}
-                      checked={
-                        isChecked(option.ability_score, selected) ||
-                        isChecked(option.ability_score, inherited)
-                      }
-                      disabled={isDisabled(option.ability_score, choose, i)}
-                      onChange={(_, checked) => onSelect(checked, option, i)}
-                    />
-                  }
-                  label={option.ability_score?.name}
-                />
-              )
-            );
-          } else if (option.option_type === 'choice') {
-            let currentOptions: undefined | Option[] = undefined;
-            if (option.choice.from.option_set_type === 'options_array') {
-              currentOptions = option.choice.from.options;
-            } else if (option.choice.from.option_set_type === 'equipment_category') {
-              const id = option.choice.from.equipment_category.index;
-              if (isEquipmentLoading[id] === undefined) {
-                fetchEquipmentList(id).then((res) =>
-                  setIsEquipmentLoading({ ...isEquipmentLoading, [id]: res })
-                );
               }
-            }
-
-            return currentOptions ||
-              isEquipmentLoading[option.choice.from.equipment_category?.index || ''] ? (
-              <Box
-                key={`choice-${i}-${desc})`}
-                sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}
-              >
-                {option.choice &&
-                  generateChoices(
-                    i,
-                    option.choice.choose,
-                    currentOptions ||
-                      isEquipmentLoading[option.choice.from.equipment_category?.index || ''],
-                    option.choice.desc || option.choice.type
+              label={option.item?.name}
+            />
+          )
+        );
+      } else if (option.option_type === 'counted_reference') {
+        return (
+          option.of &&
+          (option.prerequisites?.every(({ proficiency }) =>
+            proficiency ? proficiencies.includes(proficiency) : true
+          ) ??
+            true) && (
+            <FormControlLabel
+              key={`choice-${i}-${option.of.index}-${option.count}`}
+              control={
+                <Checkbox
+                  id={`choice-${i}-${option.of.index}-${option.count}`}
+                  checked={
+                    isChecked(option.of, selected, i, option.count) ||
+                    isChecked(option.of, inherited, i, option.count)
+                  }
+                  disabled={isDisabled(option.of, choose, i, option.count)}
+                  onChange={(_, checked) => onSelect(checked, option.of, i, option.count)}
+                />
+              }
+              label={`${option.count} ${option.of?.name}`}
+            />
+          )
+        );
+      } else if (option.option_type === 'ability_bonus') {
+        return (
+          option.ability_score &&
+          option.bonus && (
+            <FormControlLabel
+              key={`choice-${i}-${option.ability_score.index}`}
+              control={
+                <Checkbox
+                  id={`choice-${i}-${option.ability_score.index}`}
+                  checked={
+                    isChecked(option.ability_score, selected, i) ||
+                    isChecked(option.ability_score, inherited, i)
+                  }
+                  disabled={isDisabled(option.ability_score, choose, i)}
+                  onChange={(_, checked) => onSelect(checked, option, i)}
+                />
+              }
+              label={option.ability_score?.name}
+            />
+          )
+        );
+      } else if (option.option_type === 'multiple') {
+        if (option.items[0].of || option.items[0].item)
+          return (
+            <FormControlLabel
+              key={`choice-${i}-multiple-${option.items.length}-${
+                (option.items[0].of || option.items[0].item)?.index
+              }`}
+              control={
+                <Checkbox
+                  id={`choice-${i}-multiple-${option.items.length}-${
+                    (option.items[0].of || option.items[0].item)?.index
+                  }`}
+                  checked={option.items.every(
+                    (item) =>
+                      (item.of || item.item) &&
+                      (isChecked(item.of || item.item, selected, i, item.count) ||
+                        isChecked(item.of || item.item, inherited, i, item.count))
                   )}
-              </Box>
-            ) : null;
-          } else {
-            throw new Error(`Option type not handled ${option.option_type}`);
+                  disabled={option.items.every(
+                    (item) =>
+                      (item.of || item.item) &&
+                      isDisabled(item.of || item.item, choose, i, item.count)
+                  )}
+                  onChange={(_, checked) =>
+                    onSelect(
+                      checked,
+                      option.items.reduce(
+                        (acc: (DefaultRepresentation & { count?: number })[], curr) => {
+                          return curr.item || curr.of
+                            ? [...acc, { ...(curr.item || curr.of), count: curr.count }]
+                            : acc;
+                        },
+                        []
+                      ),
+                      i
+                    )
+                  }
+                />
+              }
+              label={option.items.map((i) => `${i.count} ${i.of!.name}`).join(' + ')}
+            />
+          );
+        else throw new Error(`Unknown multiple ${option}`);
+      } else if (option.option_type === 'choice') {
+        let currentOptions: undefined | Option[] = undefined;
+        if (option.choice.from.option_set_type === 'options_array') {
+          currentOptions = option.choice.from.options;
+        } else if (option.choice.from.option_set_type === 'equipment_category') {
+          const id = option.choice.from.equipment_category.index;
+          if (isEquipmentLoading[id] === undefined) {
+            fetchEquipmentList(id).then((res) =>
+              setIsEquipmentLoading({ ...isEquipmentLoading, [id]: res })
+            );
           }
-        })}
-      </FormGroup>
-    );
+        }
+
+        return currentOptions ||
+          isEquipmentLoading[option.choice.from.equipment_category?.index || ''] ? (
+          <FormGroup key={`choice-${i}-${desc})}`}>
+            {option.choice &&
+              generateChoices(
+                i,
+                option.choice.choose,
+                currentOptions ||
+                  isEquipmentLoading[option.choice.from.equipment_category?.index || ''],
+                option.choice.desc || option.choice.type
+              )}
+          </FormGroup>
+        ) : (
+          <CircularProgress size={24} key={`choice-${i}-${desc})}`} />
+        );
+      } else {
+        console.error(`Option type not handled ${option.option_type}`);
+      }
+    });
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-      {(choices.filter((data) => data !== undefined) as Choice[]).map(
-        ({ desc, choose, from }, i) => (
-          <FormControl key={`proficiencies-${i}`} fullWidth margin="dense" component="fieldset">
-            <FormLabel component="legend">{desc}</FormLabel>
-            {from?.option_set_type === 'options_array' &&
-              generateChoices(i, choose, from.options, desc || i.toString())}
-          </FormControl>
-        )
-      )}
+      {(choices.filter((data) => data !== undefined) as Choice[]).map((choice, i) => (
+        <FormControl
+          key={`choice-${choice.type}-${i}`}
+          fullWidth
+          margin="dense"
+          component="fieldset"
+        >
+          <FormLabel component="legend">{choice.desc}</FormLabel>
+          {generateChoices(i, 1, [{ choice, option_type: 'choice' }], choice.desc || i.toString())}
+        </FormControl>
+      ))}
     </Box>
   );
 }
