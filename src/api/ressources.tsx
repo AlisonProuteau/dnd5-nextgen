@@ -5,7 +5,7 @@ import type { Proficiency } from '../representations/campaign/adventure.represen
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race } from '../representations/character/race.representation';
-import type { DefaultRepresentation } from '../representations/common.representation';
+import type { DefaultRepresentation, Option } from '../representations/common.representation';
 import { get, getAll, type QueryObject } from './utils';
 
 export async function getAllRaces(): Promise<{
@@ -153,19 +153,30 @@ export async function getProficiencies(): Promise<{
   return getAll('Proficiencies', '/proficiencies');
 }
 
-export async function getEquipmentList(id: string): Promise<{
+export async function getResourceList(path: string): Promise<{
   count: number;
-  results: DefaultRepresentation[];
+  results: Option[];
 }> {
-  const data = await (await fetch(`https://www.dnd5eapi.co/api/equipment-categories/${id}`)).json();
+  const pathArray = (path.startsWith('/') ? path.replace('/', '') : path).split('/');
+  let data = { count: 0, results: [] as DefaultRepresentation[] };
 
-  return { count: data?.equipment?.length || 0, results: data?.equipment || [] };
+  if (!(pathArray.length % 2)) {
+    const index = pathArray.pop() || '';
+    const { equipment } = await get(`Resource list ${path}`, pathArray.join('/'), index);
 
-  // TODO: Update the database to use for fetching
-  // return getAll(`Equipment list ${id}`, '/equipment', [
-  //   { fieldPath: 'equipment_category.index', opStr: '==', value: id }
-  // ]).then((res) => ({
-  //   count: res.count,
-  //   results: (res.results as Equipment[]).map(({ index, name }) => ({ index, name }))
-  // }));
+    data = {
+      count: equipment.length,
+      results: equipment
+    };
+  } else {
+    data = await getAll(`Resource list ${path}`, path);
+  }
+
+  return {
+    count: data.count,
+    results: data.results.map(({ index, name }) => ({
+      option_type: 'reference',
+      item: { index, name }
+    }))
+  };
 }

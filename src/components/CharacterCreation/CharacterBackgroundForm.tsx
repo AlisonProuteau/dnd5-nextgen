@@ -1,5 +1,18 @@
-import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { ExpandMore } from '@mui/icons-material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  Button,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography
+} from '@mui/material';
+import { Fragment, useState } from 'react';
 import { useQuery } from 'react-query';
 import { getAllAligmenents, getAllBackgrounds } from '../../api/ressources';
 import type {
@@ -9,27 +22,37 @@ import type {
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
 import type { CharacterFormData } from './CharacterCreation';
+import { Choices } from './Choices';
+import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from './utils';
 
 interface CharacterBackgroundFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
-  proficiencies?: DefaultRepresentation[];
-  languages?: DefaultRepresentation[];
+  onPrev: (raceInfo: Partial<CharacterFormData>) => void;
+  proficiencies?: ChoiceSelection[];
+  languages?: ChoiceSelection[];
+  equipment?: ChoiceSelection[];
 }
 
 export function CharacterBackgroundForm({
   onNext,
+  onPrev,
   proficiencies = [],
-  languages = []
+  languages = [],
+  equipment = []
 }: CharacterBackgroundFormProps) {
   const [selectedBackground, setSelectedBackground] = useState<Background>();
-  const [selectedIdeals, setSelectedIdeals] = useState<string>();
-  const [selectedBonds, setSelectedBonds] = useState<string>();
-  const [selectedFlaws, setSelectedFlaws] = useState<string>();
   const [selectedAlignment, setSelectedAlignment] = useState<Alignment>();
+  const [selectedBonds, setSelectedBonds] = useState<ChoiceObjectType[]>([]);
+  const [selectedPersonality, setSelectedPersonality] = useState<ChoiceObjectType[]>([]);
+  const [selectedIdeals, setSelectedIdeals] = useState<ChoiceObjectType[]>([]);
+  const [selectedFlaws, setSelectedFlaws] = useState<ChoiceObjectType[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
+  const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
 
   const { data: backgrounds } = useQuery(
     'fetchBackgrounds',
-    async () => (await getAllBackgrounds()).results
+    async () => (await getAllBackgrounds()).results,
+    { select: (data) => [...data, { index: 'custom', name: 'Custom' } as Background] }
   );
 
   const { data: alignments } = useQuery(
@@ -37,256 +60,299 @@ export function CharacterBackgroundForm({
     async () => (await getAllAligmenents()).results
   );
 
-  // TODO: Remove
-  useEffect(() => console.log(proficiencies, languages), []);
-
-  // const isChecked = (type: 'proficiency' | 'language' | 'ability', item: DefaultRepresentation) => {
-  //   if (type === 'proficiency')
-  //     return (
-  //       proficiencies.some(({ index }) => index === item.index) ||
-  //       selectedProficiencies.some(({ index }) => index === item.index) ||
-  //       false
-  //     );
-  //   else if (type === 'language')
-  //     return (
-  //       languages.some(({ index }) => index === item.index) ||
-  //       selectedLanguages.some(({ index }) => index === item.index) ||
-  //       false
-  //     );
-  //   else if (type === 'ability')
-  //     return (
-  //       selectedAbilities.some(({ ability_score }) => ability_score.index === item.index) || false
-  //     );
-
-  //   return false;
-  // };
-
-  // const isDisabled = (
-  //   itemType: 'proficiency' | 'language' | 'ability',
-  //   item: DefaultRepresentation,
-  //   choose: number,
-  //   i?: number
-  // ) => {
-  //   if (itemType === 'proficiency')
-  //     return (
-  //       !isChecked(itemType, item) &&
-  //       (selectedProficiencies.filter(({ type }) => type === i).length || 0) >= choose
-  //     );
-  //   else if (itemType === 'language')
-  //     return !isChecked(itemType, item) && (selectedLanguages.length || 0) >= choose;
-  //   else if (itemType === 'ability')
-  //     return !isChecked(itemType, item) && (selectedAbilities.length || 0) >= choose;
-  //   return false;
-  // };
-
-  // const onChange = (
-  //   type: 'proficiency' | 'language' | 'ability',
-  //   checked: boolean,
-  //   item: DefaultRepresentation | RaceAbilityBonus,
-  //   i?: number
-  // ) => {
-  //   const onProficiencySelect = (checked: boolean, item: DefaultRepresentation, i: number) => {
-  //     if (checked) {
-  //       setSelectedProficiencies([...(selectedProficiencies || []), { ...item, type: i }]);
-  //     } else if (selectedProficiencies.length) {
-  //       const proficiencyIndex = selectedProficiencies.findIndex(
-  //         ({ index }) => index === item.index
-  //       );
-
-  //       setSelectedProficiencies(selectedProficiencies.toSpliced(proficiencyIndex, 1));
-  //     }
-  //   };
-  //   const onLanguageSelect = (checked: boolean, item: DefaultRepresentation) => {
-  //     if (checked) {
-  //       setSelectedLanguages([...(selectedLanguages || []), item]);
-  //     } else if (selectedLanguages.length) {
-  //       const languageIndex = selectedLanguages.findIndex(({ index }) => index === item.index);
-  //       setSelectedLanguages(selectedLanguages.toSpliced(languageIndex, 1));
-  //     }
-  //   };
-  //   const onAbilitySelect = (checked: boolean, item: RaceAbilityBonus) => {
-  //     if (checked) {
-  //       setSelectedAbilities([...(selectedAbilities || []), item]);
-  //     } else if (selectedAbilities.length) {
-  //       const abilityIndex = selectedAbilities.findIndex(
-  //         ({ ability_score }) => ability_score.index === item.ability_score.index
-  //       );
-  //       setSelectedAbilities(selectedAbilities.toSpliced(abilityIndex, 1));
-  //     }
-  //   };
-
-  //   if (type === 'proficiency') onProficiencySelect(checked, item as DefaultRepresentation, i || 0);
-  //   else if (type === 'language') onLanguageSelect(checked, item as DefaultRepresentation);
-  //   else if (type === 'ability') onAbilitySelect(checked, item as RaceAbilityBonus);
-  // };
-
-  // const generateChoices = (
-  //   i: number,
-  //   choose: number,
-  //   options: Option[],
-  //   desc: string,
-  //   type: 'proficiency' | 'language' | 'ability'
-  // ) => {
-  //   if (options[0].option_type === 'reference') {
-  //     return (
-  //       <FormGroup key={`${type}-${i}-${desc})}`}>
-  //         {options.map(
-  //           ({ item }) =>
-  //             item && (
-  //               <FormControlLabel
-  //                 key={`${type}-${i}-${item.index || item}`}
-  //                 control={
-  //                   <Checkbox
-  //                     id={`${type}-${i}-${item.index}`}
-  //                     checked={isChecked(type, item)}
-  //                     disabled={isDisabled(type, item, choose, i)}
-  //                     onChange={(_, checked) => onChange(type, checked, item, i)}
-  //                   />
-  //                 }
-  //                 label={item?.name}
-  //               />
-  //             )
-  //         )}
-  //       </FormGroup>
-  //     );
-  //   } else if (options[0].option_type === 'ability_bonus') {
-  //     return (
-  //       <FormGroup key={`${type}-${i}-${desc})}`}>
-  //         {options.map(
-  //           ({ ability_score, bonus }) =>
-  //             ability_score &&
-  //             bonus && (
-  //               <FormControlLabel
-  //                 key={`${type}-${i}-${ability_score.index}`}
-  //                 control={
-  //                   <Checkbox
-  //                     id={`${type}-${i}-${ability_score.index}`}
-  //                     checked={isChecked(type, ability_score)}
-  //                     disabled={isDisabled(type, ability_score, choose, i)}
-  //                     onChange={(_, checked) =>
-  //                       onChange(type, checked, { ability_score, bonus }, i)
-  //                     }
-  //                   />
-  //                 }
-  //                 label={ability_score?.name}
-  //               />
-  //             )
-  //         )}
-  //       </FormGroup>
-  //     );
-  //   } else if (options[0]?.option_type === 'choice') {
-  //     return (
-  //       <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-  //         {options.map(
-  //           ({ choice }, index) =>
-  //             choice &&
-  //             choice.from.option_set_type === 'options_array' &&
-  //             generateChoices(
-  //               i,
-  //               choice.choose,
-  //               choice.from.options,
-  //               choice.desc || index.toString(),
-  //               type
-  //             )
-  //         )}
-  //       </Box>
-  //     );
-  //   } else {
-  //     throw new Error('Option type not handled');
-  //   }
-  // };
-
   const isValid = () => {
-    return selectedBackground?.index && selectedAlignment?.index;
+    return (
+      selectedBackground?.index &&
+      selectedAlignment?.index &&
+      selectedLanguages.length >= selectedBackground.language_options.choose &&
+      selectedBackground.starting_equipment_options?.every(
+        ({ choose }, i) =>
+          (selectedEquipments.filter(({ type }) => type === i).length || 0) >= choose
+      )
+    );
+  };
+
+  const handleSubmit = (fn: (classInfo: Partial<CharacterFormData>) => void) => {
+    const data: Partial<CharacterFormData> = {
+      background: selectedBackground && {
+        index: selectedBackground.index,
+        name: selectedBackground.name
+      },
+      alignment: selectedAlignment,
+      bonds: selectedBonds.length ? selectedBonds.map(({ name }) => name) : undefined,
+      personality: selectedPersonality.length
+        ? selectedPersonality.map(({ name }) => name)
+        : undefined,
+      ideals: selectedIdeals.length ? selectedIdeals.map(({ name }) => name) : undefined,
+      flaws: selectedFlaws.length ? selectedFlaws.map(({ name }) => name) : undefined,
+      languages: mapDataForForm(selectedLanguages, 'background').concat(
+        languages.filter(({ type }) => type !== 'background')
+      ),
+      equipments: mapDataForForm(selectedEquipments, 'background').concat(
+        mapDataForForm(
+          selectedBackground?.starting_equipment?.map((equipment) => equipment.equipment) || [],
+          'background'
+        ).concat(equipment.filter(({ type }) => type !== 'background'))
+      ),
+      proficiencies: mapDataForForm(
+        selectedBackground?.starting_proficiencies || [],
+        'background'
+      ).concat(proficiencies.filter(({ type }) => type !== 'background'))
+    };
+
+    fn(data);
   };
 
   return (
     <Box>
       {backgrounds && (
-        <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="background">Background</InputLabel>
-          <Select
-            fullWidth
-            id="race"
-            label="Backgrounds"
-            disabled={!backgrounds}
-            value={selectedBackground?.index || ''}
-            onChange={({ target }) => {
-              setSelectedBackground(backgrounds.find((e) => e.index === target.value));
-            }}
-          >
-            {backgrounds.map((currentBackground) => (
-              <MenuItem
-                key={currentBackground.index}
-                id={currentBackground.index}
-                value={currentBackground.index}
-              >
-                {currentBackground.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      )}
-      {/* // TODO: use values from background object */}
-      {/* // TODO: add custom bockground */}
-      <FormControl margin="dense">
-        <InputLabel htmlFor="alignment">Alignment</InputLabel>
-        <Select
-          fullWidth
-          id="alignment"
-          label="Alignment"
-          defaultValue=""
-          onChange={({ target }) =>
-            setSelectedAlignment(alignments?.find(({ index }) => index === target.value))
-          }
-        >
-          {alignments?.map((currentAlignment: DefaultRepresentation) => (
-            <MenuItem
-              key={currentAlignment.index}
-              id={currentAlignment.index}
-              value={currentAlignment.index}
+        <Box display="flex" gap="15px">
+          <FormControl margin="dense" fullWidth>
+            <InputLabel htmlFor="background">Background</InputLabel>
+            <Select
+              fullWidth
+              id="race"
+              label="Backgrounds"
+              disabled={!backgrounds}
+              value={selectedBackground?.index || ''}
+              onChange={({ target }) => {
+                setSelectedAlignment(undefined);
+                setSelectedBonds([]);
+                setSelectedPersonality([]);
+                setSelectedIdeals([]);
+                setSelectedFlaws([]);
+                setSelectedLanguages([]);
+                setSelectedEquipments([]);
+                setSelectedBackground(backgrounds.find((e) => e.index === target.value));
+              }}
             >
-              {currentAlignment.name}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      <ControledInput
-        fullWidth
-        id="ideals"
-        multiline
-        label="Ideals"
-        onChange={(value) => setSelectedIdeals(value as string)}
-      />
-      <ControledInput
-        fullWidth
-        id="bonds"
-        multiline
-        label="Bonds"
-        onChange={(value) => setSelectedBonds(value as string)}
-      />
-      <ControledInput
-        fullWidth
-        id="flaws"
-        multiline
-        label="Flaws"
-        onChange={(value) => setSelectedFlaws(value as string)}
-      />
+              {backgrounds.map((currentBackground) => (
+                <MenuItem
+                  key={currentBackground.index}
+                  id={currentBackground.index}
+                  value={currentBackground.index}
+                >
+                  {currentBackground.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl margin="dense" sx={{ flexBasis: '30%', minWidth: 160 }}>
+            <InputLabel htmlFor="alignment">Alignment</InputLabel>
+            <Select
+              fullWidth
+              id="alignment"
+              label="Alignment"
+              value={selectedAlignment?.index || ''}
+              onChange={({ target }) =>
+                setSelectedAlignment(alignments?.find(({ index }) => index === target.value))
+              }
+            >
+              <MenuItem value=""> </MenuItem>
+              {alignments?.map((currentAlignment: DefaultRepresentation) => (
+                <MenuItem
+                  key={currentAlignment.index}
+                  id={currentAlignment.index}
+                  value={currentAlignment.index}
+                  disabled={
+                    !!selectedIdeals.length &&
+                    selectedIdeals.some((ideal) => {
+                      const availableAlignments = selectedBackground?.ideals?.from?.options?.find(
+                        (option) => option.desc === ideal.name
+                      )?.alignments;
 
-      <Button
-        sx={{ float: 'right' }}
-        disabled={!isValid()}
-        onClick={() => {
-          const data = {
-            background: selectedBackground,
-            ideals: selectedIdeals,
-            bonds: selectedBonds,
-            flaws: selectedFlaws,
-            alignment: selectedAlignment
-          };
-          onNext(data);
-        }}
-      >
+                      return !availableAlignments?.find(
+                        ({ index }) => index === currentAlignment.index
+                      );
+                    })
+                  }
+                >
+                  {currentAlignment.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      )}
+
+      {selectedBackground && (
+        <Fragment>
+          {selectedBackground.index === 'custom' ? (
+            <Fragment>
+              <ControledInput
+                fullWidth
+                id="bonds"
+                multiline
+                label="Bonds"
+                onChange={(value) =>
+                  setSelectedBonds(
+                    value ? [{ index: 'bond', name: value.toString(), type: 0 }] : []
+                  )
+                }
+              />
+              <ControledInput
+                fullWidth
+                id="personality"
+                multiline
+                label="Personality traits"
+                onChange={(value) =>
+                  setSelectedPersonality(
+                    value ? [{ index: 'personality', name: value.toString(), type: 0 }] : []
+                  )
+                }
+              />
+              <ControledInput
+                fullWidth
+                id="ideals"
+                multiline
+                label="Ideals"
+                onChange={(value) =>
+                  setSelectedIdeals(
+                    value ? [{ index: 'ideals', name: value.toString(), type: 0 }] : []
+                  )
+                }
+              />
+              <ControledInput
+                fullWidth
+                id="flaws"
+                multiline
+                label="Flaws"
+                onChange={(value) =>
+                  setSelectedFlaws(
+                    value ? [{ index: 'flaws', name: value.toString(), type: 0 }] : []
+                  )
+                }
+              />
+            </Fragment>
+          ) : (
+            <Fragment>
+              <Accordion>
+                <Divider component="div" role="presentation" variant="middle">
+                  <AccordionSummary
+                    expandIcon={<ExpandMore />}
+                    aria-controls="panel1-content"
+                    id="panel1-header"
+                  >
+                    <Typography>{selectedBackground.feature.name}</Typography>
+                  </AccordionSummary>
+                </Divider>
+                <AccordionDetails>
+                  <Typography align="center">{selectedBackground.feature.desc}</Typography>
+                </AccordionDetails>
+              </Accordion>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>Choose Bonds</Typography>
+                </Divider>
+                <Choices
+                  choices={[selectedBackground.bonds]}
+                  selected={selectedBonds}
+                  setSelected={setSelectedBonds}
+                />
+              </Fragment>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>
+                    Choose Personality Traits ({selectedBackground.personality_traits.choose || 0})
+                  </Typography>
+                </Divider>
+                <Choices
+                  choices={[selectedBackground.personality_traits]}
+                  selected={selectedPersonality}
+                  setSelected={setSelectedPersonality}
+                />
+              </Fragment>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>Choose Ideals ({selectedBackground.ideals.choose || 0})</Typography>
+                </Divider>
+                <Choices
+                  choices={[selectedBackground.ideals]}
+                  selected={selectedIdeals}
+                  setSelected={setSelectedIdeals}
+                  alignment={selectedAlignment}
+                />
+              </Fragment>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>Choose Flaws ({selectedBackground.flaws.choose || 0})</Typography>
+                </Divider>
+                <Choices
+                  choices={[selectedBackground.flaws]}
+                  selected={selectedFlaws}
+                  setSelected={setSelectedFlaws}
+                />
+              </Fragment>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>
+                    Choose Languages ({selectedBackground.language_options.choose || 0})
+                  </Typography>
+                </Divider>
+                <Choices
+                  choices={[{ ...selectedBackground.language_options }]}
+                  inherited={languages.filter(({ type }) => type !== 'background')}
+                  selected={selectedLanguages}
+                  setSelected={setSelectedLanguages}
+                />
+              </Fragment>
+
+              <Fragment>
+                <Divider
+                  component="div"
+                  role="presentation"
+                  sx={{ paddingTop: '15px' }}
+                  variant="middle"
+                >
+                  <Typography>Choose equipments</Typography>
+                </Divider>
+                <Choices
+                  choices={selectedBackground.starting_equipment_options}
+                  inherited={equipment}
+                  proficiencies={proficiencies}
+                  selected={selectedEquipments}
+                  setSelected={setSelectedEquipments}
+                />
+              </Fragment>
+            </Fragment>
+          )}
+        </Fragment>
+      )}
+
+      <Button sx={{ float: 'left' }} onClick={() => handleSubmit(onPrev)}>
+        Back
+      </Button>
+      <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>
         Next
       </Button>
     </Box>

@@ -1,7 +1,14 @@
 import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { ChoiceSelection } from './CharacterCreation';
 
-export const mapDataForForm = (array: (DefaultRepresentation & { count?: number })[]) =>
+export type ChoiceSelection = DefaultRepresentation & {
+  type: 'class' | 'race' | 'background';
+  count?: number;
+};
+
+export const mapDataForForm = (
+  array: (DefaultRepresentation & { count?: number })[],
+  type: 'class' | 'race' | 'background'
+) =>
   array.map(
     (data) =>
       (data.count
@@ -9,7 +16,9 @@ export const mapDataForForm = (array: (DefaultRepresentation & { count?: number 
             index: data.index,
             name: data.name,
             count: data.count,
-            type: 'class'
+            type
           }
-        : { index: data.index, name: data.name, type: 'class' }) as ChoiceSelection
+        : { index: data.index, name: data.name, type }) as ChoiceSelection
   );
+
+export type ChoiceObjectType = DefaultRepresentation & { type: number; count?: number | undefined };

@@ -1,13 +1,14 @@
-import { Box, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
 import type { CharacterFormData } from './CharacterCreation';
 
 interface CharacterDescriptionProps {
   setFormData: (data: Partial<CharacterFormData>) => void;
+  onPrev: () => void;
 }
 
-export function CharacterDescription({ setFormData }: CharacterDescriptionProps) {
+export function CharacterDescription({ setFormData, onPrev }: CharacterDescriptionProps) {
   const genderInstances: DefaultRepresentation[] = [
     { index: 'F', name: 'Female' },
     { index: 'M', name: 'Male' },
@@ -27,7 +28,7 @@ export function CharacterDescription({ setFormData }: CharacterDescriptionProps)
         type="number"
         label="Age"
         sx={{ width: '85px' }}
-        onChange={(value) => setFormData({ age: value as string })}
+        onChange={(value) => value && setFormData({ age: parseInt(value.toString()) })}
       />
       <FormControl margin="dense" sx={{ width: '100px' }}>
         <InputLabel htmlFor="sex">Sex</InputLabel>
@@ -54,13 +55,10 @@ export function CharacterDescription({ setFormData }: CharacterDescriptionProps)
         label="Appearance"
         onChange={(value) => setFormData({ appearance: value as string })}
       />
-      <ControledInput
-        fullWidth
-        id="personality"
-        multiline
-        label="Personality Traits"
-        onChange={(value) => setFormData({ personality: value as string })}
-      />
+
+      <Button sx={{ float: 'left' }} onClick={onPrev}>
+        Back
+      </Button>
     </Box>
   );
 }

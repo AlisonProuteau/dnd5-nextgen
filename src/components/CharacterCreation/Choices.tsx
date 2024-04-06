@@ -5,24 +5,28 @@ import {
   FormControl,
   FormControlLabel,
   FormGroup,
-  FormLabel
+  FormLabel,
+  Typography
 } from '@mui/material';
 import { isArray } from 'lodash';
 import { useState } from 'react';
 import { useQueryClient } from 'react-query';
-import { getEquipmentList } from '../../api/ressources';
+import { getResourceList } from '../../api/ressources';
+import type { Alignment } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type {
   Choice,
   DefaultRepresentation,
   Option
 } from '../../representations/common.representation';
+import type { ChoiceObjectType } from './utils';
 
 interface ChoicesProps {
   choices: (Choice | undefined)[];
   inherited?: ((DefaultRepresentation & { count?: number }) | RaceAbilityBonus)[];
-  selected?: ((DefaultRepresentation & { type: number; count?: number }) | RaceAbilityBonus)[];
+  selected?: (ChoiceObjectType | RaceAbilityBonus)[];
   proficiencies?: DefaultRepresentation[];
+  alignment?: Alignment;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setSelected: (data: any) => void;
 }
@@ -30,12 +34,14 @@ interface ChoicesProps {
 export function Choices({
   choices,
   setSelected,
+  alignment,
   selected = [],
   inherited = [],
   proficiencies = []
 }: ChoicesProps) {
   const queryClient = useQueryClient();
-  const [isEquipmentLoading, setIsEquipmentLoading] = useState<Record<string, Option[]>>({});
+  // const [isEquipmentLoading, setIsEquipmentLoading] = useState<Record<string, Option[]>>({});
+  const [isResourceLoading, setIsResourceLoading] = useState<Record<string, Option[]>>({});
 
   const onSelect = (
     checked: boolean,
@@ -96,20 +102,22 @@ export function Choices({
 
     return (
       isChecked(item, inherited, i, count) ||
-      (!isChecked(item, filteredSelection, i, count) && (filteredSelection.length || 0) >= choose)
+      (!isChecked(item, filteredSelection, i, count) &&
+        (filteredSelection.reduce(
+          (acc, current) => acc + ('count' in current ? current.count || 1 : 1),
+          0
+        ) || 0) >= choose)
     );
   };
 
-  const fetchEquipmentList = (id: string): Promise<Option[]> =>
-    queryClient.fetchQuery(['fetchEquipmentList', id], async () =>
-      (await getEquipmentList(id)).results.map((item) => ({
-        option_type: 'reference',
-        item
-      }))
+  const fetchResourceList = (id: string): Promise<Option[]> =>
+    queryClient.fetchQuery(
+      ['fetchResourceList', id],
+      async () => (await getResourceList(id)).results
     );
 
-  const generateChoices = (i: number, choose: number, options: Option[], desc: string) => {
-    return options.map((option) => {
+  const generateChoices = (i: number, choose: number, options: Option[], type: string) => {
+    return options?.map((option, index) => {
       if (option.option_type === 'reference') {
         return (
           option.item && (
@@ -153,6 +161,62 @@ export function Choices({
             />
           )
         );
+      } else if (option.option_type === 'string') {
+        const formattedOption: DefaultRepresentation = {
+          index: `${type}-${index}`,
+          name: option.string
+        };
+        return (
+          <FormControlLabel
+            key={`choice-${i}-${formattedOption.index}`}
+            control={
+              <Checkbox
+                id={`choice-${i}-${formattedOption.index}`}
+                checked={
+                  isChecked(formattedOption, selected, i, option.count) ||
+                  isChecked(formattedOption, inherited, i, option.count)
+                }
+                disabled={isDisabled(formattedOption, choose, i, option.count)}
+                onChange={(_, checked) => onSelect(checked, formattedOption, i, option.count)}
+              />
+            }
+            label={option.string}
+          />
+        );
+      } else if (option.option_type === 'ideal') {
+        const formattedOption: DefaultRepresentation = {
+          index: `${type}-${index}`,
+          name: option.desc
+        };
+        return (
+          <FormControlLabel
+            key={`choice-${i}-${formattedOption.index}`}
+            control={
+              <Checkbox
+                id={`choice-${i}-${formattedOption.index}`}
+                checked={
+                  isChecked(formattedOption, selected, i, option.count) ||
+                  isChecked(formattedOption, inherited, i, option.count)
+                }
+                disabled={
+                  isDisabled(formattedOption, choose, i, option.count) ||
+                  (alignment
+                    ? !option.alignments.find(({ index }) => index === alignment?.index)
+                    : false)
+                }
+                onChange={(_, checked) => onSelect(checked, formattedOption, i, option.count)}
+              />
+            }
+            label={
+              <Box paddingY="5px">
+                <Typography variant="caption" display="block">
+                  {option.alignments.map(({ name }) => name).join(' / ')}
+                </Typography>
+                {option.desc}
+              </Box>
+            }
+          />
+        );
       } else if (option.option_type === 'ability_bonus') {
         return (
           option.ability_score &&
@@ -175,7 +239,11 @@ export function Choices({
           )
         );
       } else if (option.option_type === 'multiple') {
-        if (option.items[0].of || option.items[0].item)
+        if (
+          option.items.every(
+            (item) => item.option_type === 'reference' || item.option_type === 'counted_reference'
+          )
+        )
           return (
             <FormControlLabel
               key={`choice-${i}-multiple-${option.items.length}-${
@@ -216,34 +284,41 @@ export function Choices({
               label={option.items.map((i) => `${i.count} ${i.of!.name}`).join(' + ')}
             />
           );
-        else throw new Error(`Unknown multiple ${option}`);
+        else console.error(`Unknown multiple: ${option.items[0].option_type}`);
       } else if (option.option_type === 'choice') {
         let currentOptions: undefined | Option[] = undefined;
         if (option.choice.from.option_set_type === 'options_array') {
           currentOptions = option.choice.from.options;
-        } else if (option.choice.from.option_set_type === 'equipment_category') {
-          const id = option.choice.from.equipment_category.index;
-          if (isEquipmentLoading[id] === undefined) {
-            fetchEquipmentList(id).then((res) =>
-              setIsEquipmentLoading({ ...isEquipmentLoading, [id]: res })
-            );
+        } else if (
+          option.choice.from.option_set_type === 'resource_list' ||
+          option.choice.from.option_set_type === 'equipment_category'
+        ) {
+          const id =
+            option.choice.from.equipment_category?.index || option.choice.from.resource_list_path;
+
+          if (id && isResourceLoading[id] === undefined) {
+            fetchResourceList(
+              option.choice.from.option_set_type === 'equipment_category'
+                ? `/equipment-categories/${id}`
+                : id
+            ).then((res) => setIsResourceLoading({ ...isResourceLoading, [id]: res }));
           }
         }
 
-        return currentOptions ||
-          isEquipmentLoading[option.choice.from.equipment_category?.index || ''] ? (
-          <FormGroup key={`choice-${i}-${desc})}`}>
+        const loadedData =
+          currentOptions ||
+          isResourceLoading[
+            option.choice.from.equipment_category?.index ||
+              option.choice.from.resource_list_path ||
+              ''
+          ];
+        return loadedData ? (
+          <FormGroup key={`choice-${i + index}-${type})}`}>
             {option.choice &&
-              generateChoices(
-                i,
-                option.choice.choose,
-                currentOptions ||
-                  isEquipmentLoading[option.choice.from.equipment_category?.index || ''],
-                option.choice.desc || option.choice.type
-              )}
+              generateChoices(i, option.choice.choose, loadedData, option.choice.type)}
           </FormGroup>
         ) : (
-          <CircularProgress size={24} key={`choice-${i}-${desc})}`} />
+          <CircularProgress size={24} key={`choice-${i + index}-${type})}`} />
         );
       } else {
         console.error(`Option type not handled ${option.option_type}`);
@@ -261,7 +336,7 @@ export function Choices({
           component="fieldset"
         >
           <FormLabel component="legend">{choice.desc}</FormLabel>
-          {generateChoices(i, 1, [{ choice, option_type: 'choice' }], choice.desc || i.toString())}
+          {generateChoices(i, 1, [{ choice, option_type: 'choice' }], choice.type)}
         </FormControl>
       ))}
     </Box>

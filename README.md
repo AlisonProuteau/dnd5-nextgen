@@ -2,10 +2,10 @@ https://5e-bits.github.io/docs/api
 
 TODO List:
 
-Class:
+Choice:
 
-- Choosing your features?
-- Test equipment for proficiencies
+- Ranger has one arrow ?
+- Add "choice" in "multiple" (paladin)
 
 Other:
 
@@ -18,16 +18,14 @@ Other:
 - Choosing your spells (C level, spellattack, spell DC)?
 - Choosing your feats
 
-Background:
-
-- Use DB/repr
-- Choosing your equipment/language...
-
 Submit:
 
-- Create an edge case test class/race
-- Add all known data (proficiencies, skills, equipments, etc), Format and Remove duplicates
 - Save to DB with user info?
+
+Tests:
+
+- Test equipment for proficiencies
+- Create an edge case test class/race
 
 To figure out:
 
@@ -37,5 +35,5 @@ To figure out:
 Stretch goals:
 
 - Choosing your multiclassing
-- Choosing your starting_equipment -> Make the DB querying work
 - Make it look good
+- Add more backgrounds

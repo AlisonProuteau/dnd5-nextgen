@@ -13,9 +13,9 @@ import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
 import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
+import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
-import { mapDataForForm } from './utils';
+import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from './utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -30,12 +30,8 @@ export function CharacterClassForm({
 }: CharacterClassFormProps) {
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
   const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
-  const [selectedProficiencies, setSelectedProficiencies] = useState<
-    (DefaultRepresentation & { type: number; count?: number })[]
-  >([]);
-  const [selectedEquipments, setSelectedEquipments] = useState<
-    (DefaultRepresentation & { type: number; count?: number })[]
-  >([]);
+  const [selectedProficiencies, setSelectedProficiencies] = useState<ChoiceObjectType[]>([]);
+  const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
 
   const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
   const { data: classInfo } = useQuery(
@@ -69,23 +65,26 @@ export function CharacterClassForm({
       selectedClass?.index &&
       classInfo?.proficiency_choices?.every(
         ({ choose }, i) =>
-          (selectedProficiencies.filter(({ type }) => type === i).length || 0) === choose
+          (selectedProficiencies.filter(({ type }) => type === i).length || 0) >= choose
       ) &&
       classInfo?.starting_equipment_options?.every(
         ({ choose }, i) =>
-          (selectedEquipments.filter(({ type }) => type === i).length || 0) === choose
+          (selectedEquipments.filter(({ type }) => type === i).length || 0) >= choose
       )
     );
   };
 
   const handleSubmit = (fn: (classInfo: Partial<CharacterFormData>) => void) => {
-    const data = {
+    const data: Partial<CharacterFormData> = {
       class: selectedClass,
-      proficiencies: mapDataForForm(selectedProficiencies)
-        .concat(mapDataForForm(classInfo?.proficiencies || []))
+      proficiencies: mapDataForForm(selectedProficiencies, 'class')
+        .concat(mapDataForForm(classInfo?.proficiencies || [], 'class'))
         .concat(proficiencies.filter(({ type }) => type !== 'class')),
-      equipments: mapDataForForm(selectedEquipments).concat(
-        mapDataForForm(classInfo?.starting_equipment?.map((equipment) => equipment.equipment) || [])
+      equipments: mapDataForForm(selectedEquipments, 'class').concat(
+        mapDataForForm(
+          classInfo?.starting_equipment?.map((equipment) => equipment.equipment) || [],
+          'class'
+        )
       )
     };
 
@@ -106,6 +105,7 @@ export function CharacterClassForm({
             value={selectedClass?.index || ''}
             onChange={({ target }) => {
               setSelectedProficiencies([]);
+              setSelectedEquipments([]);
               setselectedSubclass(undefined);
               setselectedClass(classes.find((e) => e.index === target.value));
             }}
@@ -127,9 +127,11 @@ export function CharacterClassForm({
             id="subRace"
             label="Sub-Race"
             value={selectedSubclass?.index || classInfo.subclasses[0].index}
-            onChange={({ target }) =>
-              setselectedSubclass(classInfo.subclasses?.find((e) => e.index === target.value))
-            }
+            onChange={({ target }) => {
+              setSelectedProficiencies([]);
+              setSelectedEquipments([]);
+              setselectedSubclass(classInfo.subclasses?.find((e) => e.index === target.value));
+            }}
           >
             {classInfo.subclasses.map((currentSubclass) => (
               <MenuItem
@@ -174,7 +176,7 @@ export function CharacterClassForm({
         </Fragment>
       )}
 
-      <Button sx={{ float: 'left' }} disabled={!isValid()} onClick={() => handleSubmit(onPrev)}>
+      <Button sx={{ float: 'left' }} onClick={() => handleSubmit(onPrev)}>
         Back
       </Button>
       <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>

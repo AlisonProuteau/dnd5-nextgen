@@ -14,9 +14,9 @@ import { useQuery } from 'react-query';
 import { getAllRaces, getRaceInfo, getSubraceInfo } from '../../api/ressources';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { CharacterFormData, ChoiceSelection } from './CharacterCreation';
+import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
-import { mapDataForForm } from './utils';
+import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from './utils';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -31,12 +31,8 @@ export function CharacterRaceForm({
 }: CharacterRaceFormProps) {
   const [selectedRace, setselectedRace] = useState<DefaultRepresentation>();
   const [selectedSubrace, setselectedSubrace] = useState<DefaultRepresentation>();
-  const [selectedProficiencies, setSelectedProficiencies] = useState<
-    (DefaultRepresentation & { type: number; count?: number })[]
-  >([]);
-  const [selectedLanguages, setSelectedLanguages] = useState<
-    (DefaultRepresentation & { type: number; count?: number })[]
-  >([]);
+  const [selectedProficiencies, setSelectedProficiencies] = useState<ChoiceObjectType[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
 
   const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
@@ -89,28 +85,29 @@ export function CharacterRaceForm({
     return (
       selectedRace?.index &&
       (raceInfo?.starting_proficiency_options?.choose || 0) +
-        (subraceInfo?.starting_proficiency_options?.choose || 0) ===
+        (subraceInfo?.starting_proficiency_options?.choose || 0) >=
         selectedProficiencies.length &&
-      (raceInfo?.language_options?.choose || 0) + (subraceInfo?.language_options?.choose || 0) ===
+      (raceInfo?.language_options?.choose || 0) + (subraceInfo?.language_options?.choose || 0) >=
         selectedLanguages.length &&
       (raceInfo?.ability_bonus_options?.choose || 0) +
-        (subraceInfo?.ability_bonus_options?.choose || 0) ===
+        (subraceInfo?.ability_bonus_options?.choose || 0) >=
         selectedAbilities.length
     );
   };
 
   const handleSubmit = () => {
-    const data = {
+    const data: Partial<CharacterFormData> = {
       race: selectedRace,
-      proficiencies: mapDataForForm(selectedProficiencies)
-        .concat(mapDataForForm(raceInfo?.starting_proficiencies || []))
-        .concat(mapDataForForm(subraceInfo?.starting_proficiencies || []))
+      proficiencies: mapDataForForm(selectedProficiencies, 'race')
+        .concat(mapDataForForm(raceInfo?.starting_proficiencies || [], 'race'))
+        .concat(mapDataForForm(subraceInfo?.starting_proficiencies || [], 'race'))
         .concat(proficiencies.filter(({ type }) => type !== 'race')),
-      languages: mapDataForForm(selectedLanguages)
-        .concat(mapDataForForm(raceInfo?.languages || []))
-        .concat(mapDataForForm(subraceInfo?.languages || []))
+      languages: mapDataForForm(selectedLanguages, 'race')
+        .concat(mapDataForForm(raceInfo?.languages || [], 'race'))
+        .concat(mapDataForForm(subraceInfo?.languages || [], 'race'))
         .concat(languages.filter(({ type }) => type !== 'race')),
       abilities: selectedAbilities
+        .map(({ bonus, ability_score }) => ({ bonus, ability_score }))
         .concat(raceInfo?.ability_bonuses || [])
         .concat(subraceInfo?.ability_bonuses || [])
     };

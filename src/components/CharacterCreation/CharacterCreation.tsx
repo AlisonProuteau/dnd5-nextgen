@@ -1,16 +1,14 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
-import { omit } from 'lodash';
+import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
-import type {
-  Alignment,
-  Background
-} from '../../representations/character/background.representation';
+import type { Alignment } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterDescription } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
+import type { ChoiceSelection } from './utils';
 
 const steps = [
   { id: 'race', label: 'Race' },
@@ -19,19 +17,17 @@ const steps = [
   { id: 'info', label: 'Character Info' }
 ];
 
-export type ChoiceSelection = DefaultRepresentation & { type: 'class' | 'race'; count?: number };
-
 export interface CharacterFormData {
   name: string;
-  age?: string;
+  age: number;
   sex: DefaultRepresentation;
   appearance?: string;
-  personality?: string;
-  background: Background;
+  background: DefaultRepresentation;
   alignment: Alignment;
-  ideals?: string;
-  bonds?: string;
-  flaws?: string;
+  personality?: string[];
+  ideals?: string[];
+  bonds?: string[];
+  flaws?: string[];
   race: DefaultRepresentation;
   subrace?: DefaultRepresentation;
   class: DefaultRepresentation;
@@ -43,7 +39,9 @@ export interface CharacterFormData {
 }
 
 export function CharacterCreation() {
-  const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({});
+  const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
+    sex: { index: 'O', name: 'Other' }
+  });
   const [formError, setFormErrorState] = useState({});
   const [activeStep, setActiveStep] = useState(0);
 
@@ -65,17 +63,38 @@ export function CharacterCreation() {
     setFormErrorState({ ...formError, ...values });
   };
 
-  const isFormValid = () => {
-    return (
-      Object.values(formData).some((value) => value === undefined) &&
-      !Object.values(formError).some((v) => v)
-    );
-  };
+  const isFormValid = () =>
+    formData.name &&
+    formData.age &&
+    formData.sex &&
+    formData.background?.index &&
+    formData.alignment?.index &&
+    formData.race?.index &&
+    formData.class?.index;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    console.log(formData);
+    const formattedData = pickBy(
+      {
+        ...formData,
+        languages: uniqBy(formData.languages, 'index'),
+        proficiencies: uniqBy(formData.proficiencies, 'index'),
+        equipments: formData.equipments?.reduce((acc: ChoiceSelection[], curr) => {
+          const existingIndex = acc.findIndex(({ index }) => index === curr.index);
+          if (existingIndex >= 0)
+            return acc.with(existingIndex, {
+              ...curr,
+              count: (acc[existingIndex].count || 1) + (curr.count || 1)
+            });
+
+          return [...acc, curr];
+        }, [])
+        // abilities: formData.abilities
+      },
+      (d) => d
+    );
+    console.log(formattedData);
   };
 
   return (
@@ -127,20 +146,22 @@ export function CharacterCreation() {
               setFormData(input);
               setActiveStep((prevActiveStep) => prevActiveStep + 1);
             }}
+            onPrev={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep - 1);
+            }}
             proficiencies={formData.proficiencies}
             languages={formData.languages}
+            equipment={formData.equipments}
           />
         </Box>
 
         <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
-          <CharacterDescription setFormData={setFormData} />
+          <CharacterDescription
+            setFormData={setFormData}
+            onPrev={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}
+          />
         </Box>
-
-        {activeStep > 1 && (
-          <Button onClick={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}>
-            Back
-          </Button>
-        )}
 
         {activeStep === steps.length - 1 && (
           <Button

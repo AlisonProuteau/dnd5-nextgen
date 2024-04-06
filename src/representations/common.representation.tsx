@@ -17,19 +17,19 @@ export type OptionSet =
       option_set_type: 'options_array';
       options: Option[];
       equipment_category?: never;
-      resource_list_url?: never;
+      resource_list_path?: never;
     }
   | {
       option_set_type: 'equipment_category';
       equipment_category: DefaultRepresentation;
       options?: never;
-      resource_list_url?: never;
+      resource_list_path?: never;
     }
   | {
       option_set_type: 'resource_list';
       options?: never;
       equipment_category?: never;
-      resource_list_url: string;
+      resource_list_path: string;
     };
 
 export type Option =
