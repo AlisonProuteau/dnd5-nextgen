@@ -15,7 +15,7 @@ interface ControledInputProps {
   sx?: SxProps<Theme>;
   endAdornment?: ReactNode;
   onChange?: (arg: string | boolean | undefined) => void;
-  errorMessage?: string;
+  errorMessage?: string[];
   hasError?: boolean;
   multiline?: boolean;
   fullWidth?: boolean;
@@ -45,7 +45,12 @@ export function ControledInput({
         onChange={({ currentTarget }) => onChange?.(currentTarget.value)}
         endAdornment={endAdornment}
       />
-      {hasError && <FormHelperText id={id}>{errorMessage}</FormHelperText>}
+      {hasError &&
+        errorMessage?.map((message, i) => (
+          <FormHelperText key={id + i} id={id + i} sx={i ? { marginTop: '-4px' } : {}}>
+            {message}
+          </FormHelperText>
+        ))}
     </FormControl>
   );
 }
