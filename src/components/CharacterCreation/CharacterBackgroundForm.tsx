@@ -19,7 +19,7 @@ import type {
   Alignment,
   Background
 } from '../../representations/character/background.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
+import type { Choice, DefaultRepresentation } from '../../representations/common.representation';
 import { ControledInput } from '../ControledInput';
 import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
@@ -49,10 +49,31 @@ export function CharacterBackgroundForm({
   const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
   const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
 
+  const emptyChoice: Choice = {
+    choose: -1,
+    type: '',
+    from: { option_set_type: 'resource_list', resource_list_path: '/' }
+  };
+
+  // TODO: Add options ?
+  const customBackground: Background = {
+    index: 'custom',
+    name: 'Custom',
+    feature: { name: 'Blank slate', desc: ['Build your own character'] },
+    starting_proficiencies: [],
+    starting_equipment: [],
+    starting_equipment_options: [],
+    language_options: emptyChoice,
+    personality_traits: emptyChoice,
+    ideals: emptyChoice,
+    bonds: emptyChoice,
+    flaws: emptyChoice
+  };
+
   const { data: backgrounds } = useQuery(
     'fetchBackgrounds',
     async () => (await getAllBackgrounds()).results,
-    { select: (data) => [...data, { index: 'custom', name: 'Custom' } as Background] }
+    { select: (data) => [...data, customBackground] }
   );
 
   const { data: alignments } = useQuery(
@@ -177,6 +198,21 @@ export function CharacterBackgroundForm({
 
       {selectedBackground && (
         <Fragment>
+          <Accordion>
+            <Divider component="div" role="presentation" variant="middle">
+              <AccordionSummary
+                expandIcon={<ExpandMore />}
+                aria-controls="panel1-content"
+                id="panel1-header"
+              >
+                <Typography>{selectedBackground.feature.name}</Typography>
+              </AccordionSummary>
+            </Divider>
+            <AccordionDetails>
+              <Typography align="center">{selectedBackground.feature.desc}</Typography>
+            </AccordionDetails>
+          </Accordion>
+
           {selectedBackground.index === 'custom' ? (
             <Fragment>
               <ControledInput
@@ -226,21 +262,6 @@ export function CharacterBackgroundForm({
             </Fragment>
           ) : (
             <Fragment>
-              <Accordion>
-                <Divider component="div" role="presentation" variant="middle">
-                  <AccordionSummary
-                    expandIcon={<ExpandMore />}
-                    aria-controls="panel1-content"
-                    id="panel1-header"
-                  >
-                    <Typography>{selectedBackground.feature.name}</Typography>
-                  </AccordionSummary>
-                </Divider>
-                <AccordionDetails>
-                  <Typography align="center">{selectedBackground.feature.desc}</Typography>
-                </AccordionDetails>
-              </Accordion>
-
               <Fragment>
                 <Divider
                   component="div"

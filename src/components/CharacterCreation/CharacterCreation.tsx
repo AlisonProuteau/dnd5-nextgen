@@ -1,6 +1,11 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import { doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { database } from '../../firebase';
+import { useAuth } from '../../providers/AuthProvider';
 import type { Alignment } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
@@ -39,6 +44,8 @@ export interface CharacterFormData {
 }
 
 export function CharacterCreation() {
+  const user = useAuth();
+  const navigate = useNavigate();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
     sex: { index: 'O', name: 'Other' }
   });
@@ -74,6 +81,7 @@ export function CharacterCreation() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    // ADD loading/disabling/navigate
 
     const formattedData = pickBy(
       {
@@ -94,7 +102,22 @@ export function CharacterCreation() {
       },
       (d) => d
     );
-    console.log(formattedData);
+
+    console.warn(formattedData);
+
+    if (formattedData.name && user?.uid) {
+      const path = `users/${user.uid}/characters`;
+      const document = doc(database, path, formattedData.name as string);
+      setDoc(document, formattedData)
+        .then(() => {
+          navigate('/');
+          toast.success('Character created');
+        })
+        .catch((error) =>
+          toast.error(`Something went wrong
+        ${(error as Error).message || 'Error'}`)
+        );
+    }
   };
 
   return (
