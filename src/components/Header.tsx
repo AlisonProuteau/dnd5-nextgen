@@ -48,14 +48,17 @@ export function Header() {
               onClose={() => navigationMenuClick()}
             >
               <MenuItem onClick={() => navigationMenuClick('/')}>Home</MenuItem>
-              {user && (
+              {/* {user && (
                 <MenuItem onClick={() => navigationMenuClick('/database')}>Database</MenuItem>
-              )}
+              )} */}
             </Menu>
             <IconButton
               size="large"
               edge="end"
-              onClick={() => (user ? signOut() : navigationMenuClick('/auth'))}
+              onClick={() => {
+                if (user) signOut();
+                navigationMenuClick('/auth');
+              }}
             >
               {user ? <LogoutIcon /> : <AccountCircle />}
             </IconButton>
