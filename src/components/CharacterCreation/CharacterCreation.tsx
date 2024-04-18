@@ -1,0 +1,202 @@
+import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import { doc, setDoc } from 'firebase/firestore';
+import { omit, pickBy, uniqBy } from 'lodash';
+import { useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { database } from '../../firebase';
+import { useAuth } from '../../providers/AuthProvider';
+import type { Alignment } from '../../representations/character/background.representation';
+import type { RaceAbilityBonus } from '../../representations/character/race.representation';
+import type { DefaultRepresentation } from '../../representations/common.representation';
+import { CharacterBackgroundForm } from './CharacterBackgroundForm';
+import { CharacterClassForm } from './CharacterClassForm';
+import { CharacterDescription } from './CharacterDescription';
+import { CharacterRaceForm } from './CharacterRaceForm';
+import type { ChoiceSelection } from './utils';
+
+const steps = [
+  { id: 'race', label: 'Race' },
+  { id: 'class', label: 'Class' },
+  { id: 'background', label: 'Background' },
+  { id: 'info', label: 'Character Info' }
+];
+
+export interface CharacterFormData {
+  name: string;
+  age: number;
+  sex: DefaultRepresentation;
+  appearance?: string;
+  background: DefaultRepresentation;
+  alignment: Alignment;
+  personality?: string[];
+  ideals?: string[];
+  bonds?: string[];
+  flaws?: string[];
+  race: DefaultRepresentation;
+  subrace?: DefaultRepresentation;
+  class: DefaultRepresentation;
+  subclass?: DefaultRepresentation;
+  proficiencies: ChoiceSelection[];
+  equipments: ChoiceSelection[];
+  languages: ChoiceSelection[];
+  abilities: RaceAbilityBonus[];
+}
+
+export function CharacterCreation() {
+  const user = useAuth();
+  const navigate = useNavigate();
+  const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
+    sex: { index: 'O', name: 'Other' }
+  });
+  const [formError, setFormErrorState] = useState({});
+  const [activeStep, setActiveStep] = useState(0);
+
+  const setFormData = (values: Partial<CharacterFormData>) => {
+    const formatedObject = { ...formData, ...values };
+
+    Object.keys(formatedObject).forEach((key) => {
+      if (
+        values[key as keyof CharacterFormData] === undefined ||
+        values[key as keyof CharacterFormData] === ''
+      )
+        omit(formatedObject, key);
+    });
+
+    setFormDataState(formatedObject);
+  };
+
+  const setFormError = (values: Partial<typeof formError>) => {
+    setFormErrorState({ ...formError, ...values });
+  };
+
+  const isFormValid = () =>
+    formData.name &&
+    formData.age &&
+    formData.sex &&
+    formData.background?.index &&
+    formData.alignment?.index &&
+    formData.race?.index &&
+    formData.class?.index;
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // ADD loading/disabling/navigate
+
+    const formattedData = pickBy(
+      {
+        ...formData,
+        languages: uniqBy(formData.languages, 'index'),
+        proficiencies: uniqBy(formData.proficiencies, 'index'),
+        equipments: formData.equipments?.reduce((acc: ChoiceSelection[], curr) => {
+          const existingIndex = acc.findIndex(({ index }) => index === curr.index);
+          if (existingIndex >= 0)
+            return acc.with(existingIndex, {
+              ...curr,
+              count: (acc[existingIndex].count || 1) + (curr.count || 1)
+            });
+
+          return [...acc, curr];
+        }, [])
+        // abilities: formData.abilities
+      },
+      (d) => d
+    );
+
+    console.warn(formattedData);
+
+    if (formattedData.name && user?.uid) {
+      const path = `users/${user.uid}/characters`;
+      const document = doc(database, path, formattedData.name as string);
+      setDoc(document, formattedData)
+        .then(() => {
+          navigate('/');
+          toast.success('Character created');
+        })
+        .catch((error) =>
+          toast.error(`Something went wrong
+        ${(error as Error).message || 'Error'}`)
+        );
+    }
+  };
+
+  return (
+    <Container>
+      <Stepper activeStep={activeStep} sx={{ marginBottom: '15px' }}>
+        {steps.map(({ id, label }) => (
+          <Step key={id} active={steps[activeStep].id === id}>
+            <StepLabel>{label}</StepLabel>
+          </Step>
+        ))}
+      </Stepper>
+
+      <form
+        onSubmit={handleSubmit}
+        onFocus={({ target }) => setFormError({ [target.id]: false })}
+        onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
+        onReset={() => {
+          setFormDataState({});
+          setFormErrorState({});
+        }}
+      >
+        <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
+          <CharacterRaceForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+            proficiencies={formData.proficiencies}
+          />
+        </Box>
+
+        <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
+          <CharacterClassForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+            onPrev={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep - 1);
+            }}
+            proficiencies={formData.proficiencies}
+          />
+        </Box>
+
+        <Box display={steps[activeStep].id === 'background' ? 'revert' : 'none'}>
+          <CharacterBackgroundForm
+            onNext={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep + 1);
+            }}
+            onPrev={(input) => {
+              setFormData(input);
+              setActiveStep((prevActiveStep) => prevActiveStep - 1);
+            }}
+            proficiencies={formData.proficiencies}
+            languages={formData.languages}
+            equipment={formData.equipments}
+          />
+        </Box>
+
+        <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
+          <CharacterDescription
+            setFormData={setFormData}
+            onPrev={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}
+          />
+        </Box>
+
+        {activeStep === steps.length - 1 && (
+          <Button
+            sx={{ float: 'right' }}
+            variant="contained"
+            type="submit"
+            disabled={!isFormValid()}
+          >
+            Create
+          </Button>
+        )}
+      </form>
+    </Container>
+  );
+}

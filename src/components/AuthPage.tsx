@@ -17,10 +17,10 @@ export function AuthPage() {
   const [formData, setFormDataState] = useState<FormData>({ showPassword: false });
   const [formError, setFormErrorState] = useState<{
     email?: boolean;
-    password?: boolean;
+    password?: string[];
     passwordConfrim?: boolean;
   }>({});
-  const [hasAccount, setHasAccount] = useState(false);
+  const [hasAccount, setHasAccount] = useState(true);
   const navigate = useNavigate();
 
   const setFormData = (values: Partial<FormData>) => {
@@ -48,39 +48,34 @@ export function AuthPage() {
   };
 
   const validateInput = ({ target }: { target: EventTarget & HTMLFormElement }) => {
-    /** Contains:
-     *
-     * one digit
-     *
-     * one lowercase letter
-     *
-     * one uppercase letter appear anywhere in the string
-     *
-     * one special character appear anywhere in the string
-     *
-     * at least 8 characters, but no more than 32
-     */
-    const PasswordRegex = new RegExp(
-      '^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[*.!@$%^&(){}[]:;<>,.?/~_+-=|]).{8,32}$'
-    );
-
     const currentData = formData[target.id as keyof FormData]?.toString();
-    let isValid = target.checkValidity();
+    if (!target.checkValidity() || !currentData || hasAccount) return;
 
-    if (!isValid || !currentData) return;
+    if (target.id === 'password') {
+      let currentPasswordError = formError.password || [];
+      const specialCharacters = '.,:;?!@$%&*^=+~_-';
 
-    switch (target.id) {
-      case 'password':
-        isValid = hasAccount || PasswordRegex.test(currentData);
-        break;
-      case 'passwordConfrim':
-        isValid = currentData === formData.password;
-        break;
-      default:
-        break;
+      if (currentData.length < 8)
+        currentPasswordError = [...currentPasswordError, 'Must be at least 8 characters'];
+      if (currentData.search(/[0-9]/) === -1)
+        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 number'];
+      if (currentData.search(/[a-z]/) === -1)
+        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 lowercase'];
+      if (currentData.search(/[A-Z]/) === -1)
+        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 uppercase'];
+      if (
+        currentData.search(new RegExp(`[${specialCharacters}]`)) === -1 ||
+        !new RegExp(`^[a-zA-Z0-9${specialCharacters}]*$`).test(currentData)
+      )
+        currentPasswordError = [
+          ...currentPasswordError,
+          `Must contain at least 1 special character in ${specialCharacters}`
+        ];
+
+      setFormError({ password: currentPasswordError.length ? currentPasswordError : undefined });
+    } else if (target.id === 'passwordConfrim') {
+      setFormError({ [target.id]: currentData !== formData.password });
     }
-    console.log(target.id, 'has error ', !isValid);
-    setFormError({ [target.id]: !isValid });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -109,21 +104,23 @@ export function AuthPage() {
         }}
       >
         <ControledInput
+          fullWidth
           id="email"
           type="email"
           label="Email address"
           onChange={(value) => setFormData({ email: value as string })}
-          errorMessage="Invalid Email"
+          errorMessage={['Invalid Email']}
           hasError={formError.email}
         />
 
         <ControledInput
+          fullWidth
           id="password"
           type={formData.showPassword ? 'input' : 'password'}
           label="Password"
           onChange={(value) => setFormData({ password: value as string })}
-          errorMessage="Invalid Password"
-          hasError={formError.password}
+          errorMessage={formError.password}
+          hasError={!!formError.password}
           endAdornment={
             <InputAdornment position="end">
               <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
@@ -135,11 +132,12 @@ export function AuthPage() {
 
         {!hasAccount && (
           <ControledInput
+            fullWidth
             id="passwordConfrim"
             type={formData.showPassword ? 'input' : 'password'}
             label="Confrim Password"
             onChange={(value) => setFormData({ passwordConfrim: value as string })}
-            errorMessage="Passwords mismatch"
+            errorMessage={['Passwords mismatch']}
             hasError={formError.passwordConfrim}
             endAdornment={
               <InputAdornment position="end">
