@@ -18,10 +18,6 @@ Other:
 - Choosing your spells (C level, spellattack, spell DC)?
 - Choosing your feats
 
-Submit:
-
-- Save to DB with user info?
-
 Tests:
 
 - Test equipment for proficiencies
@@ -36,4 +32,4 @@ Stretch goals:
 
 - Choosing your multiclassing
 - Make it look good
-- Add more backgrounds
+- Add more backgrounds + options for custom background

@@ -1,5 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { AuthPage } from '../components/AuthPage';
+import { CharacterCard } from '../components/CharacterCard/CharacterCard';
 import { CharacterCreation } from '../components/CharacterCreation/CharacterCreation';
 import { ErrorPage } from '../components/ErrorPage';
 import { Header } from '../components/Header';
@@ -11,6 +12,7 @@ export function App() {
       <Routes>
         <Route path="/" element={<Header />} errorElement={<ErrorPage />}>
           <Route path="/" element={<Home />} />
+          <Route path="/character/:id" element={<CharacterCard />} />
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/create" element={<CharacterCreation />} />
           {/* <Route path="/database" element={<DataBasePage />} /> */}

@@ -1,5 +1,7 @@
 import toast from 'react-hot-toast';
+import type { CharacterFormData } from '../components/CharacterCreation/CharacterCreation';
 import { createUserInFirebase, signInFirebase, signOutInFirebase } from '../firebase';
+import { get, getAll } from './utils';
 
 export const createUser = (email: string, password: string) =>
   createUserInFirebase(email, password)
@@ -30,3 +32,12 @@ export const signOut = () =>
         ${(error as Error).message || 'Error'}`
       );
     });
+
+export const getUserCharacters = async (userId: string): Promise<CharacterFormData[] | undefined> =>
+  (await getAll('All user characters', `users/${userId}/characters`)).results;
+
+export const getCharacter = async (
+  userId: string,
+  characterId: string
+): Promise<CharacterFormData | undefined> =>
+  get('All user characters', `users/${userId}/characters`, characterId);

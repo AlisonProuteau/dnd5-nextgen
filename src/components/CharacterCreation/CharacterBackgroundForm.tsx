@@ -55,7 +55,6 @@ export function CharacterBackgroundForm({
     from: { option_set_type: 'resource_list', resource_list_path: '/' }
   };
 
-  // TODO: Add options ?
   const customBackground: Background = {
     index: 'custom',
     name: 'Custom',
