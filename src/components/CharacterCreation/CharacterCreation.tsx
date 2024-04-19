@@ -121,8 +121,8 @@ export function CharacterCreation() {
   };
 
   return (
-    <Container>
-      <Stepper activeStep={activeStep} sx={{ marginBottom: '15px' }}>
+    <Container sx={{ overflowX: 'clip' }}>
+      <Stepper activeStep={activeStep} sx={{ marginBottom: '15px' }} alternativeLabel>
         {steps.map(({ id, label }) => (
           <Step key={id} active={steps[activeStep].id === id}>
             <StepLabel>{label}</StepLabel>

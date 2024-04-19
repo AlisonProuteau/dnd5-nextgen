@@ -2,10 +2,11 @@ import { AddRounded } from '@mui/icons-material';
 import {
   Box,
   Card,
+  CardActionArea,
   CardContent,
   CircularProgress,
   Container,
-  IconButton,
+  Fab,
   Typography
 } from '@mui/material';
 import { useEffect, useState } from 'react';
@@ -37,27 +38,34 @@ export function Home() {
             sx={{ minWidth: 275 }}
             onClick={() => navigate(`/character/${character.name}`)}
           >
-            <CardContent>
-              <Typography variant="h5" component="div">
-                {character.name}
-              </Typography>
-              <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                {character.race.name}
-                {character.subrace && ` - ${character.subrace.name}`}
-              </Typography>
-              <Typography variant="body2">
-                {character.class.name}
-                {character.subclass && ` - ${character.subclass.name}`}
-              </Typography>
-            </CardContent>
+            <CardActionArea>
+              <CardContent>
+                <Typography variant="h5" component="div">
+                  {character.name}
+                </Typography>
+                <Typography sx={{ mb: 1.5 }} color="text.secondary">
+                  {character.race.name}
+                  {character.subrace && ` - ${character.subrace.name}`}
+                </Typography>
+                <Typography variant="body2">
+                  {character.class.name}
+                  {character.subclass && ` - ${character.subclass.name}`}
+                </Typography>
+              </CardContent>
+            </CardActionArea>
           </Card>
         ))}
-        <IconButton
-          sx={{ border: 'solid 2px', inlineSize: 'fit-content', alignSelf: 'center' }}
+        <Fab
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 16,
+            right: 16
+          }}
           onClick={() => navigate('/create')}
         >
           <AddRounded />
-        </IconButton>
+        </Fab>
       </Box>
     </Container>
   ) : (

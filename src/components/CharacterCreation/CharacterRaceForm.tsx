@@ -242,7 +242,11 @@ export function CharacterRaceForm({
         </Fragment>
       )}
 
-      <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={handleSubmit}>
+      <Button
+        sx={{ float: 'right', paddingBottom: '15px' }}
+        disabled={!isValid()}
+        onClick={handleSubmit}
+      >
         Next
       </Button>
     </Box>

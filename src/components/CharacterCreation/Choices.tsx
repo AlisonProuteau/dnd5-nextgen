@@ -327,7 +327,13 @@ export function Choices({
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+    <Box
+      display="grid"
+      sx={{
+        gridGap: '50px',
+        gridTemplateColumns: `repeat(auto-fit, minmax(350px, 1fr))`
+      }}
+    >
       {(choices.filter((data) => data !== undefined) as Choice[]).map((choice, i) => (
         <FormControl
           key={`choice-${choice.type}-${i}`}
