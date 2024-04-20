@@ -176,7 +176,7 @@ export function CharacterClassForm({
         </Fragment>
       )}
 
-      <Button sx={{ float: 'left' }} onClick={() => handleSubmit(onPrev)}>
+      <Button sx={{ float: 'left', paddingBottom: '15px' }} onClick={() => handleSubmit(onPrev)}>
         Back
       </Button>
       <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>

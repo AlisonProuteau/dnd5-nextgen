@@ -56,7 +56,7 @@ export function CharacterDescription({ setFormData, onPrev }: CharacterDescripti
         onChange={(value) => setFormData({ appearance: value as string })}
       />
 
-      <Button sx={{ float: 'left' }} onClick={onPrev}>
+      <Button sx={{ float: 'left', paddingBottom: '15px' }} onClick={onPrev}>
         Back
       </Button>
     </Box>
