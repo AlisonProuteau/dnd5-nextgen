@@ -9,6 +9,10 @@ Choice:
 
 Other:
 
+- Setup webpack
+
+Sheet:
+
 - Calculate your ability scores (custom, simple, point buy, roll)? + bonuses
 - Calculate your hit points with modifiers
 - Calculate your armor class
