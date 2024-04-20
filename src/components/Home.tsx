@@ -49,13 +49,15 @@ export function Home() {
 
   return user && characters?.length ? (
     <Container>
-      <Box display="flex" flexDirection="column" gap="15px">
+      <Box
+        display="grid"
+        sx={{
+          gridGap: '50px',
+          gridTemplateColumns: `repeat(auto-fit, minmax(275px, 1fr))`
+        }}
+      >
         {characters.map((character) => (
-          <Card
-            key={character.name}
-            sx={{ minWidth: 275 }}
-            onClick={() => navigate(`/character/${character.name}`)}
-          >
+          <Card key={character.name} onClick={() => navigate(`/character/${character.name}`)}>
             <CardActionArea>
               <CardMedia
                 alt="Character"
