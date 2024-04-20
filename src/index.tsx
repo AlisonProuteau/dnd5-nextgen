@@ -4,7 +4,7 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Toaster, toast } from 'react-hot-toast';
 import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
-import { ErrorResponse } from 'react-router-dom';
+import { ErrorResponse, BrowserRouter as Router } from 'react-router-dom';
 import { App } from './providers/App';
 import { AuthProvider } from './providers/AuthProvider';
 
@@ -39,9 +39,11 @@ root.render(
       <ThemeProvider theme={darkTheme}>
         <Toaster />
         <CssBaseline />
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <Router>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </Router>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>

@@ -2,7 +2,6 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Box, Button, Container, IconButton, InputAdornment } from '@mui/material';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { createUser, signIn } from '../api/users';
 import { ControledInput } from './ControledInput';
 
@@ -21,7 +20,6 @@ export function AuthPage() {
     passwordConfrim?: boolean;
   }>({});
   const [hasAccount, setHasAccount] = useState(true);
-  const navigate = useNavigate();
 
   const setFormData = (values: Partial<FormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -87,7 +85,6 @@ export function AuthPage() {
       }
 
       await signIn(formData.email, formData.password);
-      navigate('/');
     }
   };
 
