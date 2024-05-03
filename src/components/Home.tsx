@@ -57,30 +57,32 @@ export function Home() {
         }}
       >
         {characters.map((character) => (
-          <Card key={character.name} onClick={() => navigate(`/character/${character.name}`)}>
-            <CardActionArea>
-              <CardMedia
-                alt="Character"
-                component="img"
-                height="250"
-                src={RaceImages[character.race.index]}
-                sx={{ objectPosition: 'top' }}
-              />
-              <CardContent>
-                <Typography variant="h5" component="div">
-                  {character.name}
-                </Typography>
-                <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                  {character.race.name}
-                  {character.subrace && ` - ${character.subrace.name}`}
-                </Typography>
-                <Typography variant="body2">
-                  {character.class.name}
-                  {character.subclass && ` - ${character.subclass.name}`}
-                </Typography>
-              </CardContent>
-            </CardActionArea>
-          </Card>
+          <Box key={character.name} sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Card sx={{ flex: 1, maxWidth: '500px' }}>
+              <CardActionArea onClick={() => navigate(`/character/${character.name}`)}>
+                <CardMedia
+                  alt="Character"
+                  component="img"
+                  height="250"
+                  src={RaceImages[character.race.index]}
+                  sx={{ objectPosition: 'top' }}
+                />
+                <CardContent>
+                  <Typography variant="h5" component="div">
+                    {character.name}
+                  </Typography>
+                  <Typography sx={{ mb: 1.5 }} color="text.secondary">
+                    {character.race.name}
+                    {character.subrace && ` - ${character.subrace.name}`}
+                  </Typography>
+                  <Typography variant="body2">
+                    {character.class.name}
+                    {character.subclass && ` - ${character.subclass.name}`}
+                  </Typography>
+                </CardContent>
+              </CardActionArea>
+            </Card>
+          </Box>
         ))}
         <Fab
           size="small"
