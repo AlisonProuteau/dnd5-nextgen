@@ -2,11 +2,6 @@ https://5e-bits.github.io/docs/api
 
 TODO List:
 
-Choice:
-
-- Ranger has one arrow ?
-- Add "choice" in "multiple" (paladin)
-
 Other:
 
 - Setup webpack
@@ -26,6 +21,7 @@ Tests:
 
 - Test equipment for proficiencies
 - Create an edge case test class/race
+- Choices
 
 To figure out:
 
@@ -34,6 +30,8 @@ To figure out:
 
 Stretch goals:
 
-- Choosing your multiclassing
+- Multiclassing
 - Make it look good
+- Fix choice display not very readable
+- Add auto selection if only one selectable choice
 - Add more backgrounds + options for custom background
