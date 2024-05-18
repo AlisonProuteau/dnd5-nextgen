@@ -21,4 +21,8 @@ export const mapDataForForm = (
         : { index: data.index, name: data.name, type }) as ChoiceSelection
   );
 
-export type ChoiceObjectType = DefaultRepresentation & { type: number; count?: number | undefined };
+export type ChoiceObjectType = DefaultRepresentation & {
+  type: number;
+  count?: number;
+  isMultiple?: boolean;
+};
