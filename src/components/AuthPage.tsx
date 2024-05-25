@@ -3,7 +3,7 @@ import { Box, Button, Container, IconButton, InputAdornment } from '@mui/materia
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
 import { createUser, signIn } from '../api/users';
-import { ControledInput } from './ControledInput';
+import { ControledInput } from './shared/ControledInput';
 
 interface FormData {
   email?: string;

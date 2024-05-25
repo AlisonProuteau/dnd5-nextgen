@@ -1,10 +1,24 @@
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useRouteError, type ErrorResponse } from 'react-router-dom';
 import { AuthPage } from '../components/AuthPage';
 import { CharacterCard } from '../components/CharacterCard/CharacterCard';
 import { CharacterCreation } from '../components/CharacterCreation/CharacterCreation';
-import { ErrorPage } from '../components/ErrorPage';
-import { Header } from '../components/Header';
 import { Home } from '../components/Home';
+import { Header } from '../components/shared/Header';
+
+function ErrorPage() {
+  const error = useRouteError() as (Error & ErrorResponse) | undefined;
+  console.error(error);
+
+  return (
+    <div>
+      <h1>Oops!</h1>
+      <p>Sorry, an unexpected error has occurred.</p>
+      <p>
+        <i>{error?.statusText || error?.message}</i>
+      </p>
+    </div>
+  );
+}
 
 export function App() {
   return (

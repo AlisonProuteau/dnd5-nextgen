@@ -20,7 +20,7 @@ import type {
   Background
 } from '../../representations/character/background.representation';
 import type { Choice, DefaultRepresentation } from '../../representations/common.representation';
-import { ControledInput } from '../ControledInput';
+import { ControledInput } from '../shared/ControledInput';
 import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
 import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from './utils';

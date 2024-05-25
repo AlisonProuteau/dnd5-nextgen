@@ -1,4 +1,6 @@
 https://5e-bits.github.io/docs/api
+https://kanbanflow.com/board/2FkZc7Y
+https://www.dndbeyond.com/sources/basic-rules
 
 TODO List:
 
@@ -9,13 +11,14 @@ Other:
 Sheet:
 
 - Calculate your ability scores (custom, simple, point buy, roll)? + bonuses
-- Calculate your hit points with modifiers
-- Calculate your armor class
-- Figuring out your proficiency modifier
-
+- Figure out your proficiency modifier
 - Calculate your skill points
+- Calculate your armor class
+- Calculate your hit points with modifiers
+
+Spells:
+
 - Choosing your spells (C level, spellattack, spell DC)?
-- Choosing your feats
 
 Tests:
 
@@ -27,6 +30,7 @@ To figure out:
 
 - Class archetype?
 - More race info?
+- Choosing your feats?
 
 Stretch goals:
 
