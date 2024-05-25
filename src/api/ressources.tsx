@@ -4,7 +4,7 @@ import type { Spell } from '../representations/abilities/magic.representation';
 import type { Proficiency } from '../representations/campaign/adventure.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
-import type { Race } from '../representations/character/race.representation';
+import type { Race, Subrace } from '../representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '../representations/common.representation';
 import { get, getAll, type QueryObject } from './utils';
 
@@ -19,7 +19,7 @@ export async function getRaceInfo(raceIndex: string): Promise<Race> {
   return get('Race info', '/races', raceIndex);
 }
 
-export async function getSubraceInfo(raceIndex: string, subraceIndex: string): Promise<Race> {
+export async function getSubraceInfo(raceIndex: string, subraceIndex: string): Promise<Subrace> {
   return get('Subace info', `/races/${raceIndex}/subraces`, subraceIndex);
 }
 

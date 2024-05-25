@@ -20,6 +20,7 @@ const steps = [
   { id: 'class', label: 'Class' },
   { id: 'background', label: 'Background' },
   { id: 'info', label: 'Character Info' }
+  // { id: 'points', label: 'Character Points' },
 ];
 
 export interface CharacterFormData {
@@ -35,6 +36,8 @@ export interface CharacterFormData {
   flaws?: string[];
   race: DefaultRepresentation;
   subrace?: DefaultRepresentation;
+  speed: number;
+  traits?: DefaultRepresentation[];
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
   proficiencies: ChoiceSelection[];
@@ -82,12 +85,16 @@ export function CharacterCreation() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     // ADD loading/disabling/navigate
-
+    const skills = formData.proficiencies?.filter((p) => p.index.startsWith('skill-'));
+    const formattedProficiencies = formData.proficiencies?.filter(
+      (p) => !p.index.startsWith('saving-throw-') && !p.index.startsWith('skill-')
+    );
     const formattedData = pickBy(
       {
         ...formData,
         languages: uniqBy(formData.languages, 'index'),
-        proficiencies: uniqBy(formData.proficiencies, 'index'),
+        proficiencies: uniqBy(formattedProficiencies, 'index'),
+        skills: uniqBy(skills, 'index'),
         equipments: formData.equipments?.reduce((acc: ChoiceSelection[], curr) => {
           const existingIndex = acc.findIndex(({ index }) => index === curr.index);
           if (existingIndex >= 0)
@@ -98,19 +105,16 @@ export function CharacterCreation() {
 
           return [...acc, curr];
         }, [])
-        // abilities: formData.abilities
       },
-      (d) => d
+      (d) => !!(Array.isArray(d) ? d?.length : d)
     );
-
-    console.warn(formattedData);
 
     if (formattedData.name && user?.uid) {
       const path = `users/${user.uid}/characters`;
       const document = doc(database, path, formattedData.name as string);
       setDoc(document, formattedData)
         .then(() => {
-          navigate('/');
+          navigate(`/character/${formData.name}`);
           toast.success('Character created');
         })
         .catch((error) =>

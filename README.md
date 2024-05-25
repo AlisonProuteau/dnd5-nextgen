@@ -7,6 +7,7 @@ TODO List:
 Other:
 
 - Setup webpack
+- Have better id for characters
 
 Sheet:
 
