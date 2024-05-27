@@ -1,7 +1,10 @@
 import { uniqBy } from 'lodash';
 import type { Feature } from '../representations/abilities/feature.representation';
 import type { Spell } from '../representations/abilities/magic.representation';
-import type { Proficiency } from '../representations/campaign/adventure.representation';
+import type {
+  AbilityScore,
+  Proficiency
+} from '../representations/campaign/adventure.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race, Subrace } from '../representations/character/race.representation';
@@ -179,4 +182,11 @@ export async function getResourceList(path: string): Promise<{
       item: { index, name }
     }))
   };
+}
+
+export async function getAllAbilities(): Promise<{
+  count: number;
+  results: AbilityScore[];
+}> {
+  return getAll('All Abilities', '/ability-scores');
 }
