@@ -18,9 +18,15 @@ import { useParams } from 'react-router-dom';
 import { getAllAbilities, getClassInfo, getRaceInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
+import type { Level } from '../../representations/campaign/level.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
-import { getAbilityPoints, randomInteger } from '../CharacterCreation/points_utils';
 import { NumberInput } from '../shared/NumberInput';
+import {
+  getAbilityPoints,
+  getAbilityScoreModifier,
+  getArmorClass,
+  randomInteger
+} from './points_utils';
 
 interface PointsRecord {
   hitPoints: number;
@@ -30,6 +36,8 @@ interface PointsRecord {
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 
+// TODO: Improve display
+// TODO: Go through DB, rules and features (class + race)
 export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>();
   const [points, setPoints] = useState<PointsRecord>({
@@ -49,8 +57,15 @@ export function CharacterPoints() {
   );
 
   const { data: classInfo, isLoading: isClassLoading } = useQuery(
-    ['fetchClassInfo', character?.class.index],
+    ['fetchClassInfoLevel', character?.class.index, 1],
     async () => (character ? await getClassInfo(character.class.index) : undefined),
+    { enabled: !!character }
+  );
+
+  const { data: classInfoLevel } = useQuery(
+    ['fetchClassInfoLevel', character?.class.index, 1],
+    async () =>
+      character ? ((await getClassInfo(character.class.index, 1)) as unknown as Level) : undefined,
     { enabled: !!character }
   );
 
@@ -106,14 +121,69 @@ export function CharacterPoints() {
 
   useEffect(() => {
     const missing = {
-      hit_die: classInfo?.hit_die,
-      saving_throws: classInfo?.saving_throws,
       size: raceInfo?.size,
       size_description: raceInfo?.size_description
     };
 
-    if (!isClassLoading && !isRaceLoading) console.warn('Missing data: ', missing);
+    if (!isClassLoading && !isRaceLoading) console.warn('Missing data: ', missing, classInfoLevel);
   }, [isClassLoading, isRaceLoading]);
+
+  const isValid =
+    points.hitPoints &&
+    points.proficiencyBonus &&
+    abilities?.results.every((ability) => points.scores[ability.index]) &&
+    (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points.scores) <= 27);
+
+  // TODO: Add to DB and test
+  const onSubmit = () => {
+    let formattedAbilities: Record<
+      string,
+      {
+        index: string;
+        name: string;
+        full_name: string;
+        score: number;
+        modifier: number;
+      }
+    > = {};
+    abilities?.results.forEach((ability) => {
+      const raceModifier = character?.abilities.find(
+        (bonusAbility) => bonusAbility.ability_score.index === ability.index
+      );
+      const finalScore = raceModifier
+        ? points.scores[ability.index] + raceModifier.bonus
+        : points.scores[ability.index];
+
+      formattedAbilities = {
+        ...formattedAbilities,
+        [ability.index]: {
+          index: ability.index,
+          name: ability.name,
+          full_name: ability.full_name,
+          score: finalScore,
+          modifier: getAbilityScoreModifier(finalScore)
+        }
+      };
+    });
+
+    const formattedPoints = {
+      hit_die: classInfo?.hit_die,
+      saving_throws: classInfo?.saving_throws,
+      hitPoints: points.hitPoints + formattedAbilities['con'].modifier,
+      armorClass: getArmorClass(
+        formattedAbilities['dex'].modifier,
+        character?.equipments,
+        classInfoLevel?.features,
+        character?.class.index === 'monk'
+          ? formattedAbilities['wis'].modifier
+          : formattedAbilities['con'].modifier
+      ),
+      proficiencyBonus: points.proficiencyBonus,
+      abilities: formattedAbilities
+    };
+
+    if (isValid) console.log(formattedPoints);
+  };
 
   return (
     character && (
@@ -212,6 +282,19 @@ export function CharacterPoints() {
                     ))}
                 </Fragment>
               )}
+
+              <Box marginTop="15px">
+                <Typography paddingLeft="5px">Race Modifiers</Typography>
+                {character.abilities.map((ability, i) => (
+                  <Typography
+                    key={`modifier-${ability.ability_score.index}`}
+                    display="inline"
+                    paddingLeft="5px"
+                  >
+                    {`${i > 0 ? '; ' : ''}${ability.ability_score.name}: +${ability.bonus}`}
+                  </Typography>
+                ))}
+              </Box>
             </Box>
           </Box>
         )}
@@ -244,13 +327,9 @@ export function CharacterPoints() {
           </Box>
         )}
 
-        {/* TODO: Add validation + errors (ex: 27 total point cost) */}
-        {/* TODO: Armor Class: 10 + his or her Dexterity modifier */}
-        {/* TODO: Ability scores: Add race/character modifiers */}
-        {/* TODO: Hit Points: Add constitution modifier */}
-        {/* TODO: If your character wears armor, carries a shield, or both, calculate your AC using the rules in the Equipment section. */}
-        {/* TODO: Calculate ability score modifier (see utils) */}
-        <Button onClick={() => console.log(points)}>Display</Button>
+        <Button disabled={!isValid} onClick={onSubmit}>
+          Save
+        </Button>
       </Container>
     )
   );
