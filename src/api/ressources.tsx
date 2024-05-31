@@ -5,6 +5,7 @@ import type {
   AbilityScore,
   Proficiency
 } from '../representations/campaign/adventure.representation';
+import type { Level } from '../representations/campaign/level.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race, Subrace } from '../representations/character/race.representation';
@@ -33,7 +34,7 @@ export async function getAllClasses(): Promise<{
   return get('All Classes', '/classes', 'all');
 }
 
-export async function getClassInfo(classIndex: string, level?: number): Promise<Classes> {
+export async function getClassInfo(classIndex: string, level?: number): Promise<Classes | Level> {
   return level
     ? get('Class Level Ressources', `/classes/${classIndex}/levels`, `${classIndex}-${level}`)
     : get('Class Ressources', '/classes', classIndex);
@@ -43,7 +44,7 @@ export async function getSubclassInfo(
   classIndex: string,
   subclassIndex: string,
   level?: number
-): Promise<Subclass> {
+): Promise<Subclass | Level> {
   return level
     ? get(
         `Subclass Level Ressources`,

@@ -107,6 +107,8 @@ export function CharacterRaceForm({
         .concat(raceInfo?.ability_bonuses || [])
         .concat(subraceInfo?.ability_bonuses || []),
       speed: subraceInfo?.speed || raceInfo?.speed || 30,
+      size: raceInfo?.size,
+      size_description: raceInfo?.size_description,
       traits: uniqBy([...(raceInfo?.traits || []), ...(subraceInfo?.racial_traits || [])], 'index')
     };
 

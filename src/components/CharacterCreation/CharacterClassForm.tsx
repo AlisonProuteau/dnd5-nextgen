@@ -12,6 +12,7 @@ import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
+import type { Classes } from '../../representations/character/class.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
@@ -39,7 +40,7 @@ export function CharacterClassForm({
     async () => {
       if (!selectedClass?.index) return;
 
-      return await getClassInfo(selectedClass.index);
+      return (await getClassInfo(selectedClass.index)) as Classes;
     },
     { enabled: !!selectedClass?.index }
   );

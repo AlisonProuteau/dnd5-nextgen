@@ -37,6 +37,8 @@ export interface CharacterFormData {
   race: DefaultRepresentation;
   subrace?: DefaultRepresentation;
   speed: number;
+  size?: string;
+  size_description?: string;
   traits?: DefaultRepresentation[];
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
