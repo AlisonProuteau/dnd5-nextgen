@@ -12,8 +12,8 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
-import { useQuery } from 'react-query';
 import { getAllAligmenents, getAllBackgrounds } from '../../api/ressources';
 import type {
   Alignment,
@@ -69,16 +69,16 @@ export function CharacterBackgroundForm({
     flaws: emptyChoice
   };
 
-  const { data: backgrounds } = useQuery(
-    'fetchBackgrounds',
-    async () => (await getAllBackgrounds()).results,
-    { select: (data) => [...data, customBackground] }
-  );
+  const { data: backgrounds } = useQuery({
+    queryKey: ['fetchBackgrounds'],
+    queryFn: async () => (await getAllBackgrounds()).results,
+    select: (data) => [...data, customBackground]
+  });
 
-  const { data: alignments } = useQuery(
-    ['fetchAlignments'],
-    async () => (await getAllAligmenents()).results
-  );
+  const { data: alignments } = useQuery({
+    queryKey: ['fetchAlignments'],
+    queryFn: async () => (await getAllAligmenents()).results
+  });
 
   const isValid = () => {
     return (

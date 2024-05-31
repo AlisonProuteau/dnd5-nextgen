@@ -8,10 +8,10 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useQuery } from 'react-query';
 import { getAllRaces, getRaceInfo, getSubraceInfo } from '../../api/ressources';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
@@ -36,25 +36,25 @@ export function CharacterRaceForm({
   const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
 
-  const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
-  const { data: raceInfo } = useQuery(
-    ['fetchRaceInfo', selectedRace?.index],
-    async () => {
-      if (!selectedRace?.index) return;
+  const { data: races } = useQuery({
+    queryKey: ['fetchRaces'],
+    queryFn: async () => (await getAllRaces()).results
+  });
 
-      return await getRaceInfo(selectedRace.index);
-    },
-    { enabled: !!selectedRace?.index }
-  );
-  const { data: subraceInfo } = useQuery(
-    ['fetchSubraceInfo', selectedRace?.index, selectedSubrace?.index],
-    async () => {
-      if (!selectedRace?.index || !selectedSubrace?.index) return;
+  const { data: raceInfo } = useQuery({
+    queryKey: ['fetchRaceInfo', selectedRace?.index],
+    queryFn: async () => (selectedRace?.index ? await getRaceInfo(selectedRace.index) : null),
+    enabled: !!selectedRace?.index
+  });
 
-      return await getSubraceInfo(selectedRace.index, selectedSubrace.index);
-    },
-    { enabled: !!selectedRace?.index }
-  );
+  const { data: subraceInfo } = useQuery({
+    queryKey: ['fetchSubraceInfo', selectedRace?.index, selectedSubrace?.index],
+    queryFn: async () =>
+      selectedRace?.index && selectedSubrace?.index
+        ? await getSubraceInfo(selectedRace.index, selectedSubrace.index)
+        : null,
+    enabled: !!selectedRace?.index
+  });
 
   useEffect(() => {
     if (raceInfo?.subraces?.length && !selectedSubrace) setselectedSubrace(raceInfo.subraces[0]);

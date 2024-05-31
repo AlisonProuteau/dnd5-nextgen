@@ -19,11 +19,14 @@ export async function getAllRaces(): Promise<{
   return get('All Races', '/races', 'all');
 }
 
-export async function getRaceInfo(raceIndex: string): Promise<Race> {
+export async function getRaceInfo(raceIndex: string): Promise<Race | null> {
   return get('Race info', '/races', raceIndex);
 }
 
-export async function getSubraceInfo(raceIndex: string, subraceIndex: string): Promise<Subrace> {
+export async function getSubraceInfo(
+  raceIndex: string,
+  subraceIndex: string
+): Promise<Subrace | null> {
   return get('Subace info', `/races/${raceIndex}/subraces`, subraceIndex);
 }
 
@@ -34,7 +37,10 @@ export async function getAllClasses(): Promise<{
   return get('All Classes', '/classes', 'all');
 }
 
-export async function getClassInfo(classIndex: string, level?: number): Promise<Classes | Level> {
+export async function getClassInfo(
+  classIndex: string,
+  level?: number
+): Promise<Classes | Level | null> {
   return level
     ? get('Class Level Ressources', `/classes/${classIndex}/levels`, `${classIndex}-${level}`)
     : get('Class Ressources', '/classes', classIndex);
@@ -44,7 +50,7 @@ export async function getSubclassInfo(
   classIndex: string,
   subclassIndex: string,
   level?: number
-): Promise<Subclass | Level> {
+): Promise<Subclass | Level | null> {
   return level
     ? get(
         `Subclass Level Ressources`,

@@ -12,14 +12,14 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useState } from 'react';
-import { useQuery } from 'react-query';
 import { useParams } from 'react-router-dom';
 import { getAllAbilities, getClassInfo, getRaceInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
 import type { Level } from '../../representations/campaign/level.representation';
-import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
+import type { Classes } from '../../representations/character/class.representation';
 import { NumberInput } from '../shared/NumberInput';
 import {
   getAbilityPoints,
@@ -48,37 +48,35 @@ export function CharacterPoints() {
   const user = useAuth();
   const { id } = useParams();
 
-  const { data: character } = useQuery<CharacterFormData | undefined>(
-    ['fetchCharacter', user?.uid, id],
-    async () => {
-      if (user?.uid && id) return await getCharacter(user.uid, id);
-    },
-    { enabled: !!user?.uid && !!id }
-  );
+  const { data: character } = useQuery({
+    queryKey: ['fetchCharacter', user?.uid, id],
+    queryFn: async () => (user?.uid && id ? await getCharacter(user.uid, id) : null),
+    enabled: !!user?.uid && !!id
+  });
 
-  const { data: classInfo, isLoading: isClassLoading } = useQuery(
-    ['fetchClassInfoLevel', character?.class.index, 1],
-    async () => (character ? await getClassInfo(character.class.index) : undefined),
-    { enabled: !!character }
-  );
+  const { data: classInfo, isLoading: isClassLoading } = useQuery({
+    queryKey: ['fetchClassInfo', character?.class.index],
+    queryFn: async () =>
+      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+    enabled: !!character
+  });
+  const { data: classInfoLevel } = useQuery({
+    queryKey: ['fetchClassInfoLevel', character?.class.index, 1],
+    queryFn: async () =>
+      character ? ((await getClassInfo(character.class.index, 1)) as Level | null) : null,
+    enabled: !!character
+  });
 
-  const { data: classInfoLevel } = useQuery(
-    ['fetchClassInfoLevel', character?.class.index, 1],
-    async () =>
-      character ? ((await getClassInfo(character.class.index, 1)) as unknown as Level) : undefined,
-    { enabled: !!character }
-  );
+  const { data: raceInfo, isLoading: isRaceLoading } = useQuery({
+    queryKey: ['fetchRaceInfo', character?.race.index],
+    queryFn: async () => (character ? await getRaceInfo(character.race.index) : null),
+    enabled: !!character && !isClassLoading
+  });
 
-  const { data: raceInfo, isLoading: isRaceLoading } = useQuery(
-    ['fetchRaceInfo', character?.race.index],
-    async () => (character ? await getRaceInfo(character.race.index) : undefined),
-    { enabled: character && !isClassLoading }
-  );
-
-  const { data: abilities, isLoading: isAbilitiesLoading } = useQuery(
-    ['fetchAbilities'],
-    async () => await getAllAbilities()
-  );
+  const { data: abilities, isLoading: isAbilitiesLoading } = useQuery({
+    queryKey: ['fetchAbilities'],
+    queryFn: async () => (await getAllAbilities()).results
+  });
 
   const setHitPoints = () => {
     if (classInfo?.hit_die)
@@ -111,10 +109,9 @@ export function CharacterPoints() {
 
   useEffect(() => {
     if (!isAbilitiesLoading) {
-      if (abilityScoreMethod === 'random')
-        abilities?.results.forEach(({ index }) => setScore(index));
+      if (abilityScoreMethod === 'random') abilities?.forEach(({ index }) => setScore(index));
       else if (abilityScoreMethod === 'point_cost')
-        abilities?.results.forEach(({ index }) => setScore(index, 8));
+        abilities?.forEach(({ index }) => setScore(index, 8));
       else setPoints((current) => ({ ...current, scores: {} }));
     }
   }, [isAbilitiesLoading, abilityScoreMethod]);
@@ -131,7 +128,7 @@ export function CharacterPoints() {
   const isValid =
     points.hitPoints &&
     points.proficiencyBonus &&
-    abilities?.results.every((ability) => points.scores[ability.index]) &&
+    abilities?.every((ability) => points.scores[ability.index]) &&
     (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points.scores) <= 27);
 
   // TODO: Add to DB and test
@@ -146,7 +143,7 @@ export function CharacterPoints() {
         modifier: number;
       }
     > = {};
-    abilities?.results.forEach((ability) => {
+    abilities?.forEach((ability) => {
       const raceModifier = character?.abilities.find(
         (bonusAbility) => bonusAbility.ability_score.index === ability.index
       );
@@ -190,7 +187,7 @@ export function CharacterPoints() {
       <Container sx={{ overflowX: 'clip' }}>
         <Box>Hello {character.name}</Box>
 
-        {abilities?.results && (
+        {abilities && (
           <Box>
             <Divider
               component="div"
@@ -219,7 +216,7 @@ export function CharacterPoints() {
                           label={`Points: ${score}`}
                           onChange={(e) => setScore(e.target.value as string, score)}
                         >
-                          {abilities.results.map((ability) => (
+                          {abilities.map((ability) => (
                             <MenuItem
                               key={ability.index}
                               value={ability.index}
@@ -233,7 +230,7 @@ export function CharacterPoints() {
                     ))}
                   {abilityScoreMethod === 'point_cost' && (
                     <Fragment>
-                      {abilities.results.map((ability) => (
+                      {abilities.map((ability) => (
                         <Box key={`ability-${ability.index}`} textAlign="center">
                           <NumberInput
                             id={`ability-${ability.index}`}
@@ -259,7 +256,7 @@ export function CharacterPoints() {
                     </Fragment>
                   )}
                   {abilityScoreMethod === 'random' &&
-                    abilities.results.map((ability) => (
+                    abilities.map((ability) => (
                       <Box
                         key={`ability-${ability.index}`}
                         display="flex"

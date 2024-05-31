@@ -7,8 +7,8 @@ import {
   Container,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useQuery } from 'react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
@@ -19,15 +19,15 @@ export function CharacterCard() {
   const user = useAuth();
   const navigate = useNavigate();
 
-  const { data: character, isLoading: isCharacterLoading } = useQuery<
+  const { data: character, isFetching: isCharacterLoading } = useQuery<
     (CharacterFormData & { hitPoints?: number }) | undefined
-  >(
-    ['fetchCharacter', user?.uid, id],
-    async () => {
+  >({
+    queryKey: ['fetchCharacter', user?.uid, id],
+    queryFn: async () => {
       if (user?.uid && id) return await getCharacter(user.uid, id);
     },
-    { enabled: !!user?.uid && !!id }
-  );
+    enabled: !!user?.uid && !!id
+  });
 
   useEffect(() => {
     if (!isCharacterLoading && !character?.hitPoints) navigate('points', { relative: 'path' });

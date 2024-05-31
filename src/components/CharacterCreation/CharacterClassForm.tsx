@@ -8,9 +8,9 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useQuery } from 'react-query';
 import { getAllClasses, getClassInfo } from '../../api/ressources';
 import type { Classes } from '../../representations/character/class.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
@@ -34,16 +34,17 @@ export function CharacterClassForm({
   const [selectedProficiencies, setSelectedProficiencies] = useState<ChoiceObjectType[]>([]);
   const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
 
-  const { data: classes } = useQuery('fetchClasses', async () => (await getAllClasses()).results);
-  const { data: classInfo } = useQuery(
-    ['fetchClassInfo', selectedClass?.index],
-    async () => {
-      if (!selectedClass?.index) return;
+  const { data: classes } = useQuery({
+    queryKey: ['fetchClasses'],
+    queryFn: async () => (await getAllClasses()).results
+  });
 
-      return (await getClassInfo(selectedClass.index)) as Classes;
-    },
-    { enabled: !!selectedClass?.index }
-  );
+  const { data: classInfo } = useQuery({
+    queryKey: ['fetchClassInfo', selectedClass?.index],
+    queryFn: async () =>
+      selectedClass?.index ? ((await getClassInfo(selectedClass.index)) as Classes | null) : null,
+    enabled: !!selectedClass?.index
+  });
 
   useEffect(() => {
     if (classInfo?.subclasses?.length && !selectedSubclass)

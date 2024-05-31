@@ -8,9 +8,9 @@ import {
   FormLabel,
   Typography
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { isArray } from 'lodash';
 import { useState, type ReactNode } from 'react';
-import { useQueryClient } from 'react-query';
 import { getResourceList } from '../../api/ressources';
 import type { Alignment } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
@@ -143,10 +143,10 @@ export function Choices({
   };
 
   const fetchResourceList = (id: string): Promise<Option[]> =>
-    queryClient.fetchQuery(
-      ['fetchResourceList', id],
-      async () => (await getResourceList(id)).results
-    );
+    queryClient.fetchQuery({
+      queryKey: ['fetchResourceList', id],
+      queryFn: async () => (await getResourceList(id)).results
+    });
 
   const genericCheckbox = (
     option:
