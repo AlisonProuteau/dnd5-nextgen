@@ -9,11 +9,6 @@ Other:
 - Setup webpack
 - Have better id for characters
 
-Sheet:
-
-- Improve display
-- Go through DB, rules and features (class + race) for more exceptions
-
 Spells:
 
 - Choosing your spells (C level, spellattack, spell DC)?

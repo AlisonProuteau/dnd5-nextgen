@@ -1,13 +1,12 @@
-import { CasinoOutlined } from '@mui/icons-material';
+import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
   Box,
-  Button,
-  ButtonGroup,
+  CircularProgress,
   Container,
   Divider,
+  Fab,
   FormControl,
   IconButton,
-  InputLabel,
   MenuItem,
   Select,
   Typography
@@ -23,6 +22,7 @@ import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
 import type { Classes } from '../../representations/character/class.representation';
 import { NumberInput } from '../shared/NumberInput';
+import { SplitButton } from '../shared/SplitButton';
 import {
   getAbilityPoints,
   getAbilityScoreModifier,
@@ -30,22 +30,12 @@ import {
   randomInteger
 } from './points_utils';
 
-interface PointsRecord {
-  hitPoints: number;
-  scores: Record<string, number>;
-}
-
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 
-// TODO: Improve display
-// TODO: Go through DB, rules and features (class + race)
-// Fix: Level one only
+// OK: Level one only
 export function CharacterPoints() {
-  const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>();
-  const [points, setPoints] = useState<PointsRecord>({
-    hitPoints: 0,
-    scores: {}
-  });
+  const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
+  const [points, setPoints] = useState<Record<string, number>>({});
   const user = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -57,7 +47,7 @@ export function CharacterPoints() {
     enabled: !!user?.uid && !!id
   });
 
-  const { data: classInfo, isLoading: isClassLoading } = useQuery({
+  const { data: classInfo } = useQuery({
     queryKey: ['fetchClassInfo', character?.class.index],
     queryFn: async () =>
       character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
@@ -68,11 +58,6 @@ export function CharacterPoints() {
     queryKey: ['fetchAbilities'],
     queryFn: async () => (await getAllAbilities()).results
   });
-
-  const setHitPoints = () => {
-    if (classInfo?.hit_die)
-      setPoints((current) => ({ ...current, hitPoints: randomInteger(1, classInfo.hit_die) }));
-  };
 
   const setScore = (index: string, val?: number) => {
     let res = val;
@@ -90,27 +75,22 @@ export function CharacterPoints() {
 
     setPoints((current) => ({
       ...current,
-      scores: { ...current.scores, [index]: res || 0 }
+      [index]: res || 0
     }));
   };
-
-  useEffect(() => {
-    if (!isClassLoading) setHitPoints();
-  }, [isClassLoading]);
 
   useEffect(() => {
     if (!isAbilitiesLoading) {
       if (abilityScoreMethod === 'random') abilities?.forEach(({ index }) => setScore(index));
       else if (abilityScoreMethod === 'point_cost')
         abilities?.forEach(({ index }) => setScore(index, 8));
-      else setPoints((current) => ({ ...current, scores: {} }));
+      else setPoints(() => ({}));
     }
   }, [isAbilitiesLoading, abilityScoreMethod]);
 
   const isValid =
-    points.hitPoints &&
-    abilities?.every((ability) => points.scores[ability.index]) &&
-    (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points.scores) <= 27);
+    abilities?.every((ability) => points[ability.index]) &&
+    (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points) <= 27);
 
   const onSubmit = () => {
     let formattedAbilities: Record<
@@ -128,8 +108,8 @@ export function CharacterPoints() {
         (bonusAbility) => bonusAbility.ability_score.index === ability.index
       );
       const finalScore = raceModifier
-        ? points.scores[ability.index] + raceModifier.bonus
-        : points.scores[ability.index];
+        ? points[ability.index] + raceModifier.bonus
+        : points[ability.index];
 
       formattedAbilities = {
         ...formattedAbilities,
@@ -146,7 +126,6 @@ export function CharacterPoints() {
     const formattedPoints = {
       hit_die: classInfo?.hit_die,
       saving_throws: classInfo?.saving_throws,
-      hitPoints: points.hitPoints + formattedAbilities['con'].modifier,
       armorClass: getArmorClass(
         formattedAbilities['dex'].modifier,
         character?.equipments,
@@ -174,157 +153,124 @@ export function CharacterPoints() {
     }
   };
 
-  return (
-    character && (
-      <Container sx={{ overflowX: 'clip' }}>
-        <Box>Hello {character.name}</Box>
+  return character ? (
+    <Container sx={{ overflowX: 'clip', paddingTop: '15px' }}>
+      <Divider component="div" role="presentation" sx={{ paddingBottom: '30px' }} variant="middle">
+        <Typography>Ability Scores</Typography>
+      </Divider>
 
-        {abilities && (
-          <Box>
-            <Divider
-              component="div"
-              role="presentation"
-              sx={{ paddingTop: '15px' }}
-              variant="middle"
-            >
-              <Typography>Ability Score</Typography>
-            </Divider>
+      <Box display="flex" flexDirection="column" gap="15px" alignItems="center">
+        <Box display="flex" gap="5px">
+          <Typography variant="subtitle2">Race Modifiers: </Typography>
+          {character.abilities?.map((ability, i) => (
+            <Typography key={`modifier-${ability.ability_score.index}`} variant="subtitle2">
+              {`${i > 0 ? '; ' : ''}${ability.ability_score.name}: +${ability.bonus}`}
+            </Typography>
+          ))}
+        </Box>
 
-            <Box display="flex" flexDirection="column" gap="15px" alignItems="center">
-              <ButtonGroup variant="contained">
-                <Button onClick={() => setAbilityScoreMethod('set')}>Simple</Button>
-                <Button onClick={() => setAbilityScoreMethod('point_cost')}>Point Buy</Button>
-                <Button onClick={() => setAbilityScoreMethod('random')}>Custom</Button>
-              </ButtonGroup>
+        <SplitButton
+          variant="outlined"
+          options={[
+            { value: 'set', text: 'Simple' },
+            { value: 'point_cost', text: 'Point Buy' },
+            { value: 'random', text: 'Custom' }
+          ]}
+          onClick={(value) => setAbilityScoreMethod(value as AbilityScoreMethod)}
+        />
 
-              {abilityScoreMethod && (
-                <Fragment>
-                  {abilityScoreMethod === 'set' &&
-                    [15, 14, 13, 12, 10, 8].map((score) => (
-                      <FormControl key={`score-${score}`} sx={{ display: 'flex', width: 150 }}>
-                        <InputLabel htmlFor="ability">Points: {score}</InputLabel>
-                        <Select
-                          id={`ability-${score}`}
-                          label={`Points: ${score}`}
-                          onChange={(e) => setScore(e.target.value as string, score)}
-                        >
-                          {abilities.map((ability) => (
-                            <MenuItem
-                              key={ability.index}
-                              value={ability.index}
-                              disabled={!!points.scores[ability.index]}
-                            >
-                              {ability.full_name}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    ))}
-                  {abilityScoreMethod === 'point_cost' && (
-                    <Fragment>
+        {abilities?.length ? (
+          <Fragment>
+            {abilityScoreMethod === 'set' &&
+              [15, 14, 13, 12, 10, 8].map((score) => (
+                <Box display="flex" key={`score-${score}`} alignItems="center">
+                  <NumberInput id={`ability-${score}`} value={score} readOnly />
+                  <FormControl sx={{ display: 'flex', width: 135 }}>
+                    <Select
+                      id={`ability-${score}`}
+                      onChange={(e) => setScore(e.target.value as string, score)}
+                      sx={{ height: '42px' }}
+                    >
                       {abilities.map((ability) => (
-                        <Box key={`ability-${ability.index}`} textAlign="center">
-                          <NumberInput
-                            id={`ability-${ability.index}`}
-                            label={ability.full_name}
-                            min={8}
-                            max={15}
-                            addDisabled={getAbilityPoints(points.scores) >= 27}
-                            value={points.scores[ability.index] || 8}
-                            onChange={(_, value) => setScore(ability.index, value)}
-                          />
-                        </Box>
+                        <MenuItem
+                          key={ability.index}
+                          value={ability.index}
+                          disabled={!!points[ability.index]}
+                        >
+                          {ability.full_name}
+                        </MenuItem>
                       ))}
-                      <Typography marginTop="15px">
-                        Remaining Points:
-                        <Typography
-                          color={getAbilityPoints(points.scores) > 27 ? 'red' : undefined}
-                          display="inline"
-                          paddingLeft="5px"
-                        >
-                          {27 - getAbilityPoints(points.scores)}
-                        </Typography>
-                      </Typography>
-                    </Fragment>
-                  )}
-                  {abilityScoreMethod === 'random' &&
-                    abilities.map((ability) => (
-                      <Box
-                        key={`ability-${ability.index}`}
-                        display="flex"
-                        justifyContent="center"
-                        paddingLeft="50px"
-                      >
-                        <NumberInput
-                          id={`ability-${ability.index}`}
-                          label={ability.full_name}
-                          value={points.scores[ability.index] || 0}
-                          onChange={(_, value) => setScore(ability.index, value)}
-                        />
-                        <IconButton
-                          sx={{ paddingTop: '29px' }}
-                          onClick={() => setScore(ability.index)}
-                        >
-                          <CasinoOutlined fontSize="large" />
-                        </IconButton>
-                      </Box>
-                    ))}
-                </Fragment>
-              )}
+                    </Select>
+                  </FormControl>
+                </Box>
+              ))}
+            {abilityScoreMethod === 'point_cost' && (
+              <Fragment>
+                {abilities.map((ability) => (
+                  <Box key={`ability-${ability.index}`} textAlign="center">
+                    <NumberInput
+                      id={`ability-${ability.index}`}
+                      label={ability.full_name}
+                      min={8}
+                      max={15}
+                      addDisabled={getAbilityPoints(points) >= 27}
+                      value={points[ability.index] || 8}
+                      onChange={(_, value) => setScore(ability.index, value)}
+                    />
+                  </Box>
+                ))}
 
-              <Box marginTop="15px">
-                <Typography paddingLeft="5px">Race Modifiers</Typography>
-                {character.abilities?.map((ability, i) => (
+                <Box display="flex">
+                  <Typography>Remaining Points:</Typography>
                   <Typography
-                    key={`modifier-${ability.ability_score.index}`}
+                    color={getAbilityPoints(points) > 27 ? 'red' : undefined}
                     display="inline"
                     paddingLeft="5px"
                   >
-                    {`${i > 0 ? '; ' : ''}${ability.ability_score.name}: +${ability.bonus}`}
+                    {27 - getAbilityPoints(points)}
                   </Typography>
-                ))}
-              </Box>
-            </Box>
-          </Box>
+                </Box>
+              </Fragment>
+            )}
+            {abilityScoreMethod === 'random' &&
+              abilities.map((ability) => (
+                <Box
+                  key={`ability-${ability.index}`}
+                  display="flex"
+                  justifyContent="center"
+                  marginRight="-50px"
+                >
+                  <NumberInput
+                    id={`ability-${ability.index}`}
+                    label={ability.full_name}
+                    value={points[ability.index] || 0}
+                    onChange={(_, value) => setScore(ability.index, value)}
+                  />
+                  <IconButton sx={{ paddingTop: '29px' }} onClick={() => setScore(ability.index)}>
+                    <CasinoOutlined fontSize="large" />
+                  </IconButton>
+                </Box>
+              ))}
+          </Fragment>
+        ) : (
+          <CircularProgress size={24} />
         )}
 
-        {classInfo?.hit_die && (
-          <Box>
-            <Divider
-              component="div"
-              role="presentation"
-              sx={{ paddingTop: '15px' }}
-              variant="middle"
-            >
-              <Typography>Hit Points</Typography>
-            </Divider>
-
-            <Box display="flex" justifyContent="center" paddingLeft="50px">
-              <NumberInput
-                id="hit-points"
-                min={1}
-                max={
-                  classInfo?.hit_die +
-                  (character?.features?.some(({ index }) => index === 'draconic-resilience')
-                    ? 1
-                    : 0)
-                }
-                value={points.hitPoints}
-                onChange={(_, value) =>
-                  setPoints((current) => ({ ...current, hitPoints: value || 1 }))
-                }
-              />
-              <IconButton onClick={setHitPoints}>
-                <CasinoOutlined fontSize="large" />
-              </IconButton>
-            </Box>
-          </Box>
-        )}
-
-        <Button disabled={!isValid} onClick={onSubmit}>
-          Save
-        </Button>
-      </Container>
-    )
+        <Fab
+          size="small"
+          sx={{
+            position: 'fixed',
+            bottom: 16,
+            right: 16
+          }}
+          disabled={!isValid}
+          onClick={onSubmit}
+        >
+          <SaveAltRounded />
+        </Fab>
+      </Box>
+    </Container>
+  ) : (
+    <CircularProgress size={24} />
   );
 }

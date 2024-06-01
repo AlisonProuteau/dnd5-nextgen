@@ -21,8 +21,14 @@ export const NumberInput = React.forwardRef(function CustomNumberInput(
   ref: React.ForwardedRef<HTMLDivElement>
 ) {
   return (
-    <Box display="flex" flexDirection="column" alignItems="center" marginY="5px">
-      <InputLabel sx={{ marginBottom: '-3px' }} htmlFor={id}>
+    <Box
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      marginY="5px"
+      sx={props.readOnly ? { ' button': { display: 'none' } } : {}}
+    >
+      <InputLabel sx={{ marginBottom: '-2px' }} htmlFor={id}>
         {label}
       </InputLabel>
       <BaseNumberInput
