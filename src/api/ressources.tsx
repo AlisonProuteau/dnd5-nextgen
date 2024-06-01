@@ -1,10 +1,14 @@
 import { uniqBy } from 'lodash';
 import type { Feature } from '../representations/abilities/feature.representation';
 import type { Spell } from '../representations/abilities/magic.representation';
-import type { Proficiency } from '../representations/campaign/adventure.representation';
+import type {
+  AbilityScore,
+  Proficiency
+} from '../representations/campaign/adventure.representation';
+import type { Level } from '../representations/campaign/level.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
-import type { Race } from '../representations/character/race.representation';
+import type { Race, Subrace } from '../representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '../representations/common.representation';
 import { get, getAll, type QueryObject } from './utils';
 
@@ -15,11 +19,14 @@ export async function getAllRaces(): Promise<{
   return get('All Races', '/races', 'all');
 }
 
-export async function getRaceInfo(raceIndex: string): Promise<Race> {
+export async function getRaceInfo(raceIndex: string): Promise<Race | null> {
   return get('Race info', '/races', raceIndex);
 }
 
-export async function getSubraceInfo(raceIndex: string, subraceIndex: string): Promise<Race> {
+export async function getSubraceInfo(
+  raceIndex: string,
+  subraceIndex: string
+): Promise<Subrace | null> {
   return get('Subace info', `/races/${raceIndex}/subraces`, subraceIndex);
 }
 
@@ -30,7 +37,10 @@ export async function getAllClasses(): Promise<{
   return get('All Classes', '/classes', 'all');
 }
 
-export async function getClassInfo(classIndex: string, level?: number): Promise<Classes> {
+export async function getClassInfo(
+  classIndex: string,
+  level?: number
+): Promise<Classes | Level | null> {
   return level
     ? get('Class Level Ressources', `/classes/${classIndex}/levels`, `${classIndex}-${level}`)
     : get('Class Ressources', '/classes', classIndex);
@@ -40,7 +50,7 @@ export async function getSubclassInfo(
   classIndex: string,
   subclassIndex: string,
   level?: number
-): Promise<Subclass> {
+): Promise<Subclass | Level | null> {
   return level
     ? get(
         `Subclass Level Ressources`,
@@ -115,35 +125,8 @@ export async function getSpellsForClass(
   return { count: allSpells.length, results: allSpells };
 }
 
-export async function getFeaturesForClass(
-  classIndex: string,
-  subclassIndex?: string,
-  level?: number
-): Promise<{ count: number; results: Feature[] }> {
-  const subclassFeatures: Feature[] = subclassIndex
-    ? (
-        await getAll(
-          'Features for subclass',
-          '/features',
-          getQueryForIndexAndLevel('subclass.index', subclassIndex, level, false)
-        )
-      ).results
-    : [];
-
-  const allFeatures = uniqBy(
-    (
-      (
-        await getAll(
-          'Features for class',
-          '/features',
-          getQueryForIndexAndLevel('class.index', classIndex, level, false)
-        )
-      ).results as Feature[]
-    ).concat(subclassFeatures),
-    'index'
-  );
-
-  return { count: allFeatures.length, results: allFeatures };
+export async function getFeature(index: string): Promise<Feature | null> {
+  return get('Feature', '/features', index);
 }
 
 export async function getProficiencies(): Promise<{
@@ -179,4 +162,11 @@ export async function getResourceList(path: string): Promise<{
       item: { index, name }
     }))
   };
+}
+
+export async function getAllAbilities(): Promise<{
+  count: number;
+  results: AbilityScore[];
+}> {
+  return getAll('All Abilities', '/ability-scores');
 }

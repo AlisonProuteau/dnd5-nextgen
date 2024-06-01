@@ -7,8 +7,8 @@ import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import { Fragment } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { signOut } from '../api/users';
-import { useAuth } from '../providers/AuthProvider';
+import { signOut } from '../../api/users';
+import { useAuth } from '../../providers/AuthProvider';
 
 export function Header() {
   const navigate = useNavigate();

@@ -1,11 +1,18 @@
+import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import type { CharacterFormData } from '../components/CharacterCreation/CharacterCreation';
-import { createUserInFirebase, signInFirebase, signOutInFirebase } from '../firebase';
+import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
 import { get, getAll } from './utils';
 
 export const createUser = (email: string, password: string) =>
   createUserInFirebase(email, password)
-    .then((userCredential) => userCredential.user)
+    .then(async (userCredential) => {
+      setDoc(doc(database, 'users', userCredential.user.uid), {
+        identifier: userCredential.user.email
+      });
+
+      return userCredential.user;
+    })
     .catch((error) => {
       toast.error(
         `Something went wrong

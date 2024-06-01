@@ -1,21 +1,17 @@
 https://5e-bits.github.io/docs/api
+https://kanbanflow.com/board/2FkZc7Y
+https://www.dndbeyond.com/sources/basic-rules
 
 TODO List:
 
 Other:
 
 - Setup webpack
+- Have better id for characters
 
-Sheet:
+Spells:
 
-- Calculate your ability scores (custom, simple, point buy, roll)? + bonuses
-- Calculate your hit points with modifiers
-- Calculate your armor class
-- Figuring out your proficiency modifier
-
-- Calculate your skill points
 - Choosing your spells (C level, spellattack, spell DC)?
-- Choosing your feats
 
 Tests:
 
@@ -26,7 +22,6 @@ Tests:
 To figure out:
 
 - Class archetype?
-- More race info?
 
 Stretch goals:
 

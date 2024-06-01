@@ -30,7 +30,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "react-query": "^3.39.3",
+    "@tanstack/react-query": "^5.40.0",
     "react-router-dom": "^6.21.3",
     "typescript": "^5.3.3",
     "web-vitals": "^3.5.2"

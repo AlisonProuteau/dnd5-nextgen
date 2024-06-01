@@ -8,9 +8,10 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useQuery } from 'react-query';
 import { getAllRaces, getRaceInfo, getSubraceInfo } from '../../api/ressources';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
@@ -35,25 +36,25 @@ export function CharacterRaceForm({
   const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
 
-  const { data: races } = useQuery('fetchRaces', async () => (await getAllRaces()).results);
-  const { data: raceInfo } = useQuery(
-    ['fetchRaceInfo', selectedRace?.index],
-    async () => {
-      if (!selectedRace?.index) return;
+  const { data: races } = useQuery({
+    queryKey: ['fetchRaces'],
+    queryFn: async () => (await getAllRaces()).results
+  });
 
-      return await getRaceInfo(selectedRace.index);
-    },
-    { enabled: !!selectedRace?.index }
-  );
-  const { data: subraceInfo } = useQuery(
-    ['fetchSubraceInfo', selectedRace?.index, selectedSubrace?.index],
-    async () => {
-      if (!selectedRace?.index || !selectedSubrace?.index) return;
+  const { data: raceInfo } = useQuery({
+    queryKey: ['fetchRaceInfo', selectedRace?.index],
+    queryFn: async () => (selectedRace?.index ? await getRaceInfo(selectedRace.index) : null),
+    enabled: !!selectedRace?.index
+  });
 
-      return await getSubraceInfo(selectedRace.index, selectedSubrace.index);
-    },
-    { enabled: !!selectedRace?.index }
-  );
+  const { data: subraceInfo } = useQuery({
+    queryKey: ['fetchSubraceInfo', selectedRace?.index, selectedSubrace?.index],
+    queryFn: async () =>
+      selectedRace?.index && selectedSubrace?.index
+        ? await getSubraceInfo(selectedRace.index, selectedSubrace.index)
+        : null,
+    enabled: !!selectedRace?.index
+  });
 
   useEffect(() => {
     if (raceInfo?.subraces?.length && !selectedSubrace) setselectedSubrace(raceInfo.subraces[0]);
@@ -84,14 +85,10 @@ export function CharacterRaceForm({
   const isValid = () => {
     return (
       selectedRace?.index &&
-      (raceInfo?.starting_proficiency_options?.choose || 0) +
-        (subraceInfo?.starting_proficiency_options?.choose || 0) >=
-        selectedProficiencies.length &&
+      (raceInfo?.starting_proficiency_options?.choose || 0) >= selectedProficiencies.length &&
       (raceInfo?.language_options?.choose || 0) + (subraceInfo?.language_options?.choose || 0) >=
         selectedLanguages.length &&
-      (raceInfo?.ability_bonus_options?.choose || 0) +
-        (subraceInfo?.ability_bonus_options?.choose || 0) >=
-        selectedAbilities.length
+      (raceInfo?.ability_bonus_options?.choose || 0) >= selectedAbilities.length
     );
   };
 
@@ -104,12 +101,15 @@ export function CharacterRaceForm({
         .concat(proficiencies.filter(({ type }) => type !== 'race')),
       languages: mapDataForForm(selectedLanguages, 'race')
         .concat(mapDataForForm(raceInfo?.languages || [], 'race'))
-        .concat(mapDataForForm(subraceInfo?.languages || [], 'race'))
         .concat(languages.filter(({ type }) => type !== 'race')),
       abilities: selectedAbilities
         .map(({ bonus, ability_score }) => ({ bonus, ability_score }))
         .concat(raceInfo?.ability_bonuses || [])
-        .concat(subraceInfo?.ability_bonuses || [])
+        .concat(subraceInfo?.ability_bonuses || []),
+      speed: subraceInfo?.speed || raceInfo?.speed || 30,
+      size: raceInfo?.size,
+      size_description: raceInfo?.size_description,
+      traits: uniqBy([...(raceInfo?.traits || []), ...(subraceInfo?.racial_traits || [])], 'index')
     };
 
     selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
@@ -171,35 +171,23 @@ export function CharacterRaceForm({
         </FormControl>
       )}
 
-      {selectedRace &&
-        (raceInfo?.starting_proficiency_options || subraceInfo?.starting_proficiency_options) && (
-          <Fragment>
-            <Divider
-              component="div"
-              role="presentation"
-              sx={{ paddingTop: '15px' }}
-              variant="middle"
-            >
-              <Typography>
-                Choose proficiencies (
-                {(raceInfo?.starting_proficiency_options?.choose || 0) +
-                  (subraceInfo?.starting_proficiency_options?.choose || 0)}
-                )
-              </Typography>
-            </Divider>
-            <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
-              <Choices
-                choices={[
-                  raceInfo?.starting_proficiency_options,
-                  subraceInfo?.starting_proficiency_options
-                ]}
-                inherited={proficiencies.filter(({ type }) => type !== 'race')}
-                selected={selectedProficiencies}
-                setSelected={setSelectedProficiencies}
-              />
-            </Box>
-          </Fragment>
-        )}
+      {selectedRace && raceInfo?.starting_proficiency_options && (
+        <Fragment>
+          <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
+            <Typography>
+              Choose proficiencies {raceInfo?.starting_proficiency_options?.choose || 0}
+            </Typography>
+          </Divider>
+          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+            <Choices
+              choices={[raceInfo?.starting_proficiency_options]}
+              inherited={proficiencies.filter(({ type }) => type !== 'race')}
+              selected={selectedProficiencies}
+              setSelected={setSelectedProficiencies}
+            />
+          </Box>
+        </Fragment>
+      )}
 
       {selectedRace && (raceInfo?.language_options || subraceInfo?.language_options) && (
         <Fragment>
@@ -222,19 +210,16 @@ export function CharacterRaceForm({
         </Fragment>
       )}
 
-      {selectedRace && (raceInfo?.ability_bonus_options || subraceInfo?.ability_bonus_options) && (
+      {selectedRace && raceInfo?.ability_bonus_options && (
         <Fragment>
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>
-              Choose Bonus Abilities (
-              {(raceInfo?.ability_bonus_options?.choose || 0) +
-                (subraceInfo?.ability_bonus_options?.choose || 0)}
-              )
+              Choose Bonus Abilities {raceInfo?.ability_bonus_options?.choose || 0}
             </Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
             <Choices
-              choices={[raceInfo?.ability_bonus_options, subraceInfo?.ability_bonus_options]}
+              choices={[raceInfo?.ability_bonus_options]}
               selected={selectedAbilities}
               setSelected={setSelectedAbilities}
             />
