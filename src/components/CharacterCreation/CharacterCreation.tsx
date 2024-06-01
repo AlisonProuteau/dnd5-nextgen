@@ -46,6 +46,11 @@ export interface CharacterFormData {
   equipments: ChoiceSelection[];
   languages: ChoiceSelection[];
   abilities: RaceAbilityBonus[];
+  features?: (DefaultRepresentation & {
+    subfeatures?: DefaultRepresentation[];
+    expertises?: DefaultRepresentation[];
+  })[];
+  proficiencyBonus: number;
 }
 
 export function CharacterCreation() {

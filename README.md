@@ -11,11 +11,8 @@ Other:
 
 Sheet:
 
-- Calculate your ability scores (custom, simple, point buy, roll)? + bonuses
-- Figure out your proficiency modifier
-- Calculate your skill points
-- Calculate your armor class
-- Calculate your hit points with modifiers
+- Improve display
+- Go through DB, rules and features (class + race) for more exceptions
 
 Spells:
 
@@ -30,8 +27,6 @@ Tests:
 To figure out:
 
 - Class archetype?
-- More race info?
-- Choosing your feats?
 
 Stretch goals:
 

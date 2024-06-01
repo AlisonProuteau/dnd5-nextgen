@@ -125,35 +125,8 @@ export async function getSpellsForClass(
   return { count: allSpells.length, results: allSpells };
 }
 
-export async function getFeaturesForClass(
-  classIndex: string,
-  subclassIndex?: string,
-  level?: number
-): Promise<{ count: number; results: Feature[] }> {
-  const subclassFeatures: Feature[] = subclassIndex
-    ? (
-        await getAll(
-          'Features for subclass',
-          '/features',
-          getQueryForIndexAndLevel('subclass.index', subclassIndex, level, false)
-        )
-      ).results
-    : [];
-
-  const allFeatures = uniqBy(
-    (
-      (
-        await getAll(
-          'Features for class',
-          '/features',
-          getQueryForIndexAndLevel('class.index', classIndex, level, false)
-        )
-      ).results as Feature[]
-    ).concat(subclassFeatures),
-    'index'
-  );
-
-  return { count: allFeatures.length, results: allFeatures };
+export async function getFeature(index: string): Promise<Feature | null> {
+  return get('Feature', '/features', index);
 }
 
 export async function getProficiencies(): Promise<{

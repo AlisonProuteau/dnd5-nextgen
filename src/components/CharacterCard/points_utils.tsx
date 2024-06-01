@@ -52,10 +52,12 @@ export const getAbilityPoints = (scores: Record<string, number>) =>
 export const getArmorClass = (
   dexModifier: number,
   equipment?: ChoiceSelection[],
-  features?: DefaultRepresentation[],
+  features?: (DefaultRepresentation & {
+    subfeatures?: DefaultRepresentation[];
+    expertises?: DefaultRepresentation[];
+  })[],
   additionnalModifier?: number
 ) => {
-  console.log(features);
   let ac = 10 + dexModifier;
 
   if (equipment?.length) {
@@ -77,9 +79,17 @@ export const getArmorClass = (
       ac = 12 + dexModifier;
     else if (mappedEquipment.includes('padded-armor') || mappedEquipment.includes('leather-armor'))
       ac = 11 + dexModifier;
-    else if (features?.some((feature) => feature.index.includes('unarmored-defense')))
+    else if (
+      features
+        ?.flatMap((f) => [f.index, ...(f.subfeatures?.map(({ index }) => index) || [])])
+        ?.some((index) => index.includes('unarmored-defense'))
+    )
       ac = ac + (additionnalModifier || 0);
-    else if (features?.some((feature) => feature.index === 'draconic-resilience'))
+    else if (
+      features
+        ?.flatMap((f) => [f.index, ...(f.subfeatures?.map(({ index }) => index) || [])])
+        ?.some((index) => index.includes('draconic-resilience'))
+    )
       ac = 13 + dexModifier;
 
     if (mappedEquipment.includes('shield')) ac = ac + 2;

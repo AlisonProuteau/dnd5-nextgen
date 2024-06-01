@@ -12,13 +12,15 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Fragment, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { getAllAbilities, getClassInfo, getRaceInfo } from '../../api/ressources';
+import toast from 'react-hot-toast';
+import { useNavigate, useParams } from 'react-router-dom';
+import { getAllAbilities, getClassInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
+import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
-import type { Level } from '../../representations/campaign/level.representation';
 import type { Classes } from '../../representations/character/class.representation';
 import { NumberInput } from '../shared/NumberInput';
 import {
@@ -30,7 +32,6 @@ import {
 
 interface PointsRecord {
   hitPoints: number;
-  proficiencyBonus: number;
   scores: Record<string, number>;
 }
 
@@ -38,15 +39,17 @@ type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 
 // TODO: Improve display
 // TODO: Go through DB, rules and features (class + race)
+// Fix: Level one only
 export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>();
   const [points, setPoints] = useState<PointsRecord>({
     hitPoints: 0,
-    proficiencyBonus: 2,
     scores: {}
   });
   const user = useAuth();
+  const navigate = useNavigate();
   const { id } = useParams();
+  const queryClient = useQueryClient();
 
   const { data: character } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -59,18 +62,6 @@ export function CharacterPoints() {
     queryFn: async () =>
       character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
     enabled: !!character
-  });
-  const { data: classInfoLevel } = useQuery({
-    queryKey: ['fetchClassInfoLevel', character?.class.index, 1],
-    queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index, 1)) as Level | null) : null,
-    enabled: !!character
-  });
-
-  const { data: raceInfo, isLoading: isRaceLoading } = useQuery({
-    queryKey: ['fetchRaceInfo', character?.race.index],
-    queryFn: async () => (character ? await getRaceInfo(character.race.index) : null),
-    enabled: !!character && !isClassLoading
   });
 
   const { data: abilities, isLoading: isAbilitiesLoading } = useQuery({
@@ -116,22 +107,11 @@ export function CharacterPoints() {
     }
   }, [isAbilitiesLoading, abilityScoreMethod]);
 
-  useEffect(() => {
-    const missing = {
-      size: raceInfo?.size,
-      size_description: raceInfo?.size_description
-    };
-
-    if (!isClassLoading && !isRaceLoading) console.warn('Missing data: ', missing, classInfoLevel);
-  }, [isClassLoading, isRaceLoading]);
-
   const isValid =
     points.hitPoints &&
-    points.proficiencyBonus &&
     abilities?.every((ability) => points.scores[ability.index]) &&
     (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points.scores) <= 27);
 
-  // TODO: Add to DB and test
   const onSubmit = () => {
     let formattedAbilities: Record<
       string,
@@ -170,16 +150,28 @@ export function CharacterPoints() {
       armorClass: getArmorClass(
         formattedAbilities['dex'].modifier,
         character?.equipments,
-        classInfoLevel?.features,
+        character?.features,
         character?.class.index === 'monk'
           ? formattedAbilities['wis'].modifier
           : formattedAbilities['con'].modifier
       ),
-      proficiencyBonus: points.proficiencyBonus,
-      abilities: formattedAbilities
+      abilityScores: formattedAbilities
     };
 
-    if (isValid) console.log(formattedPoints);
+    if (isValid && character?.name && user?.uid) {
+      const path = `users/${user.uid}/characters`;
+      const document = doc(database, path, character.name as string);
+      updateDoc(document, formattedPoints)
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['fetchCharacter'], exact: false });
+          navigate(`/character/${character.name}`);
+          toast.success('Character created');
+        })
+        .catch((error) =>
+          toast.error(`Something went wrong
+          ${(error as Error).message || 'Error'}`)
+        );
+    }
   };
 
   return (
@@ -282,7 +274,7 @@ export function CharacterPoints() {
 
               <Box marginTop="15px">
                 <Typography paddingLeft="5px">Race Modifiers</Typography>
-                {character.abilities.map((ability, i) => (
+                {character.abilities?.map((ability, i) => (
                   <Typography
                     key={`modifier-${ability.ability_score.index}`}
                     display="inline"
@@ -311,7 +303,12 @@ export function CharacterPoints() {
               <NumberInput
                 id="hit-points"
                 min={1}
-                max={classInfo?.hit_die}
+                max={
+                  classInfo?.hit_die +
+                  (character?.features?.some(({ index }) => index === 'draconic-resilience')
+                    ? 1
+                    : 0)
+                }
                 value={points.hitPoints}
                 onChange={(_, value) =>
                   setPoints((current) => ({ ...current, hitPoints: value || 1 }))
