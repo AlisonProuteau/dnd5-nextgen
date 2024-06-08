@@ -215,7 +215,7 @@ export function CharacterPoints() {
                       max={15}
                       addDisabled={getAbilityPoints(points) >= 27}
                       value={points[ability.index] || 8}
-                      onChange={(_, value) => setScore(ability.index, value)}
+                      onChange={(_, value) => setScore(ability.index, value ?? undefined)}
                     />
                   </Box>
                 ))}
@@ -244,7 +244,7 @@ export function CharacterPoints() {
                     id={`ability-${ability.index}`}
                     label={ability.full_name}
                     value={points[ability.index] || 0}
-                    onChange={(_, value) => setScore(ability.index, value)}
+                    onChange={(_, value) => setScore(ability.index, value ?? undefined)}
                   />
                   <IconButton sx={{ paddingTop: '29px' }} onClick={() => setScore(ability.index)}>
                     <CasinoOutlined fontSize="large" />

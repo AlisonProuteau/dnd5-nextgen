@@ -2,8 +2,7 @@
   "env": {
     "browser": true,
     "node": true,
-    "es2021": true,
-    "jest": true
+    "es2021": true
   },
   "ignorePatterns": ["src/**/*.d.ts"],
   "parser": "@typescript-eslint/parser",
@@ -33,19 +32,19 @@
   "overrides": [
     {
       "files": ["src/**/*.spec.tsx"],
-      "env": {
-        "jest": true
-      },
-      "extends": ["plugin:testing-library/react", "plugin:jest/style", "plugin:jest/recommended"],
+      // "env": {
+      //   "jest": true
+      // },
+      "extends": ["plugin:vitest/recommended"],
       "rules": {
-        "jest/consistent-test-it": ["error", { "withinDescribe": "it" }],
-        "jest/no-duplicate-hooks": ["error"],
-        "jest/require-top-level-describe": ["error"],
-        "jest/prefer-each": ["error"],
-        "jest/prefer-hooks-on-top": ["error"],
-        "jest/prefer-hooks-in-order": ["error"],
-        "jest/prefer-mock-promise-shorthand": ["error"],
-        "testing-library/prefer-user-event": ["error", { "allowedMethods": ["blur"] }]
+        "vitest/consistent-test-it": ["error", { "withinDescribe": "it" }],
+        "vitest/no-duplicate-hooks": ["error"],
+        "vitest/prefer-each": ["error"],
+        "vitest/prefer-hooks-in-order": ["error"],
+        "vitest/prefer-hooks-on-top": ["error"],
+        "vitest/prefer-mock-promise-shorthand": ["error"],
+        "vitest/require-top-level-describe": ["error"]
+        // "testing-library/prefer-user-event": ["error", { "allowedMethods": ["blur"] }]
       }
     }
   ]
