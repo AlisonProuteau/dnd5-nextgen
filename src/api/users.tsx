@@ -1,6 +1,6 @@
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import type { CharacterFormData } from '../components/CharacterCreation/CharacterCreation';
+import type { Character } from '../components/CharacterCard/CharacterCard';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
 import { get, getAll } from './utils';
 
@@ -40,11 +40,11 @@ export const signOut = () =>
       );
     });
 
-export const getUserCharacters = async (userId: string): Promise<CharacterFormData[] | undefined> =>
+export const getUserCharacters = async (userId: string): Promise<Character[] | undefined> =>
   (await getAll('All user characters', `users/${userId}/characters`)).results;
 
 export const getCharacter = async (
   userId: string,
   characterId: string
-): Promise<CharacterFormData | undefined> =>
+): Promise<Character | undefined> =>
   get('All user characters', `users/${userId}/characters`, characterId);

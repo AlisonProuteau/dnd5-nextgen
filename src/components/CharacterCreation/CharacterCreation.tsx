@@ -1,5 +1,5 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
-import { doc, setDoc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
@@ -116,12 +116,13 @@ export function CharacterCreation() {
       (d) => !!(Array.isArray(d) ? d?.length : d)
     );
 
-    if (formattedData.name && user?.uid) {
+    if (user?.uid) {
       const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, formattedData.name as string);
-      setDoc(document, formattedData)
+
+      const newCharacterRef = doc(collection(database, path));
+      setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
         .then(() => {
-          navigate(`/character/${formData.name}`);
+          navigate(`/character/${newCharacterRef.id}`);
           toast.success('Character created');
         })
         .catch((error) =>
