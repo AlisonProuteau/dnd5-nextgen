@@ -4,10 +4,11 @@ import type { Character } from '../components/CharacterCard/CharacterCard';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
 import { get, getAll } from './utils';
 
-export const createUser = (email: string, password: string) =>
+export const createUser = (email: string, password: string, displayName?: string) =>
   createUserInFirebase(email, password)
     .then(async (userCredential) => {
       setDoc(doc(database, 'users', userCredential.user.uid), {
+        displayName,
         identifier: userCredential.user.email
       });
 

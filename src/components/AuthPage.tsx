@@ -6,6 +6,7 @@ import { createUser, signIn } from '../api/users';
 import { ControledInput } from './shared/ControledInput';
 
 interface FormData {
+  name?: string;
   email?: string;
   password?: string;
   passwordConfrim?: string;
@@ -15,6 +16,7 @@ interface FormData {
 export function AuthPage() {
   const [formData, setFormDataState] = useState<FormData>({ showPassword: false });
   const [formError, setFormErrorState] = useState<{
+    name?: boolean;
     email?: boolean;
     password?: string[];
     passwordConfrim?: boolean;
@@ -38,6 +40,7 @@ export function AuthPage() {
 
   const isFormValid = () => {
     return (
+      (hasAccount || formData.name) &&
       formData.email &&
       formData.password &&
       (hasAccount || formData.passwordConfrim) &&
@@ -81,7 +84,7 @@ export function AuthPage() {
 
     if (formData.email && formData.password && isFormValid()) {
       if (!hasAccount) {
-        await createUser(formData.email, formData.password);
+        await createUser(formData.email, formData.password, formData.name);
       }
 
       await signIn(formData.email, formData.password);
@@ -100,6 +103,18 @@ export function AuthPage() {
           setFormErrorState({});
         }}
       >
+        {!hasAccount && (
+          <ControledInput
+            fullWidth
+            id="name"
+            type="name"
+            label="Display name"
+            onChange={(value) => setFormData({ name: value as string })}
+            errorMessage={['Invalid Name']}
+            hasError={formError.name}
+          />
+        )}
+
         <ControledInput
           fullWidth
           id="email"

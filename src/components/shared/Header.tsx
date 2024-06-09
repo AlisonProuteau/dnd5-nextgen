@@ -1,6 +1,7 @@
 import { Home } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
+import { Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
@@ -19,16 +20,19 @@ export function Header() {
       <Box sx={{ flexGrow: 1, marginBottom: '1rem' }}>
         <AppBar position="static">
           <Toolbar sx={{ justifyContent: 'space-between', flexDirection: 'row-reverse' }}>
-            <IconButton
-              size="large"
-              edge="end"
-              onClick={() => {
-                if (user) signOut();
-                navigate('/auth');
-              }}
-            >
-              {user ? <LogoutIcon /> : <AccountCircle />}
-            </IconButton>
+            <Box display="flex" alignItems="center">
+              {user && <Typography>{user.displayName || user.email}</Typography>}
+              <IconButton
+                size="large"
+                edge="end"
+                onClick={() => {
+                  if (user) signOut();
+                  navigate('/auth');
+                }}
+              >
+                {user ? <LogoutIcon /> : <AccountCircle />}
+              </IconButton>
+            </Box>
             {user && (
               <IconButton aria-label="home" size="large" edge="start" onClick={() => navigate('/')}>
                 <Home />
