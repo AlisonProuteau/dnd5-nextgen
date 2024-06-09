@@ -12,16 +12,32 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
+import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
+
+export type Character = CharacterFormData & {
+  id: string;
+  hit_die: number;
+  saving_throws?: DefaultRepresentation[];
+  armorClass: number;
+  abilityScores: Record<
+    string,
+    {
+      index: string;
+      name: string;
+      full_name: string;
+      score: number;
+      modifier: number;
+    }
+  >;
+};
 
 export function CharacterCard() {
   const { id } = useParams();
   const user = useAuth();
   const navigate = useNavigate();
 
-  const { data: character, isFetching: isCharacterLoading } = useQuery<
-    (CharacterFormData & { hitPoints?: number }) | undefined
-  >({
+  const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
     queryKey: ['fetchCharacter', user?.uid, id],
     queryFn: async () => {
       if (user?.uid && id) return await getCharacter(user.uid, id);
@@ -30,13 +46,13 @@ export function CharacterCard() {
   });
 
   useEffect(() => {
-    if (!isCharacterLoading && !character?.hitPoints) navigate('points', { relative: 'path' });
+    if (!isCharacterLoading && !character?.abilityScores) navigate('points', { relative: 'path' });
   }, [isCharacterLoading]);
 
   return (
     <Container>
-      {character?.name ? (
-        <Card key={character.name} sx={{ minWidth: 275 }}>
+      {character?.id ? (
+        <Card key={character.id} sx={{ minWidth: 275 }}>
           <CardHeader
             title={
               <Box>

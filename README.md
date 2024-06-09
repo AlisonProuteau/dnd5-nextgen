@@ -6,7 +6,6 @@ TODO List:
 
 Other:
 
-- Have better id for characters
 - Hooks
 
 Spells:

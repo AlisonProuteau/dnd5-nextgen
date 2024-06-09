@@ -137,14 +137,16 @@ export function CharacterPoints() {
       abilityScores: formattedAbilities
     };
 
-    if (isValid && character?.name && user?.uid) {
+    if (isValid && character?.id && user?.uid) {
       const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, character.name as string);
+      const document = doc(database, path, character.id);
       updateDoc(document, formattedPoints)
-        .then(() => {
-          queryClient.invalidateQueries({ queryKey: ['fetchCharacter'], exact: false });
-          navigate(`/character/${character.name}`);
-          toast.success('Character created');
+        .then(async () => {
+          await queryClient.invalidateQueries({
+            queryKey: ['fetchCharacter', user.uid, character.id]
+          });
+          navigate(`/character/${character.id}`);
+          toast.success('Character Points Updated');
         })
         .catch((error) =>
           toast.error(`Something went wrong
