@@ -1,3 +1,4 @@
+import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import type { Character } from '../components/CharacterCard/CharacterCard';
@@ -7,12 +8,12 @@ import { get, getAll } from './utils';
 export const createUser = (email: string, password: string, displayName?: string) =>
   createUserInFirebase(email, password)
     .then(async (userCredential) => {
+      await updateProfile(userCredential.user, { displayName });
       setDoc(doc(database, 'users', userCredential.user.uid), {
-        displayName,
         identifier: userCredential.user.email
       });
 
-      return userCredential.user;
+      return { ...userCredential.user, displayName };
     })
     .catch((error) => {
       toast.error(
