@@ -15,7 +15,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getAllAbilities, getClassInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
 import { database } from '../../firebase';
@@ -36,9 +36,10 @@ type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
   const [points, setPoints] = useState<Record<string, number>>({});
+  const [id, setId] = useState<string>();
   const user = useAuth();
   const navigate = useNavigate();
-  const { id } = useParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
 
   const { data: character } = useQuery({
@@ -58,6 +59,8 @@ export function CharacterPoints() {
     queryKey: ['fetchAbilities'],
     queryFn: async () => (await getAllAbilities()).results
   });
+
+  useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
 
   const setScore = (index: string, val?: number) => {
     let res = val;
@@ -137,15 +140,15 @@ export function CharacterPoints() {
       abilityScores: formattedAbilities
     };
 
-    if (isValid && character?.id && user?.uid) {
+    if (isValid && id && user?.uid) {
       const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, character.id);
+      const document = doc(database, path, id);
       updateDoc(document, formattedPoints)
         .then(async () => {
           await queryClient.invalidateQueries({
-            queryKey: ['fetchCharacter', user.uid, character.id]
+            queryKey: ['fetchCharacter', user.uid, id]
           });
-          navigate(`/character/${character.id}`);
+          navigate(`/character`, { state: { characterId: id } });
           toast.success('Character Points Updated');
         })
         .catch((error) =>

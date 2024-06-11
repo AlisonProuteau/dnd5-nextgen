@@ -6,7 +6,6 @@ import { defineConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import viteTsconfigPaths from 'vite-tsconfig-paths';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   build: {
     minify: 'esbuild',

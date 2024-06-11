@@ -8,8 +8,8 @@ import {
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
 import type { DefaultRepresentation } from '../../representations/common.representation';
@@ -33,9 +33,10 @@ export type Character = CharacterFormData & {
 };
 
 export function CharacterCard() {
-  const { id } = useParams();
   const user = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [id, setId] = useState<string>();
 
   const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -45,9 +46,12 @@ export function CharacterCard() {
     enabled: !!user?.uid && !!id
   });
 
+  useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
+
   useEffect(() => {
-    if (!isCharacterLoading && !character?.abilityScores) navigate('points', { relative: 'path' });
-  }, [isCharacterLoading]);
+    if (id && !isCharacterLoading && !character?.abilityScores)
+      navigate('points', { replace: true, state: { characterId: id } });
+  }, [isCharacterLoading, id]);
 
   return (
     <Container>

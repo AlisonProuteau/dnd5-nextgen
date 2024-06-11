@@ -20,7 +20,6 @@ const steps = [
   { id: 'class', label: 'Class' },
   { id: 'background', label: 'Background' },
   { id: 'info', label: 'Character Info' }
-  // { id: 'points', label: 'Character Points' },
 ];
 
 export interface CharacterFormData {
@@ -122,7 +121,7 @@ export function CharacterCreation() {
       const newCharacterRef = doc(collection(database, path));
       setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
         .then(() => {
-          navigate(`/character/${newCharacterRef.id}`);
+          navigate(`/character`, { state: { characterId: newCharacterRef.id } });
           toast.success('Character created');
         })
         .catch((error) =>

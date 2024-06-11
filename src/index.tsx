@@ -49,5 +49,3 @@ root.render(
     </QueryClientProvider>
   </StrictMode>
 );
-
-// reportWebVitals(console.info);

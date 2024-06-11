@@ -10,11 +10,11 @@ import {
   Fab,
   Typography
 } from '@mui/material';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { getUserCharacters } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
-import type { Character } from './CharacterCard/CharacterCard';
 
 const RaceImages: Record<string, string> = {
   dragonborn: 'https://www.dndbeyond.com/attachments/9/41/chromatic-dragonborn.jpg',
@@ -36,18 +36,17 @@ const RaceImages: Record<string, string> = {
 export function Home() {
   const navigate = useNavigate();
   const user = useAuth();
-  const [characters, setCharacters] = useState<Character[]>();
+
+  const { data: characters, isLoading } = useQuery({
+    queryKey: ['characters', user?.uid],
+    queryFn: () => (user ? getUserCharacters(user.uid) : null)
+  });
 
   useEffect(() => {
-    if (user) {
-      getUserCharacters(user.uid).then((characters) => {
-        if (characters?.length) setCharacters(characters);
-        else navigate('/create');
-      });
-    }
-  }, [user?.uid]);
+    if (user && !isLoading && !characters?.length) navigate('/create');
+  }, [isLoading]);
 
-  return user && characters?.length ? (
+  return characters?.length ? (
     <Container>
       <Box
         display="grid"
@@ -59,7 +58,9 @@ export function Home() {
         {characters.map((character) => (
           <Box key={character.id} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Card sx={{ flex: 1, maxWidth: '500px' }}>
-              <CardActionArea onClick={() => navigate(`/character/${character.id}`)}>
+              <CardActionArea
+                onClick={() => navigate(`/character`, { state: { characterId: character.id } })}
+              >
                 <CardMedia
                   alt="Character"
                   component="img"
@@ -84,6 +85,7 @@ export function Home() {
             </Card>
           </Box>
         ))}
+
         <Fab
           size="small"
           sx={{
@@ -91,9 +93,20 @@ export function Home() {
             bottom: 16,
             right: 16
           }}
-          onClick={() => navigate('/create')}
         >
-          <AddRounded />
+          <Link
+            to="/create"
+            css={{
+              ':visited:focus:hover:active': { color: 'inherit' },
+              display: 'flex',
+              flex: 1,
+              justifyContent: 'space-evenly',
+              alignSelf: 'stretch',
+              alignItems: 'center'
+            }}
+          >
+            <AddRounded />
+          </Link>
         </Fab>
       </Box>
     </Container>

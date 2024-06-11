@@ -13,7 +13,6 @@ import {
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: 'AIzaSyCNATiq_BDJgHq2hw79Cjdwy0TcyB73v9c',
   authDomain: 'dnd5-nextgen.firebaseapp.com',
@@ -24,7 +23,6 @@ const firebaseConfig = {
   measurementId: 'G-FLH1SPJ74T'
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 export const analytics = getAnalytics(app);
