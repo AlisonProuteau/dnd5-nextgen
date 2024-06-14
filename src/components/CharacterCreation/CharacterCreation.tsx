@@ -1,4 +1,5 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
@@ -42,6 +43,7 @@ export interface CharacterFormData {
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
   proficiencies: ChoiceSelection[];
+  skills?: ChoiceSelection[];
   equipments: ChoiceSelection[];
   languages: ChoiceSelection[];
   abilities: RaceAbilityBonus[];
@@ -55,6 +57,7 @@ export interface CharacterFormData {
 export function CharacterCreation() {
   const user = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
     sex: { index: 'O', name: 'Other' }
   });
@@ -122,6 +125,7 @@ export function CharacterCreation() {
       setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
         .then(() => {
           navigate(`/character`, { state: { characterId: newCharacterRef.id } });
+          queryClient.invalidateQueries({ queryKey: ['fetchCharacters', user?.uid] });
           toast.success('Character created');
         })
         .catch((error) =>

@@ -38,7 +38,7 @@ export function Home() {
   const user = useAuth();
 
   const { data: characters, isLoading } = useQuery({
-    queryKey: ['characters', user?.uid],
+    queryKey: ['fetchCharacters', user?.uid],
     queryFn: () => (user ? getUserCharacters(user.uid) : null)
   });
 

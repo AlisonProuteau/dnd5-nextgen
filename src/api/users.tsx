@@ -1,7 +1,7 @@
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import type { Character } from '../components/CharacterCard/CharacterCard';
+import type { Character } from '../components/CharacterCard/CharacterContainer';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
 import { get, getAll } from './utils';
 
