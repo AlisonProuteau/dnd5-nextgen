@@ -8,7 +8,7 @@ import {
   type ErrorResponse
 } from 'react-router-dom';
 import { AuthPage } from '../components/AuthPage';
-import { CharacterCard } from '../components/CharacterCard/CharacterCard';
+import { CharacterContainer } from '../components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from '../components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from '../components/CharacterCreation/CharacterCreation';
 import { Home } from '../components/Home';
@@ -48,7 +48,7 @@ export function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="create" element={<CharacterCreation />} />
         <Route path="/character">
-          <Route index element={<CharacterCard />} />
+          <Route index element={<CharacterContainer />} />
           <Route path="points" element={<CharacterPoints />} />
         </Route>
       </Route>
