@@ -166,8 +166,30 @@ export function CharacterContainer() {
 
   return (
     <Container>
-      {character?.id ? (
+      {character?.id && character.abilityScores ? (
         <Fragment>
+          <Box display="flex" justifyContent="space-between" alignItems="baseline">
+            <Box flex={1}>
+              <Typography variant="subtitle1" color="text.secondary">
+                {character.class.name}
+                {character.subclass && ` - ${character.subclass.name}`}
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                {character.race.name}
+                {character.subrace && ` - ${character.subrace.name}`}
+              </Typography>
+            </Box>
+            <Typography variant="h5">{character.name}</Typography>
+            <Box textAlign="end" flex={1}>
+              <Typography variant="subtitle1" color="text.secondary">
+                Level: 1
+              </Typography>
+              <Typography variant="subtitle2" color="text.secondary">
+                XP: 0
+              </Typography>
+            </Box>
+          </Box>
+
           <Divider component="div" role="presentation" variant="middle">
             <Typography variant="subtitle2">{getPageTitle()}</Typography>
           </Divider>
@@ -191,42 +213,28 @@ export function CharacterContainer() {
           />
 
           {activeStep === 0 && (
-            <Box display="flex" gap="15px" flexWrap="wrap">
-              <Box flexBasis="45%">
-                <Typography>Name: {character.name}</Typography>
-                <Typography>
-                  {'Race: '}
-                  {character.race.name +
-                    (character.subrace?.name ? ' - ' + character.subrace?.name : '')}
-                </Typography>
-                <Typography>
-                  {'Class: '}
-                  {character.class.name +
-                    (character.subclass?.name ? ' - ' + character.subclass?.name : '')}
-                </Typography>
-                <Typography>Level: 1</Typography>
-                <Typography>XP: 0</Typography>
-              </Box>
-
-              <Box flexBasis="45%">
+            <Box display="flex" flexDirection="column" gap="15px">
+              <Box flexBasis="100%">
                 <Typography>Hit Points: {character.hit_die}</Typography>
                 <Typography>Armor: {character.armorClass}</Typography>
                 <Typography>Speed: {character.speed}</Typography>
-              </Box>
-
-              <Box>
                 <Typography>Proficiency Bonus: {character.proficiencyBonus} </Typography>
                 <Typography>
                   Saving Throws: {character.saving_throws?.map((ability) => ability.name + ' ')}
                 </Typography>
-                {abilities?.map((ability) => (
-                  <AbilityComponent
-                    ability={ability}
-                    skills={character.skills}
-                    score={character.abilityScores[ability.index].score}
-                    modifier={character.abilityScores[ability.index].modifier}
-                  />
-                ))}
+              </Box>
+
+              <Box display="flex" flexDirection="column" rowGap="10px">
+                {abilities
+                  ?.sort((a, b) => b.skills.length - a.skills.length)
+                  .map((ability) => (
+                    <AbilityComponent
+                      ability={ability}
+                      skills={character.skills}
+                      score={character.abilityScores[ability.index].score}
+                      modifier={character.abilityScores[ability.index].modifier}
+                    />
+                  ))}
               </Box>
             </Box>
           )}

@@ -13,7 +13,7 @@ interface AbilityProps {
 const CIRCLE_SIZE = '80px';
 export function AbilityComponent({ ability, skills, score, modifier = 0 }: AbilityProps) {
   return (
-    <Box display="flex" marginBottom="15px">
+    <Box display="flex">
       <Paper
         sx={{
           marginBottom: '15px',
