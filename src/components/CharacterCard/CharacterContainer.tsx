@@ -11,20 +11,14 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  getAllAbilities,
-  getClassInfo,
-  getRaceInfo,
-  getSubclassInfo,
-  getSubraceInfo
-} from '../../api/ressources';
+import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
 import type { Level } from '../../representations/campaign/level.representation';
 import type { Classes, Subclass } from '../../representations/character/class.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
-import { AbilityComponent } from './AbilityComponent';
+import { Characteristics } from './Characteristics';
 
 export type Character = CharacterFormData & {
   id: string;
@@ -43,12 +37,12 @@ export type Character = CharacterFormData & {
   >;
 };
 
-const stepsNumber = 4;
 export function CharacterContainer() {
   const user = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [id, setId] = useState<string>();
+  const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
@@ -117,11 +111,6 @@ export function CharacterContainer() {
     enabled: !!character?.race?.index
   });
 
-  const { data: abilities } = useQuery({
-    queryKey: ['fetchAbilities'],
-    queryFn: async () => (await getAllAbilities()).results
-  });
-
   // TODO: Remove after removing unused fetch
   useEffect(() => {
     if (
@@ -134,8 +123,7 @@ export function CharacterContainer() {
       // console.log('Class: ', classInfo, 'SubClass: ', subClassInfo);
       // console.log('Race: ', raceInfo, 'SubRace: ', subraceInfo);
       // console.log('Level Info: ', levelInfo);
-      console.log(character);
-      console.log(abilities);
+      // console.log(character);
     }
   }, [classInfo, subClassInfo, levelInfo, raceInfo, subraceInfo]);
 
@@ -146,10 +134,15 @@ export function CharacterContainer() {
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
+  useEffect(() => {
+    setSteps(classInfo?.spellcasting ? 4 : 3);
+    setActiveStep(0);
+  }, [!!classInfo?.spellcasting]);
+
   const handleNext = () =>
-    setActiveStep((prevActiveStep) => (prevActiveStep < stepsNumber - 1 ? prevActiveStep + 1 : 0));
+    setActiveStep((prevActiveStep) => (prevActiveStep < steps - 1 ? prevActiveStep + 1 : 0));
   const handleBack = () =>
-    setActiveStep((prevActiveStep) => (prevActiveStep > 0 ? prevActiveStep - 1 : stepsNumber - 1));
+    setActiveStep((prevActiveStep) => (prevActiveStep > 0 ? prevActiveStep - 1 : steps - 1));
 
   const getPageTitle = () => {
     switch (activeStep) {
@@ -165,7 +158,7 @@ export function CharacterContainer() {
   };
 
   return (
-    <Container>
+    <Container sx={{ paddingBottom: '30px' }}>
       {character?.id && character.abilityScores ? (
         <Fragment>
           <Box display="flex" justifyContent="space-between" alignItems="baseline">
@@ -196,7 +189,7 @@ export function CharacterContainer() {
 
           <MobileStepper
             variant="dots"
-            steps={stepsNumber}
+            steps={steps}
             position="static"
             activeStep={activeStep}
             sx={{ paddingTop: 0 }}
@@ -212,35 +205,12 @@ export function CharacterContainer() {
             }
           />
 
-          {activeStep === 0 && (
-            <Box display="flex" flexDirection="column" gap="15px">
-              <Box flexBasis="100%">
-                <Typography>Hit Points: {character.hit_die}</Typography>
-                <Typography>Armor: {character.armorClass}</Typography>
-                <Typography>Speed: {character.speed}</Typography>
-                <Typography>Proficiency Bonus: {character.proficiencyBonus} </Typography>
-                <Typography>
-                  Saving Throws: {character.saving_throws?.map((ability) => ability.name + ' ')}
-                </Typography>
-              </Box>
-
-              <Box display="flex" flexDirection="column" rowGap="10px">
-                {abilities
-                  ?.sort((a, b) => b.skills.length - a.skills.length)
-                  .map((ability) => (
-                    <AbilityComponent
-                      ability={ability}
-                      skills={character.skills}
-                      score={character.abilityScores[ability.index].score}
-                      modifier={character.abilityScores[ability.index].modifier}
-                    />
-                  ))}
-              </Box>
-            </Box>
-          )}
-          {activeStep === 1 && <Box>Equipment</Box>}
-          {activeStep === 2 && <Box>Spells if spellcaster</Box>}
-          {activeStep === 3 && <Box>Character Description</Box>}
+          <Box display="flex" gap="15px" flexDirection="column">
+            {activeStep === 0 && <Characteristics character={character} />}
+            {activeStep === 1 && <Box>Equipment</Box>}
+            {activeStep === 2 && <Box>Spells if spellcaster</Box>}
+            {activeStep === 3 && <Box>Character Description</Box>}
+          </Box>
         </Fragment>
       ) : (
         <CircularProgress size={24} />

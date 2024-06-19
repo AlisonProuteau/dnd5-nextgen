@@ -1,45 +1,80 @@
-import { RadioButtonChecked, RadioButtonUnchecked } from '@mui/icons-material';
-import { Box, Paper, Typography } from '@mui/material';
+import { RadioButtonChecked, RadioButtonUnchecked, Shield } from '@mui/icons-material';
+import {
+  Badge,
+  Box,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Paper,
+  Typography
+} from '@mui/material';
+import { useState } from 'react';
 import type { AbilityScore } from '../../representations/campaign/adventure.representation';
+import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { ChoiceSelection } from '../CharacterCreation/utils';
 
 interface AbilityProps {
   ability: AbilityScore;
   skills?: ChoiceSelection[];
+  savingThrows?: DefaultRepresentation[];
   score?: number;
   modifier?: number;
 }
 
 const CIRCLE_SIZE = '80px';
-export function AbilityComponent({ ability, skills, score, modifier = 0 }: AbilityProps) {
+export function AbilityComponent({
+  ability,
+  skills,
+  savingThrows,
+  score,
+  modifier = 0
+}: AbilityProps) {
+  const [isDialogOpen, setIsDialogueOpen] = useState(false);
+
   return (
     <Box display="flex">
-      <Paper
-        sx={{
-          marginBottom: '15px',
-          width: '80px',
-          height: '80px',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'space-between'
+      <Badge
+        badgeContent={
+          savingThrows?.find(({ index }) => index === ability.index) ? (
+            <IconButton onClick={() => setIsDialogueOpen(true)}>
+              <Shield color="info" aria-label="Saving Throw" />
+            </IconButton>
+          ) : null
+        }
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'left'
         }}
-        elevation={24}
       >
-        <Typography variant="caption" zIndex={50}>
-          {ability.full_name}
-        </Typography>
-        <Typography alignSelf="center">+ {modifier}</Typography>
         <Paper
-          sx={{ width: 'fit-content', paddingY: '5px', paddingX: '20px', marginBottom: '-15px' }}
+          sx={{
+            marginBottom: '15px',
+            width: '80px',
+            height: '80px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+          elevation={24}
         >
-          <Typography variant="subtitle2">{score}</Typography>
+          <Typography variant="caption" zIndex={50} paddingTop="10px">
+            {ability.full_name}
+          </Typography>
+          <Typography alignSelf="center">+ {modifier}</Typography>
+          <Paper
+            sx={{ width: 'fit-content', paddingY: '5px', paddingX: '20px', marginBottom: '-15px' }}
+          >
+            <Typography variant="subtitle2">{score}</Typography>
+          </Paper>
         </Paper>
-      </Paper>
-      <Box>
+      </Badge>
+
+      <Box width="max-content">
         {ability?.skills.map((skill) => {
           const isProficient = skills?.find(({ index }) => index.includes(skill.index));
-          console.log(skill, skills, !!isProficient);
           return (
             <Box>
               {isProficient ? (
@@ -58,6 +93,13 @@ export function AbilityComponent({ ability, skills, score, modifier = 0 }: Abili
           );
         })}
       </Box>
+
+      <Dialog open={isDialogOpen} onClose={() => setIsDialogueOpen(false)}>
+        <DialogTitle>Saving Throws</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{savingThrows?.map(({ name }) => name).join(', ')}</DialogContentText>
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 }
