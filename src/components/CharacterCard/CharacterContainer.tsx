@@ -19,6 +19,7 @@ import type { Classes, Subclass } from '../../representations/character/class.re
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
 import { Characteristics } from './Characteristics';
+import { EquipmentList } from './EquipmentList';
 
 export type Character = CharacterFormData & {
   id: string;
@@ -151,9 +152,9 @@ export function CharacterContainer() {
       case 1:
         return 'Equipments & Inventory';
       case 2:
-        return 'Spells';
-      case 3:
         return 'Character Description';
+      case 3:
+        return 'Spells';
     }
   };
 
@@ -207,9 +208,10 @@ export function CharacterContainer() {
 
           <Box display="flex" gap="15px" flexDirection="column">
             {activeStep === 0 && <Characteristics character={character} />}
-            {activeStep === 1 && <Box>Equipment</Box>}
-            {activeStep === 2 && <Box>Spells if spellcaster</Box>}
-            {activeStep === 3 && <Box>Character Description</Box>}
+            {activeStep === 1 && <EquipmentList character={character} />}
+            {activeStep === 2 && <Box>Character Description</Box>}
+            {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&
+              activeStep === 3 && <Box>Spells if spellcaster</Box>}
           </Box>
         </Fragment>
       ) : (

@@ -55,6 +55,7 @@ export function Characteristics({ character }: { character: Character }) {
             .sort((a, b) => abilitySorter(a, b, character.abilityScores, character.saving_throws))
             .map((ability) => (
               <AbilityComponent
+                key={ability.index}
                 ability={ability}
                 skills={character.skills}
                 score={character.abilityScores[ability.index].score}

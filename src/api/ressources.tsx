@@ -5,6 +5,10 @@ import type {
   AbilityScore,
   Proficiency
 } from '../representations/campaign/adventure.representation';
+import type {
+  Equipment,
+  WeaponProperty
+} from '../representations/campaign/equipment.representation';
 import type { Level } from '../representations/campaign/level.representation';
 import type { Alignment, Background } from '../representations/character/background.representation';
 import type { Classes, Subclass } from '../representations/character/class.representation';
@@ -162,6 +166,14 @@ export async function getResourceList(path: string): Promise<{
       item: { index, name }
     }))
   };
+}
+
+export async function getEquipment(index: string): Promise<Equipment | null> {
+  return get('Equipment', '/equipment', index);
+}
+
+export async function getProperty(index: string): Promise<WeaponProperty | null> {
+  return get('Property', '/weapon-properties', index);
 }
 
 export async function getAllAbilities(): Promise<{

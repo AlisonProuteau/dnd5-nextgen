@@ -76,7 +76,7 @@ export function AbilityComponent({
         {ability?.skills.map((skill) => {
           const isProficient = skills?.find(({ index }) => index.includes(skill.index));
           return (
-            <Box>
+            <Box key={skill.index}>
               {isProficient ? (
                 <RadioButtonChecked
                   fontSize="small"
