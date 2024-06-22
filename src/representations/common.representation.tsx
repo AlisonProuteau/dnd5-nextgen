@@ -301,3 +301,12 @@ export type ChoiceOption = {
   damage_dice?: never;
   notes?: never;
 };
+
+export enum Sizes {
+  Tiny = 'Tiny',
+  Small = 'Small',
+  Medium = 'Medium',
+  Large = 'Large',
+  Huge = 'Huge',
+  Gargantuan = 'Gargantuan'
+}

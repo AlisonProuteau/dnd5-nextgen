@@ -94,7 +94,7 @@ export function EquipmentList({ character }: { character: Character }) {
                         {equipment.armor_class.base} AC
                         {equipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
                         {equipment.armor_class.max_bonus
-                          ? ` (Max bonus: ${equipment.armor_class.max_bonus})`
+                          ? ` (Max: ${equipment.armor_class.max_bonus})`
                           : ''}
                       </Typography>
                     </Box>

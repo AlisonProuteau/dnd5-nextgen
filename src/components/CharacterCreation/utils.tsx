@@ -42,7 +42,7 @@ export const mapFeatures = (
 
     const expertisesIndex =
       classFeatures
-        ?.filter(({ feature_specific }) => feature_specific?.subfeature_options)
+        ?.filter(({ feature_specific }) => feature_specific?.expertise_options)
         ?.findIndex((f) => f.index === index) ?? -1;
     if (expertisesIndex > -1)
       expertises = selectedExpertises

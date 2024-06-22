@@ -1,6 +1,7 @@
 import { uniqBy } from 'lodash';
 import type { Feature } from '../representations/abilities/feature.representation';
 import type { Spell } from '../representations/abilities/magic.representation';
+import type { Trait } from '../representations/abilities/trait.representation';
 import type {
   AbilityScore,
   Proficiency
@@ -131,6 +132,10 @@ export async function getSpellsForClass(
 
 export async function getFeature(index: string): Promise<Feature | null> {
   return get('Feature', '/features', index);
+}
+
+export async function getTrait(index: string): Promise<Trait | null> {
+  return get('Trait', '/traits', index);
 }
 
 export async function getProficiencies(): Promise<{

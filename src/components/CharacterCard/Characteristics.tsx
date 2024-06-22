@@ -35,9 +35,11 @@ export function Characteristics({ character }: { character: Character }) {
     );
   };
 
+  // TODO: Show expertise (see Thiefy)
+
   return (
     <Fragment>
-      <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr">
+      <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" paddingTop="15px">
         <IconText label="Armor" value={character.armorClass} Icon={Armor} color="grey" />
         <IconText label="Hit Points" value={character.hit_die} Icon={Hitpoints} color="grey" />
         <IconText label="Speed" value={character.speed} Icon={Speed} color="grey" />

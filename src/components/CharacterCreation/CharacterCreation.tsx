@@ -9,10 +9,10 @@ import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
 import type { Alignment } from '../../representations/character/background.representation';
 import type { RaceAbilityBonus } from '../../representations/character/race.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
+import type { DefaultRepresentation, Sizes } from '../../representations/common.representation';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
-import { CharacterDescription } from './CharacterDescription';
+import { CharacterDescription, GenderIndexes } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
 import type { ChoiceSelection } from './utils';
 
@@ -37,7 +37,7 @@ export interface CharacterFormData {
   race: DefaultRepresentation;
   subrace?: DefaultRepresentation;
   speed: number;
-  size?: string;
+  size?: Sizes;
   size_description?: string;
   traits?: DefaultRepresentation[];
   class: DefaultRepresentation;
@@ -59,7 +59,7 @@ export function CharacterCreation() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
-    sex: { index: 'O', name: 'Other' }
+    sex: { index: GenderIndexes.other, name: 'Other' }
   });
   const [formError, setFormErrorState] = useState({});
   const [activeStep, setActiveStep] = useState(0);

@@ -19,7 +19,9 @@ import type { Classes, Subclass } from '../../representations/character/class.re
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
 import { Characteristics } from './Characteristics';
+import { Description } from './Description';
 import { EquipmentList } from './EquipmentList';
+import { Traits } from './Traits';
 
 export type Character = CharacterFormData & {
   id: string;
@@ -136,7 +138,7 @@ export function CharacterContainer() {
   }, [isCharacterLoading, id]);
 
   useEffect(() => {
-    setSteps(classInfo?.spellcasting ? 4 : 3);
+    setSteps(classInfo?.spellcasting ? 5 : 4);
     setActiveStep(0);
   }, [!!classInfo?.spellcasting]);
 
@@ -150,10 +152,12 @@ export function CharacterContainer() {
       case 0:
         return 'Characteristics & Abilities';
       case 1:
-        return 'Equipments & Inventory';
+        return 'Traits & Features';
       case 2:
-        return 'Character Description';
+        return 'Equipments & Inventory';
       case 3:
+        return 'Character Description';
+      case 4:
         return 'Spells';
     }
   };
@@ -208,10 +212,11 @@ export function CharacterContainer() {
 
           <Box display="flex" gap="15px" flexDirection="column">
             {activeStep === 0 && <Characteristics character={character} />}
-            {activeStep === 1 && <EquipmentList character={character} />}
-            {activeStep === 2 && <Box>Character Description</Box>}
+            {activeStep === 1 && <Traits character={character} />}
+            {activeStep === 2 && <EquipmentList character={character} />}
+            {activeStep === 3 && <Description character={character} />}
             {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&
-              activeStep === 3 && <Box>Spells if spellcaster</Box>}
+              activeStep === 4 && <Box>Spells if spellcaster</Box>}
           </Box>
         </Fragment>
       ) : (

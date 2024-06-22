@@ -8,11 +8,16 @@ interface CharacterDescriptionProps {
   onPrev: () => void;
 }
 
+export enum GenderIndexes {
+  female = 'F',
+  male = 'M',
+  other = 'O'
+}
 export function CharacterDescription({ setFormData, onPrev }: CharacterDescriptionProps) {
   const genderInstances: DefaultRepresentation[] = [
-    { index: 'F', name: 'Female' },
-    { index: 'M', name: 'Male' },
-    { index: 'O', name: 'Other' }
+    { index: GenderIndexes.female, name: 'Female' },
+    { index: GenderIndexes.male, name: 'Male' },
+    { index: GenderIndexes.other, name: 'Other' }
   ];
 
   return (

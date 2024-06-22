@@ -1,4 +1,4 @@
-import type { Choice, DefaultRepresentation } from '../common.representation';
+import type { Choice, DefaultRepresentation, Sizes } from '../common.representation';
 
 export type RaceAbilityBonus = {
   ability_score: DefaultRepresentation;
@@ -15,7 +15,7 @@ export type Race = {
   language_options: Choice;
   languages: DefaultRepresentation[];
   name: string;
-  size: string;
+  size: Sizes;
   size_description: string;
   speed: number;
   starting_proficiencies?: DefaultRepresentation[];

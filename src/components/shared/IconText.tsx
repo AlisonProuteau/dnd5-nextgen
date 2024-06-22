@@ -8,16 +8,16 @@ export function IconText({
   label,
   color,
   size = '50px',
-  top = '38px',
-  marginTop = '-24px'
-}: {
+  top = '38px'
+}: // marginTop = '-24px'
+{
   Icon: FunctionComponent<SVGProps<SVGSVGElement> & { title?: string | undefined }>;
-  value: string | number;
+  value?: string | number;
   label?: string;
   color?: string;
   size?: string;
   top?: string;
-  marginTop?: string;
+  // marginTop?: string;
 }) {
   return (
     <Box
@@ -25,17 +25,20 @@ export function IconText({
       flexDirection="column"
       alignItems="center"
       textAlign="center"
-      marginTop={marginTop}
+      marginTop={`-${top}`}
+      paddingBottom={label ? '0px' : '20px'}
     >
-      <Typography
-        position="relative"
-        top={top}
-        sx={{ textShadow: '1px 1px 0 #000, -1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000' }}
-      >
-        {value}
-      </Typography>
+      {value && (
+        <Typography
+          position="relative"
+          top={top}
+          sx={{ textShadow: '1px 1px 0 #000, -1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000' }}
+        >
+          {value}
+        </Typography>
+      )}
       <Icon title={label} aria-label={label} width={size} height={size} fill={color} />
-      <Typography>{label}</Typography>
+      {label && <Typography>{label}</Typography>}
     </Box>
   );
 }
