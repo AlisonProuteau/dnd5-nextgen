@@ -11,6 +11,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
@@ -163,6 +164,13 @@ export function CharacterContainer() {
     }
   };
 
+  const swipeHandlers = useSwipeable({
+    onSwiped: (eventData) => console.log('User Swiped!', eventData),
+    onSwipedLeft: handleNext,
+    onSwipedRight: handleBack
+    // TODO: add more configs
+  });
+
   return (
     <Container sx={{ paddingBottom: '30px' }}>
       {character?.id && character.abilityScores ? (
@@ -211,8 +219,7 @@ export function CharacterContainer() {
             }
           />
 
-          {/* TODO: react-swipeable */}
-          <Box display="flex" gap="15px" flexDirection="column">
+          <Box display="flex" gap="15px" flexDirection="column" {...swipeHandlers}>
             {activeStep === 0 && <Characteristics character={character} />}
             {activeStep === 1 && <Traits character={character} />}
             {activeStep === 2 && <EquipmentList character={character} />}
