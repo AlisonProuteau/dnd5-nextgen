@@ -21,6 +21,7 @@ import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
 import { Characteristics } from './Characteristics';
 import { Description } from './Description';
 import { EquipmentList } from './EquipmentList';
+import { Spells } from './Spells';
 import { Traits } from './Traits';
 
 export type Character = CharacterFormData & {
@@ -210,13 +211,14 @@ export function CharacterContainer() {
             }
           />
 
+          {/* TODO: react-swipeable */}
           <Box display="flex" gap="15px" flexDirection="column">
             {activeStep === 0 && <Characteristics character={character} />}
             {activeStep === 1 && <Traits character={character} />}
             {activeStep === 2 && <EquipmentList character={character} />}
             {activeStep === 3 && <Description character={character} />}
             {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&
-              activeStep === 4 && <Box>Spells if spellcaster</Box>}
+              activeStep === 4 && <Spells character={character} />}
           </Box>
         </Fragment>
       ) : (
