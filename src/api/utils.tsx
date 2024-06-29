@@ -53,7 +53,7 @@ export async function getAll(name: string, path: string, queryParms?: QueryObjec
 export async function get(name: string, path: string, index: string): Promise<any> {
   const res = await getDoc(doc(database, path, index));
 
-  if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}`);
+  if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}: ${index}`);
 
   return res.data() ?? null;
 }

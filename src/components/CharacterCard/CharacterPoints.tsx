@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { doc, updateDoc } from 'firebase/firestore';
+import { omit } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -193,7 +194,13 @@ export function CharacterPoints() {
                   <FormControl sx={{ display: 'flex', width: 135 }}>
                     <Select
                       id={`ability-${score}`}
-                      onChange={(e) => setScore(e.target.value as string, score)}
+                      onChange={(e) => {
+                        const previousAbility: string | undefined = Object.entries(points).find(
+                          (value) => value[1] === score
+                        )?.[0];
+                        if (previousAbility) setPoints((current) => omit(current, previousAbility));
+                        setScore(e.target.value as string, score);
+                      }}
                       sx={{ height: '42px' }}
                     >
                       {abilities.map((ability) => (

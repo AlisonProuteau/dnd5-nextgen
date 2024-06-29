@@ -25,7 +25,6 @@ export function Description({ character }: { character: Character }) {
 
   return (
     <Fragment>
-      {/* TODO: Icon for size and alignment */}
       <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" alignItems="end">
         <IconText
           label="Sex"
@@ -50,9 +49,6 @@ export function Description({ character }: { character: Character }) {
         <Typography>Ideals: {character.ideals}</Typography>
         <Typography>Flaws: {character.flaws}</Typography>
         <Typography>Personality: {character.personality}</Typography>
-        <Typography>
-          Languages: {character.languages.map((language) => language.name).join(', ')}
-        </Typography>
       </Box>
     </Fragment>
   );

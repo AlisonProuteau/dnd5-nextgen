@@ -39,7 +39,10 @@ export interface CharacterFormData {
   speed: number;
   size?: Sizes;
   size_description?: string;
-  traits?: DefaultRepresentation[];
+  traits?: (DefaultRepresentation & {
+    subtraits?: DefaultRepresentation[];
+    spells?: DefaultRepresentation[];
+  })[];
   class: DefaultRepresentation;
   subclass?: DefaultRepresentation;
   proficiencies: ChoiceSelection[];
@@ -93,6 +96,7 @@ export function CharacterCreation() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     // ADD loading/disabling/navigate
     const skills = formData.proficiencies?.filter((p) => p.index.startsWith('skill-'));
     const formattedProficiencies = formData.proficiencies?.filter(

@@ -35,8 +35,6 @@ export function Characteristics({ character }: { character: Character }) {
     );
   };
 
-  // TODO: Show expertise (see Thiefy)
-
   return (
     <Fragment>
       <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" paddingTop="15px">
