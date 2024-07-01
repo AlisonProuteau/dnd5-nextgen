@@ -1,7 +1,5 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
-import type { Alignment } from '@representations/character/background.representation';
-import type { RaceAbilityBonus } from '@representations/character/race.representation';
-import type { DefaultRepresentation, Sizes } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
@@ -22,40 +20,6 @@ const steps = [
   { id: 'background', label: 'Background' },
   { id: 'info', label: 'Character Info' }
 ];
-
-export interface CharacterFormData {
-  name: string;
-  age: number;
-  sex: DefaultRepresentation;
-  appearance?: string;
-  background: DefaultRepresentation;
-  alignment: Alignment;
-  personality?: string[];
-  ideals?: string[];
-  bonds?: string[];
-  flaws?: string[];
-  race: DefaultRepresentation;
-  subrace?: DefaultRepresentation;
-  speed: number;
-  size?: Sizes;
-  size_description?: string;
-  traits?: (DefaultRepresentation & {
-    subtraits?: DefaultRepresentation[];
-    spells?: DefaultRepresentation[];
-  })[];
-  class: DefaultRepresentation;
-  subclass?: DefaultRepresentation;
-  proficiencies: ChoiceSelection[];
-  skills?: ChoiceSelection[];
-  equipments: ChoiceSelection[];
-  languages: ChoiceSelection[];
-  abilities: RaceAbilityBonus[];
-  features?: (DefaultRepresentation & {
-    subfeatures?: DefaultRepresentation[];
-    expertises?: DefaultRepresentation[];
-  })[];
-  proficiencyBonus: number;
-}
 
 export function CharacterCreation() {
   const user = useAuth();

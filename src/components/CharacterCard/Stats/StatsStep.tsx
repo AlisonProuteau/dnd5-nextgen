@@ -4,10 +4,10 @@ import { CircularProgress } from '@mui/material';
 import { Box } from '@mui/system';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
-import type { Character } from '../CharacterContainer';
 import { AbilityComponent } from './AbilityComponent';
 
 export function Stats({ character }: { character: Character }) {

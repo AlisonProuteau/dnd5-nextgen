@@ -3,11 +3,11 @@ import { BladeIcon, MoneyIcon, ShieldIcon, WeightIcon } from '@assets';
 import { InfoOutlined } from '@mui/icons-material';
 import { Box, Card, CardContent, Dialog, IconButton, Typography } from '@mui/material';
 import { Equipment } from '@representations/campaign/equipment.representation';
+import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy } from 'lodash';
 import { Fragment, useCallback, useState } from 'react';
-import type { Character } from '../CharacterContainer';
 import { EquipmentCard } from './EquipmentCard';
 
 export function Equipments({ character }: { character: Character }) {

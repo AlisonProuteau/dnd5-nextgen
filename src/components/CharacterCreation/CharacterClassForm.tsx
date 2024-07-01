@@ -13,10 +13,10 @@ import type { Feature } from '@representations/abilities/feature.representation'
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
 import {
   mapDataForForm,

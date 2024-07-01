@@ -15,10 +15,10 @@ import {
 } from '@mui/material';
 import type { Alignment, Background } from '@representations/character/background.representation';
 import type { Choice, DefaultRepresentation } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
-import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
 import {
   mapDataForForm,

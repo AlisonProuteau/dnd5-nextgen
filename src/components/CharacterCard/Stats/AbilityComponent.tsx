@@ -13,11 +13,10 @@ import {
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { useState } from 'react';
-import type { ChoiceSelection } from '../../CharacterCreation/characterCreation.utils';
 
 interface AbilityProps {
   ability: AbilityScore;
-  skills?: ChoiceSelection[];
+  skills?: DefaultRepresentation[];
   savingThrows?: DefaultRepresentation[];
   score?: number;
   modifier?: number;

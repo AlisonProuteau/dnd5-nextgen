@@ -1,10 +1,10 @@
 import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
+import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { Fragment } from 'react';
 import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
-import type { Character } from '../CharacterContainer';
 
 export function Description({ character }: { character: Character }) {
   const getGenderIcon = (genderIndex: GenderIndexes) => {

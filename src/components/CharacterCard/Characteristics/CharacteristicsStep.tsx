@@ -4,9 +4,9 @@ import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/
 import { Box } from '@mui/system';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
+import type { Character } from '@representations/user.representation';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
-import type { Character } from '../CharacterContainer';
 
 export function Characteristics({ character }: { character: Character }) {
   // TODO: finish blacklist for all races/classes

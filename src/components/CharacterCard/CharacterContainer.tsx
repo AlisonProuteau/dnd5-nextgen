@@ -13,37 +13,18 @@ import {
 } from '@mui/material';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
-import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 import { useQuery } from '@tanstack/react-query';
 import { button, fab, linkButton } from '@utils/style.utils';
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../providers/AuthProvider';
-import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
 import { Characteristics } from './Characteristics/CharacteristicsStep';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
 import { Spells } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
-
-export type Character = CharacterFormData & {
-  id: string;
-  hit_die: number;
-  hit_points: number;
-  saving_throws?: DefaultRepresentation[];
-  armorClass: number;
-  abilityScores: Record<
-    string,
-    {
-      index: string;
-      name: string;
-      full_name: string;
-      score: number;
-      modifier: number;
-    }
-  >;
-};
 
 export function CharacterContainer() {
   const user = useAuth();

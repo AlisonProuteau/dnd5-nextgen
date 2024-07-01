@@ -1,5 +1,4 @@
 import type { DefaultRepresentation } from '@representations/common.representation';
-import type { ChoiceSelection } from '../CharacterCreation/characterCreation.utils';
 
 export const randomInteger = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -51,7 +50,7 @@ export const getAbilityPoints = (scores: Record<string, number>) =>
 
 export const getArmorClass = (
   dexModifier: number,
-  equipment?: ChoiceSelection[],
+  equipment?: (DefaultRepresentation & { count?: number })[],
   features?: (DefaultRepresentation & {
     subfeatures?: DefaultRepresentation[];
     expertises?: DefaultRepresentation[];

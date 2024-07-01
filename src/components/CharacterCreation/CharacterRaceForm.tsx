@@ -12,11 +12,11 @@ import {
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
 import {
   mapDataForForm,

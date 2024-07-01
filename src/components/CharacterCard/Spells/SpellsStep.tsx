@@ -2,9 +2,9 @@ import { getClassInfo, getSpellsForClass, getSubclassInfo } from '@api/ressource
 import { Button, Typography } from '@mui/material';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
+import type { Character } from '@representations/user.representation';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect } from 'react';
-import type { Character } from '../CharacterContainer';
 
 // TODO
 export function Spells({ character }: { character: Character }) {
