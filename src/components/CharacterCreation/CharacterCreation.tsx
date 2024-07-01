@@ -1,4 +1,7 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import type { Alignment } from '@representations/character/background.representation';
+import type { RaceAbilityBonus } from '@representations/character/race.representation';
+import type { DefaultRepresentation, Sizes } from '@representations/common.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
@@ -7,14 +10,11 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
-import type { Alignment } from '../../representations/character/background.representation';
-import type { RaceAbilityBonus } from '../../representations/character/race.representation';
-import type { DefaultRepresentation, Sizes } from '../../representations/common.representation';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterDescription, GenderIndexes } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
-import type { ChoiceSelection } from './utils';
+import type { ChoiceSelection } from './characterCreation.utils';
 
 const steps = [
   { id: 'race', label: 'Race' },

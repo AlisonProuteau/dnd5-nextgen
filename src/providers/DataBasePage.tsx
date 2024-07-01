@@ -9,16 +9,16 @@ import {
   InputLabel,
   OutlinedInput
 } from '@mui/material';
+import type { Spell } from '@representations/abilities/magic.representation';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Subclass } from '@representations/character/class.representation';
+import type { Subrace } from '@representations/character/race.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from '../firebase';
-import type { Spell } from '../representations/abilities/magic.representation';
-import type { Level } from '../representations/campaign/level.representation';
-import type { Subclass } from '../representations/character/class.representation';
-import type { Subrace } from '../representations/character/race.representation';
-import type { DefaultRepresentation } from '../representations/common.representation';
 
 export function DataBasePage() {
   const [isLoading, setIsLoading] = useState(false);

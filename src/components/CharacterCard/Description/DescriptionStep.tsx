@@ -1,25 +1,20 @@
+import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
+import { IconText } from '@shared/IconText';
 import { Fragment } from 'react';
-import Age from '../../svgs/age.svg?react';
-import Alignment from '../../svgs/alignement.svg?react';
-import Female from '../../svgs/female.svg?react';
-import Height from '../../svgs/height.svg?react';
-import Male from '../../svgs/male.svg?react';
-import Other from '../../svgs/other.svg?react';
-import { GenderIndexes } from '../CharacterCreation/CharacterDescription';
-import { IconText } from '../shared/IconText';
-import type { Character } from './CharacterContainer';
+import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
+import type { Character } from '../CharacterContainer';
 
 export function Description({ character }: { character: Character }) {
   const getGenderIcon = (genderIndex: GenderIndexes) => {
     switch (genderIndex) {
       case GenderIndexes.female:
-        return Female;
+        return FemaleIcon;
       case GenderIndexes.male:
-        return Male;
+        return MaleIcon;
       default:
-        return Other;
+        return OtherIcon;
     }
   };
 
@@ -32,12 +27,12 @@ export function Description({ character }: { character: Character }) {
           color="grey"
           top="0px"
         />
-        <IconText label="Age" value={character.age} Icon={Age} color="grey" top="45px" />
-        <IconText label="Size" value={character.size} Icon={Height} color="grey" />
+        <IconText label="Age" value={character.age} Icon={AgeIcon} color="grey" top="45px" />
+        <IconText label="Size" value={character.size} Icon={HeightIcon} color="grey" />
         <IconText
           label="Alignment"
           value={character.alignment.abbreviation}
-          Icon={Alignment}
+          Icon={AlignmentIcon}
           color="grey"
         />
       </Box>

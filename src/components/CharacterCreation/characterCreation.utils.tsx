@@ -1,6 +1,6 @@
-import type { Feature } from '../../representations/abilities/feature.representation';
-import type { Trait } from '../../representations/abilities/trait.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { Trait } from '@representations/abilities/trait.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 
 export type ChoiceSelection = DefaultRepresentation & {
   type: 'class' | 'race' | 'background';

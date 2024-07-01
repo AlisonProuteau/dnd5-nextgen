@@ -15,7 +15,15 @@
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@assets": ["src/assets"],
+      "@api/*": ["./src/api/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@representations/*": ["./src/representations/*"],
+      "@shared/*": ["./src/components/shared/*"]
+    }
   },
   "include": ["src", "vite.config.ts", ".eslintrc.json"]
 }

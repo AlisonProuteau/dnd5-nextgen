@@ -1,3 +1,4 @@
+import { signOut } from '@api/users';
 import { Home } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -5,14 +6,13 @@ import { Box, Button, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
+import { ControledInput } from '@shared/ControledInput';
+import { StyledModal } from '@shared/StyledModal';
+import { button, linkButton } from '@utils/style.utils';
 import { updateProfile } from 'firebase/auth';
 import { Fragment, useState, type FormEvent } from 'react';
 import { Link, Outlet } from 'react-router-dom';
-import { signOut } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
-import { button, linkButton } from '../utils/style.utils';
-import { ControledInput } from './shared/ControledInput';
-import { StyledModal } from './shared/StyledModal';
 
 export function Header() {
   const [open, setOpen] = useState(true);

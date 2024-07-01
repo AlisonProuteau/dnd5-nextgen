@@ -1,3 +1,4 @@
+import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
 import {
   Box,
   Button,
@@ -8,17 +9,21 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import type { Trait } from '@representations/abilities/trait.representation';
+import type { RaceAbilityBonus } from '@representations/character/race.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '../../api/ressources';
-import type { Trait } from '../../representations/abilities/trait.representation';
-import type { RaceAbilityBonus } from '../../representations/character/race.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
-import { mapDataForForm, mapTraits, type ChoiceObjectType, type ChoiceSelection } from './utils';
+import {
+  mapDataForForm,
+  mapTraits,
+  type ChoiceObjectType,
+  type ChoiceSelection
+} from './characterCreation.utils';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;

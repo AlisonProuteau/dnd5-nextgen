@@ -1,14 +1,14 @@
+import { getFeature, getTrait } from '@api/ressources';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Typography } from '@mui/material';
 import { Box } from '@mui/system';
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { Trait } from '@representations/abilities/trait.representation';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
-import { getFeature, getTrait } from '../../api/ressources';
-import type { Feature } from '../../representations/abilities/feature.representation';
-import type { Trait } from '../../representations/abilities/trait.representation';
-import type { Character } from './CharacterContainer';
+import type { Character } from '../CharacterContainer';
 
-export function Traits({ character }: { character: Character }) {
+export function Characteristics({ character }: { character: Character }) {
   // TODO: finish blacklist for all races/classes
   // Fix: Handle missed use cases
   const blackList: string[] = [

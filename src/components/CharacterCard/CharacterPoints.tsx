@@ -1,3 +1,5 @@
+import { getAllAbilities, getClassInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
   Box,
@@ -11,26 +13,24 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import type { Classes } from '@representations/character/class.representation';
+import { NumberInput } from '@shared/NumberInput';
+import { SplitButton } from '@shared/SplitButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { button, fab, linkButton } from '@utils/style.utils';
 import { doc, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { getAllAbilities, getClassInfo } from '../../api/ressources';
-import { getCharacter } from '../../api/users';
 import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
-import type { Classes } from '../../representations/character/class.representation';
-import { button, fab, linkButton } from '../../utils/style.utils';
-import { NumberInput } from '../shared/NumberInput';
-import { SplitButton } from '../shared/SplitButton';
 import {
   getAbilityPoints,
   getAbilityScoreModifier,
   getArmorClass,
   randomInteger
-} from './points_utils';
+} from './points.utils';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 

@@ -1,3 +1,5 @@
+import { getProperty } from '@api/ressources';
+import { CoinsIcon, WeightIcon } from '@assets';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -9,15 +11,9 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
-import { getProperty } from '../../api/ressources';
-import type {
-  Equipment,
-  WeaponProperty
-} from '../../representations/campaign/equipment.representation';
-import Coins from '../../svgs/coins.svg?react';
-import Weight from '../../svgs/weight.svg?react';
 
 export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipment }) {
   const { data: properties } = useQueries({
@@ -61,7 +57,7 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
         </Box>
         <Box display="flex" flexDirection="column" alignItems="flex-end">
           <Box display="flex" gap="5px">
-            <Coins height="20px" width="20px" fill="goldenrod" />
+            <CoinsIcon height="20px" width="20px" fill="goldenrod" />
             <Typography>
               {selectedEquipment.cost.quantity}
               {selectedEquipment.cost.unit}
@@ -69,7 +65,7 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
           </Box>
           {selectedEquipment.weight && (
             <Box display="flex" paddingLeft="50px" gap="5px">
-              <Weight height="20px" width="20px" fill="slategrey" />
+              <WeightIcon height="20px" width="20px" fill="slategrey" />
               <Typography sx={{ float: 'right' }}>{selectedEquipment.weight}</Typography>
             </Box>
           )}

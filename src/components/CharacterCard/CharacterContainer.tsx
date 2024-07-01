@@ -1,3 +1,5 @@
+import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
 import { EditRounded, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
@@ -9,23 +11,21 @@ import {
   MobileStepper,
   Typography
 } from '@mui/material';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Classes, Subclass } from '@representations/character/class.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 import { useQuery } from '@tanstack/react-query';
+import { button, fab, linkButton } from '@utils/style.utils';
 import { Fragment, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
-import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '../../api/ressources';
-import { getCharacter } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
-import type { Level } from '../../representations/campaign/level.representation';
-import type { Classes, Subclass } from '../../representations/character/class.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import { button, fab, linkButton } from '../../utils/style.utils';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
-import { Characteristics } from './CharacteristicsStep';
-import { Description } from './DescriptionStep';
-import { Equipments } from './EquipmentsStep';
-import { Spells } from './SpellsStep';
-import { Traits } from './TraitsStep';
+import { Characteristics } from './Characteristics/CharacteristicsStep';
+import { Description } from './Description/DescriptionStep';
+import { Equipments } from './Equipment/EquipmentsStep';
+import { Spells } from './Spells/SpellsStep';
+import { Stats } from './Stats/StatsStep';
 
 export type Character = CharacterFormData & {
   id: string;
@@ -223,8 +223,8 @@ export function CharacterContainer() {
           />
 
           <Box display="flex" gap="15px" flexDirection="column" {...swipeHandlers}>
-            {activeStep === 0 && <Characteristics character={character} />}
-            {activeStep === 1 && <Traits character={character} />}
+            {activeStep === 0 && <Stats character={character} />}
+            {activeStep === 1 && <Characteristics character={character} />}
             {activeStep === 2 && <Equipments character={character} />}
             {activeStep === 3 && <Description character={character} />}
             {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&

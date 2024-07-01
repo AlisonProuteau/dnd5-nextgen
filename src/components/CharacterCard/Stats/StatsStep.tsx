@@ -1,19 +1,16 @@
+import { getAllAbilities } from '@api/ressources';
+import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SpeedIcon } from '@assets';
 import { CircularProgress } from '@mui/material';
 import { Box } from '@mui/system';
+import type { AbilityScore } from '@representations/campaign/adventure.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import { IconText } from '@shared/IconText';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
-import { getAllAbilities } from '../../api/ressources';
-import type { AbilityScore } from '../../representations/campaign/adventure.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import Armor from '../../svgs/armor.svg?react';
-import Hitpoints from '../../svgs/hitpoints.svg?react';
-import Proficiency from '../../svgs/proficiency.svg?react';
-import Speed from '../../svgs/speed.svg?react';
-import { IconText } from '../shared/IconText';
+import type { Character } from '../CharacterContainer';
 import { AbilityComponent } from './AbilityComponent';
-import type { Character } from './CharacterContainer';
 
-export function Characteristics({ character }: { character: Character }) {
+export function Stats({ character }: { character: Character }) {
   const { data: abilities } = useQuery({
     queryKey: ['fetchAbilities'],
     queryFn: async () => (await getAllAbilities()).results
@@ -38,13 +35,18 @@ export function Characteristics({ character }: { character: Character }) {
   return (
     <Fragment>
       <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" paddingTop="15px">
-        <IconText label="Armor" value={character.armorClass} Icon={Armor} color="grey" />
-        <IconText label="Hit Points" value={character.hit_points} Icon={Hitpoints} color="grey" />
-        <IconText label="Speed" value={character.speed} Icon={Speed} color="grey" />
+        <IconText label="Armor" value={character.armorClass} Icon={ArmorIcon} color="grey" />
+        <IconText
+          label="Hit Points"
+          value={character.hit_points}
+          Icon={HitPointsIcon}
+          color="grey"
+        />
+        <IconText label="Speed" value={character.speed} Icon={SpeedIcon} color="grey" />
         <IconText
           label="Proficiency Bonus"
           value={character.proficiencyBonus}
-          Icon={Proficiency}
+          Icon={ProficiencyIcon}
           color="grey"
         />
       </Box>

@@ -1,3 +1,4 @@
+import { getAllAligmenents, getAllBackgrounds } from '@api/ressources';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -12,18 +13,18 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import type { Alignment, Background } from '@representations/character/background.representation';
+import type { Choice, DefaultRepresentation } from '@representations/common.representation';
+import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
-import { getAllAligmenents, getAllBackgrounds } from '../../api/ressources';
-import type {
-  Alignment,
-  Background
-} from '../../representations/character/background.representation';
-import type { Choice, DefaultRepresentation } from '../../representations/common.representation';
-import { ControledInput } from '../shared/ControledInput';
 import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
-import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from './utils';
+import {
+  mapDataForForm,
+  type ChoiceObjectType,
+  type ChoiceSelection
+} from './characterCreation.utils';
 
 interface CharacterBackgroundFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;

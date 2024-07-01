@@ -1,5 +1,5 @@
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { ChoiceSelection } from '../CharacterCreation/utils';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import type { ChoiceSelection } from '../CharacterCreation/characterCreation.utils';
 
 export const randomInteger = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;

@@ -1,3 +1,4 @@
+import { getUserCharacters } from '@api/users';
 import { AddRounded } from '@mui/icons-material';
 import {
   Box,
@@ -11,11 +12,10 @@ import {
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { button, fab, linkButton } from '@utils/style.utils';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserCharacters } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
-import { button, fab, linkButton } from '../utils/style.utils';
 
 const RaceImages: Record<string, string> = {
   dragonborn: 'https://www.dndbeyond.com/attachments/9/41/chromatic-dragonborn.jpg',

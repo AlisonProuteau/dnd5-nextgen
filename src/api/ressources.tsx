@@ -1,21 +1,15 @@
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { Spell } from '@representations/abilities/magic.representation';
+import type { Trait } from '@representations/abilities/trait.representation';
+import type { AbilityScore, Proficiency } from '@representations/campaign/adventure.representation';
+import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Alignment, Background } from '@representations/character/background.representation';
+import type { Classes, Subclass } from '@representations/character/class.representation';
+import type { Race, Subrace } from '@representations/character/race.representation';
+import type { DefaultRepresentation, Option } from '@representations/common.representation';
+import { get, getAll, type QueryObject } from '@utils/api.utils';
 import { uniqBy } from 'lodash';
-import type { Feature } from '../representations/abilities/feature.representation';
-import type { Spell } from '../representations/abilities/magic.representation';
-import type { Trait } from '../representations/abilities/trait.representation';
-import type {
-  AbilityScore,
-  Proficiency
-} from '../representations/campaign/adventure.representation';
-import type {
-  Equipment,
-  WeaponProperty
-} from '../representations/campaign/equipment.representation';
-import type { Level } from '../representations/campaign/level.representation';
-import type { Alignment, Background } from '../representations/character/background.representation';
-import type { Classes, Subclass } from '../representations/character/class.representation';
-import type { Race, Subrace } from '../representations/character/race.representation';
-import type { DefaultRepresentation, Option } from '../representations/common.representation';
-import { get, getAll, type QueryObject } from '../utils/api.utils';
 
 export async function getAllRaces(): Promise<{
   count: number;

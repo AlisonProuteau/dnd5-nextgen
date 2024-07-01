@@ -1,9 +1,9 @@
+import { createUser, signIn } from '@api/users';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { Box, Button, Container, IconButton, InputAdornment } from '@mui/material';
+import { ControledInput } from '@shared/ControledInput';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
-import { createUser, signIn } from '../api/users';
-import { ControledInput } from './shared/ControledInput';
 
 interface FormData {
   name?: string;

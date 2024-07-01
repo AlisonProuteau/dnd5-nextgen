@@ -1,16 +1,13 @@
+import { getEquipment } from '@api/ressources';
+import { BladeIcon, MoneyIcon, ShieldIcon, WeightIcon } from '@assets';
 import { InfoOutlined } from '@mui/icons-material';
 import { Box, Card, CardContent, Dialog, IconButton, Typography } from '@mui/material';
+import { Equipment } from '@representations/campaign/equipment.representation';
+import { IconText } from '@shared/IconText';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy } from 'lodash';
 import { Fragment, useCallback, useState } from 'react';
-import { getEquipment } from '../../api/ressources';
-import { Equipment } from '../../representations/campaign/equipment.representation';
-import Blade from '../../svgs/blade.svg?react';
-import Money from '../../svgs/money.svg?react';
-import Shield from '../../svgs/shield.svg?react';
-import Weight from '../../svgs/weight.svg?react';
-import { IconText } from '../shared/IconText';
-import type { Character } from './CharacterContainer';
+import type { Character } from '../CharacterContainer';
 import { EquipmentCard } from './EquipmentCard';
 
 export function Equipments({ character }: { character: Character }) {
@@ -49,14 +46,20 @@ export function Equipments({ character }: { character: Character }) {
   return (
     <Fragment>
       <Box display="grid" gridTemplateColumns="1fr 1fr">
-        <IconText label="GP" value={character.armorClass} Icon={Money} color="grey" top="34px" />
+        <IconText
+          label="GP"
+          value={character.armorClass}
+          Icon={MoneyIcon}
+          color="grey"
+          top="34px"
+        />
         <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
             (total, equipment) => total + (equipment.weight || 0),
             0
           )}
-          Icon={Weight}
+          Icon={WeightIcon}
           color="grey"
         />
       </Box>
@@ -81,7 +84,7 @@ export function Equipments({ character }: { character: Character }) {
                   </Typography>
                   {(equipment.damage || equipment.two_handed_damage) && (
                     <Box display="flex" paddingLeft="50px" gap="5px">
-                      <Blade height="20px" width="20px" fill="white" />
+                      <BladeIcon height="20px" width="20px" fill="white" />
                       <Typography>
                         {equipment.damage?.damage_dice} {equipment.damage?.damage_type.name}
                       </Typography>
@@ -89,7 +92,7 @@ export function Equipments({ character }: { character: Character }) {
                   )}
                   {equipment.armor_class && (
                     <Box display="flex" paddingLeft="50px" gap="5px">
-                      <Shield height="20px" width="20px" fill="white" />
+                      <ShieldIcon height="20px" width="20px" fill="white" />
                       <Typography>
                         {equipment.armor_class.base} AC
                         {equipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
