@@ -1,9 +1,8 @@
 import { Home } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { Button, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
 import { updateProfile } from 'firebase/auth';
@@ -13,6 +12,7 @@ import { signOut } from '../../api/users';
 import { useAuth } from '../../providers/AuthProvider';
 import { ControledInput } from './ControledInput';
 import { StyledModal } from './StyledModal';
+import { button, linkButton } from './style.utils';
 
 export function Header() {
   const [open, setOpen] = useState(true);
@@ -39,14 +39,19 @@ export function Header() {
                     <LogoutIcon />
                   </IconButton>
                 </Box>
-                <Link to="/" aria-label="home" css={{ color: 'white' }}>
-                  <Home />
-                </Link>
+
+                <Box sx={button}>
+                  <Link to="/" aria-label="home" css={linkButton}>
+                    <Home />
+                  </Link>
+                </Box>
               </Fragment>
             ) : (
-              <Link to="/auth" css={{ color: 'white' }}>
-                <AccountCircle />
-              </Link>
+              <Box sx={button}>
+                <Link to="/auth" css={linkButton}>
+                  <AccountCircle />
+                </Link>
+              </Box>
             )}
           </Toolbar>
         </AppBar>

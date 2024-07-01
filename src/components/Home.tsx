@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserCharacters } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
+import { button, fab, linkButton } from './shared/style.utils';
 
 const RaceImages: Record<string, string> = {
   dragonborn: 'https://www.dndbeyond.com/attachments/9/41/chromatic-dragonborn.jpg',
@@ -86,25 +87,8 @@ export function Home() {
           </Box>
         ))}
 
-        <Fab
-          size="small"
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16
-          }}
-        >
-          <Link
-            to="/create"
-            css={{
-              ':visited:focus:hover:active': { color: 'inherit' },
-              display: 'flex',
-              flex: 1,
-              justifyContent: 'space-evenly',
-              alignSelf: 'stretch',
-              alignItems: 'center'
-            }}
-          >
+        <Fab size="small" sx={{ ...button, ...fab }}>
+          <Link to="/create" css={linkButton}>
             <AddRounded />
           </Link>
         </Fab>

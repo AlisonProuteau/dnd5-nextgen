@@ -22,7 +22,9 @@ export function Traits({ character }: { character: Character }) {
     'elf-weapon-training',
     'high-elf-cantrip',
     'extra-language',
-    'menacing'
+    'menacing',
+    'sorcerous-origin',
+    'draconic-resilience'
   ];
 
   const { data: features } = useQueries({

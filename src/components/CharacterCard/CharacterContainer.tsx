@@ -1,16 +1,17 @@
-import { KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import { EditRounded, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
   Button,
   CircularProgress,
   Container,
   Divider,
+  Fab,
   MobileStepper,
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '../../api/ressources';
 import { getCharacter } from '../../api/users';
@@ -19,6 +20,7 @@ import type { Level } from '../../representations/campaign/level.representation'
 import type { Classes, Subclass } from '../../representations/character/class.representation';
 import type { DefaultRepresentation } from '../../representations/common.representation';
 import type { CharacterFormData } from '../CharacterCreation/CharacterCreation';
+import { button, fab, linkButton } from '../shared/style.utils';
 import { Characteristics } from './Characteristics';
 import { Description } from './Description';
 import { EquipmentList } from './EquipmentList';
@@ -28,6 +30,7 @@ import { Traits } from './Traits';
 export type Character = CharacterFormData & {
   id: string;
   hit_die: number;
+  hit_points: number;
   saving_throws?: DefaultRepresentation[];
   armorClass: number;
   abilityScores: Record<
@@ -231,6 +234,12 @@ export function CharacterContainer() {
       ) : (
         <CircularProgress size={24} />
       )}
+
+      <Fab size="small" sx={{ ...button, ...fab }} disabled={true}>
+        <Link to="points" state={{ characterId: id }} css={linkButton}>
+          <EditRounded />
+        </Link>
+      </Fab>
     </Container>
   );
 }

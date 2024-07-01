@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
         ${(error as Error).message || 'Error'}`
       );
     },
-    onSuccess: (data, { queryKey }) => console.debug(queryKey, data)
+    onSuccess: (data, { queryKey }) => console.debug(queryKey.join(', '), data)
   }),
   defaultOptions: {
     queries: {
