@@ -15,7 +15,7 @@ import type { Alignment, Background } from '../representations/character/backgro
 import type { Classes, Subclass } from '../representations/character/class.representation';
 import type { Race, Subrace } from '../representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '../representations/common.representation';
-import { get, getAll, type QueryObject } from './utils';
+import { get, getAll, type QueryObject } from '../utils/api.utils';
 
 export async function getAllRaces(): Promise<{
   count: number;

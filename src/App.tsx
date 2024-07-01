@@ -7,13 +7,13 @@ import {
   useRouteError,
   type ErrorResponse
 } from 'react-router-dom';
-import { AuthPage } from '../components/AuthPage';
-import { CharacterContainer } from '../components/CharacterCard/CharacterContainer';
-import { CharacterPoints } from '../components/CharacterCard/CharacterPoints';
-import { CharacterCreation } from '../components/CharacterCreation/CharacterCreation';
-import { Home } from '../components/Home';
-import { Header } from '../components/shared/Header';
-import { useAuth } from './AuthProvider';
+import { AuthPage } from './components/AuthPage';
+import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
+import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
+import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
+import { Header } from './components/Header';
+import { Home } from './components/Home';
+import { useAuth } from './providers/AuthProvider';
 
 function ErrorPage() {
   const error = useRouteError() as (Error & ErrorResponse) | undefined;

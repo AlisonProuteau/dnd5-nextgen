@@ -24,7 +24,8 @@ export function Traits({ character }: { character: Character }) {
     'extra-language',
     'menacing',
     'sorcerous-origin',
-    'draconic-resilience'
+    'draconic-resilience',
+    'otherworldly-patron'
   ];
 
   const { data: features } = useQueries({
@@ -91,8 +92,8 @@ export function Traits({ character }: { character: Character }) {
                   ?.expertises?.map((e) => (
                     <Typography key={e.index}>{e.name}</Typography>
                   ))}
-                {feature.desc.map((s) => (
-                  <Typography>{s}</Typography>
+                {feature.desc.map((s, i) => (
+                  <Typography key={`desc-${i}`}>{s}</Typography>
                 ))}
               </AccordionDetails>
             </Accordion>
@@ -120,8 +121,8 @@ export function Traits({ character }: { character: Character }) {
                   ?.spells?.map((s) => (
                     <Typography key={s.index}>{s.name}</Typography>
                   ))}
-                {trait.desc.map((s) => (
-                  <Typography>{s}</Typography>
+                {trait.desc.map((s, i) => (
+                  <Typography key={`desc-${i}`}>{s}</Typography>
                 ))}
               </AccordionDetails>
             </Accordion>

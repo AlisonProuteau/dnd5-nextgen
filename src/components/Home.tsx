@@ -15,7 +15,7 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserCharacters } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
-import { button, fab, linkButton } from './shared/style.utils';
+import { button, fab, linkButton } from '../utils/style.utils';
 
 const RaceImages: Record<string, string> = {
   dragonborn: 'https://www.dndbeyond.com/attachments/9/41/chromatic-dragonborn.jpg',

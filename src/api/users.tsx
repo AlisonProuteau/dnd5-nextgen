@@ -3,7 +3,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 import type { Character } from '../components/CharacterCard/CharacterContainer';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
-import { get, getAll } from './utils';
+import { get, getAll } from '../utils/api.utils';
 
 export const createUser = (email: string, password: string, displayName?: string) =>
   createUserInFirebase(email, password)

@@ -22,9 +22,9 @@ import { getCharacter } from '../../api/users';
 import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
 import type { Classes } from '../../representations/character/class.representation';
+import { button, fab, linkButton } from '../../utils/style.utils';
 import { NumberInput } from '../shared/NumberInput';
 import { SplitButton } from '../shared/SplitButton';
-import { button, fab, linkButton } from '../shared/style.utils';
 import {
   getAbilityPoints,
   getAbilityScoreModifier,

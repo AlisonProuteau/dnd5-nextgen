@@ -63,7 +63,7 @@ export function AbilityComponent({
           <Typography variant="caption" zIndex={50} paddingTop="10px">
             {ability.full_name}
           </Typography>
-          <Typography alignSelf="center">+ {modifier}</Typography>
+          <Typography alignSelf="center">{modifier > 0 ? '+' + modifier : modifier}</Typography>
           <Paper
             sx={{ width: 'fit-content', paddingY: '5px', paddingX: '20px', marginBottom: '-15px' }}
           >

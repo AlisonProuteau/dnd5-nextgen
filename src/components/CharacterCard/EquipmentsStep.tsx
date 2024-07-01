@@ -13,7 +13,7 @@ import { IconText } from '../shared/IconText';
 import type { Character } from './CharacterContainer';
 import { EquipmentCard } from './EquipmentCard';
 
-export function EquipmentList({ character }: { character: Character }) {
+export function Equipments({ character }: { character: Character }) {
   const [isDialogOpen, setIsDialogueOpen] = useState(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment>();
 
