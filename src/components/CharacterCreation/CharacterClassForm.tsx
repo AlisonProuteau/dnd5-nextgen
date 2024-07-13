@@ -301,7 +301,7 @@ export function CharacterClassForm({
                   feature.feature_specific?.expertise_options
                     ? {
                         ...feature.feature_specific?.expertise_options,
-                        desc: feature.desc.find((d) => d.includes('1st'))
+                        desc: feature.desc.find((d) => d.includes('1st')) || feature.desc[0]
                       }
                     : undefined
                 )}

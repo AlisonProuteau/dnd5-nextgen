@@ -2219,6 +2219,71 @@ const characters = [
     ]
   },
   {
+    size: 'Medium',
+    hit_points: 10,
+    id: 'c7GSL1NfFVwL5al1esPp',
+    proficiencies: [
+      {
+        type: 'class',
+        name: 'Light Armor',
+        index: 'light-armor'
+      },
+      {
+        index: 'medium-armor',
+        type: 'class',
+        name: 'Medium Armor'
+      },
+      {
+        name: 'Shields',
+        index: 'shields',
+        type: 'class'
+      },
+      {
+        name: 'Simple Weapons',
+        index: 'simple-weapons',
+        type: 'class'
+      },
+      {
+        index: 'martial-weapons',
+        name: 'Martial Weapons',
+        type: 'class'
+      }
+    ],
+    saving_throws: [
+      {
+        index: 'str',
+        name: 'STR'
+      },
+      {
+        name: 'DEX',
+        index: 'dex'
+      }
+    ],
+    name: 'Ravy',
+    speed: 30,
+    abilities: [
+      {
+        ability_score: {
+          index: 'str',
+          name: 'STR'
+        },
+        bonus: 2
+      },
+      {
+        bonus: 1,
+        ability_score: {
+          name: 'CON',
+          index: 'con'
+        }
+      }
+    ],
+    alignment: {
+      name: 'Neutral',
+      desc: "Neutral (N) is the alignment of those who prefer to steer clear of moral questions and don't take sides, doing what seems best at the time. Lizardfolk, most druids, and many humans are neutral.",
+      index: 'neutral',
+      abbreviation: 'N'
+    },
+    age: 26,
     traits: [
       {
         name: 'Darkvision',
@@ -2237,32 +2302,130 @@ const characters = [
         name: 'Menacing'
       }
     ],
+    subclass: {
+      name: 'Hunter',
+      index: 'hunter'
+    },
+    languages: [
+      {
+        type: 'race',
+        name: 'Common',
+        index: 'common'
+      },
+      {
+        index: 'orc',
+        name: 'Orc',
+        type: 'race'
+      }
+    ],
+    sex: {
+      name: 'Female',
+      index: 'F'
+    },
+    armorClass: 13,
     class: {
       index: 'ranger',
       name: 'Ranger'
     },
-    age: 26,
+    race: {
+      name: 'Half-orc',
+      index: 'half-orc'
+    },
+    skills: [
+      {
+        index: 'skill-animal-handling',
+        name: 'Skill: Animal Handling',
+        type: 'class'
+      },
+      {
+        name: 'Skill: Nature',
+        index: 'skill-nature',
+        type: 'class'
+      },
+      {
+        index: 'skill-survival',
+        type: 'class',
+        name: 'Skill: Survival'
+      },
+      {
+        name: 'Skill: Intimidation',
+        index: 'skill-intimidation',
+        type: 'race'
+      }
+    ],
+    proficiencyBonus: 2,
+    abilityScores: {
+      str: {
+        score: 17,
+        index: 'str',
+        modifier: 3,
+        name: 'STR',
+        full_name: 'Strength'
+      },
+      int: {
+        full_name: 'Intelligence',
+        modifier: 3,
+        index: 'int',
+        name: 'INT',
+        score: 16
+      },
+      dex: {
+        modifier: 2,
+        name: 'DEX',
+        full_name: 'Dexterity',
+        score: 14,
+        index: 'dex'
+      },
+      con: {
+        index: 'con',
+        modifier: 0,
+        score: 11,
+        full_name: 'Constitution',
+        name: 'CON'
+      },
+      cha: {
+        full_name: 'Charisma',
+        modifier: 2,
+        name: 'CHA',
+        score: 15,
+        index: 'cha'
+      },
+      wis: {
+        name: 'WIS',
+        modifier: 2,
+        score: 15,
+        index: 'wis',
+        full_name: 'Wisdom'
+      }
+    },
     size_description:
       'Half-orcs are somewhat larger and bulkier than humans, and they range from 5 to well over 6 feet tall. Your size is Medium.',
     hit_die: 10,
-    size: 'Medium',
+    background: {
+      name: 'Custom',
+      index: 'custom'
+    },
     equipments: [
       {
+        type: 'class',
         index: 'leather-armor',
         name: 'Leather Armor',
-        type: 'class',
         count: 1
       },
       {
-        type: 'class',
-        index: 'shortsword',
-        name: 'Shortsword',
-        count: 2
+        index: 'handaxe',
+        name: 'Handaxe',
+        type: 'class'
       },
       {
-        name: "Explorer's Pack",
-        count: 1,
+        name: 'Light hammer',
         type: 'class',
+        index: 'light-hammer'
+      },
+      {
+        type: 'class',
+        count: 1,
+        name: "Explorer's Pack",
         index: 'explorers-pack'
       },
       {
@@ -2272,179 +2435,26 @@ const characters = [
       },
       {
         index: 'arrow',
-        name: 'Arrow',
-        type: 'class'
+        type: 'class',
+        name: 'Arrow'
       }
     ],
-    abilities: [
-      {
-        ability_score: {
-          index: 'str',
-          name: 'STR'
-        },
-        bonus: 2
-      },
-      {
-        bonus: 1,
-        ability_score: {
-          name: 'CON',
-          index: 'con'
-        }
-      }
-    ],
-    skills: [
-      {
-        name: 'Skill: Animal Handling',
-        index: 'skill-animal-handling',
-        type: 'class'
-      },
-      {
-        type: 'class',
-        name: 'Skill: Survival',
-        index: 'skill-survival'
-      },
-      {
-        name: 'Skill: Nature',
-        type: 'class',
-        index: 'skill-nature'
-      },
-      {
-        type: 'race',
-        name: 'Skill: Intimidation',
-        index: 'skill-intimidation'
-      }
-    ],
-    alignment: {
-      abbreviation: 'N',
-      desc: "Neutral (N) is the alignment of those who prefer to steer clear of moral questions and don't take sides, doing what seems best at the time. Lizardfolk, most druids, and many humans are neutral.",
-      name: 'Neutral',
-      index: 'neutral'
-    },
-    hit_points: 14,
-    speed: 30,
-    proficiencyBonus: 2,
-    armorClass: 12,
-    background: {
-      index: 'custom',
-      name: 'Custom'
-    },
-    proficiencies: [
-      {
-        name: 'Light Armor',
-        type: 'class',
-        index: 'light-armor'
-      },
-      {
-        type: 'class',
-        name: 'Medium Armor',
-        index: 'medium-armor'
-      },
-      {
-        type: 'class',
-        index: 'shields',
-        name: 'Shields'
-      },
-      {
-        index: 'simple-weapons',
-        name: 'Simple Weapons',
-        type: 'class'
-      },
-      {
-        name: 'Martial Weapons',
-        type: 'class',
-        index: 'martial-weapons'
-      }
-    ],
-    saving_throws: [
-      {
-        index: 'str',
-        name: 'STR'
-      },
-      {
-        name: 'DEX',
-        index: 'dex'
-      }
-    ],
-    subclass: {
-      name: 'Hunter',
-      index: 'hunter'
-    },
-    name: 'Ravy',
     features: [
       {
-        name: 'Favored Enemy (1 type)',
-        index: 'favored-enemy-1-type'
+        index: 'favored-enemy-1-type',
+        name: 'Favored Enemy (1 type)'
       },
       {
-        name: 'Natural Explorer (1 terrain type)',
-        index: 'natural-explorer-1-terrain-type'
+        index: 'natural-explorer-1-terrain-type',
+        expertises: [
+          {
+            index: 'terrain-3',
+            name: 'forest'
+          }
+        ],
+        name: 'Natural Explorer (1 terrain type)'
       }
-    ],
-    abilityScores: {
-      cha: {
-        name: 'CHA',
-        modifier: -1,
-        full_name: 'Charisma',
-        index: 'cha',
-        score: 9
-      },
-      wis: {
-        index: 'wis',
-        score: 7,
-        modifier: -2,
-        full_name: 'Wisdom',
-        name: 'WIS'
-      },
-      int: {
-        modifier: 3,
-        score: 16,
-        full_name: 'Intelligence',
-        index: 'int',
-        name: 'INT'
-      },
-      con: {
-        index: 'con',
-        modifier: 4,
-        score: 18,
-        full_name: 'Constitution',
-        name: 'CON'
-      },
-      dex: {
-        index: 'dex',
-        score: 12,
-        full_name: 'Dexterity',
-        name: 'DEX',
-        modifier: 1
-      },
-      str: {
-        modifier: 1,
-        index: 'str',
-        name: 'STR',
-        full_name: 'Strength',
-        score: 13
-      }
-    },
-    languages: [
-      {
-        index: 'common',
-        type: 'race',
-        name: 'Common'
-      },
-      {
-        name: 'Orc',
-        index: 'orc',
-        type: 'race'
-      }
-    ],
-    sex: {
-      name: 'Female',
-      index: 'F'
-    },
-    id: 'pBnuBlv0SbaIZ683jEmg',
-    race: {
-      name: 'Half-orc',
-      index: 'half-orc'
-    }
+    ]
   },
   {
     skills: [

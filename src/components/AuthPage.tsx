@@ -4,6 +4,7 @@ import { Box, Button, Container, IconButton, InputAdornment } from '@mui/materia
 import { ControledInput } from '@shared/ControledInput';
 import { omit } from 'lodash';
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface FormData {
   name?: string;
@@ -22,6 +23,7 @@ export function AuthPage() {
     passwordConfrim?: boolean;
   }>({});
   const [hasAccount, setHasAccount] = useState(true);
+  const navigate = useNavigate();
 
   const setFormData = (values: Partial<FormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -88,6 +90,7 @@ export function AuthPage() {
       }
 
       await signIn(formData.email, formData.password);
+      navigate('/');
     }
   };
 

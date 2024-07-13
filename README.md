@@ -12,6 +12,10 @@ Spells:
 
 - Choosing your spells (C level, spellattack, spell DC)?
 
+Level up:
+
+- Check all traits and features and verify choices
+
 Tests:
 
 - Test equipment for proficiencies

@@ -22,7 +22,7 @@ const steps = [
 ];
 
 export function CharacterCreation() {
-  const user = useAuth();
+  const [user] = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({

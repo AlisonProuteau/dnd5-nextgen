@@ -17,7 +17,7 @@ import { useAuth } from '../providers/AuthProvider';
 export function Header() {
   const [open, setOpen] = useState(true);
   const [username, setUsername] = useState<string>();
-  const user = useAuth();
+  const [user] = useAuth();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

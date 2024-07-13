@@ -27,7 +27,7 @@ import { Spells } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
 export function CharacterContainer() {
-  const user = useAuth();
+  const [user] = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [id, setId] = useState<string>();
@@ -149,10 +149,8 @@ export function CharacterContainer() {
   };
 
   const swipeHandlers = useSwipeable({
-    onSwiped: (eventData) => console.log('User Swiped!', eventData),
     onSwipedLeft: handleNext,
     onSwipedRight: handleBack
-    // TODO: add more configs
   });
 
   return (

@@ -1,0 +1,40 @@
+import { AreaIcon, BladeIcon, DodgeIcon, TimeIcon } from '@assets';
+import { Typography } from '@mui/material';
+import { Box } from '@mui/system';
+import type { Action } from '@representations/abilities/trait.representation';
+
+export function ActionInfo({ action }: { action: Action }) {
+  return (
+    <Box paddingBottom="15px" paddingLeft="15px">
+      <Box display="flex" gap="5px">
+        <TimeIcon height="20px" width="20px" fill="white" />
+        <Typography>
+          {action.usage.times}
+          {action.usage.type}
+        </Typography>
+      </Box>
+      <Box display="flex" gap="5px">
+        <AreaIcon height="20px" width="20px" fill="white" />
+        <Typography>
+          {action?.area_of_effect.size}ft - {action?.area_of_effect.type}
+        </Typography>
+      </Box>
+      {action?.damage.map((dam, i) => (
+        <Box display="flex" gap="5px" key={`${dam.damage_type?.index}-${i}`}>
+          <BladeIcon height="20px" width="20px" fill="white" />
+          <Typography>
+            {dam.damage_at_slot_level?.['1'] || dam.damage_at_character_level?.['1']} -{' '}
+            {dam.damage_type?.name}
+          </Typography>
+        </Box>
+      ))}
+      <Box display="flex" gap="5px">
+        <DodgeIcon height="20px" width="20px" fill="white" />
+        <Typography>
+          {`DC - ${action?.dc.dc_type.index}`}
+          {action?.dc.dc_value ? `${action?.dc.dc_value} - ` : ' '}({action?.dc.success_type})
+        </Typography>
+      </Box>
+    </Box>
+  );
+}

@@ -14,6 +14,7 @@ import { CharacterCreation } from './components/CharacterCreation/CharacterCreat
 import { Header } from './components/Header';
 import { Home } from './components/Home';
 import { useAuth } from './providers/AuthProvider';
+import { DataBasePage } from './providers/DataBasePage';
 
 function ErrorPage() {
   const error = useRouteError() as (Error & ErrorResponse) | undefined;
@@ -31,19 +32,23 @@ function ErrorPage() {
 }
 
 export function App() {
-  const user = useAuth();
+  const [user, isLoading] = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (isLoading) return;
+
     if (!location.pathname.startsWith('/auth') && !user?.uid) navigate('/auth', { replace: true });
-    if (location.pathname.startsWith('/character') && !location.state?.characterId)
+    else if (location.pathname.startsWith('/auth') && user?.uid) navigate('/', { replace: true });
+    else if (location.pathname.startsWith('/character') && !location.state?.characterId)
       navigate('/', { replace: true });
-  }, [location.pathname]);
+  }, [location.pathname, isLoading]);
 
   return (
     <Routes>
       <Route element={<Header />} errorElement={<ErrorPage />}>
+        <Route path="/database" element={<DataBasePage />} />
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="create" element={<CharacterCreation />} />
@@ -52,7 +57,6 @@ export function App() {
           <Route path="points" element={<CharacterPoints />} />
         </Route>
       </Route>
-      {/* <Route path="/database" element={<DataBasePage />} /> */}
     </Routes>
   );
 }

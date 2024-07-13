@@ -1,22 +1,24 @@
 import { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { onAuthChange } from '../firebase';
 
-const AuthContext = createContext<User | null>(null);
+const AuthContext = createContext<[User | null, boolean]>([null, true]);
 export function AuthProvider({ children }: { children: JSX.Element }) {
-  const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     onAuthChange((currentUser) => {
+      setIsLoading(false);
       setUser(currentUser);
-      if (currentUser) navigate('/');
-      else navigate('/auth');
+      if (!currentUser) navigate('/auth');
     });
   }, []);
 
-  return <AuthContext.Provider value={user}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={[user, isLoading]}>{children}</AuthContext.Provider>;
 }
 
 export const useAuth = () => {

@@ -1,9 +1,11 @@
 export { default as AgeIcon } from './age.svg?react';
 export { default as AlignmentIcon } from './alignement.svg?react';
+export { default as AreaIcon } from './area.svg?react';
 export { default as ArmorIcon } from './armor.svg?react';
 export { default as BladeIcon } from './blade.svg?react';
 export { default as CoinsIcon } from './coins.svg?react';
 export { default as DiceRandomIcon } from './dice-random.svg?react';
+export { default as DodgeIcon } from './dodge.svg?react';
 export { default as FemaleIcon } from './female.svg?react';
 export { default as HeightIcon } from './height.svg?react';
 export { default as HitPointsIcon } from './hitpoints.svg?react';
@@ -13,4 +15,5 @@ export { default as OtherIcon } from './other.svg?react';
 export { default as ProficiencyIcon } from './proficiency.svg?react';
 export { default as ShieldIcon } from './shield.svg?react';
 export { default as SpeedIcon } from './speed.svg?react';
+export { default as TimeIcon } from './time.svg?react';
 export { default as WeightIcon } from './weight.svg?react';

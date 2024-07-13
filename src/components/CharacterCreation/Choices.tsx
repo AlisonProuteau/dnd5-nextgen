@@ -168,7 +168,11 @@ export function Choices({
       prerequisites: boolean;
     } = {
       index:
-        option.item?.index || option.of?.index || option.ability_score?.index || `${type}-${index}`,
+        option.item?.index ||
+        option.of?.index ||
+        option.ability_score?.index ||
+        (option.string && `${option.string}-${type}-${index}`) ||
+        `${type}-${index}`,
       name:
         option.item?.name ||
         option.string ||
@@ -299,6 +303,7 @@ export function Choices({
     });
   };
 
+  // Fix: With 2 choices, get select up to the max (ranger expertise)
   const formatChoice = (choice: Choice, i: number, isMultiple?: boolean) => {
     let currentOptions: undefined | Option[] = undefined;
     if (choice.from.option_set_type === 'options_array') {
