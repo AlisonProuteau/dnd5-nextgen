@@ -25,12 +25,7 @@ import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
-import {
-  getAbilityPoints,
-  getAbilityScoreModifier,
-  getArmorClass,
-  randomInteger
-} from './points.utils';
+import { getAbilityPoints, getAbilityScoreModifier, getArmorClass, randomInteger } from './utils';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 

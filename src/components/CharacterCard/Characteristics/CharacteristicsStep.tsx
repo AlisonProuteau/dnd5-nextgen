@@ -121,17 +121,7 @@ export function Characteristics({ character }: { character: Character }) {
       {features && (
         <Box paddingTop="15px">
           {features.map((feature) => (
-            <Accordion
-              key={feature.index}
-              onChange={(_, exp) =>
-                exp &&
-                console.log(
-                  feature.name,
-                  feature,
-                  subfeatures.filter(({ parent }) => parent?.index === feature.index)
-                )
-              }
-            >
+            <Accordion key={feature.index}>
               <AccordionSummary expandIcon={<ExpandMore />}>{feature.name}</AccordionSummary>
               <AccordionDetails sx={{ textAlign: 'justify' }}>
                 {character.features
@@ -164,19 +154,7 @@ export function Characteristics({ character }: { character: Character }) {
       {traits && (
         <Box paddingTop="15px">
           {traits.map((trait) => (
-            <Accordion
-              key={trait.index}
-              onChange={(_, exp) =>
-                exp &&
-                console.log(
-                  trait.name,
-                  trait,
-                  subtraits.filter(
-                    ({ trait_specific }) => trait_specific?.action?.index === trait.index
-                  )
-                )
-              }
-            >
+            <Accordion key={trait.index}>
               <AccordionSummary expandIcon={<ExpandMore />}>{trait.name}</AccordionSummary>
               <AccordionDetails sx={{ textAlign: 'justify' }}>
                 {subtraits

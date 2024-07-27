@@ -23,7 +23,7 @@ import { useAuth } from '../../providers/AuthProvider';
 import { Characteristics } from './Characteristics/CharacteristicsStep';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
-import { Spells } from './Spells/SpellsStep';
+import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
 export function CharacterContainer() {
@@ -119,7 +119,7 @@ export function CharacterContainer() {
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
 
   useEffect(() => {
-    if (id && !isCharacterLoading && !character?.abilityScores)
+    if (id && !isCharacterLoading && character && !character?.abilityScores)
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
@@ -207,7 +207,7 @@ export function CharacterContainer() {
             {activeStep === 2 && <Equipments character={character} />}
             {activeStep === 3 && <Description character={character} />}
             {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&
-              activeStep === 4 && <Spells character={character} />}
+              activeStep === 4 && <SpellStep character={character} />}
           </Box>
         </Fragment>
       ) : (

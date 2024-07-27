@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Box } from '@mui/system';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
+import { EquipmentLine } from '@shared/EquipmentLine';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
 
@@ -30,23 +31,6 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
       };
     }, [])
   });
-
-  function EquipmentLine({ label, data }: { label: string; data: string | string[] }) {
-    return (
-      <Box display="flex" flexWrap="wrap" alignItems="baseline" columnGap="5px" textAlign="justify">
-        <Typography variant="body2" color="lightgrey" display="contents">
-          {label}
-        </Typography>
-        {Array.isArray(data)
-          ? data.map((d, i) => (
-              <Typography key={`${label}-${i}`} display={i === 0 ? 'contents' : 'inline-flex'}>
-                {d}
-              </Typography>
-            ))
-          : data}
-      </Box>
-    );
-  }
 
   return (
     <Fragment>
@@ -75,7 +59,7 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
         <DialogContentText textAlign="justify">{selectedEquipment.desc}</DialogContentText>
         {selectedEquipment.armor_class && (
           <EquipmentLine
-            label="Armor Class: "
+            label="Armor Class"
             data={`${selectedEquipment.armor_class.base}
             ${selectedEquipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
             ${
@@ -86,18 +70,18 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
           />
         )}
         {selectedEquipment.category_range && (
-          <EquipmentLine label="Range Category: " data={selectedEquipment.category_range} />
+          <EquipmentLine label="Range Category" data={selectedEquipment.category_range} />
         )}
         {selectedEquipment.range && (
           <EquipmentLine
-            label="Range: "
-            data={`${selectedEquipment.range.normal}
-            ${selectedEquipment.range.long ? ` - ${selectedEquipment.range.long}` : ''}`}
+            label="Range"
+            data={`${selectedEquipment.range.normal}ft
+            ${selectedEquipment.range.long ? ` - ${selectedEquipment.range.long}ft` : ''}`}
           />
         )}
         {selectedEquipment.throw_range && (
           <EquipmentLine
-            label="Throw Range: "
+            label="Throw Range"
             data={`
             ${selectedEquipment.throw_range.normal}
             ${
@@ -107,18 +91,18 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
         )}
         {selectedEquipment.damage && (
           <EquipmentLine
-            label="Damage: "
+            label="Damage"
             data={`${selectedEquipment.damage.damage_dice} ${selectedEquipment.damage.damage_type.name}`}
           />
         )}
         {selectedEquipment.two_handed_damage && (
           <EquipmentLine
-            label="Two-Handed Damage: "
+            label="Two-Handed Damage"
             data={`${selectedEquipment.two_handed_damage.damage_dice} ${selectedEquipment.two_handed_damage.damage_type.name}`}
           />
         )}
         {selectedEquipment.capacity && (
-          <EquipmentLine label="Capacity: " data={selectedEquipment.capacity.toString()} />
+          <EquipmentLine label="Capacity" data={selectedEquipment.capacity.toString()} />
         )}
         {selectedEquipment.contents?.map((content) => (
           <Typography key={content.item.index}>
@@ -127,19 +111,16 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
         ))}
         {selectedEquipment.speed && (
           <EquipmentLine
-            label="Speed: "
+            label="Speed"
             data={`${selectedEquipment.speed?.quantity} ${selectedEquipment.speed?.unit}`}
           />
         )}
         {selectedEquipment.str_minimum ? (
-          <EquipmentLine
-            label="Minimum Strength: "
-            data={selectedEquipment.str_minimum.toString()}
-          />
+          <EquipmentLine label="Minimum Strength" data={selectedEquipment.str_minimum.toString()} />
         ) : null}
         {selectedEquipment.stealth_disadvantage && <Typography>Stealth Disadvantage</Typography>}
         {selectedEquipment.special && (
-          <EquipmentLine label="Special: " data={selectedEquipment.special} />
+          <EquipmentLine label="Special" data={selectedEquipment.special} />
         )}
         {selectedEquipment.properties && (
           <Box paddingTop="15px">

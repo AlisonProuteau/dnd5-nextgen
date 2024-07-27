@@ -1,13 +1,16 @@
-import { getClassInfo, getSpellsForClass, getSubclassInfo } from '@api/ressources';
-import { Button, Typography } from '@mui/material';
+import { getClassInfo, getSubclassInfo } from '@api/ressources';
+import { Box, Typography } from '@mui/material';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { Character } from '@representations/user.representation';
+import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useEffect } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import { SpellList } from './SpellList';
 
-// TODO
-export function Spells({ character }: { character: Character }) {
+export function SpellStep({ character }: { character: Character }) {
+  const [page, setPage] = useState<'main' | 'full' | 'prepare' | 'howto'>('full');
+
   const { data: classInfo } = useQuery({
     queryKey: ['fetchClassInfo', character?.class.index],
     queryFn: async () =>
@@ -39,31 +42,43 @@ export function Spells({ character }: { character: Character }) {
     enabled: !!character?.class.index
   });
 
-  // TODO: App spells from traits
-  const { data: spells } = useQuery({
-    queryKey: ['fetchSpells', character?.class?.index, character?.subclass?.index, 1],
-    queryFn: async () =>
-      character?.class?.index
-        ? (await getSpellsForClass(character.class.index, character.subclass?.index, 1)).results
-        : null,
-    enabled: !!character?.class.index
-  });
-
   useEffect(() => {
     console.log('class: ', classInfo?.spellcasting); // Gives user info on how it works + spellcasting ability + level?
     // If i have spells but level is not 1, cannot cast ?
     // What about only sub then?
     // What if only sub and no known spells or spell slots all 0? (paladin)
     console.log('level: ', levelInfo?.spellcasting); // Actual usable spell data
-    console.log('spells: ', spells); // Spell list
-  }, [classInfo?.spellcasting, levelInfo?.spellcasting, spells]);
+  }, [classInfo?.spellcasting, levelInfo?.spellcasting]);
+
+  const spellMenu = [
+    { text: 'Known/Prepared Spells', value: 'main' },
+    { text: 'See Full List', value: 'full' },
+    { text: 'Prepare or Learn or whatever', value: 'prepare' },
+    { text: 'How does it work ?', value: 'howto' }
+  ];
 
   return (
     <Fragment>
-      <Typography>Known/Prepared Spells</Typography>
-      <Button variant="outlined">See Full List</Button>
-      <Button variant="outlined">Prepare or Learn or whatever</Button>
-      <Button variant="outlined">How does it work ?</Button>
+      <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
+        <SplitButton
+          options={spellMenu}
+          onClick={(val) => setPage(val as typeof page)}
+          defaultValue={page}
+          variant="outlined"
+        />
+      </Box>
+
+      {page === 'main' && <Typography>Main</Typography>}
+      {page === 'full' && (
+        <SpellList
+          classIndex={character.class.index}
+          subclassIndex={character.subclass?.index}
+          charLevel={1}
+          moreSpells={character.traits?.flatMap(({ spells }) => spells || [])}
+        />
+      )}
+      {page === 'prepare' && <Typography>Prepare</Typography>}
+      {page === 'howto' && <Typography>HowTo</Typography>}
     </Fragment>
   );
 }

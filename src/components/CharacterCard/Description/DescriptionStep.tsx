@@ -28,7 +28,7 @@ export function Description({ character }: { character: Character }) {
           top="0px"
         />
         <IconText label="Age" value={character.age} Icon={AgeIcon} color="grey" top="45px" />
-        <IconText label="Size" value={character.size} Icon={HeightIcon} color="grey" />
+        <IconText label="Size" value={character.size} Icon={HeightIcon} color="lightgrey" />
         <IconText
           label="Alignment"
           value={character.alignment.abbreviation}

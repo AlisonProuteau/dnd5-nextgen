@@ -9,7 +9,7 @@ import type { Classes, Subclass } from '@representations/character/class.represe
 import type { Race, Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '@representations/common.representation';
 import { get, getAll, type QueryObject } from '@utils/api.utils';
-import { omit, uniqBy } from 'lodash';
+import { omit } from 'lodash';
 
 export async function getAllRaces(): Promise<{
   count: number;
@@ -108,20 +108,28 @@ export async function getSpellsForClass(
       ).results
     : [];
 
-  const allSpells = uniqBy(
+  const allSpells = (
     (
-      (
-        await getAll(
-          'Spells for class',
-          '/spells',
-          getQueryForIndexAndLevel('classes', classIndex, level)
-        )
-      ).results as Spell[]
-    ).concat(subClassSpells),
-    'index'
-  );
+      await getAll(
+        'Spells for class',
+        '/spells',
+        getQueryForIndexAndLevel('classes', classIndex, level)
+      )
+    ).results as Spell[]
+  )
+    .concat(subClassSpells)
+    .reduce((acc: Spell[], current) => {
+      if (acc.find((spell) => spell.index === current.index && spell.level === current.level))
+        return acc;
+
+      return [...acc, current];
+    }, []);
 
   return { count: allSpells.length, results: allSpells };
+}
+
+export async function getSpell(index: string): Promise<Spell | null> {
+  return get('Spell', '/spells', index);
 }
 
 export async function getFeature(index: string): Promise<Feature | null> {
