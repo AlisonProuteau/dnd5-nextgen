@@ -1,10 +1,16 @@
 import { createUser, signIn } from '@api/users';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { Box, Button, Container, IconButton, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  IconButton,
+  InputAdornment
+} from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
 import { omit } from 'lodash';
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Fragment, useState, type FormEvent } from 'react';
 
 interface FormData {
   name?: string;
@@ -15,6 +21,7 @@ interface FormData {
 }
 
 export function AuthPage() {
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormDataState] = useState<FormData>({ showPassword: false });
   const [formError, setFormErrorState] = useState<{
     name?: boolean;
@@ -23,7 +30,6 @@ export function AuthPage() {
     passwordConfrim?: boolean;
   }>({});
   const [hasAccount, setHasAccount] = useState(true);
-  const navigate = useNavigate();
 
   const setFormData = (values: Partial<FormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -83,6 +89,7 @@ export function AuthPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsSaving(true);
 
     if (formData.email && formData.password && isFormValid()) {
       if (!hasAccount) {
@@ -90,8 +97,8 @@ export function AuthPage() {
       }
 
       await signIn(formData.email, formData.password);
-      navigate('/');
     }
+    setIsSaving(false);
   };
 
   return (
@@ -106,66 +113,74 @@ export function AuthPage() {
           setFormErrorState({});
         }}
       >
-        {!hasAccount && (
-          <ControledInput
-            fullWidth
-            id="name"
-            type="name"
-            label="Display name"
-            onChange={(value) => setFormData({ name: value as string })}
-            errorMessage={['Invalid Name']}
-            hasError={formError.name}
-          />
-        )}
+        {!isSaving ? (
+          <Fragment>
+            {!hasAccount && (
+              <ControledInput
+                fullWidth
+                id="name"
+                type="name"
+                label="Display name"
+                onChange={(value) => setFormData({ name: value as string })}
+                errorMessage={['Invalid Name']}
+                hasError={formError.name}
+              />
+            )}
 
-        <ControledInput
-          fullWidth
-          id="email"
-          type="email"
-          label="Email address"
-          onChange={(value) => setFormData({ email: value as string })}
-          errorMessage={['Invalid Email']}
-          hasError={formError.email}
-        />
+            <ControledInput
+              fullWidth
+              id="email"
+              type="email"
+              label="Email address"
+              onChange={(value) => setFormData({ email: value as string })}
+              errorMessage={['Invalid Email']}
+              hasError={formError.email}
+            />
 
-        <ControledInput
-          fullWidth
-          id="password"
-          type={formData.showPassword ? 'input' : 'password'}
-          label="Password"
-          onChange={(value) => setFormData({ password: value as string })}
-          errorMessage={formError.password}
-          hasError={!!formError.password}
-          endAdornment={
-            <InputAdornment position="end">
-              <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
-                {formData.showPassword ? <VisibilityOff /> : <Visibility />}
-              </IconButton>
-            </InputAdornment>
-          }
-        />
+            <ControledInput
+              fullWidth
+              id="password"
+              type={formData.showPassword ? 'input' : 'password'}
+              label="Password"
+              onChange={(value) => setFormData({ password: value as string })}
+              errorMessage={formError.password}
+              hasError={!!formError.password}
+              endAdornment={
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
+                    {formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              }
+            />
 
-        {!hasAccount && (
-          <ControledInput
-            fullWidth
-            id="passwordConfrim"
-            type={formData.showPassword ? 'input' : 'password'}
-            label="Confrim Password"
-            onChange={(value) => setFormData({ passwordConfrim: value as string })}
-            errorMessage={['Passwords mismatch']}
-            hasError={formError.passwordConfrim}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
-                  {formData.showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
-          />
+            {!hasAccount && (
+              <ControledInput
+                fullWidth
+                id="passwordConfrim"
+                type={formData.showPassword ? 'input' : 'password'}
+                label="Confrim Password"
+                onChange={(value) => setFormData({ passwordConfrim: value as string })}
+                errorMessage={['Passwords mismatch']}
+                hasError={formError.passwordConfrim}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setFormData({ showPassword: !formData.showPassword })}
+                    >
+                      {formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+              />
+            )}
+          </Fragment>
+        ) : (
+          <CircularProgress size={24} />
         )}
 
         <Button
-          disabled={!isFormValid()}
+          disabled={!isFormValid() || isSaving}
           sx={{ marginTop: '1rem' }}
           fullWidth
           type="submit"
@@ -176,7 +191,7 @@ export function AuthPage() {
 
         <Box display="flex" justifyContent="center" alignItems="center">
           {hasAccount ? "Don't have an account?" : 'Already have an account?'}
-          <Button type="reset" onClick={() => setHasAccount(!hasAccount)}>
+          <Button type="reset" onClick={() => setHasAccount(!hasAccount)} disabled={isSaving}>
             {hasAccount ? 'Sign Up' : 'Sign In'}
           </Button>
         </Box>

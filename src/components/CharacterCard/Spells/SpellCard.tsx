@@ -103,8 +103,8 @@ export function SpellCard({
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMore />}>Description</AccordionSummary>
           <AccordionDetails>
-            {spell.desc.map((d) => (
-              <Typography>{d}</Typography>
+            {spell.desc.map((d, i) => (
+              <Typography key={`spell-descrption-${i}`}>{d}</Typography>
             ))}
           </AccordionDetails>
         </Accordion>

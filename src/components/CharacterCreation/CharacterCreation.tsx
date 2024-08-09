@@ -1,4 +1,4 @@
-import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import { Box, Button, CircularProgress, Container, Step, StepLabel, Stepper } from '@mui/material';
 import type { CharacterFormData } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
@@ -22,6 +22,7 @@ const steps = [
 ];
 
 export function CharacterCreation() {
+  const [isSaving, setIsSaving] = useState(false);
   const [user] = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -60,8 +61,8 @@ export function CharacterCreation() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsSaving(true);
 
-    // ADD loading/disabling/navigate
     const skills = formData.proficiencies?.filter((p) => p.index.startsWith('skill-'));
     const formattedProficiencies = formData.proficiencies?.filter(
       (p) => !p.index.startsWith('saving-throw-') && !p.index.startsWith('skill-')
@@ -99,8 +100,9 @@ export function CharacterCreation() {
         .catch((error) =>
           toast.error(`Something went wrong
         ${(error as Error).message || 'Error'}`)
-        );
-    }
+        )
+        .finally(() => setIsSaving(false));
+    } else setIsSaving(false);
   };
 
   return (
@@ -113,73 +115,77 @@ export function CharacterCreation() {
         ))}
       </Stepper>
 
-      <form
-        onSubmit={handleSubmit}
-        onFocus={({ target }) => setFormError({ [target.id]: false })}
-        onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
-        onReset={() => {
-          setFormDataState({});
-          setFormErrorState({});
-        }}
-      >
-        <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
-          <CharacterRaceForm
-            onNext={(input) => {
-              setFormData(input);
-              setActiveStep((prevActiveStep) => prevActiveStep + 1);
-            }}
-            proficiencies={formData.proficiencies}
-          />
-        </Box>
+      {!isSaving ? (
+        <form
+          onSubmit={handleSubmit}
+          onFocus={({ target }) => setFormError({ [target.id]: false })}
+          onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
+          onReset={() => {
+            setFormDataState({});
+            setFormErrorState({});
+          }}
+        >
+          <Box display={steps[activeStep].id === 'race' ? 'revert' : 'none'}>
+            <CharacterRaceForm
+              onNext={(input) => {
+                setFormData(input);
+                setActiveStep((prevActiveStep) => prevActiveStep + 1);
+              }}
+              proficiencies={formData.proficiencies}
+            />
+          </Box>
 
-        <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
-          <CharacterClassForm
-            onNext={(input) => {
-              setFormData(input);
-              setActiveStep((prevActiveStep) => prevActiveStep + 1);
-            }}
-            onPrev={(input) => {
-              setFormData(input);
-              setActiveStep((prevActiveStep) => prevActiveStep - 1);
-            }}
-            proficiencies={formData.proficiencies}
-          />
-        </Box>
+          <Box display={steps[activeStep].id === 'class' ? 'revert' : 'none'}>
+            <CharacterClassForm
+              onNext={(input) => {
+                setFormData(input);
+                setActiveStep((prevActiveStep) => prevActiveStep + 1);
+              }}
+              onPrev={(input) => {
+                setFormData(input);
+                setActiveStep((prevActiveStep) => prevActiveStep - 1);
+              }}
+              proficiencies={formData.proficiencies}
+            />
+          </Box>
 
-        <Box display={steps[activeStep].id === 'background' ? 'revert' : 'none'}>
-          <CharacterBackgroundForm
-            onNext={(input) => {
-              setFormData(input);
-              setActiveStep((prevActiveStep) => prevActiveStep + 1);
-            }}
-            onPrev={(input) => {
-              setFormData(input);
-              setActiveStep((prevActiveStep) => prevActiveStep - 1);
-            }}
-            proficiencies={formData.proficiencies}
-            languages={formData.languages}
-            equipment={formData.equipments}
-          />
-        </Box>
+          <Box display={steps[activeStep].id === 'background' ? 'revert' : 'none'}>
+            <CharacterBackgroundForm
+              onNext={(input) => {
+                setFormData(input);
+                setActiveStep((prevActiveStep) => prevActiveStep + 1);
+              }}
+              onPrev={(input) => {
+                setFormData(input);
+                setActiveStep((prevActiveStep) => prevActiveStep - 1);
+              }}
+              proficiencies={formData.proficiencies}
+              languages={formData.languages}
+              equipment={formData.equipments}
+            />
+          </Box>
 
-        <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
-          <CharacterDescription
-            setFormData={setFormData}
-            onPrev={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}
-          />
-        </Box>
+          <Box display={steps[activeStep].id === 'info' ? 'revert' : 'none'}>
+            <CharacterDescription
+              setFormData={setFormData}
+              onPrev={() => setActiveStep((prevActiveStep) => prevActiveStep - 1)}
+            />
+          </Box>
 
-        {activeStep === steps.length - 1 && (
-          <Button
-            sx={{ float: 'right' }}
-            variant="contained"
-            type="submit"
-            disabled={!isFormValid()}
-          >
-            Create
-          </Button>
-        )}
-      </form>
+          {activeStep === steps.length - 1 && (
+            <Button
+              sx={{ float: 'right' }}
+              variant="contained"
+              type="submit"
+              disabled={!isFormValid()}
+            >
+              Create
+            </Button>
+          )}
+        </form>
+      ) : (
+        <CircularProgress size={24} />
+      )}
     </Container>
   );
 }
