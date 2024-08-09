@@ -5,7 +5,7 @@ import { StrictMode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { Toaster, toast } from 'react-hot-toast';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { App } from './providers/App';
+import { App } from './App';
 import { AuthProvider } from './providers/AuthProvider';
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
         ${(error as Error).message || 'Error'}`
       );
     },
-    onSuccess: (data, { queryKey }) => console.debug(queryKey, data)
+    onSuccess: (data, { queryKey }) => console.debug(queryKey.join(', '), data)
   }),
   defaultOptions: {
     queries: {

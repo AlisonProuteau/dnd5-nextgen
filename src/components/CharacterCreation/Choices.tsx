@@ -1,3 +1,4 @@
+import { getResourceList } from '@api/ressources';
 import {
   Box,
   Checkbox,
@@ -8,12 +9,8 @@ import {
   FormLabel,
   Typography
 } from '@mui/material';
-import { useQueryClient } from '@tanstack/react-query';
-import { isArray } from 'lodash';
-import { useState, type ReactNode } from 'react';
-import { getResourceList } from '../../api/ressources';
-import type { Alignment } from '../../representations/character/background.representation';
-import type { RaceAbilityBonus } from '../../representations/character/race.representation';
+import type { Alignment } from '@representations/character/background.representation';
+import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type {
   AbilityBonusOption,
   Choice,
@@ -23,8 +20,11 @@ import type {
   Option,
   ReferenceOption,
   StringOption
-} from '../../representations/common.representation';
-import type { ChoiceObjectType } from './utils';
+} from '@representations/common.representation';
+import { useQueryClient } from '@tanstack/react-query';
+import { isArray } from 'lodash';
+import { useState, type ReactNode } from 'react';
+import type { ChoiceObjectType } from './characterCreation.utils';
 
 interface ChoicesProps {
   choices: (Choice | undefined)[];
@@ -168,7 +168,11 @@ export function Choices({
       prerequisites: boolean;
     } = {
       index:
-        option.item?.index || option.of?.index || option.ability_score?.index || `${type}-${index}`,
+        option.item?.index ||
+        option.of?.index ||
+        option.ability_score?.index ||
+        (option.string && `${option.string}-${type}-${index}`) ||
+        `${type}-${index}`,
       name:
         option.item?.name ||
         option.string ||
@@ -299,6 +303,7 @@ export function Choices({
     });
   };
 
+  // Fix: With 2 choices, get select up to the max (ranger expertise)
   const formatChoice = (choice: Choice, i: number, isMultiple?: boolean) => {
     let currentOptions: undefined | Option[] = undefined;
     if (choice.from.option_set_type === 'options_array') {

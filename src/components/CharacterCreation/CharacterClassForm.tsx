@@ -1,3 +1,4 @@
+import { getAllClasses, getClassInfo, getFeature, getSubclassInfo } from '@api/ressources';
 import {
   Box,
   Button,
@@ -8,17 +9,21 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Classes } from '@representations/character/class.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { getAllClasses, getClassInfo, getFeature, getSubclassInfo } from '../../api/ressources';
-import type { Feature } from '../../representations/abilities/feature.representation';
-import type { Level } from '../../representations/campaign/level.representation';
-import type { Classes } from '../../representations/character/class.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { CharacterFormData } from './CharacterCreation';
 import { Choices } from './Choices';
-import { mapDataForForm, mapFeatures, type ChoiceObjectType, type ChoiceSelection } from './utils';
+import {
+  mapDataForForm,
+  mapFeatures,
+  type ChoiceObjectType,
+  type ChoiceSelection
+} from './characterCreation.utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -66,7 +71,6 @@ export function CharacterClassForm({
           1
         )) as Level | null;
 
-        // FIX: Only uses features for subclass
         if (subclassRes)
           levelRes = {
             ...levelRes,
@@ -296,7 +300,7 @@ export function CharacterClassForm({
                   feature.feature_specific?.expertise_options
                     ? {
                         ...feature.feature_specific?.expertise_options,
-                        desc: feature.desc.find((d) => d.includes('1st'))
+                        desc: feature.desc.find((d) => d.includes('1st')) || feature.desc[0]
                       }
                     : undefined
                 )}

@@ -1,5 +1,5 @@
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import type { ChoiceSelection } from '../CharacterCreation/utils';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import { sortBy } from 'lodash';
 
 export const randomInteger = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1)) + min;
@@ -51,7 +51,7 @@ export const getAbilityPoints = (scores: Record<string, number>) =>
 
 export const getArmorClass = (
   dexModifier: number,
-  equipment?: ChoiceSelection[],
+  equipment?: (DefaultRepresentation & { count?: number })[],
   features?: (DefaultRepresentation & {
     subfeatures?: DefaultRepresentation[];
     expertises?: DefaultRepresentation[];
@@ -96,4 +96,11 @@ export const getArmorClass = (
   }
 
   return ac;
+};
+
+export const getSlotMinMax = (slots: Record<number, string>, level?: number) => {
+  if (level) return slots[level];
+
+  const sortedByLevel = sortBy(Object.entries(slots), (val) => val[0]).flatMap((val) => val[1]);
+  return sortedByLevel.length ? `${sortedByLevel.at(0)} -> ${sortedByLevel.at(-1)}` : undefined;
 };

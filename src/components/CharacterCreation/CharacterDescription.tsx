@@ -1,18 +1,23 @@
 import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
-import type { DefaultRepresentation } from '../../representations/common.representation';
-import { ControledInput } from '../shared/ControledInput';
-import type { CharacterFormData } from './CharacterCreation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import type { CharacterFormData } from '@representations/user.representation';
+import { ControledInput } from '@shared/ControledInput';
 
 interface CharacterDescriptionProps {
   setFormData: (data: Partial<CharacterFormData>) => void;
   onPrev: () => void;
 }
 
+export enum GenderIndexes {
+  female = 'F',
+  male = 'M',
+  other = 'O'
+}
 export function CharacterDescription({ setFormData, onPrev }: CharacterDescriptionProps) {
   const genderInstances: DefaultRepresentation[] = [
-    { index: 'F', name: 'Female' },
-    { index: 'M', name: 'Male' },
-    { index: 'O', name: 'Other' }
+    { index: GenderIndexes.female, name: 'Female' },
+    { index: GenderIndexes.male, name: 'Male' },
+    { index: GenderIndexes.other, name: 'Other' }
   ];
 
   return (

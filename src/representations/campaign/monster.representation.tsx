@@ -1,4 +1,4 @@
-import type { Choice, DefaultRepresentation } from '../common.representation';
+import type { Choice, DefaultRepresentation, Sizes } from '../common.representation';
 import type { ActionDamage, Damage, DifficultyClass } from './adventure.representation';
 
 type ActionOption = {
@@ -162,7 +162,7 @@ export type Monster = {
   proficiencies: Proficiency[];
   reactions?: Reaction[];
   senses: Sense;
-  size: string;
+  size: Sizes;
   special_abilities?: SpecialAbility[];
   speed: Speed;
   strength: number;

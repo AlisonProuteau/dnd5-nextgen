@@ -1,4 +1,6 @@
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
+import type { CharacterFormData } from '@representations/user.representation';
+import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
@@ -6,14 +8,11 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { database } from '../../firebase';
 import { useAuth } from '../../providers/AuthProvider';
-import type { Alignment } from '../../representations/character/background.representation';
-import type { RaceAbilityBonus } from '../../representations/character/race.representation';
-import type { DefaultRepresentation } from '../../representations/common.representation';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
-import { CharacterDescription } from './CharacterDescription';
+import { CharacterDescription, GenderIndexes } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
-import type { ChoiceSelection } from './utils';
+import type { ChoiceSelection } from './characterCreation.utils';
 
 const steps = [
   { id: 'race', label: 'Race' },
@@ -22,41 +21,12 @@ const steps = [
   { id: 'info', label: 'Character Info' }
 ];
 
-export interface CharacterFormData {
-  name: string;
-  age: number;
-  sex: DefaultRepresentation;
-  appearance?: string;
-  background: DefaultRepresentation;
-  alignment: Alignment;
-  personality?: string[];
-  ideals?: string[];
-  bonds?: string[];
-  flaws?: string[];
-  race: DefaultRepresentation;
-  subrace?: DefaultRepresentation;
-  speed: number;
-  size?: string;
-  size_description?: string;
-  traits?: DefaultRepresentation[];
-  class: DefaultRepresentation;
-  subclass?: DefaultRepresentation;
-  proficiencies: ChoiceSelection[];
-  equipments: ChoiceSelection[];
-  languages: ChoiceSelection[];
-  abilities: RaceAbilityBonus[];
-  features?: (DefaultRepresentation & {
-    subfeatures?: DefaultRepresentation[];
-    expertises?: DefaultRepresentation[];
-  })[];
-  proficiencyBonus: number;
-}
-
 export function CharacterCreation() {
-  const user = useAuth();
+  const [user] = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
-    sex: { index: 'O', name: 'Other' }
+    sex: { index: GenderIndexes.other, name: 'Other' }
   });
   const [formError, setFormErrorState] = useState({});
   const [activeStep, setActiveStep] = useState(0);
@@ -90,6 +60,7 @@ export function CharacterCreation() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     // ADD loading/disabling/navigate
     const skills = formData.proficiencies?.filter((p) => p.index.startsWith('skill-'));
     const formattedProficiencies = formData.proficiencies?.filter(
@@ -122,6 +93,7 @@ export function CharacterCreation() {
       setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
         .then(() => {
           navigate(`/character`, { state: { characterId: newCharacterRef.id } });
+          queryClient.invalidateQueries({ queryKey: ['fetchCharacters', user?.uid] });
           toast.success('Character created');
         })
         .catch((error) =>

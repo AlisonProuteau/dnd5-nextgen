@@ -10,7 +10,8 @@ export type Usage = {
   times: number;
 };
 
-type Action = {
+export type Action = {
+  index: string;
   name: string;
   desc: string;
   usage: Usage;
@@ -23,7 +24,7 @@ type TraitSpecific = {
   subtrait_options?: Choice;
   spell_options?: Choice;
   damage_type?: DefaultRepresentation;
-  breath_weapon?: Action;
+  action?: Action;
 };
 
 export type Trait = {

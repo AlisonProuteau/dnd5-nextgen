@@ -24,7 +24,11 @@ export interface QueryObject {
   value: unknown;
 }
 
-export async function getAll(name: string, path: string, queryParms?: QueryObject[]): Promise<any> {
+export async function getAll(
+  name: string,
+  path: string,
+  queryParms?: QueryObject[]
+): Promise<{ results: any[]; count: number }> {
   let res;
   const ref = collection(database, path);
 
@@ -45,15 +49,15 @@ export async function getAll(name: string, path: string, queryParms?: QueryObjec
     res = await getDocs(ref);
   }
 
-  return (res.docs as any).results
-    ? res.docs
+  return 'results' in res.docs
+    ? (res.docs as any)
     : { count: res.docs.length, results: res.docs.map((item) => item.data()) };
 }
 
 export async function get(name: string, path: string, index: string): Promise<any> {
   const res = await getDoc(doc(database, path, index));
 
-  if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}`);
+  if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}: ${index}`);
 
   return res.data() ?? null;
 }

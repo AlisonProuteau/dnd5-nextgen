@@ -1,16 +1,14 @@
-import { uniqBy } from 'lodash';
-import type { Feature } from '../representations/abilities/feature.representation';
-import type { Spell } from '../representations/abilities/magic.representation';
-import type {
-  AbilityScore,
-  Proficiency
-} from '../representations/campaign/adventure.representation';
-import type { Level } from '../representations/campaign/level.representation';
-import type { Alignment, Background } from '../representations/character/background.representation';
-import type { Classes, Subclass } from '../representations/character/class.representation';
-import type { Race, Subrace } from '../representations/character/race.representation';
-import type { DefaultRepresentation, Option } from '../representations/common.representation';
-import { get, getAll, type QueryObject } from './utils';
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { Spell } from '@representations/abilities/magic.representation';
+import type { Trait } from '@representations/abilities/trait.representation';
+import type { AbilityScore, Proficiency } from '@representations/campaign/adventure.representation';
+import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Alignment, Background } from '@representations/character/background.representation';
+import type { Classes, Subclass } from '@representations/character/class.representation';
+import type { Race, Subrace } from '@representations/character/race.representation';
+import type { DefaultRepresentation, Option } from '@representations/common.representation';
+import { get, getAll, type QueryObject } from '@utils/api.utils';
 
 export async function getAllRaces(): Promise<{
   count: number;
@@ -109,24 +107,43 @@ export async function getSpellsForClass(
       ).results
     : [];
 
-  const allSpells = uniqBy(
+  const allSpells = (
     (
-      (
-        await getAll(
-          'Spells for class',
-          '/spells',
-          getQueryForIndexAndLevel('classes', classIndex, level)
-        )
-      ).results as Spell[]
-    ).concat(subClassSpells),
-    'index'
-  );
+      await getAll(
+        'Spells for class',
+        '/spells',
+        getQueryForIndexAndLevel('classes', classIndex, level)
+      )
+    ).results as Spell[]
+  )
+    .concat(subClassSpells)
+    .reduce((acc: Spell[], current) => {
+      if (acc.find((spell) => spell.index === current.index && spell.level === current.level))
+        return acc;
+
+      return [...acc, current];
+    }, []);
 
   return { count: allSpells.length, results: allSpells };
 }
 
+export async function getSpell(index: string): Promise<Spell | null> {
+  return get('Spell', '/spells', index);
+}
+
 export async function getFeature(index: string): Promise<Feature | null> {
   return get('Feature', '/features', index);
+}
+
+export async function getTrait(index: string): Promise<Trait | null> {
+  return get('Trait', '/traits', index);
+}
+
+export async function getAllTraitsAndFeatures(): Promise<Trait[] | Feature[] | null> {
+  const traits = await getAll('', '/traits');
+  const features = await getAll('', '/features');
+
+  return traits.results.concat(features.results);
 }
 
 export async function getProficiencies(): Promise<{
@@ -162,6 +179,14 @@ export async function getResourceList(path: string): Promise<{
       item: { index, name }
     }))
   };
+}
+
+export async function getEquipment(index: string): Promise<Equipment | null> {
+  return get('Equipment', '/equipment', index);
+}
+
+export async function getProperty(index: string): Promise<WeaponProperty | null> {
+  return get('Property', '/weapon-properties', index);
 }
 
 export async function getAllAbilities(): Promise<{

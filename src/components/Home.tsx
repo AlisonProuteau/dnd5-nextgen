@@ -1,3 +1,4 @@
+import { getUserCharacters } from '@api/users';
 import { AddRounded } from '@mui/icons-material';
 import {
   Box,
@@ -11,9 +12,9 @@ import {
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { button, fab, linkButton } from '@utils/style.utils';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserCharacters } from '../api/users';
 import { useAuth } from '../providers/AuthProvider';
 
 const RaceImages: Record<string, string> = {
@@ -35,10 +36,10 @@ const RaceImages: Record<string, string> = {
 
 export function Home() {
   const navigate = useNavigate();
-  const user = useAuth();
+  const [user] = useAuth();
 
   const { data: characters, isLoading } = useQuery({
-    queryKey: ['characters', user?.uid],
+    queryKey: ['fetchCharacters', user?.uid],
     queryFn: () => (user ? getUserCharacters(user.uid) : null)
   });
 
@@ -86,25 +87,8 @@ export function Home() {
           </Box>
         ))}
 
-        <Fab
-          size="small"
-          sx={{
-            position: 'fixed',
-            bottom: 16,
-            right: 16
-          }}
-        >
-          <Link
-            to="/create"
-            css={{
-              ':visited:focus:hover:active': { color: 'inherit' },
-              display: 'flex',
-              flex: 1,
-              justifyContent: 'space-evenly',
-              alignSelf: 'stretch',
-              alignItems: 'center'
-            }}
-          >
+        <Fab size="small" sx={{ ...button, ...fab }}>
+          <Link to="/create" css={linkButton}>
             <AddRounded />
           </Link>
         </Fab>
