@@ -21,17 +21,19 @@ export function SpellList({
   subclassIndex,
   moreSpells,
   slotLevel,
-  charLevel = 1
+  charLevel = 1,
+  selectable = false
 }: {
   classIndex?: string;
   subclassIndex?: string;
   moreSpells?: DefaultRepresentation[];
   slotLevel?: number;
   charLevel?: number;
+  selectable?: boolean;
 }) {
   const [allSpells, setAllSpells] = useState<Array<Spell>>([]);
-  const [isDialogOpen, setIsDialogueOpen] = useState(false);
-  const [selectedSpell, setSelectedSpell] = useState<Spell>();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedSpell, setSelectedSpell] = useState<Spell[]>([]);
 
   const { data: spells, isFetching: spellsFetching } = useQuery({
     queryKey: ['fetchSpells', classIndex, subclassIndex, charLevel],
@@ -73,11 +75,12 @@ export function SpellList({
       }}
     >
       {allSpells.map((spell) => (
+        //  sx={{ border: '2px solid green' }}
         <Card key={`spell-${spell.index}-${spell.level}`}>
           <CardActionArea
             onClick={() => {
-              setSelectedSpell(spell);
-              setIsDialogueOpen(true);
+              setSelectedSpell(selectable ? [...selectedSpell, spell] : [spell]);
+              !selectable && setIsDialogOpen(true);
             }}
           >
             <CardHeader
@@ -148,9 +151,11 @@ export function SpellList({
         </Card>
       ))}
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogueOpen(false)} fullWidth>
-        {selectedSpell && <SpellCard spell={selectedSpell} charLevel={charLevel} />}
-      </Dialog>
+      {!selectable && (
+        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth>
+          {selectedSpell[0] && <SpellCard spell={selectedSpell[0]} charLevel={charLevel} />}
+        </Dialog>
+      )}
     </Box>
   );
 }

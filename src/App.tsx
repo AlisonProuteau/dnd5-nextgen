@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { CircularProgress } from '@mui/material';
+import { Fragment } from 'react';
 import {
+  Navigate,
   Route,
   Routes,
   useLocation,
-  useNavigate,
   useRouteError,
   type ErrorResponse
 } from 'react-router-dom';
@@ -14,6 +15,7 @@ import { CharacterCreation } from './components/CharacterCreation/CharacterCreat
 import { Header } from './components/Header';
 import { Home } from './components/Home';
 import { useAuth } from './providers/AuthProvider';
+import { DataBasePage } from './providers/DataBasePage';
 
 function ErrorPage() {
   const error = useRouteError() as (Error & ErrorResponse) | undefined;
@@ -33,29 +35,36 @@ function ErrorPage() {
 export function App() {
   const [user, isLoading] = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (isLoading) return;
-
-    if (!location.pathname.startsWith('/auth') && !user?.uid) navigate('/auth', { replace: true });
-    else if (location.pathname.startsWith('/auth') && user?.uid) navigate('/', { replace: true });
-    else if (location.pathname.startsWith('/character') && !location.state?.characterId)
-      navigate('/', { replace: true });
-  }, [location.pathname, isLoading]);
-
-  return (
+  return !isLoading ? (
     <Routes>
       <Route element={<Header />} errorElement={<ErrorPage />}>
-        {/* <Route path="/database" element={<DataBasePage />} /> */}
-        <Route path="/" element={<Home />} />
-        <Route path="/auth" element={<AuthPage />} />
-        <Route path="create" element={<CharacterCreation />} />
-        <Route path="/character">
-          <Route index element={<CharacterContainer />} />
-          <Route path="points" element={<CharacterPoints />} />
-        </Route>
+        <Route path="/" element={!user?.uid ? <AuthPage /> : <Home />} />
+        {user?.uid && (
+          <Fragment>
+            {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
+              <Route path="/database" element={<DataBasePage />} />
+            )}
+            <Route path="create" element={<CharacterCreation />} />
+            <Route
+              path="/character/*"
+              element={
+                !location.state?.characterId ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Routes>
+                    <Route index element={<CharacterContainer />} />
+                    <Route path="points" element={<CharacterPoints />} />
+                  </Routes>
+                )
+              }
+            />
+          </Fragment>
+        )}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+  ) : (
+    <CircularProgress size={24} />
   );
 }

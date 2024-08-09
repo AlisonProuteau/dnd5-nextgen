@@ -16,7 +16,7 @@ import type { Classes, Subclass } from '@representations/character/class.represe
 import type { Character } from '@representations/user.representation';
 import { useQuery } from '@tanstack/react-query';
 import { button, fab, linkButton } from '@utils/style.utils';
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../providers/AuthProvider';
@@ -92,23 +92,35 @@ export function CharacterContainer() {
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
+  // TODO: Is it missing a use case for traits or features?
+  const canCastSpells = useMemo(
+    () =>
+      !!(
+        subClassInfo?.spells?.length ||
+        character?.traits?.filter(({ spells }) => spells).length ||
+        classInfo?.spellcasting ||
+        levelInfo?.spellcasting
+      ),
+    [
+      !!(
+        subClassInfo?.spells?.length ||
+        character?.traits?.filter(({ spells }) => spells).length ||
+        classInfo?.spellcasting ||
+        levelInfo?.spellcasting
+      )
+    ]
+  );
+
   useEffect(() => {
-    // TODO: Is it missing a use case for traits or features?
-    const canCastSpells =
-      classInfo?.spellcasting ||
-      subClassInfo?.spells ||
-      levelInfo?.spellcasting ||
-      character?.traits?.find(({ spells }) => spells);
     setSteps(canCastSpells ? 5 : 4);
-    setActiveStep(0);
-  }, [!!classInfo?.spellcasting]);
+  }, [canCastSpells]);
 
   const handleNext = () =>
     setActiveStep((prevActiveStep) => (prevActiveStep < steps - 1 ? prevActiveStep + 1 : 0));
   const handleBack = () =>
     setActiveStep((prevActiveStep) => (prevActiveStep > 0 ? prevActiveStep - 1 : steps - 1));
 
-  const getPageTitle = () => {
+  const pageTitle = useMemo(() => {
     switch (activeStep) {
       case 0:
         return 'Characteristics & Abilities';
@@ -121,7 +133,7 @@ export function CharacterContainer() {
       case 4:
         return 'Spells';
     }
-  };
+  }, [activeStep]);
 
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNext,
@@ -155,7 +167,7 @@ export function CharacterContainer() {
           </Box>
 
           <Divider component="div" role="presentation" variant="middle">
-            <Typography variant="subtitle2">{getPageTitle()}</Typography>
+            <Typography variant="subtitle2">{pageTitle}</Typography>
           </Divider>
 
           <MobileStepper
@@ -181,8 +193,7 @@ export function CharacterContainer() {
             {activeStep === 1 && <Characteristics character={character} />}
             {activeStep === 2 && <Equipments character={character} />}
             {activeStep === 3 && <Description character={character} />}
-            {(classInfo?.spellcasting || subClassInfo?.spells || levelInfo?.spellcasting) &&
-              activeStep === 4 && <SpellStep character={character} />}
+            {canCastSpells && activeStep === 4 && <SpellStep character={character} />}
           </Box>
         </Fragment>
       ) : (
