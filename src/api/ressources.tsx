@@ -9,7 +9,6 @@ import type { Classes, Subclass } from '@representations/character/class.represe
 import type { Race, Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '@representations/common.representation';
 import { get, getAll, type QueryObject } from '@utils/api.utils';
-import { omit } from 'lodash';
 
 export async function getAllRaces(): Promise<{
   count: number;
@@ -137,19 +136,7 @@ export async function getFeature(index: string): Promise<Feature | null> {
 }
 
 export async function getTrait(index: string): Promise<Trait | null> {
-  return get('Trait', '/traits', index).then((trait) => {
-    // FIX: Rename all breath_weapon in DB to action
-    if (trait.trait_specific?.breath_weapon)
-      return {
-        ...trait,
-        trait_specific: {
-          ...omit(trait.trait_specific, 'breath_weapon'),
-          action: trait.trait_specific.breath_weapon
-        }
-      };
-
-    return trait;
-  });
+  return get('Trait', '/traits', index);
 }
 
 export async function getAllTraitsAndFeatures(): Promise<Trait[] | Feature[] | null> {

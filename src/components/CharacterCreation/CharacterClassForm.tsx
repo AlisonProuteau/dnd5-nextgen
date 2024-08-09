@@ -71,7 +71,6 @@ export function CharacterClassForm({
           1
         )) as Level | null;
 
-        // FIX: Only uses features for subclass
         if (subclassRes)
           levelRes = {
             ...levelRes,

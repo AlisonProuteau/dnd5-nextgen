@@ -1,4 +1,4 @@
-import { getClassInfo, getRaceInfo, getSubclassInfo, getSubraceInfo } from '@api/ressources';
+import { getClassInfo, getSubclassInfo } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { EditRounded, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
@@ -85,37 +85,6 @@ export function CharacterContainer() {
     enabled: !!character?.class.index
   });
 
-  const { data: raceInfo } = useQuery({
-    queryKey: ['fetchRaceInfo', character?.race?.index],
-    queryFn: async () => (character?.race?.index ? await getRaceInfo(character?.race.index) : null),
-    enabled: !!character?.race?.index
-  });
-
-  const { data: subraceInfo } = useQuery({
-    queryKey: ['fetchSubraceInfo', character?.race?.index, character?.subrace?.index],
-    queryFn: async () =>
-      character?.race?.index && character?.subrace?.index
-        ? await getSubraceInfo(character?.race.index, character?.subrace.index)
-        : null,
-    enabled: !!character?.race?.index
-  });
-
-  // TODO: Remove after removing unused fetch
-  useEffect(() => {
-    if (
-      classInfo &&
-      raceInfo &&
-      levelInfo &&
-      (!character?.subclass || subClassInfo) &&
-      (!character?.subrace || subraceInfo)
-    ) {
-      // console.log('Class: ', classInfo, 'SubClass: ', subClassInfo);
-      // console.log('Race: ', raceInfo, 'SubRace: ', subraceInfo);
-      // console.log('Level Info: ', levelInfo);
-      // console.log(character);
-    }
-  }, [classInfo, subClassInfo, levelInfo, raceInfo, subraceInfo]);
-
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
 
   useEffect(() => {
@@ -124,7 +93,13 @@ export function CharacterContainer() {
   }, [isCharacterLoading, id]);
 
   useEffect(() => {
-    setSteps(classInfo?.spellcasting ? 5 : 4);
+    // TODO: Is it missing a use case for traits or features?
+    const canCastSpells =
+      classInfo?.spellcasting ||
+      subClassInfo?.spells ||
+      levelInfo?.spellcasting ||
+      character?.traits?.find(({ spells }) => spells);
+    setSteps(canCastSpells ? 5 : 4);
     setActiveStep(0);
   }, [!!classInfo?.spellcasting]);
 

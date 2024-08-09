@@ -14,7 +14,6 @@ import { CharacterCreation } from './components/CharacterCreation/CharacterCreat
 import { Header } from './components/Header';
 import { Home } from './components/Home';
 import { useAuth } from './providers/AuthProvider';
-import { DataBasePage } from './providers/DataBasePage';
 
 function ErrorPage() {
   const error = useRouteError() as (Error & ErrorResponse) | undefined;
@@ -48,7 +47,7 @@ export function App() {
   return (
     <Routes>
       <Route element={<Header />} errorElement={<ErrorPage />}>
-        <Route path="/database" element={<DataBasePage />} />
+        {/* <Route path="/database" element={<DataBasePage />} /> */}
         <Route path="/" element={<Home />} />
         <Route path="/auth" element={<AuthPage />} />
         <Route path="create" element={<CharacterCreation />} />
