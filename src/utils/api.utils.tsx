@@ -41,12 +41,21 @@ export async function getAll(
         )
       )
     );
-    res = await getDocs(q);
+    res = await getDocs(q).catch((e) => {
+      console.error(e);
+      return { docs: [] };
+    });
   } else if (queryParms?.length === 1) {
     const q = query(ref, where(queryParms[0].fieldPath, queryParms[0].opStr, queryParms[0].value));
-    res = await getDocs(q);
+    res = await getDocs(q).catch((e) => {
+      console.error(e);
+      return { docs: [] };
+    });
   } else {
-    res = await getDocs(ref);
+    res = await getDocs(ref).catch((e) => {
+      console.error(e);
+      return { docs: [] };
+    });
   }
 
   return 'results' in res.docs

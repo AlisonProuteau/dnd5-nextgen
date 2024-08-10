@@ -76,7 +76,7 @@ function getQueryForIndexAndLevel(
     ? [
         {
           fieldPath: 'level',
-          opStr: '==',
+          opStr: '<=',
           value: level
         }
       ]

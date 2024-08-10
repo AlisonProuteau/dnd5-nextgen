@@ -12,7 +12,8 @@ import {
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { useCallback, useEffect, useState } from 'react';
+import { uniqWith } from 'lodash';
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
 import { getSlotMinMax } from '../utils';
 import { SpellCard } from './SpellCard';
 
@@ -21,19 +22,23 @@ export function SpellList({
   subclassIndex,
   moreSpells,
   slotLevel,
-  charLevel = 1,
-  selectable = false
+  setSelectedSpells,
+  selectedSpells = [],
+  disabledLevels = [],
+  charLevel = 1
 }: {
   classIndex?: string;
   subclassIndex?: string;
   moreSpells?: DefaultRepresentation[];
   slotLevel?: number;
+  setSelectedSpells?: Dispatch<SetStateAction<Spell[]>>;
+  selectedSpells?: Spell[];
+  disabledLevels?: number[];
   charLevel?: number;
-  selectable?: boolean;
 }) {
   const [allSpells, setAllSpells] = useState<Array<Spell>>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedSpell, setSelectedSpell] = useState<Spell[]>([]);
+  const [currentSpell, setCurrentSpell] = useState<Spell>();
 
   const { data: spells, isFetching: spellsFetching } = useQuery({
     queryKey: ['fetchSpells', classIndex, subclassIndex, charLevel],
@@ -63,9 +68,15 @@ export function SpellList({
       !additionnalSpellsFetching &&
       (spells?.length || additionnalSpells.length)
     )
-      setAllSpells([...(spells || []), ...additionnalSpells]);
+      setAllSpells(
+        uniqWith(
+          [...(spells || []), ...additionnalSpells],
+          (a, b) => a.index === b.index && a.level === b.level
+        )
+      );
   }, [spellsFetching, additionnalSpellsFetching]);
 
+  // TODO: Fix colors and alignment
   return (
     <Box
       display="grid"
@@ -74,86 +85,115 @@ export function SpellList({
         gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`
       }}
     >
-      {allSpells.map((spell) => (
-        //  sx={{ border: '2px solid green' }}
-        <Card key={`spell-${spell.index}-${spell.level}`}>
-          <CardActionArea
-            onClick={() => {
-              setSelectedSpell(selectable ? [...selectedSpell, spell] : [spell]);
-              !selectable && setIsDialogOpen(true);
-            }}
+      {allSpells
+        .sort(({ level: levelA }, { level: levelB }) => levelA - levelB)
+        .filter(
+          ({ level, index }) =>
+            selectedSpells.find(({ index: selectedIndex }) => selectedIndex === index) ||
+            (level === 0
+              ? !disabledLevels.some((levelDisabled) => levelDisabled === 0)
+              : !disabledLevels.some((levelDisabled) => levelDisabled === 1))
+        )
+        .map((spell) => (
+          <Card
+            key={`spell-${spell.index}-${spell.level}`}
+            sx={
+              setSelectedSpells &&
+              selectedSpells.find(({ index }) => index === spell.index) && {
+                border: '2px solid green'
+              }
+            }
           >
-            <CardHeader
-              title={
-                <Box display="flex" justifyContent="space-between" alignItems="baseline" gap="5px">
-                  <Typography>{spell.name}</Typography>
-                  <Typography variant="subtitle2" color="primary">
-                    lvl{spell.level}
+            <CardActionArea
+              onClick={() => {
+                if (setSelectedSpells) {
+                  setSelectedSpells(
+                    selectedSpells.find(({ index }) => index === spell.index)
+                      ? selectedSpells.filter(({ index }) => index !== spell.index)
+                      : [...selectedSpells, spell]
+                  );
+                  console.log(disabledLevels);
+                } else {
+                  setCurrentSpell(spell);
+                  setIsDialogOpen(true);
+                }
+              }}
+            >
+              <CardHeader
+                title={
+                  <Box
+                    display="flex"
+                    justifyContent="space-between"
+                    alignItems="baseline"
+                    gap="5px"
+                  >
+                    <Typography>{spell.name}</Typography>
+                    <Typography variant="subtitle2" color="primary">
+                      lvl{spell.level}
+                    </Typography>
+                  </Box>
+                }
+                subheader={
+                  <Typography display="inline" variant="subtitle2" color="darkgrey">
+                    {spell.components}
+                    {spell.concentration ? ' - Con' : ''}
+                    {spell.ritual ? ' - Ritual' : ''}
                   </Typography>
-                </Box>
-              }
-              subheader={
-                <Typography display="inline" variant="subtitle2" color="darkgrey">
-                  {spell.components}
-                  {spell.concentration ? ' - Con' : ''}
-                  {spell.ritual ? ' - Ritual' : ''}
+                }
+                sx={{ paddingBottom: 0 }}
+              />
+              <CardContent>
+                {spell.duration !== 'Instantaneous' && (
+                  <Box display="flex" gap="5px">
+                    <TimeIcon height="20px" width="20px" fill="white" />
+                    <Typography>{spell.duration}</Typography>
+                  </Box>
+                )}
+                {spell.damage && (
+                  <Box display="flex" gap="5px">
+                    <BladeIcon height="20px" width="20px" fill="white" />
+                    <Typography>
+                      {getSlotMinMax(spell.damage.damage_at_character_level || {}, charLevel) ||
+                        getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevel)}
+                      {spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''}
+                    </Typography>
+                  </Box>
+                )}
+                {spell.heal_at_slot_level && (
+                  <Box display="flex" gap="5px">
+                    <HealIcon height="20px" width="20px" fill="white" />
+                    <Typography>
+                      {getSlotMinMax(spell.heal_at_slot_level || {}, slotLevel)}
+                    </Typography>
+                  </Box>
+                )}
+                {spell.area_of_effect && (
+                  <Box display="flex" gap="5px">
+                    <AreaIcon height="20px" width="20px" fill="white" />
+                    <Typography>
+                      {spell.area_of_effect.size}ft - {spell.area_of_effect.type}
+                    </Typography>
+                  </Box>
+                )}
+                {spell.range !== 'Self' && (
+                  <Box display="flex" gap="5px">
+                    <RangeIcon height="20px" width="20px" fill="white" />
+                    <Typography>{spell.range}</Typography>
+                  </Box>
+                )}
+              </CardContent>
+              <Box>
+                <Typography variant="subtitle2" color="secondary">
+                  {spell.casting_time}
                 </Typography>
-              }
-              sx={{ paddingBottom: 0 }}
-            />
-            <CardContent>
-              {spell.duration !== 'Instantaneous' && (
-                <Box display="flex" gap="5px">
-                  <TimeIcon height="20px" width="20px" fill="white" />
-                  <Typography>{spell.duration}</Typography>
-                </Box>
-              )}
-              {spell.damage && (
-                <Box display="flex" gap="5px">
-                  <BladeIcon height="20px" width="20px" fill="white" />
-                  <Typography>
-                    {getSlotMinMax(spell.damage.damage_at_character_level || {}, charLevel) ||
-                      getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevel)}
-                    {spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''}
-                  </Typography>
-                </Box>
-              )}
-              {spell.heal_at_slot_level && (
-                <Box display="flex" gap="5px">
-                  <HealIcon height="20px" width="20px" fill="white" />
-                  <Typography>
-                    {getSlotMinMax(spell.heal_at_slot_level || {}, slotLevel)}
-                  </Typography>
-                </Box>
-              )}
-              {spell.area_of_effect && (
-                <Box display="flex" gap="5px">
-                  <AreaIcon height="20px" width="20px" fill="white" />
-                  <Typography>
-                    {spell.area_of_effect.size}ft - {spell.area_of_effect.type}
-                  </Typography>
-                </Box>
-              )}
-              {spell.range !== 'Self' && (
-                <Box display="flex" gap="5px">
-                  <RangeIcon height="20px" width="20px" fill="white" />
-                  <Typography>{spell.range}</Typography>
-                </Box>
-              )}
-            </CardContent>
-            {/* Footer  */}
-            <Box>
-              <Typography variant="subtitle2" color="secondary">
-                {spell.casting_time}
-              </Typography>
-            </Box>
-          </CardActionArea>
-        </Card>
-      ))}
+              </Box>
+            </CardActionArea>
+          </Card>
+        ))}
 
-      {!selectable && (
+      {!setSelectedSpells && (
         <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth>
-          {selectedSpell[0] && <SpellCard spell={selectedSpell[0]} charLevel={charLevel} />}
+          {currentSpell && <SpellCard spell={currentSpell} charLevel={charLevel} />}
         </Dialog>
       )}
     </Box>

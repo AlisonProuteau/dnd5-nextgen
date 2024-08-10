@@ -32,7 +32,7 @@ export function CharacterContainer() {
   const location = useLocation();
   const [id, setId] = useState<string>();
   const [steps, setSteps] = useState(3);
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(4);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -92,7 +92,8 @@ export function CharacterContainer() {
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
-  // TODO: Is it missing a use case for traits or features?
+  //TODO: feature.feature_specific.invocations?: DefaultRepresentation[];
+  //TODO: trait.trait_specific.action?: Action;
   const canCastSpells = useMemo(
     () =>
       !!(
