@@ -82,7 +82,8 @@ export function CharacterCreation() {
             });
 
           return [...acc, curr];
-        }, [])
+        }, []),
+        level: 1 // TODO: Add level to DB
       },
       (d) => !!(Array.isArray(d) ? d?.length : d)
     );

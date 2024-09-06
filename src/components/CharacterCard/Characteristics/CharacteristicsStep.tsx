@@ -165,6 +165,7 @@ export function Characteristics({ character }: { character: Character }) {
                         <ActionInfo
                           key={trait_specific?.action.index}
                           action={trait_specific?.action}
+                          charLevel={character.level}
                         />
                       )
                   )}
@@ -190,7 +191,10 @@ export function Characteristics({ character }: { character: Character }) {
                               ({ index }) => index === subtrait.trait_specific?.action?.index
                             )) ? (
                             <Fragment>
-                              <ActionInfo action={subtrait.trait_specific?.action} />
+                              <ActionInfo
+                                action={subtrait.trait_specific?.action}
+                                charLevel={character.level}
+                              />
                               <Typography>{subtrait.trait_specific?.action.desc}</Typography>
                             </Fragment>
                           ) : (

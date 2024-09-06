@@ -14,6 +14,7 @@ type Spellcasting = {
   info: SpellcastingInfo[];
   level: number;
   spellcasting_ability: DefaultRepresentation;
+  prepare?: boolean;
 };
 
 type MultiClassingPrereq = {

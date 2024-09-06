@@ -53,4 +53,5 @@ export type Character = CharacterFormData & {
       modifier: number;
     }
   >;
+  level: number;
 };

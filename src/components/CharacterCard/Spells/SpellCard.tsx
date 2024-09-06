@@ -15,12 +15,12 @@ import { getSlotMinMax } from '../utils';
 
 export function SpellCard({
   spell,
-  level,
-  charLevel = 1
+  charLevel,
+  slotLevel
 }: {
   spell: Spell;
-  level?: number;
-  charLevel?: number;
+  charLevel: number;
+  slotLevel?: number;
 }) {
   return (
     <Fragment>
@@ -61,7 +61,7 @@ export function SpellCard({
           <EquipmentLine
             label="Damage"
             data={[
-              getSlotMinMax(spell.damage.damage_at_slot_level || {}, level) ||
+              getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevel) ||
                 getSlotMinMax(spell.damage.damage_at_character_level || {}, charLevel) ||
                 '',
               spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''
@@ -71,7 +71,7 @@ export function SpellCard({
         {spell.heal_at_slot_level && (
           <EquipmentLine
             label="Healing"
-            data={getSlotMinMax(spell.heal_at_slot_level || {}, level) || ''}
+            data={getSlotMinMax(spell.heal_at_slot_level || {}, slotLevel) || ''}
           />
         )}
         {spell.dc && (
