@@ -54,4 +54,6 @@ export type Character = CharacterFormData & {
     }
   >;
   level: number;
+  knownSpells?: (DefaultRepresentation & { level: number })[];
+  preparedSpells?: (DefaultRepresentation & { level: number })[];
 };
