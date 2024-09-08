@@ -6,12 +6,12 @@ import { getSlotMinMax } from '../utils';
 
 export function ActionInfo({
   action,
-  slotLevel,
-  charLevel = 1
+  charLevel,
+  slotLevel
 }: {
   action: Action;
+  charLevel: number;
   slotLevel?: number;
-  charLevel?: number;
 }) {
   return (
     <Box paddingBottom="15px" paddingLeft="15px">

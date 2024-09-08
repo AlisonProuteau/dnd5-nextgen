@@ -34,6 +34,8 @@ interface CharacterBackgroundFormProps {
   equipment?: ChoiceSelection[];
 }
 
+// TODO: Add optionnal/requiered for field
+// TODO: Add ideal description for alignment (+ you can remove/change alignment)
 export function CharacterBackgroundForm({
   onNext,
   onPrev,

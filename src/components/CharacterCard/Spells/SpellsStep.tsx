@@ -1,16 +1,24 @@
-import { getClassInfo } from '@api/ressources';
+import { getClassInfo, getSubclassInfo } from '@api/ressources';
 import { ExpandMore } from '@mui/icons-material';
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Box,
+  CircularProgress,
+  Typography
+} from '@mui/material';
+import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { Character } from '@representations/user.representation';
 import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo, useState } from 'react';
 import { SpellList } from './SpellList';
+import { Spellbook } from './Spellbook';
 
 export function SpellStep({ character }: { character: Character }) {
-  // const [page, setPage] = useState<'main' | 'full' | 'prepare' | 'howto'>('prepare');
-  const [page, setPage] = useState<'full' | 'howto'>('howto');
+  const [page, setPage] = useState<'available' | 'full' | 'howto'>('available');
 
   const { data: classSpellcasting } = useQuery({
     queryKey: ['fetchClassInfo', character?.class.index],
@@ -20,54 +28,84 @@ export function SpellStep({ character }: { character: Character }) {
     select: (classInfo) => classInfo?.spellcasting // Gives user info on how it works + spellcasting ability + level?
   });
 
-  // const { data: levelSpellcasting } = useQuery({
-  //   queryKey: ['fetchClassInfoLevel', character?.class?.index, character?.subclass?.index, 1],
-  //   queryFn: async () => {
-  //     if (!character?.class?.index) return null;
-  //     let levelRes: Partial<Level> = {};
-
-  //     const classRes = (await getClassInfo(character.class.index, 1)) as Level | null;
-  //     if (classRes) levelRes = { ...classRes };
-
-  //     if (character.subclass?.index) {
-  //       const subclassRes = (await getSubclassInfo(
-  //         character.class.index,
-  //         character.subclass.index,
-  //         1
-  //       )) as Level | null;
-
-  //       if (subclassRes) levelRes = { ...levelRes, ...subclassRes };
-  //     }
-
-  //     return Object.keys(levelRes).length ? (levelRes as Level) : null;
-  //   },
-  //   enabled: !!character?.class.index,
-  //   select: (levelInfo) => {
-  //     // If i have spells but level is not 1, cannot cast ?
-  //     // What about only sub then?
-  //     // What if only sub and no known spells or spell slots all 0? (paladin)
-  //     return levelInfo?.spellcasting; // Spell slots
-  //   }
-  // });
-
-  // useEffect(() => {
-  //   if (classSpellcasting && levelSpellcasting) {
-  //     console.log('class spellcasting: ', classSpellcasting);
-  //     console.log('level spellcasting: ', levelSpellcasting);
-  //   }
-  // }, [!!classSpellcasting, !!levelSpellcasting]);
-
-  const spellMenu = useMemo(
-    () => [
-      // { text: 'Known/Prepared Spells', value: 'main' },
-      // { text: 'Prepare or Learn or whatever', value: 'prepare' },
-      { text: 'See Full List', value: 'full' },
-      { text: 'How does it work ?', value: 'howto' }
+  const { data: levelSpellcasting } = useQuery({
+    queryKey: [
+      'fetchClassInfoLevel',
+      character?.class?.index,
+      character?.subclass?.index,
+      character.level
     ],
-    []
+    queryFn: async () => {
+      if (!character?.class?.index) return null;
+      let levelRes: Partial<Level> = {};
+
+      const classRes = (await getClassInfo(character.class.index, character.level)) as Level | null;
+      if (classRes) levelRes = { ...classRes };
+
+      if (character.subclass?.index) {
+        const subclassRes = (await getSubclassInfo(
+          character.class.index,
+          character.subclass.index,
+          character.level
+        )) as Level | null;
+
+        if (subclassRes) levelRes = { ...levelRes, ...subclassRes };
+      }
+
+      return Object.keys(levelRes).length ? (levelRes as Level) : null;
+    },
+    enabled: !!character?.class.index,
+    select: (levelInfo) => levelInfo?.spellcasting
+  });
+
+  // TODO: warlock add more spells without leveling
+  const slots = useMemo(
+    () =>
+      Object.entries(levelSpellcasting || {}).reduce(
+        (
+          acc: {
+            cantrips?: number;
+            learn?: number;
+            prepare?: number;
+            slots: Record<string, number>;
+          },
+          [key, value]
+        ) => {
+          const level = key.includes('spell_slots_level_')
+            ? key.replace('spell_slots_level_', '')
+            : undefined;
+
+          return level && value > 0 ? { ...acc, slots: { ...acc.slots, [level]: value } } : acc;
+        },
+        {
+          cantrips: levelSpellcasting?.cantrips_known,
+          learn:
+            character.class.index === 'wizard'
+              ? 6 + (character.level - 1) * 2
+              : levelSpellcasting?.spells_known,
+          prepare: classSpellcasting?.prepare
+            ? (character.abilityScores[classSpellcasting?.spellcasting_ability?.index || '']
+                ?.modifier || 0) + character.level
+            : undefined,
+          slots: {}
+        }
+      ),
+    [levelSpellcasting, classSpellcasting]
   );
 
-  return (
+  const spellMenu = useMemo(() => {
+    return [
+      { text: 'Spellbook', value: 'available' },
+      { text: 'All Spells', value: 'full' },
+      { text: 'How does it work ?', value: 'howto' }
+    ];
+  }, [slots.cantrips, slots.learn, slots.prepare]);
+
+  // TODO: Test more
+  // TODO: Add loading
+  // TODO: Make it prettier?
+  // TODO: Manually add more cantrips/spells/slots?
+  return slots ? (
     <Fragment>
       <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
         <SplitButton
@@ -78,23 +116,18 @@ export function SpellStep({ character }: { character: Character }) {
         />
       </Box>
 
-      {/* {page === 'main' && <Typography>Main</Typography>} */}
-      {/* {page === 'prepare' && (
-        <SpellList
-          classIndex={character.class.index}
-          subclassIndex={character.subclass?.index}
-          charLevel={1}
-          moreSpells={character.traits?.flatMap(({ spells }) => spells || [])}
-          selectable
-        />  */}
+      {page === 'available' && <Spellbook character={character} slots={slots} />}
+
       {page === 'full' && (
         <SpellList
           classIndex={character.class.index}
           subclassIndex={character.subclass?.index}
-          charLevel={1}
+          charLevel={character.level}
+          highestSpellLevel={0}
           moreSpells={character.traits?.flatMap(({ spells }) => spells || [])}
         />
       )}
+
       {page === 'howto' &&
         classSpellcasting?.info.map((info) => (
           <Accordion key={info.name}>
@@ -107,5 +140,7 @@ export function SpellStep({ character }: { character: Character }) {
           </Accordion>
         ))}
     </Fragment>
+  ) : (
+    <CircularProgress size={24} />
   );
 }

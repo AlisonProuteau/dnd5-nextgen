@@ -40,3 +40,4 @@ Stretch goals:
 - Reformat the character and move to representations
 - Add warning if not enough strengh on equipment
 - Add weight management?
+- Animated Icons?

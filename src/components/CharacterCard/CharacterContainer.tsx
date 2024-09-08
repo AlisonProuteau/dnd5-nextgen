@@ -32,7 +32,7 @@ export function CharacterContainer() {
   const location = useLocation();
   const [id, setId] = useState<string>();
   const [steps, setSteps] = useState(3);
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState(4);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -62,19 +62,24 @@ export function CharacterContainer() {
   });
 
   const { data: levelInfo } = useQuery({
-    queryKey: ['fetchClassInfoLevel', character?.class?.index, character?.subclass?.index, 1],
+    queryKey: [
+      'fetchClassInfoLevel',
+      character?.class?.index,
+      character?.subclass?.index,
+      character?.level
+    ],
     queryFn: async () => {
       if (!character?.class?.index) return null;
       let levelRes: Partial<Level> = {};
 
-      const classRes = (await getClassInfo(character.class.index, 1)) as Level | null;
+      const classRes = (await getClassInfo(character.class.index, character.level)) as Level | null;
       if (classRes) levelRes = { ...classRes };
 
       if (character.subclass?.index) {
         const subclassRes = (await getSubclassInfo(
           character.class.index,
           character.subclass.index,
-          1
+          character.level
         )) as Level | null;
 
         if (subclassRes) levelRes = { ...levelRes, ...subclassRes };
@@ -92,22 +97,16 @@ export function CharacterContainer() {
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
-  // TODO: Is it missing a use case for traits or features?
+  //TODO: feature.feature_specific.invocations?: DefaultRepresentation[];
+  //TODO: trait.trait_specific.action?: Action;
   const canCastSpells = useMemo(
     () =>
-      !!(
-        subClassInfo?.spells?.length ||
-        character?.traits?.filter(({ spells }) => spells).length ||
-        classInfo?.spellcasting ||
-        levelInfo?.spellcasting
-      ),
+      (character && classInfo?.spellcasting && classInfo.spellcasting.level === character.level) ||
+      (character?.traits?.filter(({ spells }) => spells).length || 0) > 0,
     [
-      !!(
-        subClassInfo?.spells?.length ||
-        character?.traits?.filter(({ spells }) => spells).length ||
-        classInfo?.spellcasting ||
-        levelInfo?.spellcasting
-      )
+      classInfo?.spellcasting?.level,
+      character?.level,
+      character?.traits?.filter(({ spells }) => spells).length
     ]
   );
 
@@ -158,7 +157,7 @@ export function CharacterContainer() {
             <Typography variant="h5">{character.name}</Typography>
             <Box textAlign="end" flex={1}>
               <Typography variant="subtitle1" color="text.secondary">
-                Level: 1
+                Level: {character.level}
               </Typography>
               <Typography variant="subtitle2" color="text.secondary">
                 XP: 0
