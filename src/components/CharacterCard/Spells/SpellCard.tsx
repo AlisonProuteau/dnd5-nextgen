@@ -46,7 +46,6 @@ export function SpellCard({
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
-        {/* <DialogContentText textAlign="justify">{spell.desc}</DialogContentText> */}
         <EquipmentLine label="Casting Time" data={spell.casting_time} />
         <EquipmentLine label="Duration" data={spell.duration} />
         {spell.area_of_effect && (

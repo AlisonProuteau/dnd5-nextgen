@@ -105,6 +105,7 @@ export function SpellStep({ character }: { character: Character }) {
   // TODO: Add loading
   // TODO: Make it prettier?
   // TODO: Manually add more cantrips/spells/slots?
+  // FIX: Refactor spells
   return slots ? (
     <Fragment>
       <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
@@ -120,11 +121,12 @@ export function SpellStep({ character }: { character: Character }) {
 
       {page === 'full' && (
         <SpellList
-          classIndex={character.class.index}
-          subclassIndex={character.subclass?.index}
-          charLevel={character.level}
-          highestSpellLevel={0}
-          moreSpells={character.traits?.flatMap(({ spells }) => spells || [])}
+          characterInfo={{
+            classIndex: character.class.index,
+            subclassIndex: character.subclass?.index,
+            charLevel: character.level
+          }}
+          additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
         />
       )}
 

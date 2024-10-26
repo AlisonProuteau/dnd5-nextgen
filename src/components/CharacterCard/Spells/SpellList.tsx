@@ -5,57 +5,80 @@ import {
   AccordionDetails,
   AccordionSummary,
   Box,
+  Button,
   Card,
   CardActionArea,
+  CardActions,
+  CardHeader,
   Dialog,
-  Divider
+  DialogContent,
+  Divider,
+  Typography
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { groupBy, uniqWith } from 'lodash';
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from 'react';
+import { groupBy, max, maxBy, uniqWith } from 'lodash';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useState,
+  type Dispatch,
+  type SetStateAction
+} from 'react';
 import { SpellCard } from './SpellCard';
 import { SpellCardContent } from './SpellCardContent';
 
 export function SpellList({
-  classIndex,
-  subclassIndex,
-  moreSpells,
-  highestSpellLevel,
-  charLevel,
-  slotLevel,
-  setSelectedSpells,
+  characterInfo,
+  additionalSpellList,
+  slotLevels = [],
+  spellListOnly = false,
   selectedSpells = [],
-  disabledLevels = []
+  setSelectedSpells,
+  maxSelected = [0, 0]
 }: {
-  classIndex?: string;
-  subclassIndex?: string;
-  moreSpells?: DefaultRepresentation[];
-  highestSpellLevel?: number;
-  charLevel?: number;
-  slotLevel?: number;
-  setSelectedSpells?: Dispatch<SetStateAction<(DefaultRepresentation & { level: number })[]>>;
+  characterInfo: {
+    classIndex?: string;
+    subclassIndex?: string;
+    charLevel?: number;
+    slotLevel?: number;
+  };
+  additionalSpellList?: DefaultRepresentation[];
+  slotLevels?: number[];
+  spellListOnly?: boolean;
   selectedSpells?: (DefaultRepresentation & { level: number })[];
-  disabledLevels?: number[];
+  setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
+  maxSelected?: [number, number];
 }) {
   const [allSpells, setAllSpells] = useState<Record<string, Array<Spell>>>({});
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
   // TODO: Am I missing subclass info spells ?
-  const { data: spells, isFetching: spellsFetching } = useQuery({
-    queryKey: ['fetchSpells', classIndex, subclassIndex, highestSpellLevel],
+  const { data: spells = [], isFetching: spellsFetching } = useQuery({
+    queryKey: [
+      'fetchCharacterSpells',
+      characterInfo.classIndex,
+      characterInfo.subclassIndex,
+      max(slotLevels)
+    ],
     queryFn: async () =>
-      classIndex && highestSpellLevel !== undefined
-        ? (await getSpellsForClass(classIndex, subclassIndex, highestSpellLevel)).results
-        : null,
-    enabled: !!classIndex
+      characterInfo.classIndex
+        ? (
+            await getSpellsForClass(
+              characterInfo.classIndex,
+              characterInfo.subclassIndex,
+              max(slotLevels)
+            )
+          ).results
+        : [],
+    enabled: !!characterInfo.classIndex && !spellListOnly
   });
 
   const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
     queries:
-      moreSpells?.map(({ index }) => ({
+      additionalSpellList?.map(({ index }) => ({
         queryKey: ['fetchSpell', index],
         queryFn: async () => await getSpell(index),
         enabled: !!index
@@ -63,135 +86,174 @@ export function SpellList({
     combine: useCallback((results: UseQueryResult<Spell | null, Error>[]) => {
       return {
         data: results.map(({ data }) => data).filter((data) => data) as Spell[],
-        isFetching: results.some((result) => result.isFetching)
+        isFetching: results.some((result) => result.isFetching),
+        dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
       };
     }, [])
   });
-
-  const selected = (index?: string, level?: number) => {
-    let filtered = selectedSpells;
-
-    if (level !== undefined)
-      filtered = filtered.filter(({ level: currentLevel }) => currentLevel === level);
-    if (index) filtered = filtered.filter(({ index: currentIndex }) => currentIndex === index);
-
-    return filtered.length > 0;
-  };
 
   useEffect(() => {
     if (
       !spellsFetching &&
       !additionnalSpellsFetching &&
-      (spells?.length || additionnalSpells.length)
+      (spells.length || additionnalSpells.length)
     ) {
-      const uniqSpells = uniqWith(
-        [...(spells || []), ...additionnalSpells],
+      const filteredSpells = uniqWith(
+        [
+          ...(spellListOnly ? [] : spells).filter(
+            ({ level }) => !slotLevels.length || slotLevels.includes(level)
+          ),
+          ...additionnalSpells
+        ],
         (a, b) => a.index === b.index && a.level === b.level
-      ).filter(
-        ({ level, index }) =>
-          !(
-            disabledLevels?.includes(level === 0 ? 0 : 1) &&
-            (!selectedSpells.length || !selected(undefined, level))
-          ) || moreSpells?.find(({ index: selectedIndex }) => selectedIndex === index)
       );
 
-      setAllSpells(groupBy(uniqSpells, 'level'));
+      setAllSpells(groupBy(filteredSpells, 'level'));
     }
-  }, [
-    spellsFetching,
-    additionnalSpellsFetching,
-    disabledLevels[0],
-    disabledLevels[1],
-    selectedSpells.map(({ level }) => level).join(', '),
-    moreSpells?.map(({ index }) => index).join(', ')
-  ]);
+  }, [spellsFetching, additionnalSpellsFetching, spellListOnly]);
 
-  return Object.keys(allSpells).map((currentLevel) => (
-    <Accordion
-      key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
-      sx={{ '&:before': { display: 'none' } }}
-      elevation={0}
-      defaultExpanded
-      disableGutters
-    >
-      <AccordionSummary expandIcon={<ExpandMore />}>
-        <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-          {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
-        </Divider>
-      </AccordionSummary>
+  return (
+    <Fragment>
+      <DialogContent>
+        {setSelectedSpells && (
+          <Fragment>
+            {maxSelected[0] > 0 && (
+              <Typography>
+                {selectedSpells.filter(({ level }) => level === 0).length}/{maxSelected[0]} cantrips
+                selected
+              </Typography>
+            )}
+            {maxSelected[1] > 0 && (
+              <Typography>
+                {selectedSpells.filter(({ level }) => level > 0).length}/{maxSelected[1]} spells
+                selected
+              </Typography>
+            )}
+          </Fragment>
+        )}
+        {Object.keys(allSpells).map((currentLevel) => (
+          <Accordion
+            key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
+            sx={{ '&:before': { display: 'none' } }}
+            elevation={0}
+            defaultExpanded
+            disableGutters
+          >
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
+              </Divider>
+            </AccordionSummary>
 
-      <AccordionDetails>
-        <Box display="grid" gap="25px" gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))">
-          {allSpells[currentLevel]
-            .filter(({ level, index }) => {
-              if (
-                disabledLevels.includes(level === 0 ? 0 : 1) &&
-                !selected(index) &&
-                !selected(undefined, level)
-              )
-                return moreSpells?.find(({ index: selectedIndex }) => selectedIndex === index);
-
-              if (setSelectedSpells)
-                return (
-                  !disabledLevels.includes(level === 0 ? 0 : 1) ||
-                  !selectedSpells.length ||
-                  selected(index)
-                );
-
-              return selected(undefined, level)
-                ? selected(index) ||
-                    moreSpells?.find(({ index: selectedIndex }) => selectedIndex === index)
-                : true;
-            })
-            .map((spell) => (
-              <Card
-                key={`spell-${spell.index}-${spell.level}`}
-                sx={
-                  setSelectedSpells && selected(spell.index)
-                    ? {
-                        border: '2px inset peru'
-                      }
-                    : null
-                }
+            <AccordionDetails>
+              <Box
+                display="grid"
+                gap="25px"
+                gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))"
               >
-                <CardActionArea
-                  onClick={() => {
-                    if (
-                      setSelectedSpells &&
-                      (!disabledLevels.includes(spell.level === 0 ? 0 : 1) || selected(spell.index))
-                    ) {
-                      const allSpells = selected(spell.index)
-                        ? selectedSpells.filter(({ index }) => index !== spell.index)
-                        : [...selectedSpells, spell];
-                      setSelectedSpells(
-                        allSpells.map(({ index, name, level }) => ({ index, name, level }))
-                      );
-                    } else {
-                      setCurrentSpell(spell);
-                      setIsDialogOpen(true);
-                    }
-                  }}
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'stretch'
-                  }}
-                >
-                  <SpellCardContent spell={spell} />
-                </CardActionArea>
-              </Card>
-            ))}
+                {allSpells[currentLevel].map((spell) => (
+                  <Card
+                    key={`spell-${spell.index}-${spell.level}`}
+                    sx={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      boxShadow:
+                        selectedSpells.find(({ index }) => index === spell.index) &&
+                        'inset 0px 0px 5px 2px #383838'
+                    }}
+                  >
+                    <CardActionArea
+                      onClick={() => setCurrentSpell(spell)}
+                      sx={{
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'stretch'
+                      }}
+                    >
+                      <CardHeader
+                        title={
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="baseline"
+                            gap="5px"
+                          >
+                            <Typography display="inline" variant="subtitle2" color="darkgrey">
+                              {spell.components}
+                              {spell.concentration ? ' - Con' : ''}
+                              {spell.ritual ? ' - Ritual' : ''}
+                            </Typography>
+                            <Typography variant="subtitle2" color="primary">
+                              lvl{spell.level}
+                            </Typography>
+                          </Box>
+                        }
+                        subheader={
+                          <Typography
+                            alignContent="center"
+                            textAlign="center"
+                            height={48}
+                            overflow="hidden"
+                            sx={{ overflowWrap: 'break-word' }}
+                          >
+                            {spell.name}
+                          </Typography>
+                        }
+                        sx={{ paddingBottom: 0, height: 72, display: 'block' }}
+                      />
 
-          {!setSelectedSpells && (
-            <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)} fullWidth>
-              {currentSpell && (
-                <SpellCard spell={currentSpell} charLevel={charLevel || 1} slotLevel={slotLevel} />
-              )}
-            </Dialog>
-          )}
-        </Box>
-      </AccordionDetails>
-    </Accordion>
-  ));
+                      <SpellCardContent spell={spell} />
+                    </CardActionArea>
+
+                    {setSelectedSpells && (
+                      <CardActions sx={{ alignSelf: 'center' }}>
+                        {selectedSpells.find(({ index }) => index === spell.index) ? (
+                          <Button
+                            onClick={() =>
+                              setSelectedSpells(
+                                selectedSpells.filter(({ index }) => index !== spell.index)
+                              )
+                            }
+                          >
+                            Remove
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() =>
+                              selectedSpells.filter(({ level }) =>
+                                spell.level === 0 ? level === 0 : level > 0
+                              ).length < maxSelected[spell.level === 0 ? 0 : 1] &&
+                              setSelectedSpells([...selectedSpells, spell])
+                            }
+                            disabled={
+                              selectedSpells.filter(({ level }) =>
+                                spell.level === 0 ? level === 0 : level > 0
+                              ).length >= maxSelected[spell.level === 0 ? 0 : 1]
+                            }
+                          >
+                            Add
+                          </Button>
+                        )}
+                      </CardActions>
+                    )}
+                  </Card>
+                ))}
+              </Box>
+            </AccordionDetails>
+          </Accordion>
+        ))}
+      </DialogContent>
+
+      <Dialog open={!!currentSpell} onClose={() => setCurrentSpell(undefined)} fullWidth>
+        {currentSpell && (
+          <SpellCard
+            spell={currentSpell}
+            charLevel={characterInfo.charLevel || 1}
+            slotLevel={characterInfo.slotLevel}
+          />
+        )}
+      </Dialog>
+    </Fragment>
+  );
 }
