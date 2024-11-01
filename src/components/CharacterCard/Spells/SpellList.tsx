@@ -159,7 +159,7 @@ export function SpellList({
                       flexDirection: 'column',
                       boxShadow:
                         selectedSpells.find(({ index }) => index === spell.index) &&
-                        'inset 0px 0px 5px 2px #383838'
+                        'inset 0px 0px 5px 2px darkgrey'
                     }}
                   >
                     <CardActionArea

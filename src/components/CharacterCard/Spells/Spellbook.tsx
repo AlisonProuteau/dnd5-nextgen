@@ -1,11 +1,11 @@
-import { SpellbookIcon } from '@assets';
+import { PrepareIcon, SpellbookIcon } from '@assets';
 import { Button, Dialog, DialogActions, DialogTitle, IconButton, Typography } from '@mui/material';
-import type { DefaultRepresentation } from '@representations/common.representation';
+import { Box } from '@mui/system';
 import type { Character } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { doc, updateDoc } from 'firebase/firestore';
 import { isEqual } from 'lodash';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -23,82 +23,56 @@ export function Spellbook({
     slots: Record<string, number>;
   };
 }) {
-  const [user] = useAuth();
   const queryClient = useQueryClient();
+  const [user] = useAuth();
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
   const [isLearnOpen, setIsLearnOpen] = useState(false);
   const [isPrepareOpen, setIsPrepareOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEdit, setIsEdit] = useState(true);
 
-  const isDisabled = (
-    spells: (DefaultRepresentation & { level: number })[],
-    spellNumber: number,
-    prepare: boolean = false
-  ) => {
-    const levels = spells.map(({ level }) => level);
-    const cantripsLength = levels.filter((level) => level === 0).length;
-    const spellsLength = levels.filter((level) => level > 0).length;
+  const saveSpells = async (learn: boolean = false) => {
+    const shouldSavSpells = (
+      slot: number | undefined,
+      currentSpells: any[],
+      characterSpells?: any[]
+    ) => character.id && slot && !isEqual(characterSpells ?? [], currentSpells);
 
-    const val: number[] = [];
-    if (cantripsLength >= (slots.cantrips || 0) || prepare) val.push(0);
-    if (spellsLength >= spellNumber) val.push(1);
+    learn ? setIsLearnOpen(false) : setIsPrepareOpen(false);
 
-    return val;
-  };
-
-  const saveLearnedSpells = () => {
-    if (!character || isEqual(character.knownSpells, knownSpells)) return;
+    if (
+      learn
+        ? !shouldSavSpells(slots.learn, knownSpells, character.knownSpells)
+        : !shouldSavSpells(
+            (slots.prepare ?? 0) + (slots.cantrips ?? 0),
+            preparedSpells,
+            character.preparedSpells
+          )
+    )
+      return;
 
     setIsSaving(true);
     if (user?.uid) {
       const path = `users/${user.uid}/characters`;
       const document = doc(database, path, character.id);
 
-      updateDoc(document, { knownSpells: knownSpells })
-        .then(async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ['fetchCharacter', user.uid, character.id]
-          });
-          toast.success('Learned spells saved');
-        })
-        .catch((error) =>
-          toast.error(`Something went wrong
-          ${(error as Error).message || 'Error'}`)
-        )
-        .finally(() => {
-          setIsSaving(false);
-          setIsEdit(false);
+      try {
+        await updateDoc(
+          document,
+          learn ? { knownSpells: knownSpells } : { preparedSpells: preparedSpells }
+        );
+        await queryClient.invalidateQueries({
+          queryKey: ['fetchCharacter', user.uid, character.id]
         });
-    } else setIsSaving(false);
+      } catch (error: any) {
+        console.error(error.stack);
+        toast.error(`Something went wrong
+           ${error.code || 'Error'}`);
+      }
+    }
+
+    setIsSaving(false);
   };
-
-  const savePreparedSpells = () => {
-    if (!slots.prepare || !character || isEqual(character.preparedSpells, preparedSpells)) return;
-
-    setIsSaving(true);
-    if (user?.uid) {
-      const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, character.id);
-
-      updateDoc(document, { preparedSpells: preparedSpells })
-        .then(() =>
-          queryClient.invalidateQueries({
-            queryKey: ['fetchCharacter', user.uid, character.id]
-          })
-        )
-        .catch((error) =>
-          toast.error(`Something went wrong
-          ${(error as Error).message || 'Error'}`)
-        )
-        .finally(() => setIsSaving(false));
-    } else setIsSaving(false);
-  };
-
-  useEffect(() => {
-    setIsEdit((character.knownSpells?.length || 0) < (slots.learn || 0) + (slots.cantrips || 0));
-  }, [slots, character.knownSpells?.length]);
 
   const slotLevels = useMemo(
     () =>
@@ -117,9 +91,17 @@ export function Spellbook({
     () => preparedSpells.length < (slots.prepare || 0) + (slots.cantrips || 0),
     [slots.prepare, preparedSpells.length, slots.cantrips]
   );
+  const characterInfo = useMemo(
+    () => ({
+      classIndex: character.class.index,
+      subclassIndex: character.subclass?.index,
+      charLevel: character.level
+    }),
+    [character.class.index, character.subclass?.index, character.level]
+  );
 
   // TODO: Make spell smaller when editable (less data? Maybe just attack or heal or something?)
-  // TODO: More rules/info for learn/prepare per class?
+  // TODO: Link to the how to maybe when need to learn/prepare?
   // TODO: should additional race/subrace spells be always prepared? (current yes)
   return (
     <Fragment>
@@ -129,11 +111,7 @@ export function Spellbook({
         !isLearnOpen &&
         !isPrepareOpen && (
           <SpellList
-            characterInfo={{
-              classIndex: character.class.index,
-              subclassIndex: character.subclass?.index,
-              charLevel: character.level
-            }}
+            characterInfo={characterInfo}
             additionalSpellList={(character.traits || [])
               .flatMap(({ spells }) => spells || [])
               .concat(...preparedSpells)
@@ -145,74 +123,46 @@ export function Spellbook({
         )
       )}
 
-      {slots.learn && (
-        <Fragment>
+      <Box display="flex" justifyContent="space-evenly">
+        {slots.learn && (
           <IconButton
             sx={{
               alignSelf: 'center',
               width: 'fit-content',
-              color: 'white'
+              color: 'white',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
             }}
             onClick={() => setIsLearnOpen(true)}
+            disabled={!shouldLearn || isSaving}
           >
             <SpellbookIcon
-              height="80px"
-              width="80px"
+              height="75px"
+              width="75px"
               fill="currentColor"
               css={{
                 margin: '10px'
               }}
             />
+            Learn
           </IconButton>
+        )}
 
-          <Dialog
-            fullWidth
-            open={isLearnOpen}
-            onClose={() => {
-              saveLearnedSpells();
-              setIsLearnOpen(false);
-            }}
-            PaperProps={{ elevation: 0 }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
-          >
-            <DialogTitle>Learn</DialogTitle>
-            <SpellList
-              characterInfo={{
-                classIndex: character.class.index,
-                subclassIndex: character.subclass?.index,
-                charLevel: character.level
-              }}
-              slotLevels={slotLevels}
-              selectedSpells={knownSpells}
-              setSelectedSpells={setKnownSpells}
-              maxSelected={[0, slots.learn]}
-            />
-            <DialogActions>
-              <Button
-                onClick={() => {
-                  saveLearnedSpells();
-                  setIsLearnOpen(false);
-                }}
-              >
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Fragment>
-      )}
-
-      {(slots.cantrips || slots.prepare) && (
-        <Fragment>
+        {(slots.cantrips || slots.prepare) && (
           <IconButton
             sx={{
               alignSelf: 'center',
               width: 'fit-content',
-              color: 'white'
+              color: 'white',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center'
             }}
             onClick={() => setIsPrepareOpen(true)}
-            disabled={shouldLearn}
+            disabled={shouldLearn || isSaving}
           >
-            <SpellbookIcon
+            <PrepareIcon
               height="80px"
               width="80px"
               fill="currentColor"
@@ -222,43 +172,39 @@ export function Spellbook({
             />
             Prepare
           </IconButton>
+        )}
+      </Box>
 
-          <Dialog
-            fullWidth
-            open={isPrepareOpen}
-            onClose={() => {
-              savePreparedSpells();
-              setIsPrepareOpen(false);
-            }}
-            PaperProps={{ elevation: 0 }}
-            slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
-          >
-            <DialogTitle>Prepare</DialogTitle>
-            <SpellList
-              characterInfo={{
-                classIndex: character.class.index,
-                subclassIndex: character.subclass?.index,
-                charLevel: character.level
-              }}
-              additionalSpellList={slots.prepare ? knownSpells : []}
-              slotLevels={slots.learn || !slots.prepare ? [0] : [0, ...slotLevels]}
-              selectedSpells={preparedSpells}
-              setSelectedSpells={setPreparedSpells}
-              maxSelected={[slots.cantrips || 0, slots.prepare || 0]}
-            />
-            <DialogActions>
-              <Button
-                onClick={() => {
-                  savePreparedSpells();
-                  setIsPrepareOpen(false);
-                }}
-              >
-                Close
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Fragment>
-      )}
+      <Dialog
+        fullWidth
+        open={isLearnOpen || isPrepareOpen}
+        onClose={() => saveSpells(isLearnOpen)}
+        PaperProps={{ elevation: 0 }}
+        slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+      >
+        <DialogTitle>{isLearnOpen ? 'Learn' : 'Prepare'}</DialogTitle>
+        {isLearnOpen ? (
+          <SpellList
+            characterInfo={characterInfo}
+            slotLevels={slotLevels}
+            selectedSpells={knownSpells}
+            setSelectedSpells={setKnownSpells}
+            maxSelected={[0, slots.learn || 0]}
+          />
+        ) : (
+          <SpellList
+            characterInfo={characterInfo}
+            additionalSpellList={slots.prepare ? knownSpells : []}
+            slotLevels={slots.learn || !slots.prepare ? [0] : [0, ...slotLevels]}
+            selectedSpells={preparedSpells}
+            setSelectedSpells={setPreparedSpells}
+            maxSelected={[slots.cantrips || 0, slots.prepare || 0]}
+          />
+        )}
+        <DialogActions>
+          <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Fragment>
   );
 }
