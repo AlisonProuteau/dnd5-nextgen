@@ -1,5 +1,13 @@
 import { PrepareIcon, SpellbookIcon } from '@assets';
-import { Button, Dialog, DialogActions, DialogTitle, IconButton, Typography } from '@mui/material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Typography
+} from '@mui/material';
 import { Box } from '@mui/system';
 import type { Character } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
@@ -13,10 +21,10 @@ import { SpellList } from './SpellList';
 
 export function Spellbook({
   character,
-  slots
+  slotInfo
 }: {
   character: Character;
-  slots: {
+  slotInfo: {
     cantrips?: number;
     learn?: number;
     prepare?: number;
@@ -32,22 +40,13 @@ export function Spellbook({
   const [isSaving, setIsSaving] = useState(false);
 
   const saveSpells = async (learn: boolean = false) => {
-    const shouldSavSpells = (
-      slot: number | undefined,
-      currentSpells: any[],
-      characterSpells?: any[]
-    ) => character.id && slot && !isEqual(characterSpells ?? [], currentSpells);
-
     learn ? setIsLearnOpen(false) : setIsPrepareOpen(false);
-
     if (
-      learn
-        ? !shouldSavSpells(slots.learn, knownSpells, character.knownSpells)
-        : !shouldSavSpells(
-            (slots.prepare ?? 0) + (slots.cantrips ?? 0),
-            preparedSpells,
-            character.preparedSpells
-          )
+      !character.id ||
+      (learn
+        ? !slotInfo.learn || isEqual(character.knownSpells ?? [], knownSpells)
+        : (!slotInfo.prepare && !slotInfo.cantrips) ||
+          isEqual(character.preparedSpells ?? [], preparedSpells))
     )
       return;
 
@@ -61,9 +60,25 @@ export function Spellbook({
           document,
           learn ? { knownSpells: knownSpells } : { preparedSpells: preparedSpells }
         );
-        await queryClient.invalidateQueries({
-          queryKey: ['fetchCharacter', user.uid, character.id]
-        });
+
+        if (learn) {
+          const newPreparedSpells = preparedSpells.filter((spell) =>
+            spell.level > 0
+              ? knownSpells.find(
+                  ({ index, level }) => index === spell.index && level === spell.level
+                )
+              : true
+          );
+          if (!isEqual(newPreparedSpells, preparedSpells)) {
+            console.log('different');
+            setPreparedSpells(newPreparedSpells);
+            await saveSpells();
+          }
+        } else {
+          await queryClient.invalidateQueries({
+            queryKey: ['fetchCharacter', user.uid, character.id]
+          });
+        }
       } catch (error: any) {
         console.error(error.stack);
         toast.error(`Something went wrong
@@ -74,57 +89,55 @@ export function Spellbook({
     setIsSaving(false);
   };
 
+  const shouldLearn = useMemo(
+    () => knownSpells.length < (slotInfo.learn || 0),
+    [slotInfo.learn, knownSpells.length]
+  );
+  const shouldPrepare = useMemo(
+    () => preparedSpells.length < (slotInfo.prepare || 0) + (slotInfo.cantrips || 0),
+    [slotInfo.prepare, preparedSpells.length, slotInfo.cantrips]
+  );
+
   const slotLevels = useMemo(
     () =>
-      Object.entries(slots.slots).reduce(
+      Object.entries(slotInfo.slots).reduce(
         (acc: number[], [key, value]) => (value > 0 ? [...acc, parseInt(key)] : acc),
         []
       ),
-    [slots.slots]
+    [slotInfo.slots]
   );
 
-  const shouldLearn = useMemo(
-    () => knownSpells.length < (slots.learn || 0),
-    [slots.learn, knownSpells.length]
-  );
-  const shouldPrepare = useMemo(
-    () => preparedSpells.length < (slots.prepare || 0) + (slots.cantrips || 0),
-    [slots.prepare, preparedSpells.length, slots.cantrips]
-  );
-  const characterInfo = useMemo(
-    () => ({
+  const characterInfo = useMemo(() => {
+    return {
       classIndex: character.class.index,
       subclassIndex: character.subclass?.index,
-      charLevel: character.level
-    }),
-    [character.class.index, character.subclass?.index, character.level]
-  );
+      charLevel: character.level,
+      slotLevels: []
+    };
+  }, [character.class.index, character.subclass?.index, character.level, slotLevels]);
 
-  // TODO: Make spell smaller when editable (less data? Maybe just attack or heal or something?)
-  // TODO: Link to the how to maybe when need to learn/prepare?
-  // TODO: should additional race/subrace spells be always prepared? (current yes)
+  // TODO: Test more
+  // TODO: Manually add more cantrips/spells/slots? Warlock can add more spells without levelingg to check or if you made a mistake)
+  // TODO: Should learn be disabled? (current only if should prepare => might be annoyin
+  // TODO: Should additional race/subrace spells be always prepared? (current yes)
+  // TODO: Am I missing subclass info spells ?
   return (
     <Fragment>
-      {shouldLearn || shouldPrepare ? (
-        <Typography>Click on the spellbooks to setup your spells</Typography>
-      ) : (
-        !isLearnOpen &&
-        !isPrepareOpen && (
-          <SpellList
-            characterInfo={characterInfo}
-            additionalSpellList={(character.traits || [])
-              .flatMap(({ spells }) => spells || [])
-              .concat(...preparedSpells)
-              .concat(
-                ...(slots.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
-              )}
-            spellListOnly={true}
-          />
-        )
+      {!shouldLearn && !shouldPrepare && !isLearnOpen && !isPrepareOpen && (
+        <SpellList
+          characterInfo={characterInfo}
+          additionalSpellList={(character.traits || [])
+            .flatMap(({ spells }) => spells || [])
+            .concat(...preparedSpells)
+            .concat(
+              ...(slotInfo.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
+            )}
+          spellListOnly={true}
+        />
       )}
 
       <Box display="flex" justifyContent="space-evenly">
-        {slots.learn && (
+        {slotInfo.learn && (
           <IconButton
             sx={{
               alignSelf: 'center',
@@ -135,7 +148,7 @@ export function Spellbook({
               alignItems: 'center'
             }}
             onClick={() => setIsLearnOpen(true)}
-            disabled={!shouldLearn || isSaving}
+            disabled={(!shouldLearn && shouldPrepare) || isSaving}
           >
             <SpellbookIcon
               height="75px"
@@ -145,11 +158,11 @@ export function Spellbook({
                 margin: '10px'
               }}
             />
-            Learn
+            {<Typography>Learn spells</Typography>}
           </IconButton>
         )}
 
-        {(slots.cantrips || slots.prepare) && (
+        {(slotInfo.cantrips || slotInfo.prepare) && (
           <IconButton
             sx={{
               alignSelf: 'center',
@@ -170,7 +183,7 @@ export function Spellbook({
                 margin: '10px'
               }}
             />
-            Prepare
+            {!shouldLearn && <Typography>Prepare your spells</Typography>}
           </IconButton>
         )}
       </Box>
@@ -183,24 +196,27 @@ export function Spellbook({
         slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
       >
         <DialogTitle>{isLearnOpen ? 'Learn' : 'Prepare'}</DialogTitle>
-        {isLearnOpen ? (
-          <SpellList
-            characterInfo={characterInfo}
-            slotLevels={slotLevels}
-            selectedSpells={knownSpells}
-            setSelectedSpells={setKnownSpells}
-            maxSelected={[0, slots.learn || 0]}
-          />
-        ) : (
-          <SpellList
-            characterInfo={characterInfo}
-            additionalSpellList={slots.prepare ? knownSpells : []}
-            slotLevels={slots.learn || !slots.prepare ? [0] : [0, ...slotLevels]}
-            selectedSpells={preparedSpells}
-            setSelectedSpells={setPreparedSpells}
-            maxSelected={[slots.cantrips || 0, slots.prepare || 0]}
-          />
-        )}
+        <DialogContent>
+          {isLearnOpen ? (
+            <SpellList
+              characterInfo={{ ...characterInfo, slotLevels }}
+              selectedSpells={knownSpells}
+              setSelectedSpells={setKnownSpells}
+              maxSelected={[0, slotInfo.learn || 0]}
+            />
+          ) : (
+            <SpellList
+              characterInfo={{
+                ...characterInfo,
+                slotLevels: slotInfo.learn || !slotInfo.prepare ? [0] : [0, ...slotLevels]
+              }}
+              additionalSpellList={slotInfo.prepare ? knownSpells : []}
+              selectedSpells={preparedSpells}
+              setSelectedSpells={setPreparedSpells}
+              maxSelected={[slotInfo.cantrips || 0, slotInfo.prepare || 0]}
+            />
+          )}
+        </DialogContent>
         <DialogActions>
           <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
         </DialogActions>

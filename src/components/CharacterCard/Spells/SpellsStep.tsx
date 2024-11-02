@@ -58,7 +58,6 @@ export function SpellStep({ character }: { character: Character }) {
     select: (levelInfo) => levelInfo?.spellcasting
   });
 
-  // TODO: warlock add more spells without leveling
   const slots = useMemo(
     () =>
       Object.entries(levelSpellcasting || {}).reduce(
@@ -101,11 +100,6 @@ export function SpellStep({ character }: { character: Character }) {
     ];
   }, [slots.cantrips, slots.learn, slots.prepare]);
 
-  // TODO: Test more
-  // TODO: Add loading
-  // TODO: Make it prettier?
-  // TODO: Manually add more cantrips/spells/slots?
-  // FIX: Refactor spells
   return slots ? (
     <Fragment>
       <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
@@ -117,14 +111,15 @@ export function SpellStep({ character }: { character: Character }) {
         />
       </Box>
 
-      {page === 'available' && <Spellbook character={character} slots={slots} />}
+      {page === 'available' && <Spellbook character={character} slotInfo={slots} />}
 
       {page === 'full' && (
         <SpellList
           characterInfo={{
             classIndex: character.class.index,
             subclassIndex: character.subclass?.index,
-            charLevel: character.level
+            charLevel: character.level,
+            slotLevels: []
           }}
           additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
         />
@@ -143,6 +138,6 @@ export function SpellStep({ character }: { character: Character }) {
         ))}
     </Fragment>
   ) : (
-    <CircularProgress size={24} />
+    <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
   );
 }

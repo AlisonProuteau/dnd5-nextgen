@@ -32,7 +32,7 @@ export function CharacterContainer() {
   const location = useLocation();
   const [id, setId] = useState<string>();
   const [steps, setSteps] = useState(3);
-  const [activeStep, setActiveStep] = useState(4);
+  const [activeStep, setActiveStep] = useState(0);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
     queryKey: ['fetchCharacter', user?.uid, id],

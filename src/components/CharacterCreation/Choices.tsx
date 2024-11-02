@@ -303,6 +303,7 @@ export function Choices({
     });
   };
 
+  // TODO
   // Fix: With 2 choices, get select up to the max (ranger expertise)
   const formatChoice = (choice: Choice, i: number, isMultiple?: boolean) => {
     let currentOptions: undefined | Option[] = undefined;

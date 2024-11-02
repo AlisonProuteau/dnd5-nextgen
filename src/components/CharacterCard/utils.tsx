@@ -98,9 +98,14 @@ export const getArmorClass = (
   return ac;
 };
 
-export const getSlotMinMax = (slots: Record<number, string>, level?: number) => {
-  if (level) return slots[level];
+export const getSlotMinMax = (slots: Record<number, string>, levels: number[] = []) => {
+  if (levels.length === 1) return slots[levels[0]];
 
-  const sortedByLevel = sortBy(Object.entries(slots), (val) => val[0]).flatMap((val) => val[1]);
-  return sortedByLevel.length ? `${sortedByLevel.at(0)} -> ${sortedByLevel.at(-1)}` : undefined;
+  const slotValuesSortedByLevel = levels.length
+    ? levels.sort().map((level) => slots[level])
+    : sortBy(Object.entries(slots), (val) => val[0]).flatMap((val) => val[1]);
+
+  return slotValuesSortedByLevel.length
+    ? `${slotValuesSortedByLevel.at(0)} -> ${slotValuesSortedByLevel.at(-1)}`
+    : undefined;
 };
