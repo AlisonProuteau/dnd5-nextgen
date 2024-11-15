@@ -170,7 +170,7 @@ export function Choices({
         option.item?.index ||
         option.of?.index ||
         option.ability_score?.index ||
-        (option.string && `${option.string}-${type}-${index}`) ||
+        (option.string && `${option.string}-${type}`) ||
         `${type}-${index}`,
       name:
         option.item?.name ||
@@ -202,7 +202,12 @@ export function Choices({
     };
 
     const formatOptions = options?.map(
-      (o) => o.item?.index || o.of?.index || o.ability_score?.index || `${type}-${index}`
+      (o) =>
+        o.item?.index ||
+        o.of?.index ||
+        o.ability_score?.index ||
+        `${o.string}-${type}` ||
+        `${type}-${index}`
     );
 
     return (
@@ -214,7 +219,7 @@ export function Choices({
           control={
             <Checkbox
               id={`choice-${i}-${formattedOption.index}${
-                formattedOption.count && '-' + formattedOption.count
+                formattedOption.count ? '-' + formattedOption.count : ''
               }`}
               checked={
                 isChecked(formattedOption, selected, formattedOption.count) ||
@@ -302,8 +307,6 @@ export function Choices({
     });
   };
 
-  // TODO
-  // Fix: With 2 choices, get select up to the max (ranger expertise)
   const formatChoice = (choice: Choice, i: number, isMultiple?: boolean) => {
     let currentOptions: undefined | Option[] = undefined;
     if (choice.from.option_set_type === 'options_array') {

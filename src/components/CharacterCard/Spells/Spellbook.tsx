@@ -70,7 +70,6 @@ export function Spellbook({
               : true
           );
           if (!isEqual(newPreparedSpells, preparedSpells)) {
-            console.log('different');
             setPreparedSpells(newPreparedSpells);
             await saveSpells();
           }
