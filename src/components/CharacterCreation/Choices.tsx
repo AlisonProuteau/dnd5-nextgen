@@ -32,7 +32,6 @@ interface ChoicesProps {
   selected?: (ChoiceObjectType | RaceAbilityBonus)[];
   proficiencies?: DefaultRepresentation[];
   alignment?: Alignment;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setSelected: (data: any) => void;
 }
 

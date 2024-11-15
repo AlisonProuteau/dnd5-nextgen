@@ -106,39 +106,35 @@ export function CharacterRaceForm({
     }
   }, [languages.map(({ index }) => index).join(', ')]);
 
-  // OK: Language and proficiencies already in race/subrace
-  const isValid = () => {
-    return (
-      selectedRace?.index &&
-      (raceInfo?.traits?.length || 0) + (subraceInfo?.racial_traits?.length || 0) ===
-        raceTraits.length &&
-      raceTraits
-        ?.filter(({ trait_specific }) => trait_specific?.subtrait_options)
-        .every(
-          ({ trait_specific }, i) =>
-            (selectedTraits.filter(({ type }) => type === i).length || 0) >=
-            (trait_specific?.subtrait_options?.choose || 0)
-        ) &&
-      raceTraits
-        ?.filter(({ trait_specific }) => trait_specific?.spell_options)
-        .every(
-          ({ trait_specific }, i) =>
-            (selectedSpells.filter(({ type }) => type === i).length || 0) >=
-            (trait_specific?.spell_options?.choose || 0)
-        ) &&
-      raceTraits
-        ?.filter(({ trait_specific }) => trait_specific?.spell_options)
-        .every(
-          ({ trait_specific }, i) =>
-            (selectedSpells.filter(({ type }) => type === i).length || 0) >=
-            (trait_specific?.spell_options?.choose || 0)
-        ) &&
-      (raceInfo?.starting_proficiency_options?.choose || 0) >= selectedProficiencies.length &&
-      (raceInfo?.language_options?.choose || 0) + (subraceInfo?.language_options?.choose || 0) >=
-        selectedLanguages.length &&
-      (raceInfo?.ability_bonus_options?.choose || 0) >= selectedAbilities.length
-    );
-  };
+  const isValid = () =>
+    selectedRace?.index &&
+    (raceInfo?.traits?.length || 0) + (subraceInfo?.racial_traits?.length || 0) ===
+      raceTraits.length &&
+    raceTraits
+      ?.filter(({ trait_specific }) => trait_specific?.subtrait_options)
+      .every(
+        ({ trait_specific }, i) =>
+          (selectedTraits.filter(({ type }) => type === i).length || 0) >=
+          (trait_specific?.subtrait_options?.choose || 0)
+      ) &&
+    raceTraits
+      ?.filter(({ trait_specific }) => trait_specific?.spell_options)
+      .every(
+        ({ trait_specific }, i) =>
+          (selectedSpells.filter(({ type }) => type === i).length || 0) >=
+          (trait_specific?.spell_options?.choose || 0)
+      ) &&
+    raceTraits
+      ?.filter(({ trait_specific }) => trait_specific?.spell_options)
+      .every(
+        ({ trait_specific }, i) =>
+          (selectedSpells.filter(({ type }) => type === i).length || 0) >=
+          (trait_specific?.spell_options?.choose || 0)
+      ) &&
+    (raceInfo?.starting_proficiency_options?.choose || 0) <= selectedProficiencies.length &&
+    (raceInfo?.language_options?.choose || 0) + (subraceInfo?.language_options?.choose || 0) <=
+      selectedLanguages.length &&
+    (raceInfo?.ability_bonus_options?.choose || 0) <= selectedAbilities.length;
 
   const handleSubmit = () => {
     const data: Partial<CharacterFormData> = {
