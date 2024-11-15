@@ -97,8 +97,6 @@ export function CharacterContainer() {
       navigate('points', { replace: true, state: { characterId: id } });
   }, [isCharacterLoading, id]);
 
-  //TODO: feature.feature_specific.invocations?: DefaultRepresentation[];
-  //TODO: trait.trait_specific.action?: Action;
   const canCastSpells = useMemo(
     () =>
       (character && classInfo?.spellcasting && classInfo.spellcasting.level === character.level) ||
