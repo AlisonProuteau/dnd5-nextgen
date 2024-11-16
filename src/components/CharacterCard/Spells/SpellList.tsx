@@ -14,7 +14,8 @@ import {
   CircularProgress,
   Dialog,
   Divider,
-  Typography
+  Typography,
+  type AccordionProps
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -26,6 +27,7 @@ import {
   useEffect,
   useState,
   type Dispatch,
+  type ReactNode,
   type SetStateAction
 } from 'react';
 import { SpellCardContent } from './SpellCardContent';
@@ -38,7 +40,8 @@ export function SpellList({
   spellListOnly = false,
   selectedSpells = [],
   setSelectedSpells,
-  maxSelected = [0, 0]
+  maxSelected = [0, 0],
+  hideLevels = false
 }: {
   characterInfo: {
     classIndex?: string;
@@ -52,6 +55,7 @@ export function SpellList({
   selectedSpells?: (DefaultRepresentation & { level: number })[];
   setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
   maxSelected?: [number, number];
+  hideLevels?: boolean;
 }) {
   const [allSpells, setAllSpells] = useState<Record<string, Array<Spell>>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
@@ -109,9 +113,22 @@ export function SpellList({
         (a, b) => a.index === b.index && a.level === b.level
       ).sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB));
 
-      setAllSpells(groupBy(filteredSpells, 'level'));
+      !hideLevels
+        ? setAllSpells(groupBy(filteredSpells, 'level'))
+        : setAllSpells({ all: filteredSpells });
     }
   }, [spellsFetching, additionnalSpellsFetching, spellListOnly]);
+
+  function ConditionalAccordion({
+    condition,
+    children,
+    ...props
+  }: {
+    condition: boolean;
+    children: ReactNode;
+  } & AccordionProps) {
+    return condition && children ? <Accordion {...props}>{children}</Accordion> : children;
+  }
 
   return !spellsFetching && !additionnalSpellsFetching ? (
     <Fragment>
@@ -132,18 +149,21 @@ export function SpellList({
         </Fragment>
       )}
       {Object.keys(allSpells).map((currentLevel) => (
-        <Accordion
+        <ConditionalAccordion
           key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
           defaultExpanded
           disableGutters
+          condition={!hideLevels}
         >
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-              {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
-            </Divider>
-          </AccordionSummary>
+          {!hideLevels && (
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
+              </Divider>
+            </AccordionSummary>
+          )}
 
           <AccordionDetails>
             <Box
@@ -242,7 +262,7 @@ export function SpellList({
               ))}
             </Box>
           </AccordionDetails>
-        </Accordion>
+        </ConditionalAccordion>
       ))}
 
       <Dialog open={!!currentSpell} onClose={() => setCurrentSpell(undefined)} fullWidth>

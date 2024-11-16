@@ -3,24 +3,20 @@ https://kanbanflow.com/board/2FkZc7Y
 https://www.dndbeyond.com/sources/basic-rules
 
 TODO List:
-
 Other:
 
-- Hooks
+- Manually add more cantrips/slots?
 
-Spells:
+Gameplay:
 
-- Choosing your spells (C level, spellattack, spell DC)?
+- Rest
+- Spell slots
+- racial spells
 
 Level up:
 
 - Check all traits and features and verify choices
-
-Tests:
-
-- Test equipment for proficiencies
-- Create an edge case test class/race
-- Choices
+- Make sure feature.feature_specific.invocations are handled correctly
 
 To figure out:
 

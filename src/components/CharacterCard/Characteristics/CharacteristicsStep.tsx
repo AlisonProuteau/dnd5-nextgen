@@ -99,7 +99,6 @@ export function Characteristics({ character }: { character: Character }) {
     }, [])
   });
 
-  // TODO: feature.feature_specific.invocations?: DefaultRepresentation[]; is it in subfeatures ? On level up
   return (
     <Fragment>
       <Box>

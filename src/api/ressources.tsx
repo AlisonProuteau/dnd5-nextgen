@@ -127,6 +127,17 @@ export async function getSpellsForClass(
   return { count: allSpells.length, results: allSpells };
 }
 
+export async function getMatchingSpells(
+  search: string
+): Promise<{ count: number; results: Spell[] }> {
+  const spells = (await getAll('Spells', '/spells')).results as Spell[];
+  const filteredSpells = spells.filter(({ name }) =>
+    name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return { count: filteredSpells.length, results: filteredSpells };
+}
+
 export async function getSpell(index: string): Promise<Spell | null> {
   return get('Spell', '/spells', index);
 }

@@ -1,10 +1,15 @@
 import { PrepareIcon, SpellbookIcon } from '@assets';
+import { ExpandMore } from '@mui/icons-material';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
   Typography
 } from '@mui/material';
@@ -18,6 +23,7 @@ import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 import { SpellList } from './SpellList';
+import { SpellSearch } from './SpellSearch';
 
 export function Spellbook({
   character,
@@ -37,9 +43,11 @@ export function Spellbook({
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
   const [isLearnOpen, setIsLearnOpen] = useState(false);
   const [isPrepareOpen, setIsPrepareOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const saveSpells = async (learn: boolean = false) => {
+    setIsAddOpen(false);
     learn ? setIsLearnOpen(false) : setIsPrepareOpen(false);
     if (
       !character.id ||
@@ -49,6 +57,7 @@ export function Spellbook({
           isEqual(character.preparedSpells ?? [], preparedSpells))
     )
       return;
+    console.log('hey');
 
     setIsSaving(true);
     if (user?.uid) {
@@ -89,8 +98,8 @@ export function Spellbook({
   };
 
   const shouldLearn = useMemo(
-    () => knownSpells.length < (slotInfo.learn || 0),
-    [slotInfo.learn, knownSpells.length]
+    () => knownSpells.filter(({ added }) => !added).length < (slotInfo.learn || 0),
+    [slotInfo.learn, knownSpells]
   );
   const shouldPrepare = useMemo(
     () => preparedSpells.length < (slotInfo.prepare || 0) + (slotInfo.cantrips || 0),
@@ -116,23 +125,42 @@ export function Spellbook({
   }, [character.class.index, character.subclass?.index, character.level, slotLevels]);
 
   // TODO: Test more
-  // TODO: Manually add more cantrips/spells/slots? Warlock can add more spells without levelingg to check or if you made a mistake)
-  // TODO: Should learn be disabled? (current only if should prepare => might be annoyin
-  // TODO: Should additional race/subrace spells be always prepared? (current yes)
   // TODO: Am I missing subclass info spells ?
   return (
     <Fragment>
       {!shouldLearn && !shouldPrepare && !isLearnOpen && !isPrepareOpen && (
-        <SpellList
-          characterInfo={characterInfo}
-          additionalSpellList={(character.traits || [])
-            .flatMap(({ spells }) => spells || [])
-            .concat(...preparedSpells)
-            .concat(
-              ...(slotInfo.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
+        <Fragment>
+          <SpellList
+            characterInfo={characterInfo}
+            additionalSpellList={(character.traits || [])
+              .flatMap(({ spells }) => spells || [])
+              .concat(...preparedSpells)
+              .concat(
+                ...(slotInfo.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
+              )}
+            spellListOnly={true}
+          />
+          {character.class.index === 'wizard' &&
+            knownSpells.filter(({ level }) => level > 0).length && (
+              <Accordion sx={{ '&:before': { display: 'none' } }} elevation={0} disableGutters>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                    All Ritual Spells
+                  </Divider>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <SpellList
+                    characterInfo={characterInfo}
+                    additionalSpellList={knownSpells
+                      .filter(({ level }) => level > 0)
+                      .filter(({ ritual }) => ritual)}
+                    spellListOnly={true}
+                    hideLevels
+                  />
+                </AccordionDetails>
+              </Accordion>
             )}
-          spellListOnly={true}
-        />
+        </Fragment>
       )}
 
       <Box display="flex" justifyContent="space-evenly">
@@ -147,7 +175,7 @@ export function Spellbook({
               alignItems: 'center'
             }}
             onClick={() => setIsLearnOpen(true)}
-            disabled={(!shouldLearn && shouldPrepare) || isSaving}
+            disabled={isSaving}
           >
             <SpellbookIcon
               height="75px"
@@ -199,7 +227,7 @@ export function Spellbook({
           {isLearnOpen ? (
             <SpellList
               characterInfo={{ ...characterInfo, slotLevels }}
-              selectedSpells={knownSpells}
+              selectedSpells={knownSpells.filter(({ added }) => !added)}
               setSelectedSpells={setKnownSpells}
               maxSelected={[0, slotInfo.learn || 0]}
             />
@@ -217,7 +245,35 @@ export function Spellbook({
           )}
         </DialogContent>
         <DialogActions>
+          {isLearnOpen && character.class.index === 'wizard' && (
+            <Button onClick={() => setIsAddOpen(true)}>Learn additional spell</Button>
+          )}
           <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        fullWidth
+        open={isAddOpen}
+        onClose={() => saveSpells(true)}
+        PaperProps={{ elevation: 0 }}
+        slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+      >
+        <DialogTitle>Learn additional spell</DialogTitle>
+        <DialogContent>
+          {isAddOpen && (
+            <SpellSearch
+              onSelect={(spell) => {
+                !knownSpells.some(
+                  ({ index, level }) => index === spell.index && level === spell.level
+                ) && setKnownSpells([...knownSpells, { ...spell, added: true }]);
+                setIsAddOpen(false);
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsAddOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Fragment>
