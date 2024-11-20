@@ -1,4 +1,4 @@
-import { getClassInfo, getSubclassInfo } from '@api/ressources';
+import { getClassInfo } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { EditRounded, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
@@ -11,9 +11,7 @@ import {
   MobileStepper,
   Typography
 } from '@mui/material';
-import type { Level } from '@representations/campaign/level.representation';
-import type { Classes, Subclass } from '@representations/character/class.representation';
-import type { Character } from '@representations/user.representation';
+import type { Classes } from '@representations/character/class.representation';
 import { useQuery } from '@tanstack/react-query';
 import { button, fab, linkButton } from '@utils/style.utils';
 import { Fragment, useEffect, useMemo, useState } from 'react';
@@ -34,11 +32,9 @@ export function CharacterContainer() {
   const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
 
-  const { data: character, isFetching: isCharacterLoading } = useQuery<Character | undefined>({
+  const { data: character, isFetching: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
-    queryFn: async () => {
-      if (user?.uid && id) return await getCharacter(user.uid, id);
-    },
+    queryFn: async () => (user?.uid && id ? await getCharacter(user.uid, id) : null),
     enabled: !!user?.uid && !!id
   });
 
@@ -47,47 +43,6 @@ export function CharacterContainer() {
     queryFn: async () =>
       character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
     enabled: !!character
-  });
-
-  const { data: subClassInfo } = useQuery({
-    queryKey: ['fetchSubclassInfo', character?.class.index, character?.subclass?.index],
-    queryFn: async () =>
-      character?.class?.index && character?.subclass?.index
-        ? ((await getSubclassInfo(
-            character.class.index,
-            character.subclass.index
-          )) as Subclass | null)
-        : null,
-    enabled: !!character?.class.index && !!character.subclass?.index
-  });
-
-  const { data: levelInfo } = useQuery({
-    queryKey: [
-      'fetchClassInfoLevel',
-      character?.class?.index,
-      character?.subclass?.index,
-      character?.level
-    ],
-    queryFn: async () => {
-      if (!character?.class?.index) return null;
-      let levelRes: Partial<Level> = {};
-
-      const classRes = (await getClassInfo(character.class.index, character.level)) as Level | null;
-      if (classRes) levelRes = { ...classRes };
-
-      if (character.subclass?.index) {
-        const subclassRes = (await getSubclassInfo(
-          character.class.index,
-          character.subclass.index,
-          character.level
-        )) as Level | null;
-
-        if (subclassRes) levelRes = { ...levelRes, ...subclassRes };
-      }
-
-      return Object.keys(levelRes).length ? (levelRes as Level) : null;
-    },
-    enabled: !!character?.class.index
   });
 
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);

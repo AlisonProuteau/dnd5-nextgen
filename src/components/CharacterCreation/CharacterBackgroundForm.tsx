@@ -200,11 +200,7 @@ export function CharacterBackgroundForm({
         <Fragment>
           <Accordion>
             <Divider component="div" role="presentation" variant="middle">
-              <AccordionSummary
-                expandIcon={<ExpandMore />}
-                aria-controls="panel1-content"
-                id="panel1-header"
-              >
+              <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography>{selectedBackground.feature.name}</Typography>
               </AccordionSummary>
             </Divider>

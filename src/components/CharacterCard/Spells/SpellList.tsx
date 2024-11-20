@@ -19,6 +19,7 @@ import {
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { groupBy, max, maxBy, uniqWith } from 'lodash';
 import {
@@ -52,7 +53,7 @@ export function SpellList({
   additionalSpellList?: DefaultRepresentation[];
   slotLevel?: number;
   spellListOnly?: boolean;
-  selectedSpells?: (DefaultRepresentation & { level: number })[];
+  selectedSpells?: Character['knownSpells'] | Character['preparedSpells'];
   setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
   maxSelected?: [number, number];
   hideLevels?: boolean;

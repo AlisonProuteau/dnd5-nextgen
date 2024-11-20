@@ -1,5 +1,5 @@
 import { PrepareIcon, SpellbookIcon } from '@assets';
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -17,7 +17,7 @@ import { Box } from '@mui/system';
 import type { Character } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { doc, updateDoc } from 'firebase/firestore';
-import { isEqual } from 'lodash';
+import { isEqual, max } from 'lodash';
 import { Fragment, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
@@ -47,8 +47,9 @@ export function Spellbook({
   const [isSaving, setIsSaving] = useState(false);
 
   const saveSpells = async (learn: boolean = false) => {
-    setIsAddOpen(false);
-    learn ? setIsLearnOpen(false) : setIsPrepareOpen(false);
+    if (learn) isAddOpen ? setIsAddOpen(false) : setIsLearnOpen(false);
+    else setIsPrepareOpen(false);
+
     if (
       !character.id ||
       (learn
@@ -57,7 +58,6 @@ export function Spellbook({
           isEqual(character.preparedSpells ?? [], preparedSpells))
     )
       return;
-    console.log('hey');
 
     setIsSaving(true);
     if (user?.uid) {
@@ -70,20 +70,21 @@ export function Spellbook({
           learn ? { knownSpells: knownSpells } : { preparedSpells: preparedSpells }
         );
 
-        if (learn) {
-          const newPreparedSpells = preparedSpells.filter((spell) =>
-            spell.level > 0
-              ? knownSpells.find(
-                  ({ index, level }) => index === spell.index && level === spell.level
-                )
-              : true
-          );
-          if (!isEqual(newPreparedSpells, preparedSpells)) {
-            setPreparedSpells(newPreparedSpells);
-            await saveSpells();
-          }
+        const newPreparedSpells = learn
+          ? preparedSpells.filter((spell) =>
+              spell.level > 0
+                ? knownSpells.find(
+                    ({ index, level }) => index === spell.index && level === spell.level
+                  )
+                : true
+            )
+          : undefined;
+
+        if (newPreparedSpells !== undefined && !isEqual(newPreparedSpells, preparedSpells)) {
+          setPreparedSpells(newPreparedSpells);
+          await saveSpells();
         } else {
-          await queryClient.invalidateQueries({
+          await queryClient.refetchQueries({
             queryKey: ['fetchCharacter', user.uid, character.id]
           });
         }
@@ -124,8 +125,6 @@ export function Spellbook({
     };
   }, [character.class.index, character.subclass?.index, character.level, slotLevels]);
 
-  // TODO: Test more
-  // TODO: Am I missing subclass info spells ?
   return (
     <Fragment>
       {!shouldLearn && !shouldPrepare && !isLearnOpen && !isPrepareOpen && (
@@ -246,7 +245,7 @@ export function Spellbook({
         </DialogContent>
         <DialogActions>
           {isLearnOpen && character.class.index === 'wizard' && (
-            <Button onClick={() => setIsAddOpen(true)}>Learn additional spell</Button>
+            <Button onClick={() => setIsAddOpen(true)}>More spells</Button>
           )}
           <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
         </DialogActions>
@@ -259,21 +258,65 @@ export function Spellbook({
         PaperProps={{ elevation: 0 }}
         slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
       >
-        <DialogTitle>Learn additional spell</DialogTitle>
+        <DialogTitle>
+          <Accordion disableGutters>
+            <AccordionSummary
+              expandIcon={
+                <InfoOutlined color="info" fontSize="small" alignmentBaseline="central" />
+              }
+            >
+              Additional spells
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '10px',
+                background: 'DimGray'
+              }}
+            >
+              <Typography variant="subtitle2">
+                You might find other spells during your adventures. You could discover a spell
+                recorded on a scroll in an evil wizard’s chest, for example, or in a dusty tome in
+                an ancient library.
+              </Typography>
+              <Typography variant="subtitle2">
+                When you find a wizard spell of 1st level or higher, you can add it to your
+                spellbook if it is of a spell level you can prepare and if you can spare the time to
+                decipher and copy it.
+              </Typography>
+              <Typography variant="subtitle2">
+                For each level of the spell, the process takes 2 hours and costs 50 gp. Once you
+                have spent this time and money, you can prepare the spell just like your other
+                spells.
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+        </DialogTitle>
         <DialogContent>
           {isAddOpen && (
             <SpellSearch
-              onSelect={(spell) => {
-                !knownSpells.some(
-                  ({ index, level }) => index === spell.index && level === spell.level
-                ) && setKnownSpells([...knownSpells, { ...spell, added: true }]);
-                setIsAddOpen(false);
+              classIndex={character.class.index}
+              subclassIndex={character.subclass?.index}
+              maxLevel={max(slotLevels)}
+              selectedSpells={knownSpells.filter(({ added }) => added)}
+              onSelect={(spell, remove = false) => {
+                if (
+                  remove ===
+                  knownSpells.some(
+                    ({ index, level }) => index === spell.index && level === spell.level
+                  )
+                ) {
+                  remove
+                    ? setKnownSpells(knownSpells.filter(({ index }) => index !== spell.index))
+                    : setKnownSpells([...knownSpells, { ...spell, added: true }]);
+                }
               }}
             />
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsAddOpen(false)}>Close</Button>
+          <Button onClick={() => saveSpells(true)}>Close</Button>
         </DialogActions>
       </Dialog>
     </Fragment>
