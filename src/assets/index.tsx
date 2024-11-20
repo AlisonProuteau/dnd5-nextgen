@@ -14,6 +14,7 @@ export { default as MaleIcon } from './male.svg?react';
 export { default as MoneyIcon } from './money.svg?react';
 export { default as SpellbookOpenIcon } from './open-spellbook.svg?react';
 export { default as OtherIcon } from './other.svg?react';
+export { default as PrepareIcon } from './prepare.svg?react';
 export { default as ProficiencyIcon } from './proficiency.svg?react';
 export { default as RangeIcon } from './range.svg?react';
 export { default as ShieldIcon } from './shield.svg?react';

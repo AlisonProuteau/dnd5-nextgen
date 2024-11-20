@@ -1,39 +1,22 @@
 import { AreaIcon, BladeIcon, HealIcon, RangeIcon, TimeIcon } from '@assets';
-import { Box, CardContent, CardHeader, Typography } from '@mui/material';
+import { Box, CardContent, Typography } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import { Fragment } from 'react';
 import { getSlotMinMax } from '../utils';
 
 export function SpellCardContent({
   spell,
-  charLevel,
-  slotLevel
+  charLevel = 1,
+  slotLevels = []
 }: {
   spell: Spell;
   charLevel?: number;
-  slotLevel?: number;
+  slotLevels?: number[];
 }) {
   return (
     <Fragment>
-      <CardHeader
-        title={
-          <Box display="flex" justifyContent="space-between" alignItems="baseline" gap="5px">
-            <Typography>{spell.name}</Typography>
-            <Typography variant="subtitle2" color="primary">
-              lvl{spell.level}
-            </Typography>
-          </Box>
-        }
-        subheader={
-          <Typography display="inline" variant="subtitle2" color="darkgrey">
-            {spell.components}
-            {spell.concentration ? ' - Con' : ''}
-            {spell.ritual ? ' - Ritual' : ''}
-          </Typography>
-        }
-        sx={{ paddingBottom: 0 }}
-      />
-      <CardContent sx={{ flex: 1 }}>
+      <CardContent>
+        {/* <Box flex={1} alignContent="center"> */}
         {spell.duration !== 'Instantaneous' && (
           <Box display="flex" gap="5px">
             <TimeIcon height="20px" width="20px" fill="white" />
@@ -44,8 +27,8 @@ export function SpellCardContent({
           <Box display="flex" gap="5px">
             <BladeIcon height="20px" width="20px" fill="white" />
             <Typography>
-              {getSlotMinMax(spell.damage.damage_at_character_level || {}, charLevel) ||
-                getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevel)}
+              {getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevels) ||
+                getSlotMinMax(spell.damage.damage_at_character_level || {}, [charLevel])}
               {spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''}
             </Typography>
           </Box>
@@ -53,7 +36,7 @@ export function SpellCardContent({
         {spell.heal_at_slot_level && (
           <Box display="flex" gap="5px">
             <HealIcon height="20px" width="20px" fill="white" />
-            <Typography>{getSlotMinMax(spell.heal_at_slot_level || {}, slotLevel)}</Typography>
+            <Typography>{getSlotMinMax(spell.heal_at_slot_level || {}, slotLevels)}</Typography>
           </Box>
         )}
         {spell.area_of_effect && (
@@ -70,12 +53,11 @@ export function SpellCardContent({
             <Typography>{spell.range}</Typography>
           </Box>
         )}
+        {/* </Box> */}
       </CardContent>
-      <Box paddingLeft="16px" paddingBottom="16px">
-        <Typography variant="subtitle2" color="secondary">
-          {spell.casting_time}
-        </Typography>
-      </Box>
+      <Typography variant="subtitle2" color="secondary" textAlign="right">
+        {spell.casting_time}
+      </Typography>
     </Fragment>
   );
 }

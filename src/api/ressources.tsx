@@ -67,10 +67,9 @@ export function getAllBackgrounds(): Promise<{ count: number; results: Backgroun
 }
 
 function getQueryForIndexAndLevel(
-  path: string,
   index: string,
   level?: number,
-  multiple = true
+  subclass: boolean = false
 ): QueryObject[] {
   const levelQuery: QueryObject[] = level
     ? [
@@ -85,8 +84,8 @@ function getQueryForIndexAndLevel(
   return [
     ...levelQuery,
     {
-      fieldPath: path,
-      opStr: multiple ? 'array-contains' : '==',
+      fieldPath: subclass ? 'subclasses' : 'classes',
+      opStr: 'array-contains',
       value: index
     }
   ];
@@ -102,19 +101,14 @@ export async function getSpellsForClass(
         await getAll(
           'Spells for subclass',
           '/spells',
-          getQueryForIndexAndLevel('subclasses', subclassIndex, level)
+          getQueryForIndexAndLevel(subclassIndex, level, true)
         )
       ).results
     : [];
 
   const allSpells = (
-    (
-      await getAll(
-        'Spells for class',
-        '/spells',
-        getQueryForIndexAndLevel('classes', classIndex, level)
-      )
-    ).results as Spell[]
+    (await getAll('Spells for class', '/spells', getQueryForIndexAndLevel(classIndex, level)))
+      .results as Spell[]
   )
     .concat(subClassSpells)
     .reduce((acc: Spell[], current) => {
@@ -125,6 +119,23 @@ export async function getSpellsForClass(
     }, []);
 
   return { count: allSpells.length, results: allSpells };
+}
+
+export async function getMatchingSpells(
+  maxLevel?: number
+): Promise<{ count: number; results: Spell[] }> {
+  return getAll('Spells', '/spells', [
+    {
+      fieldPath: 'level',
+      opStr: '>',
+      value: 0
+    },
+    {
+      fieldPath: 'level',
+      opStr: '<=',
+      value: maxLevel
+    }
+  ]);
 }
 
 export async function getSpell(index: string): Promise<Spell | null> {

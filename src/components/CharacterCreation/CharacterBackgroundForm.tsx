@@ -34,8 +34,6 @@ interface CharacterBackgroundFormProps {
   equipment?: ChoiceSelection[];
 }
 
-// TODO: Add optionnal/requiered for field
-// TODO: Add ideal description for alignment (+ you can remove/change alignment)
 export function CharacterBackgroundForm({
   onNext,
   onPrev,
@@ -130,7 +128,7 @@ export function CharacterBackgroundForm({
     <Box>
       {backgrounds && (
         <Box display="flex" gap="15px">
-          <FormControl margin="dense" fullWidth>
+          <FormControl margin="dense" fullWidth required>
             <InputLabel htmlFor="background">Background</InputLabel>
             <Select
               fullWidth
@@ -160,7 +158,7 @@ export function CharacterBackgroundForm({
               ))}
             </Select>
           </FormControl>
-          <FormControl margin="dense" sx={{ flexBasis: '30%', minWidth: 160 }}>
+          <FormControl margin="dense" sx={{ flexBasis: '30%', minWidth: 160 }} required>
             <InputLabel htmlFor="alignment">Alignment</InputLabel>
             <Select
               fullWidth
@@ -202,11 +200,7 @@ export function CharacterBackgroundForm({
         <Fragment>
           <Accordion>
             <Divider component="div" role="presentation" variant="middle">
-              <AccordionSummary
-                expandIcon={<ExpandMore />}
-                aria-controls="panel1-content"
-                id="panel1-header"
-              >
+              <AccordionSummary expandIcon={<ExpandMore />}>
                 <Typography>{selectedBackground.feature.name}</Typography>
               </AccordionSummary>
             </Divider>
@@ -307,6 +301,19 @@ export function CharacterBackgroundForm({
                 >
                   <Typography>Choose Ideals ({selectedBackground.ideals.choose || 0})</Typography>
                 </Divider>
+                <Typography align="center" color="secondary">
+                  {selectedAlignment && !selectedIdeals.length && (
+                    <Typography variant="caption">
+                      Deselect your aligment to access all ideals
+                    </Typography>
+                  )}
+
+                  {!!selectedIdeals.length && (
+                    <Typography variant="caption" display="block">
+                      Deselect your ideal to access all aligments
+                    </Typography>
+                  )}
+                </Typography>
                 <Choices
                   choices={[selectedBackground.ideals]}
                   selected={selectedIdeals}
@@ -340,6 +347,9 @@ export function CharacterBackgroundForm({
                 >
                   <Typography>
                     Choose Languages ({selectedBackground.language_options.choose || 0})
+                    <Typography display="inline" sx={{ verticalAlign: 'top' }} variant="subtitle2">
+                      *
+                    </Typography>
                   </Typography>
                 </Divider>
                 <Choices
@@ -357,7 +367,12 @@ export function CharacterBackgroundForm({
                   sx={{ paddingTop: '15px' }}
                   variant="middle"
                 >
-                  <Typography>Choose equipments</Typography>
+                  <Typography>
+                    Choose equipments
+                    <Typography display="inline" sx={{ verticalAlign: 'top' }} variant="subtitle2">
+                      *
+                    </Typography>
+                  </Typography>
                 </Divider>
                 <Choices
                   choices={selectedBackground.starting_equipment_options}
