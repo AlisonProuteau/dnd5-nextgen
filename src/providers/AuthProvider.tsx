@@ -1,5 +1,5 @@
 import { User } from 'firebase/auth';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, type JSX } from 'react';
 import { onAuthChange } from '../firebase';
 
 const AuthContext = createContext<[User | null, boolean]>([null, true]);

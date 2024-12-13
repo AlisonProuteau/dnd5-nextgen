@@ -210,6 +210,11 @@ export function Choices({
         `${type}-${index}`
     );
 
+    const boxDisabled =
+      isDisabled(formattedOption, choose, i, option.count, isMultiple, formatOptions) ||
+      (alignment && option.alignments
+        ? !option.alignments.find(({ index }) => index === alignment?.index)
+        : false);
     return (
       formattedOption.prerequisites && (
         <FormControlLabel
@@ -225,12 +230,7 @@ export function Choices({
                 isChecked(formattedOption, selected, formattedOption.count) ||
                 isChecked(formattedOption, inherited, formattedOption.count)
               }
-              disabled={
-                isDisabled(formattedOption, choose, i, option.count, isMultiple, formatOptions) ||
-                (alignment && option.alignments
-                  ? !option.alignments.find(({ index }) => index === alignment?.index)
-                  : false)
-              }
+              disabled={boxDisabled}
               onChange={(_, checked) =>
                 onSelect(
                   checked,
@@ -243,6 +243,7 @@ export function Choices({
             />
           }
           label={formattedOption.label}
+          sx={{ display: boxDisabled ? 'none' : 'flex' }}
         />
       )
     );

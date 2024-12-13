@@ -25,5 +25,5 @@
       "@shared/*": ["./src/components/shared/*"]
     }
   },
-  "include": ["src", "vite.config.ts", ".eslintrc.json"]
+  "include": ["src", "vite.config.mts", ".eslintrc.json"]
 }
