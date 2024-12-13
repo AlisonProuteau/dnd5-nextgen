@@ -1,13 +1,14 @@
 /// <reference types="vite/client" />
-/// <reference types="vitest" />
+/// <reference types="vitest/config" />
 
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig } from 'vite';
+import { defineConfig, mergeConfig } from 'vite';
 import svgr from 'vite-plugin-svgr';
 import viteTsconfigPaths from 'vite-tsconfig-paths';
+import { defineConfig as defineVitestConfig } from 'vitest/config';
 
-export default defineConfig({
+const viteConfig = defineConfig({
   build: {
     minify: 'esbuild',
     outDir: 'build'
@@ -27,7 +28,10 @@ export default defineConfig({
       '@representations/*': path.resolve(__dirname, './src/representations'),
       '@shared/*': path.resolve(__dirname, './src/components/shared')
     }
-  },
+  }
+});
+
+const vitestConfig = defineVitestConfig({
   test: {
     globals: true,
     environment: 'jsdom',
@@ -38,3 +42,5 @@ export default defineConfig({
     }
   }
 });
+
+export default mergeConfig(viteConfig, vitestConfig);
