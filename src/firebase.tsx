@@ -5,13 +5,14 @@ import {
   ErrorFn,
   NextOrObserver,
   User,
+  connectAuthEmulator,
   createUserWithEmailAndPassword,
   getAuth,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCNATiq_BDJgHq2hw79Cjdwy0TcyB73v9c',
@@ -25,8 +26,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-export const analytics = getAnalytics(app);
-export const database = getFirestore(app);
+const database = getFirestore(app);
+const analytics = getAnalytics(app);
+
+const { VITE_FIRESTORE_EMULATOR_HOST, VITE_FIREBASE_AUTH_EMULATOR_HOST } = import.meta.env;
+if (VITE_FIRESTORE_EMULATOR_HOST) {
+  const [host, port] = VITE_FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
+  connectFirestoreEmulator(database, host, parseInt(port));
+  console.debug(`Using Firestore emulator: http://${VITE_FIRESTORE_EMULATOR_HOST}/`);
+} else console.debug('Firestore production mode');
+
+if (VITE_FIREBASE_AUTH_EMULATOR_HOST) {
+  connectAuthEmulator(auth, `http://l${VITE_FIREBASE_AUTH_EMULATOR_HOST}/`);
+  console.debug(`Using Auth emulator: http://${VITE_FIREBASE_AUTH_EMULATOR_HOST}/`);
+} else console.debug('Auth production mode');
+
+export { analytics, database };
 export const createUserInFirebase = (email: string, password: string) =>
   createUserWithEmailAndPassword(auth, email, password);
 export const signInFirebase = (email: string, password: string) =>
