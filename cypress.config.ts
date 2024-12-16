@@ -6,9 +6,31 @@ import { emulators } from './firebase.json';
 
 export default defineConfig({
   e2e: {
-    env,
-    baseUrl: `http://localhost:${emulators.hosting.port}`,
-    setupNodeEvents: (on, config) =>
-      cypressFirebasePlugin(on, config, admin, { projectId: 'dnd5-nextgen' })
+    env: {
+      ...env,
+      FIREBASE_AUTH_EMULATOR_HOST: `${emulators.firestore.host}:${emulators.auth.port}`,
+      FIRESTORE_EMULATOR_HOST: `${emulators.firestore.host}:${emulators.firestore.port}`
+    },
+    baseUrl: `http://${emulators.firestore.host}:${emulators.hosting.port}`,
+    setupNodeEvents: (on, config) => {
+      process.env = {
+        ...env,
+        FIREBASE_AUTH_EMULATOR_HOST: `${emulators.firestore.host}:${emulators.auth.port}`,
+        FIRESTORE_EMULATOR_HOST: `${emulators.firestore.host}:${emulators.firestore.port}`
+      };
+
+      return cypressFirebasePlugin(
+        on,
+        config,
+        admin,
+        { projectId: 'dnd5-nextgen' },
+        {
+          protectProduction: {
+            firestore: 'error',
+            auth: 'error'
+          }
+        }
+      );
+    }
   }
 });

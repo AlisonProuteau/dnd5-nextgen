@@ -20,6 +20,7 @@ const viteConfig = defineConfig({
       include: '**/*.svg?react'
     })
   ],
+  envPrefix: ['VITE_', 'FIRESTORE_', 'FIREBASE_'],
   resolve: {
     alias: {
       '@assets': path.resolve(__dirname, './src/assets'),

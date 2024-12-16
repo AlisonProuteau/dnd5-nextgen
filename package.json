@@ -11,7 +11,7 @@
     "build": "tsc && vite build",
     "start": "ESLINT_NO_DEV_ERRORS=true vite",
     "firebase:emulate": "firebase emulators:start --only hosting,auth,firestore",
-    "start:dist": "VITE_FIREBASE_AUTH_EMULATOR_HOST=\"localhost:$(cat firebase.json | jq .emulators.auth.port)\" VITE_FIRESTORE_EMULATOR_HOST=\"localhost:$(cat firebase.json | jq .emulators.firestore.port)\" yarn build && yarn firebase:emulate",
+    "start:dist": "FIREBASE_AUTH_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.auth.port)\" FIRESTORE_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.firestore.port)\" yarn build && yarn firebase:emulate",
     "cy:open": "SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" cypress open",
     "cy:emulate": "run-p -r start:dist cy:open",
     "test": "vitest run",

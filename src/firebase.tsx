@@ -24,24 +24,23 @@ const firebaseConfig = {
   measurementId: 'G-FLH1SPJ74T'
 };
 
+const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST } = import.meta.env;
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const database = getFirestore(app);
 const analytics = getAnalytics(app);
 
-const { VITE_FIRESTORE_EMULATOR_HOST, VITE_FIREBASE_AUTH_EMULATOR_HOST } = import.meta.env;
-if (VITE_FIRESTORE_EMULATOR_HOST) {
-  const [host, port] = VITE_FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
+const database = getFirestore(app);
+if (FIRESTORE_EMULATOR_HOST) {
+  const [host, port] = FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
   connectFirestoreEmulator(database, host, parseInt(port));
-  console.debug(`Using Firestore emulator: http://${VITE_FIRESTORE_EMULATOR_HOST}/`);
+  console.debug(`Using Firestore emulator: http://${FIRESTORE_EMULATOR_HOST}/`);
 } else console.debug('Firestore production mode');
 
-if (VITE_FIREBASE_AUTH_EMULATOR_HOST) {
-  connectAuthEmulator(auth, `http://l${VITE_FIREBASE_AUTH_EMULATOR_HOST}/`);
-  console.debug(`Using Auth emulator: http://${VITE_FIREBASE_AUTH_EMULATOR_HOST}/`);
+const auth = getAuth(app);
+if (FIREBASE_AUTH_EMULATOR_HOST) {
+  connectAuthEmulator(auth, `http://l${FIREBASE_AUTH_EMULATOR_HOST}/`);
+  console.debug(`Using Auth emulator: http://${FIREBASE_AUTH_EMULATOR_HOST}/`);
 } else console.debug('Auth production mode');
 
-export { analytics, database };
 export const createUserInFirebase = (email: string, password: string) =>
   createUserWithEmailAndPassword(auth, email, password);
 export const signInFirebase = (email: string, password: string) =>
@@ -49,3 +48,4 @@ export const signInFirebase = (email: string, password: string) =>
 export const signOutInFirebase = () => signOut(auth);
 export const onAuthChange = (fn: NextOrObserver<User>, error?: ErrorFn, completed?: CompleteFn) =>
   onAuthStateChanged(auth, fn, error, completed);
+export { analytics, database };

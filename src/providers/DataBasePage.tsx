@@ -14,9 +14,10 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import { getAll } from '@utils/api.utils';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from '../firebase';
 
@@ -25,6 +26,42 @@ export function DataBasePage() {
   const [isUpdate, setIsUpdate] = useState(false);
   const [docID, setDocID] = useState<string>('');
   const [docContent, setDocContent] = useState<string>('');
+
+  const getFullDatabase = async () => {
+    let allData: Record<string, any> = {};
+
+    await Promise.all(
+      [
+        'ability-scores',
+        'alignments',
+        'backgrounds',
+        'classes',
+        'conditions',
+        'damage-types',
+        'equipment',
+        'equipment-categories',
+        'feats',
+        'features',
+        'languages',
+        'magic-items',
+        'magic-schools',
+        'monsters',
+        'proficiencies',
+        'races',
+        'rule-sections',
+        'rules',
+        'skills',
+        'spells',
+        'traits',
+        'weapon-properties'
+      ].map(async (collection) => {
+        const data = await getAll(collection, `/${collection}`);
+        allData[collection] = data.results;
+      })
+    );
+    return allData;
+  };
+  useEffect(() => void getFullDatabase().then(console.warn), []);
 
   const createDocument = async () => {
     if (docContent.length && docID.length) {
