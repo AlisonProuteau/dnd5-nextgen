@@ -9,6 +9,7 @@
 # production
 /build
 serviceAccount.json
+/database
 
 # misc
 .DS_Store

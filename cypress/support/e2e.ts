@@ -6,30 +6,38 @@ import './commands';
 
 const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST } = Cypress.env();
 if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
-  const projectId = Cypress.env('FIREBASE_PROJECT_ID');
-  const firebaseConfig = {
-    apiKey: Cypress.env('FIREBASE_API_KEY'),
-    projectId: `${projectId}`,
-    authDomain: `${projectId}.firebaseapp.com`,
-    storageBucket: `${projectId}.appspot.com`
-  };
-  const app = firebase.initializeApp(firebaseConfig);
+  let app: firebase.app.App;
+  if (firebase.apps?.length === 0) {
+    const firebaseConfig = {
+      apiKey: Cypress.env('FIREBASE_API_KEY'),
+      projectId: Cypress.env('FIREBASE_PROJECT_ID')
+    };
+    app = firebase.initializeApp(firebaseConfig);
+
+    firebase.auth().useEmulator(`http://${FIRESTORE_EMULATOR_HOST}`);
+
+    const [host, port] = FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
+    firebase.firestore().useEmulator(host, port);
+  } else {
+    app = firebase.app();
+  }
+
   attachCustomCommands({ Cypress, cy, firebase, app });
 }
 
+// returning false here prevents Cypress from failing the test
+Cypress.on('uncaught:exception', () => false);
+
 before(() => {
   const user = {
-    uid: Cypress.env().TEST_UID,
+    uid: '12345',
     email: 'test@test.com'
   };
-  // cy.authImportUsers([user]); // .login(user.uid);
+  cy.authImportUsers([user]).login(user.uid);
 
-  // cy.get('#email').type('test@test.com');
-  // cy.get('#password').type('Test1234!');
-  // cy.get("button:contains('Sign In')").click();
-
-  cy.authCreateUser(user);
-  cy.login();
-  cy.visit('/');
-  cy.callFirestore('add', '/test', { id: 'test', descriptor: 'Test' });
+  cy.callFirestore('set', `/users/${user.uid}`, { identifier: user.email }).then(() => {
+    cy.visit('/');
+    cy.get('#name').type('Test');
+    cy.get('button:contains("Submit")').click();
+  });
 });
