@@ -14,17 +14,9 @@ import {
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyCNATiq_BDJgHq2hw79Cjdwy0TcyB73v9c',
-  authDomain: 'dnd5-nextgen.firebaseapp.com',
-  projectId: 'dnd5-nextgen',
-  storageBucket: 'dnd5-nextgen',
-  messagingSenderId: '566203048707',
-  appId: '1:566203048707:web:fadc47511f464482c23f36',
-  measurementId: 'G-FLH1SPJ74T'
-};
+const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_CONFIG } = import.meta.env;
+const firebaseConfig = JSON.parse(FIREBASE_CONFIG);
 
-const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST } = import.meta.env;
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 

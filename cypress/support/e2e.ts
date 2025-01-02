@@ -4,6 +4,9 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import './commands';
 
+console.log(Cypress.env());
+console.log(process.env);
+
 const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST } = Cypress.env();
 if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
   let app: firebase.app.App;
