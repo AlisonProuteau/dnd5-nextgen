@@ -22,3 +22,5 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DND5_NEXTGEN }}
           channelId: live
           projectId: dnd5-nextgen
+          env:
+            FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
