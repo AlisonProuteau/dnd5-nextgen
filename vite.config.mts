@@ -13,6 +13,9 @@ const viteConfig = defineConfig({
     minify: 'esbuild',
     outDir: 'build'
   },
+  esbuild: {
+    pure: ['console.debug']
+  },
   plugins: [
     react(),
     viteTsconfigPaths(),
