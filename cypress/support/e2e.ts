@@ -40,7 +40,7 @@ before(() => {
 
   cy.callFirestore('set', `/users/${user.uid}`, { identifier: user.email }).then(() => {
     cy.visit('/');
-    cy.get('#name').type('Test');
+    cy.get('#name').should('be.visible').type('Test');
     cy.get('button:contains("Submit")').click();
   });
 });
