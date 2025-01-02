@@ -6,6 +6,8 @@ on:
   push:
     branches:
       - master
+env: 
+  FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -22,5 +24,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DND5_NEXTGEN }}
           channelId: live
           projectId: dnd5-nextgen
-          env:
-            FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+            
