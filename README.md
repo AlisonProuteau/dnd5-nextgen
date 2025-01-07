@@ -7,3 +7,4 @@ TODO List:
 - Manually add more cantrips/slots?
 - Reformat the character and move to representations
 - Figure out class archetype?
+- Add 2024 version when added to DB

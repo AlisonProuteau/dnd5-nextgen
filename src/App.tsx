@@ -32,6 +32,12 @@ function ErrorPage() {
   );
 }
 
+// TODO: on load if not set, ask for Legacy or 2024 (set default boolean)
+// TODO: on select, set the default if selected
+// TODO: on load if set, go to the correct version
+// TODO: add  button to change version
+// TODO: make 2024 version disabled
+// TODO: make characters dependant on version (version field?)
 export function App() {
   const [user, isLoading] = useAuth();
   const location = useLocation();
