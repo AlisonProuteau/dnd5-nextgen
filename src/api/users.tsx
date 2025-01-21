@@ -3,7 +3,7 @@ import { get, getAll } from '@utils/api.utils';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
+import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from 'src/firebase';
 
 export const createUser = (email: string, password: string, displayName?: string) =>
   createUserInFirebase(email, password)

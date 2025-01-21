@@ -14,9 +14,12 @@ import { Fragment, useState, type FormEvent } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
+// TODO: update versionning
 export function Header() {
   const [open, setOpen] = useState(true);
+  // const [openVersion, setOpenVersion] = useState(true);
   const [username, setUsername] = useState<string>();
+  // const [version, setVersion] = useState<string>();
   const [user] = useAuth();
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -25,6 +28,14 @@ export function Header() {
 
     if (user) await updateProfile(user, { displayName: username });
   };
+
+  // const handleSubmitVersion = async (event: FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+  //   setOpenVersion(false);
+
+  //   console.log(version);
+  //   // if (user) await updateProfile(user, { displayName: username });
+  // };
 
   return (
     <Fragment>
@@ -76,6 +87,28 @@ export function Header() {
           </form>
         </StyledModal>
       )}
+
+      {/* {user && !import.meta.env['databaseVersion'] && (
+        <StyledModal
+          open={openVersion}
+          onClose={() => setOpenVersion(false)}
+          title="Update your version"
+        >
+          <form onSubmit={handleSubmitVersion}>
+            <ControledInput
+              fullWidth
+              required
+              id="version"
+              type="text"
+              label="Version"
+              onChange={(version) => setVersion(version?.toString())}
+            />
+            <Button sx={{ marginTop: '1rem' }} fullWidth type="submit" variant="contained">
+              Submit
+            </Button>
+          </form>
+        </StyledModal>
+      )} */}
     </Fragment>
   );
 }

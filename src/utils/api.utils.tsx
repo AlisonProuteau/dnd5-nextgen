@@ -10,7 +10,7 @@ import {
   type FieldPath,
   type WhereFilterOp
 } from 'firebase/firestore';
-import { database } from '../firebase';
+import { database } from 'src/firebase';
 
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
@@ -29,8 +29,10 @@ export async function getAll(
   path: string,
   queryParms?: QueryObject[]
 ): Promise<{ results: any[]; count: number }> {
+  const version = 'legacy'; // TODO: update versionning
+  const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;
+  const ref = collection(database, `/versions/${version}/${pathFormatted}`);
   let res;
-  const ref = collection(database, path);
 
   if (queryParms?.length && queryParms.length > 1) {
     const q = query(
@@ -64,7 +66,9 @@ export async function getAll(
 }
 
 export async function get(name: string, path: string, index: string): Promise<any> {
-  const res = await getDoc(doc(database, path, index));
+  const version = 'legacy'; // TODO: update versionning
+  const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;
+  const res = await getDoc(doc(database, `versions/${version}/${pathFormatted}`, index));
 
   if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}: ${index}`);
 

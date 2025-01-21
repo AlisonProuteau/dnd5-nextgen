@@ -14,25 +14,25 @@ export async function getAllRaces(): Promise<{
   count: number;
   results: DefaultRepresentation[];
 }> {
-  return get('All Races', '/races', 'all');
+  return get('All Races', 'races', 'all');
 }
 
 export async function getRaceInfo(raceIndex: string): Promise<Race | null> {
-  return get('Race info', '/races', raceIndex);
+  return get('Race info', 'races', raceIndex);
 }
 
 export async function getSubraceInfo(
   raceIndex: string,
   subraceIndex: string
 ): Promise<Subrace | null> {
-  return get('Subace info', `/races/${raceIndex}/subraces`, subraceIndex);
+  return get('Subace info', `races/${raceIndex}/subraces`, subraceIndex);
 }
 
 export async function getAllClasses(): Promise<{
   count: number;
   results: DefaultRepresentation[];
 }> {
-  return get('All Classes', '/classes', 'all');
+  return get('All Classes', 'classes', 'all');
 }
 
 export async function getClassInfo(
@@ -40,8 +40,8 @@ export async function getClassInfo(
   level?: number
 ): Promise<Classes | Level | null> {
   return level
-    ? get('Class Level Ressources', `/classes/${classIndex}/levels`, `${classIndex}-${level}`)
-    : get('Class Ressources', '/classes', classIndex);
+    ? get('Class Level Ressources', `classes/${classIndex}/levels`, `${classIndex}-${level}`)
+    : get('Class Ressources', 'classes', classIndex);
 }
 
 export async function getSubclassInfo(
@@ -52,18 +52,18 @@ export async function getSubclassInfo(
   return level
     ? get(
         `Subclass Level Ressources`,
-        `/classes/${classIndex}/subclasses/${subclassIndex}/levels`,
+        `classes/${classIndex}/subclasses/${subclassIndex}/levels`,
         `${subclassIndex}-${level}`
       )
-    : get(`Subclass Ressources`, `/classes/${classIndex}/subclasses`, subclassIndex);
+    : get(`Subclass Ressources`, `classes/${classIndex}/subclasses`, subclassIndex);
 }
 
 export function getAllAligmenents(): Promise<{ count: number; results: Alignment[] }> {
-  return getAll('Alignments', '/alignments');
+  return getAll('Alignments', 'alignments');
 }
 
 export function getAllBackgrounds(): Promise<{ count: number; results: Background[] }> {
-  return getAll('Backgrounds', '/backgrounds');
+  return getAll('Backgrounds', 'backgrounds');
 }
 
 function getQueryForIndexAndLevel(
@@ -100,14 +100,14 @@ export async function getSpellsForClass(
     ? (
         await getAll(
           'Spells for subclass',
-          '/spells',
+          'spells',
           getQueryForIndexAndLevel(subclassIndex, level, true)
         )
       ).results
     : [];
 
   const allSpells = (
-    (await getAll('Spells for class', '/spells', getQueryForIndexAndLevel(classIndex, level)))
+    (await getAll('Spells for class', 'spells', getQueryForIndexAndLevel(classIndex, level)))
       .results as Spell[]
   )
     .concat(subClassSpells)
@@ -124,7 +124,7 @@ export async function getSpellsForClass(
 export async function getMatchingSpells(
   maxLevel?: number
 ): Promise<{ count: number; results: Spell[] }> {
-  return getAll('Spells', '/spells', [
+  return getAll('Spells', 'spells', [
     {
       fieldPath: 'level',
       opStr: '>',
@@ -139,20 +139,20 @@ export async function getMatchingSpells(
 }
 
 export async function getSpell(index: string): Promise<Spell | null> {
-  return get('Spell', '/spells', index);
+  return get('Spell', 'spells', index);
 }
 
 export async function getFeature(index: string): Promise<Feature | null> {
-  return get('Feature', '/features', index);
+  return get('Feature', 'features', index);
 }
 
 export async function getTrait(index: string): Promise<Trait | null> {
-  return get('Trait', '/traits', index);
+  return get('Trait', 'traits', index);
 }
 
 export async function getAllTraitsAndFeatures(): Promise<Trait[] | Feature[] | null> {
-  const traits = await getAll('', '/traits');
-  const features = await getAll('', '/features');
+  const traits = await getAll('', 'traits');
+  const features = await getAll('', 'features');
 
   return traits.results.concat(features.results);
 }
@@ -161,7 +161,7 @@ export async function getProficiencies(): Promise<{
   count: number;
   results: Proficiency[];
 }> {
-  return getAll('Proficiencies', '/proficiencies');
+  return getAll('Proficiencies', 'proficiencies');
 }
 
 export async function getResourceList(path: string): Promise<{
@@ -193,16 +193,16 @@ export async function getResourceList(path: string): Promise<{
 }
 
 export async function getEquipment(index: string): Promise<Equipment | null> {
-  return get('Equipment', '/equipment', index);
+  return get('Equipment', 'equipment', index);
 }
 
 export async function getProperty(index: string): Promise<WeaponProperty | null> {
-  return get('Property', '/weapon-properties', index);
+  return get('Property', 'weapon-properties', index);
 }
 
 export async function getAllAbilities(): Promise<{
   count: number;
   results: AbilityScore[];
 }> {
-  return getAll('All Abilities', '/ability-scores');
+  return getAll('All Abilities', 'ability-scores');
 }

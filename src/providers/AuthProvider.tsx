@@ -1,6 +1,6 @@
 import { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type JSX } from 'react';
-import { onAuthChange } from '../firebase';
+import { onAuthChange } from 'src/firebase';
 
 const AuthContext = createContext<[User | null, boolean]>([null, true]);
 export function AuthProvider({ children }: { children: JSX.Element }) {
