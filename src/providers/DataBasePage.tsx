@@ -15,6 +15,7 @@ import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { get, getAll } from '@utils/api.utils';
+import type { Version } from '@utils/versions.constants';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { useState } from 'react';
@@ -169,7 +170,7 @@ export function DataBasePage() {
           }
 
           // TODO: add version selection
-          const version = 'legacy';
+          const version: Version = 'Legacy';
           path = `versions/${version}/${path}`;
           const document = doc(database, path, (formattedItem as DefaultRepresentation).index);
           await (isUpdate

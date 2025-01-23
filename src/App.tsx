@@ -14,6 +14,7 @@ import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
+import { VersionSelection } from './components/VersionSelection';
 import { useAuth } from './providers/AuthProvider';
 import { DataBasePage } from './providers/DataBasePage';
 
@@ -32,39 +33,51 @@ function ErrorPage() {
   );
 }
 
-// TODO: on load if not set, ask for Legacy or 2024 (set default boolean)
-// TODO: on select, set the default if selected
-// TODO: on load if set, go to the correct version
-// TODO: add  button to change version
-// TODO: make 2024 version disabled
-// TODO: make characters dependant on version (version field?)
+// TODO: read characters version for fetching
 export function App() {
-  const [user, isLoading] = useAuth();
+  const [user, isLoading, currentUserVersion] = useAuth();
   const location = useLocation();
 
   return !isLoading ? (
     <Routes>
       <Route element={<Header />} errorElement={<ErrorPage />}>
-        <Route path="/" element={!user?.uid ? <AuthPage /> : <Home />} />
+        <Route
+          path="/"
+          element={
+            !user?.uid ? (
+              <AuthPage />
+            ) : currentUserVersion === null ? (
+              <Navigate to="/version" replace />
+            ) : (
+              <Home />
+            )
+          }
+        />
         {user?.uid && (
           <Fragment>
             {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
               <Route path="/database" element={<DataBasePage />} />
             )}
-            <Route path="create" element={<CharacterCreation />} />
-            <Route
-              path="/character/*"
-              element={
-                !location.state?.characterId ? (
-                  <Navigate to="/" replace />
-                ) : (
-                  <Routes>
-                    <Route index element={<CharacterContainer />} />
-                    <Route path="points" element={<CharacterPoints />} />
-                  </Routes>
-                )
-              }
-            />
+
+            <Route path="/version" element={<VersionSelection />} />
+            {currentUserVersion !== null && (
+              <Fragment>
+                <Route path="create" element={<CharacterCreation />} />
+                <Route
+                  path="/character/*"
+                  element={
+                    !location.state?.characterId ? (
+                      <Navigate to="/" replace />
+                    ) : (
+                      <Routes>
+                        <Route index element={<CharacterContainer />} />
+                        <Route path="points" element={<CharacterPoints />} />
+                      </Routes>
+                    )
+                  }
+                />
+              </Fragment>
+            )}
           </Fragment>
         )}
         <Route path="*" element={<Navigate to="/" replace />} />

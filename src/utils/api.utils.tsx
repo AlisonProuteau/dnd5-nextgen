@@ -11,6 +11,7 @@ import {
   type WhereFilterOp
 } from 'firebase/firestore';
 import { database } from 'src/firebase';
+import type { Version } from './versions.constants';
 
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
@@ -27,11 +28,15 @@ export interface QueryObject {
 export async function getAll(
   name: string,
   path: string,
-  queryParms?: QueryObject[]
+  queryParms?: QueryObject[],
+  version: Version = 'Legacy' // TODO: update versionning
 ): Promise<{ results: any[]; count: number }> {
-  const version = 'legacy'; // TODO: update versionning
   const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;
-  const ref = collection(database, `/versions/${version}/${pathFormatted}`);
+  const versionnedPath =
+    version && !pathFormatted.startsWith('users')
+      ? `versions/${version}/${pathFormatted}`
+      : pathFormatted;
+  const ref = collection(database, versionnedPath);
   let res;
 
   if (queryParms?.length && queryParms.length > 1) {
@@ -65,10 +70,18 @@ export async function getAll(
     : { count: res.docs.length, results: res.docs.map((item) => item.data()) };
 }
 
-export async function get(name: string, path: string, index: string): Promise<any> {
-  const version = 'legacy'; // TODO: update versionning
+export async function get(
+  name: string,
+  path: string,
+  index: string,
+  version: Version = 'Legacy' // TODO: update versionning
+): Promise<any> {
   const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;
-  const res = await getDoc(doc(database, `versions/${version}/${pathFormatted}`, index));
+  const versionnedPath =
+    version && !pathFormatted.startsWith('users')
+      ? `versions/${version}/${pathFormatted}`
+      : pathFormatted;
+  const res = await getDoc(doc(database, versionnedPath, index));
 
   if (!res.exists()) console.error(`Not found ${capitalizeFirstLetter(name)}: ${index}`);
 

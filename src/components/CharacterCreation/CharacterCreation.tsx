@@ -23,7 +23,7 @@ const steps = [
 
 export function CharacterCreation() {
   const [isSaving, setIsSaving] = useState(false);
-  const [user] = useAuth();
+  const [user, _, currentUserVersion] = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
@@ -92,7 +92,11 @@ export function CharacterCreation() {
       const path = `users/${user.uid}/characters`;
 
       const newCharacterRef = doc(collection(database, path));
-      setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
+      setDoc(newCharacterRef, {
+        ...formattedData,
+        id: newCharacterRef.id,
+        version: currentUserVersion
+      })
         .then(() => {
           navigate(`/character`, { state: { characterId: newCharacterRef.id } });
           queryClient.invalidateQueries({ queryKey: ['fetchCharacters', user?.uid] });

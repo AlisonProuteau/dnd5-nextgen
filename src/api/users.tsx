@@ -1,5 +1,6 @@
-import type { Character } from '@representations/user.representation';
+import type { Character, UserData } from '@representations/user.representation';
 import { get, getAll } from '@utils/api.utils';
+import { VERSIONS } from '@utils/versions.constants';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -50,3 +51,11 @@ export const getCharacter = async (
   characterId: string
 ): Promise<Character | undefined> =>
   get('All user characters', `users/${userId}/characters`, characterId);
+
+export const getUserData = async (userId: string): Promise<UserData | undefined> => {
+  const data: UserData = await get('User data', `users`, userId);
+
+  return !(data.version && VERSIONS.includes(data.version))
+    ? { ...data, version: undefined }
+    : data;
+};
