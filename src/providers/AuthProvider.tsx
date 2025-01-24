@@ -5,12 +5,18 @@ import { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type JSX } from 'react';
 import { onAuthChange } from 'src/firebase';
 
-const AuthContext = createContext<[User | null, boolean, Version | null]>([null, true, null]);
+interface AuthContextProps {
+  user: User | null;
+  isLoading: boolean;
+  version?: Version;
+}
+
+const AuthContext = createContext<AuthContextProps>({ user: null, isLoading: true });
 export function AuthProvider({ children }: { children: JSX.Element }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { data: currentUserVersion = null, isLoading: isUserVersionLoading = true } = useQuery({
+  const { data: currentUserVersion, isLoading: isUserVersionLoading = true } = useQuery({
     queryKey: ['fetchUserData', user?.uid],
     queryFn: async () => (user?.uid && (await getUserData(user.uid))) || null,
     select: (data) => data?.version,
@@ -25,7 +31,9 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={[user, isLoading || isUserVersionLoading, currentUserVersion]}>
+    <AuthContext.Provider
+      value={{ user, isLoading: isLoading || isUserVersionLoading, version: currentUserVersion }}
+    >
       {children}
     </AuthContext.Provider>
   );

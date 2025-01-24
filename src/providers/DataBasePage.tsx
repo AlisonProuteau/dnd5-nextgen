@@ -15,12 +15,12 @@ import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { get, getAll } from '@utils/api.utils';
-import type { Version } from '@utils/versions.constants';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
+import { useAuth } from './AuthProvider';
 
 export function DataBasePage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +28,7 @@ export function DataBasePage() {
   const [isUpdate, setIsUpdate] = useState(false);
   const [docID, setDocID] = useState<string>('');
   const [docContent, setDocContent] = useState<string>('');
+  const { version } = useAuth();
 
   const migrateData = async () => {
     setIsMigrating(true);
@@ -58,7 +59,7 @@ export function DataBasePage() {
 
     await Promise.allSettled(
       simpleCollections.map(async (col) => {
-        const value = (await getAll('', col)).results;
+        const value = (await getAll('', `versions/${version}/${col}`)).results;
         return createDocument(JSON.stringify(value), col);
       })
     );
@@ -66,9 +67,11 @@ export function DataBasePage() {
     console.info('Done simple collections');
 
     const classValue: (Subclass & { class: DefaultRepresentation })[] = [];
-    const classes = (await get('ClassList', 'classes', 'all')).results;
+    const classes = (await get('ClassList', `versions/${version}/classes`, 'all')).results;
     for (let i = 0; i < classes.length; i++) {
-      const subclasses = (await getAll('', `classes/${classes[i].index}/subclasses`)).results || [];
+      const subclasses =
+        (await getAll('', `versions/${version}/classes/${classes[i].index}/subclasses`)).results ||
+        [];
 
       subclasses.forEach((sub: Subclass) => {
         classValue.push({
@@ -80,9 +83,10 @@ export function DataBasePage() {
     await createDocument(JSON.stringify(classValue), 'subclasses');
 
     const raceValue: (Subrace & { race: DefaultRepresentation })[] = [];
-    const races = (await get('RaceList', 'races', 'all')).results;
+    const races = (await get('RaceList', `versions/${version}/races`, 'all')).results;
     for (let i = 0; i < races.length; i++) {
-      const subraces = (await getAll('', `races/${races[i].index}/subraces`)).results || [];
+      const subraces =
+        (await getAll('', `versions/${version}/races/${races[i].index}/subraces`)).results || [];
 
       subraces.forEach((sub: Subrace) => {
         raceValue.push({
@@ -169,8 +173,6 @@ export function DataBasePage() {
             formattedItem = item as Spell;
           }
 
-          // TODO: add version selection
-          const version: Version = 'Legacy';
           path = `versions/${version}/${path}`;
           const document = doc(database, path, (formattedItem as DefaultRepresentation).index);
           await (isUpdate

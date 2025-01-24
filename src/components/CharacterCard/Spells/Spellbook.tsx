@@ -38,7 +38,7 @@ export function Spellbook({
   };
 }) {
   const queryClient = useQueryClient();
-  const [user] = useAuth();
+  const { user } = useAuth();
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
   const [isLearnOpen, setIsLearnOpen] = useState(false);

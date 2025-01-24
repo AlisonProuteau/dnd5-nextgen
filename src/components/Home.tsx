@@ -36,11 +36,12 @@ const RaceImages: Record<string, string> = {
 
 export function Home() {
   const navigate = useNavigate();
-  const [user] = useAuth();
+  const { user, version: currentUserVersion } = useAuth();
 
   const { data: characters, isLoading } = useQuery({
-    queryKey: ['fetchCharacters', user?.uid],
-    queryFn: () => (user ? getUserCharacters(user.uid) : null)
+    queryKey: ['fetchCharacters', user?.uid, currentUserVersion],
+    queryFn: () =>
+      user && currentUserVersion ? getUserCharacters(user.uid, currentUserVersion) : null
   });
 
   useEffect(() => {

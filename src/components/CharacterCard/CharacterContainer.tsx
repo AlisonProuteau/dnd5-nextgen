@@ -25,7 +25,7 @@ import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
 export function CharacterContainer() {
-  const [user] = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [id, setId] = useState<string>();

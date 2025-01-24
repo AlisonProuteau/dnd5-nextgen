@@ -34,7 +34,7 @@ export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
-  const [user] = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();

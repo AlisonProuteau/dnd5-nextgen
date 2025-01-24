@@ -1,6 +1,6 @@
 import type { Character, UserData } from '@representations/user.representation';
 import { get, getAll } from '@utils/api.utils';
-import { VERSIONS } from '@utils/versions.constants';
+import { VERSIONS, type Version } from '@utils/versions.constants';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
@@ -43,8 +43,15 @@ export const signOut = () =>
       );
     });
 
-export const getUserCharacters = async (userId: string): Promise<Character[] | undefined> =>
-  (await getAll('All user characters', `users/${userId}/characters`)).results;
+export const getUserCharacters = async (
+  userId: string,
+  version: Version
+): Promise<Character[] | undefined> =>
+  (
+    await getAll('All user characters', `users/${userId}/characters`, [
+      { fieldPath: 'version', opStr: '==', value: version }
+    ])
+  ).results;
 
 export const getCharacter = async (
   userId: string,

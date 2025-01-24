@@ -19,7 +19,7 @@ import { database } from 'src/firebase';
 import { useAuth } from '../providers/AuthProvider';
 
 export function VersionSelection() {
-  const [user, _, currentUserVersion] = useAuth();
+  const { user, version: currentUserVersion } = useAuth();
   const [selectedVersion, setSelectedVersion] = useState<Version>('Legacy');
   const [isLoading, setIsLoading] = useState(false);
   const client = useQueryClient();
