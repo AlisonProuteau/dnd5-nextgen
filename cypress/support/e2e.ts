@@ -1,4 +1,5 @@
 import { attachCustomCommands } from 'cypress-firebase';
+import type { UserImportRecord } from 'firebase-admin/lib/auth/user-import-builder';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
@@ -14,7 +15,7 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
     };
     app = firebase.initializeApp(firebaseConfig);
 
-    firebase.auth().useEmulator(`http://${FIRESTORE_EMULATOR_HOST}`);
+    firebase.auth().useEmulator(`http://${FIREBASE_AUTH_EMULATOR_HOST}`);
 
     const [host, port] = FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
     firebase.firestore().useEmulator(host, port);
@@ -29,15 +30,15 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
 Cypress.on('uncaught:exception', () => false);
 
 before(() => {
-  const user = {
+  const user: UserImportRecord = {
+    displayName: 'Test',
     uid: '12345',
     email: 'test@test.com'
   };
-  cy.authImportUsers([user]).login(user.uid);
-
-  cy.callFirestore('set', `/users/${user.uid}`, { identifier: user.email }).then(() => {
-    cy.visit('/');
-    cy.get('#name').should('be.visible').type('Test');
-    cy.get('button:contains("Submit")').click();
-  });
+  cy.authImportUsers([user])
+    .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
+    .login(user.uid)
+    .then(() => {
+      cy.visit('/');
+    });
 });

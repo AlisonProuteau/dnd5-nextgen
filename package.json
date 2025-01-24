@@ -13,7 +13,7 @@
     "firestore:import": "./import_firestore.sh",
     "firebase:emulate": "firebase emulators:start --only hosting,auth,firestore --import=./database",
     "start:dist": "FIREBASE_AUTH_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.auth.port)\" FIRESTORE_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.firestore.port)\" yarn build && yarn firebase:emulate",
-    "cy:open": "wait-on http://localhost:3000 &&  cypress open",
+    "cy:open": "wait-on http://localhost:3000 &&  cypress open --e2e --browser chrome",
     "cy:emulate": "SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" run-p -r start:dist cy:open",
     "test": "vitest run",
     "test:watch": "vitest watch",

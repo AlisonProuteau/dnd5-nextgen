@@ -1,5 +1,5 @@
 import { getAnalytics } from 'firebase/analytics';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, type FirebaseOptions } from 'firebase/app';
 import {
   CompleteFn,
   ErrorFn,
@@ -15,7 +15,7 @@ import {
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
 const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_CONFIG } = import.meta.env;
-const firebaseConfig = JSON.parse(FIREBASE_CONFIG);
+const firebaseConfig: FirebaseOptions = JSON.parse(FIREBASE_CONFIG);
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
