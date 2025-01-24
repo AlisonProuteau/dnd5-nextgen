@@ -15,14 +15,17 @@ import type { Equipment, WeaponProperty } from '@representations/campaign/equipm
 import { EquipmentLine } from '@shared/EquipmentLine';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 
 export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipment }) {
+  const { version } = useAuth();
+
   const { data: properties } = useQueries({
     queries:
       selectedEquipment.properties?.map(({ index }) => ({
-        queryKey: ['fetchProperty', index],
-        queryFn: async () => await getProperty(index),
-        enabled: !!index
+        queryKey: ['fetchProperty', version, index],
+        queryFn: async () => (version ? await getProperty(version, index) : null),
+        enabled: !!index && !!version
       })) || [],
     combine: useCallback((results: UseQueryResult<WeaponProperty | null, Error>[]) => {
       return {

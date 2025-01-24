@@ -118,6 +118,7 @@ export function Spellbook({
 
   const characterInfo = useMemo(() => {
     return {
+      version: character.version,
       classIndex: character.class.index,
       subclassIndex: character.subclass?.index,
       charLevel: character.level,

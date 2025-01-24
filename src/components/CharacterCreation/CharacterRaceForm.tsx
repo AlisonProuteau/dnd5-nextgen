@@ -17,6 +17,7 @@ import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
 import {
   mapDataForForm,
@@ -36,6 +37,7 @@ export function CharacterRaceForm({
   proficiencies = [],
   languages = []
 }: CharacterRaceFormProps) {
+  const { version } = useAuth();
   const [selectedRace, setselectedRace] = useState<DefaultRepresentation>();
   const [selectedSubrace, setselectedSubrace] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] = useState<ChoiceObjectType[]>([]);
@@ -45,31 +47,33 @@ export function CharacterRaceForm({
   const [selectedSpells, setSelectedSpells] = useState<ChoiceObjectType[]>([]);
 
   const { data: races } = useQuery({
-    queryKey: ['fetchRaces'],
-    queryFn: async () => (await getAllRaces()).results
+    queryKey: ['fetchRaces', version],
+    queryFn: async () => (version ? (await getAllRaces(version)).results : []),
+    enabled: !!version
   });
 
   const { data: raceInfo } = useQuery({
-    queryKey: ['fetchRaceInfo', selectedRace?.index],
-    queryFn: async () => (selectedRace?.index ? await getRaceInfo(selectedRace.index) : null),
-    enabled: !!selectedRace?.index
+    queryKey: ['fetchRaceInfo', version, selectedRace?.index],
+    queryFn: async () =>
+      selectedRace?.index && version ? await getRaceInfo(version, selectedRace.index) : null,
+    enabled: !!selectedRace?.index && !!version
   });
 
   const { data: subraceInfo } = useQuery({
-    queryKey: ['fetchSubraceInfo', selectedRace?.index, selectedSubrace?.index],
+    queryKey: ['fetchSubraceInfo', version, selectedRace?.index, selectedSubrace?.index],
     queryFn: async () =>
-      selectedRace?.index && selectedSubrace?.index
-        ? await getSubraceInfo(selectedRace.index, selectedSubrace.index)
+      selectedRace?.index && selectedSubrace?.index && version
+        ? await getSubraceInfo(version, selectedRace.index, selectedSubrace.index)
         : null,
-    enabled: !!selectedRace?.index
+    enabled: !!selectedRace?.index && !!version
   });
 
   const { data: raceTraits } = useQueries({
     queries:
       (raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])?.map(({ index }) => ({
-        queryKey: ['fetchTrait', index],
-        queryFn: async () => await getTrait(index),
-        enabled: !!index
+        queryKey: ['fetchTrait', version, index],
+        queryFn: async () => (version ? await getTrait(version, index) : null),
+        enabled: !!index && !!version
       })) || [],
     combine: useCallback(
       (results: UseQueryResult<Trait | null, Error>[]) => ({

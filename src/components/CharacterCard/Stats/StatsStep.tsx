@@ -8,12 +8,16 @@ import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 import { AbilityComponent } from './AbilityComponent';
 
 export function Stats({ character }: { character: Character }) {
+  const { version } = useAuth();
+
   const { data: abilities } = useQuery({
-    queryKey: ['fetchAbilities'],
-    queryFn: async () => (await getAllAbilities()).results
+    queryKey: ['fetchAbilities', version],
+    queryFn: async () => (version ? (await getAllAbilities(version)).results : null),
+    enabled: !!version
   });
 
   const abilitySorter = (

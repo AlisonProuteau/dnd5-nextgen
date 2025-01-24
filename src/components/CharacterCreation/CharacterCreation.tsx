@@ -23,7 +23,7 @@ const steps = [
 
 export function CharacterCreation() {
   const [isSaving, setIsSaving] = useState(false);
-  const { user, version: currentUserVersion } = useAuth();
+  const { user, version } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
@@ -95,7 +95,7 @@ export function CharacterCreation() {
       setDoc(newCharacterRef, {
         ...formattedData,
         id: newCharacterRef.id,
-        version: currentUserVersion
+        version
       })
         .then(() => {
           navigate(`/character`, { state: { characterId: newCharacterRef.id } });

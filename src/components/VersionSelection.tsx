@@ -44,7 +44,8 @@ export function VersionSelection() {
   };
 
   useEffect(() => {
-    if (currentUserVersion) setSelectedVersion(currentUserVersion);
+    if (currentUserVersion && currentUserVersion !== selectedVersion)
+      setSelectedVersion(currentUserVersion);
   }, [currentUserVersion]);
 
   return (

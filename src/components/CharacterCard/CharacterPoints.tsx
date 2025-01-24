@@ -34,7 +34,7 @@ export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
-  const { user } = useAuth();
+  const { user, version } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -46,15 +46,18 @@ export function CharacterPoints() {
   });
 
   const { data: classInfo } = useQuery({
-    queryKey: ['fetchClassInfo', character?.class.index],
+    queryKey: ['fetchClassInfo', character?.version, character?.class.index],
     queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
     enabled: !!character
   });
 
   const { data: abilities, isLoading: isAbilitiesLoading } = useQuery({
-    queryKey: ['fetchAbilities'],
-    queryFn: async () => (await getAllAbilities()).results
+    queryKey: ['fetchAbilities', version],
+    queryFn: async () => (version ? (await getAllAbilities(version)).results : null),
+    enabled: !!version
   });
 
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);

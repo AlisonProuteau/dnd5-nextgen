@@ -21,9 +21,11 @@ export function SpellStep({ character }: { character: Character }) {
   const [page, setPage] = useState<'available' | 'full' | 'howto'>('available');
 
   const { data: classSpellcasting } = useQuery({
-    queryKey: ['fetchClassInfo', character?.class.index],
+    queryKey: ['fetchClassInfo', character.version, character?.class.index],
     queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
     enabled: !!character,
     select: (classInfo) => classInfo?.spellcasting // Gives user info on how it works + spellcasting ability + level?
   });
@@ -31,6 +33,7 @@ export function SpellStep({ character }: { character: Character }) {
   const { data: levelSpellcasting } = useQuery({
     queryKey: [
       'fetchClassInfoLevel',
+      character.version,
       character?.class?.index,
       character?.subclass?.index,
       character.level
@@ -39,11 +42,16 @@ export function SpellStep({ character }: { character: Character }) {
       if (!character?.class?.index) return null;
       let levelRes: Partial<Level> = {};
 
-      const classRes = (await getClassInfo(character.class.index, character.level)) as Level | null;
+      const classRes = (await getClassInfo(
+        character.version,
+        character.class.index,
+        character.level
+      )) as Level | null;
       if (classRes) levelRes = { ...classRes };
 
       if (character.subclass?.index) {
         const subclassRes = (await getSubclassInfo(
+          character.version,
           character.class.index,
           character.subclass.index,
           character.level
@@ -54,7 +62,7 @@ export function SpellStep({ character }: { character: Character }) {
 
       return Object.keys(levelRes).length ? (levelRes as Level) : null;
     },
-    enabled: !!character?.class.index,
+    enabled: !!character?.class.index && !!character?.version,
     select: (levelInfo) => levelInfo?.spellcasting
   });
 
@@ -116,6 +124,7 @@ export function SpellStep({ character }: { character: Character }) {
       {page === 'full' && (
         <SpellList
           characterInfo={{
+            version: character.version,
             classIndex: character.class.index,
             subclassIndex: character.subclass?.index,
             charLevel: character.level,

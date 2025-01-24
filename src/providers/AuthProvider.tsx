@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { data: currentUserVersion, isLoading: isUserVersionLoading = true } = useQuery({
+  const { data: version, isLoading: isUserVersionLoading = true } = useQuery({
     queryKey: ['fetchUserData', user?.uid],
     queryFn: async () => (user?.uid && (await getUserData(user.uid))) || null,
     select: (data) => data?.version,
@@ -31,9 +31,7 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{ user, isLoading: isLoading || isUserVersionLoading, version: currentUserVersion }}
-    >
+    <AuthContext.Provider value={{ user, isLoading: isLoading || isUserVersionLoading, version }}>
       {children}
     </AuthContext.Provider>
   );

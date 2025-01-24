@@ -17,8 +17,8 @@ export function Equipments({ character }: { character: Character }) {
   const { data: equipmentList } = useQueries({
     queries:
       character?.equipments?.map(({ index }) => ({
-        queryKey: ['fetchEquipment', index],
-        queryFn: async () => await getEquipment(index),
+        queryKey: ['fetchEquipment', character.version, index],
+        queryFn: async () => await getEquipment(character.version, index),
         enabled: !!index
       })) || [],
     combine: useCallback((results: UseQueryResult<Equipment | null, Error>[]) => {

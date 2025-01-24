@@ -33,10 +33,8 @@ function ErrorPage() {
   );
 }
 
-// TODO: read profile/character version for fetching
-// FIX: Fix the build errors from version missing on all queries with versionning
 export function App() {
-  const { user, isLoading, version: currentUserVersion } = useAuth();
+  const { user, isLoading, version } = useAuth();
   const location = useLocation();
 
   return !isLoading ? (
@@ -45,13 +43,7 @@ export function App() {
         <Route
           path="/"
           element={
-            !user?.uid ? (
-              <AuthPage />
-            ) : currentUserVersion ? (
-              <Home />
-            ) : (
-              <Navigate to="/version" replace />
-            )
+            !user?.uid ? <AuthPage /> : version ? <Home /> : <Navigate to="/version" replace />
           }
         />
         {user?.uid && (
@@ -61,7 +53,7 @@ export function App() {
             )}
 
             <Route path="/version" element={<VersionSelection />} />
-            {currentUserVersion && (
+            {version && (
               <Fragment>
                 <Route path="create" element={<CharacterCreation />} />
                 <Route

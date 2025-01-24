@@ -24,6 +24,7 @@ import type {
 import { useQueryClient } from '@tanstack/react-query';
 import { isArray } from 'lodash';
 import { useState, type ReactNode } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 import type { ChoiceObjectType } from './characterCreation.utils';
 
 interface ChoicesProps {
@@ -43,6 +44,7 @@ export function Choices({
   inherited = [],
   proficiencies = []
 }: ChoicesProps) {
+  const { version } = useAuth();
   const queryClient = useQueryClient();
   const [isResourceLoading, setIsResourceLoading] = useState<Record<string, Option[]>>({});
 
@@ -143,8 +145,8 @@ export function Choices({
 
   const fetchResourceList = (id: string): Promise<Option[]> =>
     queryClient.fetchQuery({
-      queryKey: ['fetchResourceList', id],
-      queryFn: async () => (await getResourceList(id)).results
+      queryKey: ['fetchResourceList', version, id],
+      queryFn: async () => (version ? (await getResourceList(version, id)).results : [])
     });
 
   const genericCheckbox = (

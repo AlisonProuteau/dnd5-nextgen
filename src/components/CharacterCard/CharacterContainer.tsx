@@ -39,9 +39,11 @@ export function CharacterContainer() {
   });
 
   const { data: classInfo } = useQuery({
-    queryKey: ['fetchClassInfo', character?.class.index],
+    queryKey: ['fetchClassInfo', character?.version, character?.class.index],
     queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
     enabled: !!character
   });
 

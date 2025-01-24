@@ -34,8 +34,8 @@ export function Characteristics({ character }: { character: Character }) {
       character.features
         ?.filter(({ index }) => !blackList.includes(index))
         ?.map(({ index }) => ({
-          queryKey: ['fetchFeature', index],
-          queryFn: async () => await getFeature(index),
+          queryKey: ['fetchFeature', character.version, index],
+          queryFn: async () => await getFeature(character.version, index),
           enabled: !!index
         })) || [],
     combine: useCallback((results: UseQueryResult<Feature | null, Error>[]) => {
@@ -52,8 +52,8 @@ export function Characteristics({ character }: { character: Character }) {
         ?.filter(({ subfeatures }) => subfeatures)
         ?.flatMap(({ subfeatures }) => subfeatures as DefaultRepresentation[])
         ?.map(({ index }) => ({
-          queryKey: ['fetchFeature', index],
-          queryFn: async () => await getFeature(index),
+          queryKey: ['fetchFeature', character.version, index],
+          queryFn: async () => await getFeature(character.version, index),
           enabled: !!index
         })) || [],
     combine: useCallback((results: UseQueryResult<Feature | null, Error>[]) => {
@@ -69,8 +69,8 @@ export function Characteristics({ character }: { character: Character }) {
       character.traits
         ?.filter(({ index }) => !blackList.includes(index))
         ?.map(({ index }) => ({
-          queryKey: ['fetchTrait', index],
-          queryFn: async () => await getTrait(index),
+          queryKey: ['fetchTrait', character.version, index],
+          queryFn: async () => await getTrait(character.version, index),
           enabled: !!index
         })) || [],
     combine: useCallback((results: UseQueryResult<Trait | null, Error>[]) => {
@@ -87,8 +87,8 @@ export function Characteristics({ character }: { character: Character }) {
         ?.filter(({ subtraits }) => subtraits)
         ?.flatMap(({ subtraits }) => subtraits as DefaultRepresentation[])
         ?.map(({ index }) => ({
-          queryKey: ['fetchTrait', index],
-          queryFn: async () => await getTrait(index),
+          queryKey: ['fetchTrait', character.version, index],
+          queryFn: async () => await getTrait(character.version, index),
           enabled: !!index
         })) || [],
     combine: useCallback((results: UseQueryResult<Trait | null, Error>[]) => {

@@ -13,7 +13,7 @@ import type { Version } from '@utils/versions.constants';
 
 const formatPath = (path: string, version?: Version) => {
   const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;
-  return version ? `versions/${version}/${pathFormatted}` : pathFormatted;
+  return version ? `versions/${version.toLowerCase()}/${pathFormatted}` : pathFormatted;
 };
 
 export async function getAllRaces(version: Version): Promise<{
