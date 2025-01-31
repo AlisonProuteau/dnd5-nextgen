@@ -8,5 +8,4 @@ TODO List:
 - Reformat the character and move to representations
 - Figure out class archetype?
 - Add 2024 version when added to DB
-- Make actual props representations for components
 - Add delete/archive characters option

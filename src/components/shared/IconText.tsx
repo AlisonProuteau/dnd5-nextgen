@@ -2,6 +2,15 @@ import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import type { FunctionComponent, SVGProps } from 'react';
 
+interface IconTextProps {
+  Icon: FunctionComponent<SVGProps<SVGSVGElement> & { title?: string | undefined }>;
+  value?: string | number;
+  label?: string;
+  color?: string;
+  size?: string;
+  top?: string;
+}
+
 export function IconText({
   Icon,
   value,
@@ -9,16 +18,7 @@ export function IconText({
   color,
   size = '50px',
   top = '38px'
-}: // marginTop = '-24px'
-{
-  Icon: FunctionComponent<SVGProps<SVGSVGElement> & { title?: string | undefined }>;
-  value?: string | number;
-  label?: string;
-  color?: string;
-  size?: string;
-  top?: string;
-  // marginTop?: string;
-}) {
+}: IconTextProps) {
   return (
     <Box
       display="flex"

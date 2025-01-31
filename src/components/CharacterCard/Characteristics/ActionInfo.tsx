@@ -4,15 +4,13 @@ import { Box } from '@mui/system';
 import type { Action } from '@representations/abilities/trait.representation';
 import { getSlotMinMax } from '../utils';
 
-export function ActionInfo({
-  action,
-  charLevel,
-  slotLevel
-}: {
+interface ActionInfoProps {
   action: Action;
   charLevel: number;
   slotLevel?: number;
-}) {
+}
+
+export function ActionInfo({ action, charLevel, slotLevel }: ActionInfoProps) {
   return (
     <Box paddingBottom="15px" paddingLeft="15px">
       <Box display="flex" gap="5px">

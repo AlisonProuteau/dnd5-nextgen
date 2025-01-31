@@ -4,15 +4,13 @@ import type { Spell } from '@representations/abilities/magic.representation';
 import { Fragment } from 'react';
 import { getSlotMinMax } from '../utils';
 
-export function SpellCardContent({
-  spell,
-  charLevel = 1,
-  slotLevels = []
-}: {
+interface SpellCardContentProps {
   spell: Spell;
   charLevel?: number;
   slotLevels?: number[];
-}) {
+}
+
+export function SpellCardContent({ spell, charLevel = 1, slotLevels = [] }: SpellCardContentProps) {
   return (
     <Fragment>
       <CardContent>

@@ -36,16 +36,7 @@ import { useAuth } from 'src/providers/AuthProvider';
 import { SpellCardContent } from './SpellCardContent';
 import { SpellDetails } from './SpellDetails';
 
-export function SpellList({
-  characterInfo,
-  additionalSpellList,
-  slotLevel,
-  spellListOnly = false,
-  selectedSpells = [],
-  setSelectedSpells,
-  maxSelected = [0, 0],
-  hideLevels = false
-}: {
+interface SpellListProps {
   characterInfo: {
     version: Version;
     classIndex?: string;
@@ -57,9 +48,21 @@ export function SpellList({
   slotLevel?: number;
   spellListOnly?: boolean;
   selectedSpells?: Character['knownSpells'] | Character['preparedSpells'];
-  setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
   maxSelected?: [number, number];
   hideLevels?: boolean;
+}
+
+export function SpellList({
+  characterInfo,
+  additionalSpellList,
+  slotLevel,
+  spellListOnly = false,
+  selectedSpells = [],
+  setSelectedSpells,
+  maxSelected = [0, 0],
+  hideLevels = false
+}: SpellListProps & {
+  setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
 }) {
   const { version } = useAuth();
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});

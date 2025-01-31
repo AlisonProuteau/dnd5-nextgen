@@ -8,6 +8,13 @@ import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useLayoutEffect, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
+interface SpellSearchProps {
+  classIndex: string;
+  subclassIndex?: string;
+  maxLevel?: number;
+  selectedSpells?: Character['knownSpells'];
+  onSelect?: (spell: TypeFromArray<Character['knownSpells']>, remove?: boolean) => void;
+}
 
 export function SpellSearch({
   classIndex,
@@ -15,13 +22,7 @@ export function SpellSearch({
   maxLevel,
   selectedSpells = [],
   onSelect
-}: {
-  classIndex: string;
-  subclassIndex?: string;
-  maxLevel?: number;
-  selectedSpells?: Character['knownSpells'];
-  onSelect?: (spell: TypeFromArray<Character['knownSpells']>, remove?: boolean) => void;
-}) {
+}: SpellSearchProps) {
   const { version } = useAuth();
   const [spells, setSpells] = useState<Spell[]>([]);
   const [search, setSearch] = useState('');
