@@ -13,15 +13,13 @@ import { EquipmentLine } from '@shared/EquipmentLine';
 import { Fragment } from 'react';
 import { getSlotMinMax } from '../utils';
 
-export function SpellDetails({
-  spell,
-  charLevel,
-  slotLevels = []
-}: {
+interface SpellDetailsProps {
   spell: Spell;
   charLevel: number;
   slotLevels?: number[];
-}) {
+}
+
+export function SpellDetails({ spell, charLevel, slotLevels = [] }: SpellDetailsProps) {
   return (
     <Fragment>
       <DialogTitle>

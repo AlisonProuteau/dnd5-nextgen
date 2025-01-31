@@ -9,17 +9,19 @@ import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import React, { useRef, useState } from 'react';
 
+interface SplitButtonProps {
+  options: { text: string; value: string }[];
+  onClick: (value: string) => void;
+  defaultValue?: string;
+  variant?: 'contained' | 'outlined' | 'text';
+}
+
 export function SplitButton({
   options,
   onClick,
   defaultValue,
   variant = 'contained'
-}: {
-  options: { text: string; value: string }[];
-  onClick: (value: string) => void;
-  defaultValue?: string;
-  variant?: 'contained' | 'outlined' | 'text';
-}) {
+}: SplitButtonProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(defaultValue || options[0].value);

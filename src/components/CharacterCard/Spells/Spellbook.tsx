@@ -25,10 +25,7 @@ import { useAuth } from 'src/providers/AuthProvider';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
 
-export function Spellbook({
-  character,
-  slotInfo
-}: {
+interface SpellbookProps {
   character: Character;
   slotInfo: {
     cantrips?: number;
@@ -36,7 +33,9 @@ export function Spellbook({
     prepare?: number;
     slots: Record<string, number>;
   };
-}) {
+}
+
+export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
