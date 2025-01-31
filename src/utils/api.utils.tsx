@@ -10,7 +10,7 @@ import {
   type FieldPath,
   type WhereFilterOp
 } from 'firebase/firestore';
-import { database } from '../firebase';
+import { database } from 'src/firebase';
 
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
@@ -29,8 +29,8 @@ export async function getAll(
   path: string,
   queryParms?: QueryObject[]
 ): Promise<{ results: any[]; count: number }> {
-  let res;
   const ref = collection(database, path);
+  let res;
 
   if (queryParms?.length && queryParms.length > 1) {
     const q = query(

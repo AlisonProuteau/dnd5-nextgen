@@ -1,9 +1,10 @@
-import type { Character } from '@representations/user.representation';
+import type { Character, UserData } from '@representations/user.representation';
 import { get, getAll } from '@utils/api.utils';
+import { VERSIONS, type Version } from '@utils/versions.constants';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from '../firebase';
+import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from 'src/firebase';
 
 export const createUser = (email: string, password: string, displayName?: string) =>
   createUserInFirebase(email, password)
@@ -42,11 +43,26 @@ export const signOut = () =>
       );
     });
 
-export const getUserCharacters = async (userId: string): Promise<Character[] | undefined> =>
-  (await getAll('All user characters', `users/${userId}/characters`)).results;
+export const getUserCharacters = async (
+  userId: string,
+  version: Version
+): Promise<Character[] | undefined> =>
+  (
+    await getAll('All user characters', `users/${userId}/characters`, [
+      { fieldPath: 'version', opStr: '==', value: version }
+    ])
+  ).results;
 
 export const getCharacter = async (
   userId: string,
   characterId: string
 ): Promise<Character | undefined> =>
   get('All user characters', `users/${userId}/characters`, characterId);
+
+export const getUserData = async (userId: string): Promise<UserData | undefined> => {
+  const data: UserData = await get('User data', `users`, userId);
+
+  return !(data.version && VERSIONS.includes(data.version))
+    ? { ...data, version: undefined }
+    : data;
+};

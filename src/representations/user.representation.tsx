@@ -1,3 +1,4 @@
+import type { Version } from '@utils/versions.constants';
 import type { ChoiceSelection } from 'src/components/CharacterCreation/characterCreation.utils';
 import type { Alignment } from './character/background.representation';
 import type { RaceAbilityBonus } from './character/race.representation';
@@ -56,4 +57,11 @@ export type Character = CharacterFormData & {
   level: number;
   knownSpells?: (DefaultRepresentation & { level: number; ritual?: boolean; added?: boolean })[];
   preparedSpells?: (DefaultRepresentation & { level: number })[];
+  version: Version;
+};
+
+export type UserData = {
+  identifier: string;
+  admin?: boolean;
+  version?: Version;
 };

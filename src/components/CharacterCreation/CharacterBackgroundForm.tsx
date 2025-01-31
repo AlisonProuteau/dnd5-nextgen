@@ -19,6 +19,7 @@ import type { CharacterFormData } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useState } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
 import {
   mapDataForForm,
@@ -41,6 +42,7 @@ export function CharacterBackgroundForm({
   languages = [],
   equipment = []
 }: CharacterBackgroundFormProps) {
+  const { version } = useAuth();
   const [selectedBackground, setSelectedBackground] = useState<Background>();
   const [selectedAlignment, setSelectedAlignment] = useState<Alignment>();
   const [selectedBonds, setSelectedBonds] = useState<ChoiceObjectType[]>([]);
@@ -71,14 +73,16 @@ export function CharacterBackgroundForm({
   };
 
   const { data: backgrounds } = useQuery({
-    queryKey: ['fetchBackgrounds'],
-    queryFn: async () => (await getAllBackgrounds()).results,
-    select: (data) => [...data, customBackground]
+    queryKey: ['fetchBackgrounds', version],
+    queryFn: async () => (version ? (await getAllBackgrounds(version)).results : []),
+    select: (data) => [...data, customBackground],
+    enabled: !!version
   });
 
   const { data: alignments } = useQuery({
     queryKey: ['fetchAlignments'],
-    queryFn: async () => (await getAllAligmenents()).results
+    queryFn: async () => (version ? (await getAllAligmenents(version)).results : []),
+    enabled: !!version
   });
 
   const isValid = () => {

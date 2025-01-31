@@ -1,3 +1,4 @@
+import { getAllClasses, getAllRaces, getAllSubclasses, getAllSubraces } from '@api/ressources';
 import {
   Box,
   Button,
@@ -14,34 +15,123 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import { getAll } from '@utils/api.utils';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import { database } from '../firebase';
+import { database } from 'src/firebase';
+import { useAuth } from './AuthProvider';
 
 export function DataBasePage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
   const [isUpdate, setIsUpdate] = useState(false);
   const [docID, setDocID] = useState<string>('');
   const [docContent, setDocContent] = useState<string>('');
+  const { version } = useAuth();
 
-  const createDocument = async () => {
-    if (docContent.length && docID.length) {
+  const migrateData = async () => {
+    if (!version) return;
+    setIsMigrating(true);
+
+    const simpleCollections = [
+      'ability-scores',
+      'alignments',
+      'backgrounds',
+      'conditions',
+      'damage-types',
+      'equipment-categories',
+      'equipment',
+      'feats',
+      'features',
+      'languages',
+      'magic-items',
+      'magic-schools',
+      'monsters',
+      'proficiencies',
+      'rule-sections',
+      'rules',
+      'skills',
+      'traits',
+      'weapon-properties',
+      'classes',
+      'races',
+      'spells'
+    ];
+
+    await Promise.allSettled(
+      simpleCollections.map(async (col) => {
+        const value = (await getAll('', `versions/${version.toLowerCase()}/${col}`)).results;
+        return createDocument(JSON.stringify(value), col);
+      })
+    );
+
+    console.info('Done simple collections');
+
+    const classes = (await getAllClasses(version)).results;
+    const classValue: (Subclass & { class: DefaultRepresentation })[] = [];
+    for (let i = 0; i < classes.length; i++) {
+      const subclasses = (await getAllSubclasses(version, classes[i].index)).results;
+      subclasses.forEach((sub: Subclass) => {
+        classValue.push({
+          ...sub,
+          class: classes[i]
+        });
+      });
+    }
+    await createDocument(JSON.stringify(classValue), 'subclasses');
+
+    const races = (await getAllRaces(version)).results;
+    const raceValue: (Subrace & { race: DefaultRepresentation })[] = [];
+    for (let i = 0; i < races.length; i++) {
+      const subraces = (await getAllSubraces(version, races[i].index)).results;
+      subraces.forEach((sub: Subrace) => {
+        raceValue.push({
+          ...sub,
+          race: races[i]
+        });
+      });
+    }
+    await createDocument(JSON.stringify(raceValue), 'subraces');
+
+    const levels: (Level & { class: DefaultRepresentation })[] = [];
+    for (let i = 0; i < classes.length; i++) {
+      const { index } = classes[i];
+      const subclasses = (await getAllSubclasses(version, index)).results;
+      const encodedSubclasses = encodeURIComponent(subclasses.map(({ index }) => index).join(', '));
+      const classLevels: Level[] = JSON.parse(
+        await (
+          await fetch(
+            `https://www.dnd5eapi.co/api/classes/${index}/levels?subclass=${encodedSubclasses}`
+          )
+        ).text()
+      );
+      levels.push(...classLevels);
+    }
+    await createDocument(JSON.stringify(levels), 'levels');
+
+    console.info('Done advanced collections');
+
+    setIsMigrating(false);
+  };
+
+  const createDocument = async (content: string, id: string) => {
+    if (content.length && id.length && version) {
       setIsLoading(true);
 
       try {
-        const formattedData: [] = JSON.parse(docContent.replaceAll(/,\n^\s*"url":.*"$/gm, ''));
+        const formattedData: [] = JSON.parse(content.replaceAll(/,\n^\s*"url":.*"$/gm, ''));
 
         for (const item of formattedData as (DefaultRepresentation & unknown)[]) {
           if (!item.index) continue;
 
-          let path = docID;
+          let path = id;
           let formattedItem: unknown = { ...item };
 
-          if (docID === 'classes') {
+          if (id === 'classes') {
             formattedItem = omit(item, ['class_levels', 'spells']);
-          } else if (docID === 'subclasses') {
+          } else if (id === 'subclasses') {
             let formattedSubclass = item as Subclass & { class: DefaultRepresentation };
             if (formattedSubclass.spells?.length) {
               formattedSubclass = {
@@ -61,10 +151,10 @@ export function DataBasePage() {
 
             path = `classes/${formattedSubclass.class.index}/subclasses`;
             formattedItem = omit(formattedSubclass, ['class', 'subclass_levels']);
-          } else if (docID === 'subraces' && (item as Subrace).race.index) {
+          } else if (id === 'subraces' && (item as Subrace).race.index) {
             path = `races/${(item as Subrace).race.index}/subraces`;
             formattedItem = omit(item, ['race']);
-          } else if (docID === 'levels' && (item as unknown as Level).class) {
+          } else if (id === 'levels' && (item as unknown as Level).class) {
             const level = item as unknown as Level;
             const subclass = level.subclass?.index;
 
@@ -72,35 +162,39 @@ export function DataBasePage() {
               ? `classes/${level.class.index}/subclasses/${subclass}/levels`
               : `classes/${level.class.index}/levels`;
             formattedItem = omit(item, ['class', 'subclass']);
-          } else if (docID === 'spells') {
+          } else if (id === 'spells') {
             let spell = item as Spell;
-            spell = {
-              ...spell,
-              classes: (item as unknown as { classes: DefaultRepresentation[] }).classes.map(
-                (currentClass) => (currentClass as DefaultRepresentation).index
-              )
-            };
 
-            formattedItem = spell.subclasses?.length
-              ? {
-                  ...spell,
-                  subclasses: (
-                    item as unknown as { subclasses: DefaultRepresentation[] }
-                  ).subclasses.map(
-                    (currentSubclass) => (currentSubclass as DefaultRepresentation).index
-                  )
-                }
-              : spell;
+            if (!isMigrating) {
+              spell = {
+                ...spell,
+                classes: (item as unknown as { classes: DefaultRepresentation[] }).classes.map(
+                  (currentClass) => (currentClass as DefaultRepresentation).index
+                )
+              };
+
+              formattedItem = spell.subclasses?.length
+                ? {
+                    ...spell,
+                    subclasses: (
+                      item as unknown as { subclasses: DefaultRepresentation[] }
+                    ).subclasses.map(
+                      (currentSubclass) => (currentSubclass as DefaultRepresentation).index
+                    )
+                  }
+                : spell;
+            }
+            formattedItem = spell;
           }
 
+          path = `versions/${version.toLowerCase()}/${path}`;
           const document = doc(database, path, (formattedItem as DefaultRepresentation).index);
           await (isUpdate
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              updateDoc(document, formattedItem as { [x: string]: any })
+            ? updateDoc(document, formattedItem as { [x: string]: any })
             : setDoc(document, formattedItem));
         }
 
-        if (docID === 'classes' || docID === 'races') {
+        if (!isMigrating && (id === 'classes' || id === 'races')) {
           const uniqInstances = uniqBy(
             formattedData.map((data: DefaultRepresentation) => ({
               index: data.index,
@@ -108,26 +202,36 @@ export function DataBasePage() {
             })),
             'index'
           );
-          await setDoc(doc(database, docID, 'all'), {
+          await setDoc(doc(database, id, 'all'), {
             count: uniqInstances.length,
             results: uniqInstances
           });
         }
 
-        setIsLoading(false);
         setDocID('');
         setDocContent('');
-        toast.success(`Done: ${docID}`);
+        toast.success(`Done: ${id}`);
       } catch (e) {
         console.error(e);
+        toast.error(`Something went wrong: ${id}`);
+      } finally {
         setIsLoading(false);
-        toast.error(`Something went wrong`);
       }
+      return void 0;
     }
   };
 
   return (
     <Container maxWidth="md">
+      <Button
+        fullWidth
+        variant="outlined"
+        disabled={isLoading || isMigrating}
+        onClick={migrateData}
+      >
+        {isMigrating ? <CircularProgress size={24} /> : 'Migrate All'}
+      </Button>
+
       <form>
         <FormControl fullWidth margin="dense">
           <InputLabel htmlFor="docId">Doc ID</InputLabel>
@@ -150,8 +254,13 @@ export function DataBasePage() {
             sx={{ overflow: 'scroll', height: '75vh' }}
           />
         </FormControl>
-        <Box display="flex">
-          <Button fullWidth variant="contained" disabled={isLoading} onClick={createDocument}>
+        <Box display="flex" gap="5px">
+          <Button
+            sx={{ flexGrow: 1 }}
+            variant="contained"
+            disabled={isLoading || isMigrating}
+            onClick={() => createDocument(docContent, docID)}
+          >
             {isLoading ? <CircularProgress size={24} /> : 'Add to database'}
           </Button>
           <FormControlLabel

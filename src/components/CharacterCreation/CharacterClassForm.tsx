@@ -17,6 +17,7 @@ import type { CharacterFormData } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
 import {
   mapDataForForm,
@@ -36,6 +37,7 @@ export function CharacterClassForm({
   onPrev,
   proficiencies = []
 }: CharacterClassFormProps) {
+  const { version } = useAuth();
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
   const [selectedSubclass, setselectedSubclass] = useState<DefaultRepresentation>();
   const [selectedProficiencies, setSelectedProficiencies] = useState<ChoiceObjectType[]>([]);
@@ -44,28 +46,32 @@ export function CharacterClassForm({
   const [selectedExpertises, setSelectedExpertises] = useState<ChoiceObjectType[]>([]);
 
   const { data: classes } = useQuery({
-    queryKey: ['fetchClasses'],
-    queryFn: async () => (await getAllClasses()).results
+    queryKey: ['fetchClasses', version],
+    queryFn: async () => (version ? (await getAllClasses(version)).results : []),
+    enabled: !!version
   });
 
   const { data: classInfo } = useQuery({
-    queryKey: ['fetchClassInfo', selectedClass?.index],
+    queryKey: ['fetchClassInfo', version, selectedClass?.index],
     queryFn: async () =>
-      selectedClass?.index ? ((await getClassInfo(selectedClass.index)) as Classes | null) : null,
-    enabled: !!selectedClass?.index
+      selectedClass?.index && version
+        ? ((await getClassInfo(version, selectedClass.index)) as Classes | null)
+        : null,
+    enabled: !!selectedClass?.index && !!version
   });
 
   const { data: levelInfo } = useQuery({
-    queryKey: ['fetchClassInfoLevel', selectedClass?.index, selectedSubclass?.index, 1],
+    queryKey: ['fetchClassInfoLevel', version, selectedClass?.index, selectedSubclass?.index, 1],
     queryFn: async () => {
-      if (!selectedClass?.index) return null;
+      if (!selectedClass?.index || !version) return null;
       let levelRes: Partial<Level> = {};
 
-      const classRes = (await getClassInfo(selectedClass.index, 1)) as Level | null;
+      const classRes = (await getClassInfo(version, selectedClass.index, 1)) as Level | null;
       if (classRes) levelRes = { ...classRes };
 
       if (selectedSubclass?.index) {
         const subclassRes = (await getSubclassInfo(
+          version,
           selectedClass.index,
           selectedSubclass.index,
           1
@@ -80,15 +86,15 @@ export function CharacterClassForm({
 
       return Object.keys(levelRes).length ? (levelRes as Level) : null;
     },
-    enabled: !!selectedClass
+    enabled: !!selectedClass && !!version
   });
 
   const { data: classFeatures } = useQueries({
     queries:
       levelInfo?.features?.map(({ index }) => ({
-        queryKey: ['fetchFeature', index],
-        queryFn: async () => await getFeature(index),
-        enabled: !!index
+        queryKey: ['fetchFeature', version, index],
+        queryFn: async () => (version ? await getFeature(version, index) : null),
+        enabled: !!index && !!version
       })) || [],
     combine: useCallback(
       (results: UseQueryResult<Feature | null, Error>[]) => ({

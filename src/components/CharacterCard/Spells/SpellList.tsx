@@ -21,6 +21,7 @@ import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import type { Version } from '@utils/versions.constants';
 import { groupBy, max, maxBy, uniqWith } from 'lodash';
 import {
   Fragment,
@@ -31,6 +32,7 @@ import {
   type ReactNode,
   type SetStateAction
 } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 import { SpellCardContent } from './SpellCardContent';
 import { SpellDetails } from './SpellDetails';
 
@@ -45,6 +47,7 @@ export function SpellList({
   hideLevels = false
 }: {
   characterInfo: {
+    version: Version;
     classIndex?: string;
     subclassIndex?: string;
     charLevel?: number;
@@ -58,6 +61,8 @@ export function SpellList({
   maxSelected?: [number, number];
   hideLevels?: boolean;
 }) {
+  const { version } = useAuth();
+  const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [allSpells, setAllSpells] = useState<Record<string, Array<Spell>>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
@@ -72,6 +77,7 @@ export function SpellList({
       characterInfo.classIndex
         ? (
             await getSpellsForClass(
+              characterInfo.version,
               characterInfo.classIndex,
               characterInfo.subclassIndex,
               max(characterInfo.slotLevels)
@@ -84,9 +90,9 @@ export function SpellList({
   const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
     queries:
       additionalSpellList?.map(({ index }) => ({
-        queryKey: ['fetchSpell', index],
-        queryFn: async () => await getSpell(index),
-        enabled: !!index
+        queryKey: ['fetchSpell', version, index],
+        queryFn: async () => (version ? await getSpell(version, index) : null),
+        enabled: !!index && !!version
       })) || [],
     combine: useCallback((results: UseQueryResult<Spell | null, Error>[]) => {
       return {
@@ -154,7 +160,10 @@ export function SpellList({
           key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
-          defaultExpanded
+          expanded={isExpanded[currentLevel] ?? true}
+          onChange={() =>
+            setIsExpanded((prev) => ({ ...prev, [currentLevel]: !(prev[currentLevel] ?? true) }))
+          }
           disableGutters
           condition={!hideLevels}
         >

@@ -1,5 +1,5 @@
 import { getAnalytics } from 'firebase/analytics';
-import { initializeApp } from 'firebase/app';
+import { initializeApp, type FirebaseOptions } from 'firebase/app';
 import {
   CompleteFn,
   ErrorFn,
@@ -12,15 +12,15 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from 'firebase/auth';
-import { connectFirestoreEmulator, initializeFirestore } from 'firebase/firestore';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
 const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_CONFIG } = import.meta.env;
-const firebaseConfig = JSON.parse(FIREBASE_CONFIG);
+const firebaseConfig: FirebaseOptions = JSON.parse(FIREBASE_CONFIG);
 
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 
-const database = initializeFirestore(app, {}, 'legacy');
+const database = getFirestore(app);
 if (FIRESTORE_EMULATOR_HOST) {
   const [host, port] = FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
   connectFirestoreEmulator(database, host, parseInt(port));

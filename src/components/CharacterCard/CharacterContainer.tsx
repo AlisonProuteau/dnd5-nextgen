@@ -25,7 +25,7 @@ import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
 export function CharacterContainer() {
-  const [user] = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [id, setId] = useState<string>();
@@ -39,9 +39,11 @@ export function CharacterContainer() {
   });
 
   const { data: classInfo } = useQuery({
-    queryKey: ['fetchClassInfo', character?.class.index],
+    queryKey: ['fetchClassInfo', character?.version, character?.class.index],
     queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
     enabled: !!character
   });
 
@@ -50,6 +52,8 @@ export function CharacterContainer() {
   useEffect(() => {
     if (id && !isCharacterLoading && character && !character?.abilityScores)
       navigate('points', { replace: true, state: { characterId: id } });
+    else if (id && !isCharacterLoading && !character)
+      navigate('/', { state: { characterId: undefined } });
   }, [isCharacterLoading, id]);
 
   const canCastSpells = useMemo(

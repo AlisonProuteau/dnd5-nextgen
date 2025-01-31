@@ -1,5 +1,5 @@
 import { signOut } from '@api/users';
-import { Home } from '@mui/icons-material';
+import { Home, Settings } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Box, Button, Typography } from '@mui/material';
@@ -15,13 +15,13 @@ import { Link, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
 export function Header() {
-  const [open, setOpen] = useState(true);
+  const [openUsername, setOpenUsername] = useState(true);
   const [username, setUsername] = useState<string>();
-  const [user] = useAuth();
+  const { user } = useAuth();
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitUsername = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setOpen(false);
+    setOpenUsername(false);
 
     if (user) await updateProfile(user, { displayName: username });
   };
@@ -40,10 +40,18 @@ export function Header() {
                   </IconButton>
                 </Box>
 
-                <Box sx={button}>
-                  <Link to="/" aria-label="home" css={linkButton}>
-                    <Home />
-                  </Link>
+                <Box display="flex" alignItems="center">
+                  <Box sx={button}>
+                    <Link to="/" aria-label="home" css={linkButton}>
+                      <Home />
+                    </Link>
+                  </Box>
+
+                  <Box sx={button}>
+                    <Link to="/version" aria-label="version selection" css={linkButton}>
+                      <Settings />
+                    </Link>
+                  </Box>
                 </Box>
               </Fragment>
             ) : (
@@ -60,8 +68,12 @@ export function Header() {
       <Outlet />
 
       {user && !user.displayName && (
-        <StyledModal open={open} onClose={() => setOpen(false)} title="Update your display name">
-          <form onSubmit={handleSubmit}>
+        <StyledModal
+          open={openUsername}
+          onClose={() => setOpenUsername(false)}
+          title="Update your display name"
+        >
+          <form onSubmit={handleSubmitUsername}>
             <ControledInput
               fullWidth
               required

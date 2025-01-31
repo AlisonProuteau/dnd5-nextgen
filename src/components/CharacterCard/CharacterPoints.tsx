@@ -23,8 +23,8 @@ import { omit } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { database } from '../../firebase';
-import { useAuth } from '../../providers/AuthProvider';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
 import { getAbilityPoints, getAbilityScoreModifier, getArmorClass, randomInteger } from './utils';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
@@ -34,7 +34,7 @@ export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
-  const [user] = useAuth();
+  const { user, version } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -46,15 +46,18 @@ export function CharacterPoints() {
   });
 
   const { data: classInfo } = useQuery({
-    queryKey: ['fetchClassInfo', character?.class.index],
+    queryKey: ['fetchClassInfo', character?.version, character?.class.index],
     queryFn: async () =>
-      character ? ((await getClassInfo(character.class.index)) as Classes | null) : null,
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
     enabled: !!character
   });
 
   const { data: abilities, isLoading: isAbilitiesLoading } = useQuery({
-    queryKey: ['fetchAbilities'],
-    queryFn: async () => (await getAllAbilities()).results
+    queryKey: ['fetchAbilities', version],
+    queryFn: async () => (version ? (await getAllAbilities(version)).results : null),
+    enabled: !!version
   });
 
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);

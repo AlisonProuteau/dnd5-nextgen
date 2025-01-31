@@ -1,11 +1,27 @@
+import { getUserData } from '@api/users';
+import { useQuery } from '@tanstack/react-query';
+import type { Version } from '@utils/versions.constants';
 import { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type JSX } from 'react';
-import { onAuthChange } from '../firebase';
+import { onAuthChange } from 'src/firebase';
 
-const AuthContext = createContext<[User | null, boolean]>([null, true]);
+interface AuthContextProps {
+  user: User | null;
+  isLoading: boolean;
+  version?: Version;
+}
+
+const AuthContext = createContext<AuthContextProps>({ user: null, isLoading: true });
 export function AuthProvider({ children }: { children: JSX.Element }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const { data: version, isLoading: isUserVersionLoading = true } = useQuery({
+    queryKey: ['fetchUserData', user?.uid],
+    queryFn: async () => (user?.uid && (await getUserData(user.uid))) || null,
+    select: (data) => data?.version,
+    enabled: !isLoading && !!user?.uid
+  });
 
   useEffect(() => {
     onAuthChange((currentUser) => {
@@ -14,7 +30,11 @@ export function AuthProvider({ children }: { children: JSX.Element }) {
     });
   }, []);
 
-  return <AuthContext.Provider value={[user, isLoading]}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, isLoading: isLoading || isUserVersionLoading, version }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export const useAuth = () => {

@@ -6,8 +6,8 @@ import { omit, pickBy, uniqBy } from 'lodash';
 import { useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { database } from '../../firebase';
-import { useAuth } from '../../providers/AuthProvider';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterDescription, GenderIndexes } from './CharacterDescription';
@@ -23,7 +23,7 @@ const steps = [
 
 export function CharacterCreation() {
   const [isSaving, setIsSaving] = useState(false);
-  const [user] = useAuth();
+  const { user, version } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormDataState] = useState<Partial<CharacterFormData>>({
@@ -92,7 +92,11 @@ export function CharacterCreation() {
       const path = `users/${user.uid}/characters`;
 
       const newCharacterRef = doc(collection(database, path));
-      setDoc(newCharacterRef, { ...formattedData, id: newCharacterRef.id })
+      setDoc(newCharacterRef, {
+        ...formattedData,
+        id: newCharacterRef.id,
+        version
+      })
         .then(() => {
           navigate(`/character`, { state: { characterId: newCharacterRef.id } });
           queryClient.invalidateQueries({ queryKey: ['fetchCharacters', user?.uid] });

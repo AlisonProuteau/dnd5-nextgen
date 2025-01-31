@@ -7,6 +7,7 @@ import type { TypeFromArray } from '@representations/utils.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useLayoutEffect, useState } from 'react';
+import { useAuth } from 'src/providers/AuthProvider';
 
 export function SpellSearch({
   classIndex,
@@ -21,21 +22,24 @@ export function SpellSearch({
   selectedSpells?: Character['knownSpells'];
   onSelect?: (spell: TypeFromArray<Character['knownSpells']>, remove?: boolean) => void;
 }) {
+  const { version } = useAuth();
   const [spells, setSpells] = useState<Spell[]>([]);
   const [search, setSearch] = useState('');
   const [runningTimer, setRunningTimer] = useState<NodeJS.Timeout>();
 
   const { data: allSpells } = useQuery({
-    queryKey: ['fetchAllSpells', maxLevel],
-    queryFn: async () => (await getMatchingSpells(maxLevel)).results,
-    enabled: search.length > 0
+    queryKey: ['fetchAllSpells', version, maxLevel],
+    queryFn: async () => (version ? (await getMatchingSpells(version, maxLevel)).results : null),
+    enabled: search.length > 0 && !!version
   });
 
   const { data: knownSpells = [], isFetching: spellsFetching } = useQuery({
-    queryKey: ['fetchCharacterSpells', classIndex, subclassIndex, maxLevel],
+    queryKey: ['fetchCharacterSpells', version, classIndex, subclassIndex, maxLevel],
     queryFn: async () =>
-      classIndex ? (await getSpellsForClass(classIndex, subclassIndex, maxLevel)).results : [],
-    enabled: !!classIndex && !!allSpells?.length
+      classIndex && version
+        ? (await getSpellsForClass(version, classIndex, subclassIndex, maxLevel)).results
+        : [],
+    enabled: !!classIndex && !!allSpells?.length && !!version
   });
 
   useLayoutEffect(() => {
