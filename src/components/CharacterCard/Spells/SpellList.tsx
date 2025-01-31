@@ -62,6 +62,7 @@ export function SpellList({
   hideLevels?: boolean;
 }) {
   const { version } = useAuth();
+  const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [allSpells, setAllSpells] = useState<Record<string, Array<Spell>>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
@@ -159,7 +160,10 @@ export function SpellList({
           key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
-          defaultExpanded
+          expanded={isExpanded[currentLevel] ?? true}
+          onChange={() =>
+            setIsExpanded((prev) => ({ ...prev, [currentLevel]: !(prev[currentLevel] ?? true) }))
+          }
           disableGutters
           condition={!hideLevels}
         >

@@ -23,6 +23,16 @@ export async function getAllRaces(version: Version): Promise<{
   return get('All Races', formatPath('races', version), 'all');
 }
 
+export async function getAllSubraces(
+  version: Version,
+  raceIndex: string
+): Promise<{
+  count: number;
+  results: Subrace[];
+}> {
+  return getAll('All Subraces', formatPath(`races/${raceIndex}/subraces`, version));
+}
+
 export async function getRaceInfo(version: Version, raceIndex: string): Promise<Race | null> {
   return get('Race info', formatPath('races', version), raceIndex);
 }
@@ -40,6 +50,16 @@ export async function getAllClasses(version: Version): Promise<{
   results: DefaultRepresentation[];
 }> {
   return get('All Classes', formatPath('classes', version), 'all');
+}
+
+export async function getAllSubclasses(
+  version: Version,
+  classIndex: string
+): Promise<{
+  count: number;
+  results: Subclass[];
+}> {
+  return getAll('All Subclasses', formatPath(`classes/${classIndex}/subclasses`, version));
 }
 
 export async function getClassInfo(

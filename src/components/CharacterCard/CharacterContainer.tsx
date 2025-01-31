@@ -52,6 +52,8 @@ export function CharacterContainer() {
   useEffect(() => {
     if (id && !isCharacterLoading && character && !character?.abilityScores)
       navigate('points', { replace: true, state: { characterId: id } });
+    else if (id && !isCharacterLoading && !character)
+      navigate('/', { state: { characterId: undefined } });
   }, [isCharacterLoading, id]);
 
   const canCastSpells = useMemo(

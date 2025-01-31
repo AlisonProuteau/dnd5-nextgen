@@ -18,7 +18,6 @@ import { useNavigate } from 'react-router-dom';
 import { database } from 'src/firebase';
 import { useAuth } from '../providers/AuthProvider';
 
-// TODO: Test full app
 export function VersionSelection() {
   const { user, version: currentUserVersion } = useAuth();
   const [selectedVersion, setSelectedVersion] = useState<Version>('Legacy');
