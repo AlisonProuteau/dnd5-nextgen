@@ -282,7 +282,7 @@ export function SpellList({
         {currentSpell && (
           <SpellDetails
             spell={currentSpell}
-            charLevel={characterInfo.charLevel || 1}
+            charLevel={characterInfo.charLevel}
             slotLevels={slotLevel ? [slotLevel] : characterInfo.slotLevels}
           />
         )}

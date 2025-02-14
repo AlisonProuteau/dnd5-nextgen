@@ -86,9 +86,9 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
           <EquipmentLine
             label="Throw Range"
             data={`
-            ${selectedEquipment.throw_range.normal}
+            ${selectedEquipment.throw_range.normal}ft
             ${
-              selectedEquipment.throw_range.long ? ` - ${selectedEquipment.throw_range.long}` : ''
+              selectedEquipment.throw_range.long ? ` - ${selectedEquipment.throw_range.long}ft` : ''
             }`}
           />
         )}
