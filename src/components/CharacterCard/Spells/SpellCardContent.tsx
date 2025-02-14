@@ -2,7 +2,7 @@ import { AreaIcon, BladeIcon, HealIcon, RangeIcon, TimeIcon } from '@assets';
 import { Box, CardContent, Typography } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import { Fragment } from 'react';
-import { getSlotMinMax } from '../utils';
+import { getDamageMinMax, getSlotMinMax } from '../utils';
 
 interface SpellCardContentProps {
   spell: Spell;
@@ -10,11 +10,10 @@ interface SpellCardContentProps {
   slotLevels?: number[];
 }
 
-export function SpellCardContent({ spell, charLevel = 1, slotLevels = [] }: SpellCardContentProps) {
+export function SpellCardContent({ spell, charLevel, slotLevels }: SpellCardContentProps) {
   return (
     <Fragment>
       <CardContent>
-        {/* <Box flex={1} alignContent="center"> */}
         {spell.duration !== 'Instantaneous' && (
           <Box display="flex" gap="5px">
             <TimeIcon height="20px" width="20px" fill="white" />
@@ -25,8 +24,7 @@ export function SpellCardContent({ spell, charLevel = 1, slotLevels = [] }: Spel
           <Box display="flex" gap="5px">
             <BladeIcon height="20px" width="20px" fill="white" />
             <Typography>
-              {getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevels) ||
-                getSlotMinMax(spell.damage.damage_at_character_level || {}, [charLevel])}
+              {getDamageMinMax(spell.damage, charLevel, slotLevels) || ''}
               {spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''}
             </Typography>
           </Box>
@@ -34,7 +32,7 @@ export function SpellCardContent({ spell, charLevel = 1, slotLevels = [] }: Spel
         {spell.heal_at_slot_level && (
           <Box display="flex" gap="5px">
             <HealIcon height="20px" width="20px" fill="white" />
-            <Typography>{getSlotMinMax(spell.heal_at_slot_level || {}, slotLevels)}</Typography>
+            <Typography>{getSlotMinMax(spell.heal_at_slot_level, slotLevels)}</Typography>
           </Box>
         )}
         {spell.area_of_effect && (
@@ -51,7 +49,6 @@ export function SpellCardContent({ spell, charLevel = 1, slotLevels = [] }: Spel
             <Typography>{spell.range}</Typography>
           </Box>
         )}
-        {/* </Box> */}
       </CardContent>
       <Typography variant="subtitle2" color="secondary" textAlign="right">
         {spell.casting_time}

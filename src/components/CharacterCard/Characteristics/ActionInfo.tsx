@@ -2,7 +2,7 @@ import { AreaIcon, BladeIcon, DodgeIcon, TimeIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import type { Action } from '@representations/abilities/trait.representation';
-import { getSlotMinMax } from '../utils';
+import { getDamageMinMax } from '../utils';
 
 interface ActionInfoProps {
   action: Action;
@@ -35,8 +35,7 @@ export function ActionInfo({ action, charLevel, slotLevel }: ActionInfoProps) {
           <Box display="flex" gap="5px" key={`${dam.damage_type?.index}-${i}`}>
             <BladeIcon height="20px" width="20px" fill="white" />
             <Typography>
-              {getSlotMinMax(dam.damage_at_slot_level || {}, slotLevel ? [slotLevel] : undefined) ||
-                getSlotMinMax(dam.damage_at_character_level || {}, [charLevel])}
+              {getDamageMinMax(dam, charLevel, slotLevel ? [slotLevel] : undefined)}
               {dam.damage_type?.name ? ` - ${dam.damage_type?.name}` : ''}
             </Typography>
           </Box>

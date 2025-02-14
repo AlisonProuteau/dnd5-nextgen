@@ -121,7 +121,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       classIndex: character.class.index,
       subclassIndex: character.subclass?.index,
       charLevel: character.level,
-      slotLevels: []
+      slotLevels
     };
   }, [character.class.index, character.subclass?.index, character.level, slotLevels]);
 
@@ -225,7 +225,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         <DialogContent>
           {isLearnOpen ? (
             <SpellList
-              characterInfo={{ ...characterInfo, slotLevels }}
+              characterInfo={{ ...characterInfo }}
               selectedSpells={knownSpells.filter(({ added }) => !added)}
               setSelectedSpells={setKnownSpells}
               maxSelected={[0, slotInfo.learn || 0]}

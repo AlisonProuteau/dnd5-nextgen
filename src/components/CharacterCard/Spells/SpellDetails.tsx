@@ -11,15 +11,15 @@ import {
 import type { Spell } from '@representations/abilities/magic.representation';
 import { EquipmentLine } from '@shared/EquipmentLine';
 import { Fragment } from 'react';
-import { getSlotMinMax } from '../utils';
+import { getDamageMinMax, getSlotMinMax } from '../utils';
 
 interface SpellDetailsProps {
   spell: Spell;
-  charLevel: number;
+  charLevel?: number;
   slotLevels?: number[];
 }
 
-export function SpellDetails({ spell, charLevel, slotLevels = [] }: SpellDetailsProps) {
+export function SpellDetails({ spell, charLevel, slotLevels }: SpellDetailsProps) {
   return (
     <Fragment>
       <DialogTitle>
@@ -53,14 +53,12 @@ export function SpellDetails({ spell, charLevel, slotLevels = [] }: SpellDetails
           />
         )}
         {spell.attack_type && <EquipmentLine label="Range Category" data={spell.attack_type} />}
-        <EquipmentLine label="Range" data={`${spell.range}ft`} />
+        <EquipmentLine label="Range" data={`${spell.range}`} />
         {spell.damage && (
           <EquipmentLine
             label="Damage"
             data={[
-              getSlotMinMax(spell.damage.damage_at_slot_level || {}, slotLevels) ||
-                getSlotMinMax(spell.damage.damage_at_character_level || {}, [charLevel]) ||
-                '',
+              getDamageMinMax(spell.damage, charLevel, slotLevels) || '',
               spell.damage.damage_type?.name ? ` - ${spell.damage.damage_type?.name}` : ''
             ]}
           />
@@ -68,7 +66,7 @@ export function SpellDetails({ spell, charLevel, slotLevels = [] }: SpellDetails
         {spell.heal_at_slot_level && (
           <EquipmentLine
             label="Healing"
-            data={getSlotMinMax(spell.heal_at_slot_level || {}, slotLevels) || ''}
+            data={getSlotMinMax(spell.heal_at_slot_level, slotLevels) || ''}
           />
         )}
         {spell.dc && (
