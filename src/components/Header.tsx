@@ -1,8 +1,8 @@
 import { signOut } from '@api/users';
-import { Home, Settings } from '@mui/icons-material';
+import { Help, Home, Menu as MenuIcon, Settings } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { Box, Button, Typography } from '@mui/material';
+import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
@@ -10,11 +10,12 @@ import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
 import { button, linkButton } from '@utils/style.utils';
 import { updateProfile } from 'firebase/auth';
-import { Fragment, useState, type FormEvent } from 'react';
+import { Fragment, useMemo, useState, type FormEvent } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
 
 export function Header() {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openUsername, setOpenUsername] = useState(true);
   const [username, setUsername] = useState<string>();
   const { user } = useAuth();
@@ -25,6 +26,25 @@ export function Header() {
 
     if (user) await updateProfile(user, { displayName: username });
   };
+
+  const MenuItems = useMemo(
+    () => [
+      {
+        icon: <Settings />,
+        title: 'Settings',
+        id: 'settings',
+        link: '/settings'
+      },
+      {
+        icon: <Help />,
+        title: 'Contact',
+        id: 'contact',
+        link: '/contact'
+      }
+      // TODO: { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
+    ],
+    []
+  );
 
   return (
     <Fragment>
@@ -47,11 +67,38 @@ export function Header() {
                     </Link>
                   </Box>
 
-                  <Box sx={button}>
-                    <Link to="/version" aria-label="version selection" css={linkButton}>
-                      <Settings />
-                    </Link>
-                  </Box>
+                  <IconButton
+                    size="large"
+                    edge="end"
+                    onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
+                    aria-haspopup="true"
+                  >
+                    <MenuIcon />
+                  </IconButton>
+
+                  <Menu
+                    keepMounted
+                    open={!!anchorEl}
+                    onClose={() => setAnchorEl(null)}
+                    anchorEl={anchorEl}
+                    anchorOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right'
+                    }}
+                  >
+                    {MenuItems.map((item) => (
+                      <MenuItem>
+                        <Link
+                          to={item.link}
+                          aria-label={item.id}
+                          css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
+                        >
+                          {item.icon}
+                          <Typography> {item.title}</Typography>
+                        </Link>
+                      </MenuItem>
+                    ))}
+                  </Menu>
                 </Box>
               </Fragment>
             ) : (

@@ -217,8 +217,8 @@ export function CharacterBackgroundForm({
             <Fragment>
               <ControledInput
                 fullWidth
-                id="bonds"
                 multiline
+                id="bonds"
                 label="Bonds"
                 onChange={(value) =>
                   setSelectedBonds(
@@ -228,8 +228,8 @@ export function CharacterBackgroundForm({
               />
               <ControledInput
                 fullWidth
-                id="personality"
                 multiline
+                id="personality"
                 label="Personality traits"
                 onChange={(value) =>
                   setSelectedPersonality(
@@ -239,8 +239,8 @@ export function CharacterBackgroundForm({
               />
               <ControledInput
                 fullWidth
-                id="ideals"
                 multiline
+                id="ideals"
                 label="Ideals"
                 onChange={(value) =>
                   setSelectedIdeals(
@@ -250,8 +250,8 @@ export function CharacterBackgroundForm({
               />
               <ControledInput
                 fullWidth
-                id="flaws"
                 multiline
+                id="flaws"
                 label="Flaws"
                 onChange={(value) =>
                   setSelectedFlaws(

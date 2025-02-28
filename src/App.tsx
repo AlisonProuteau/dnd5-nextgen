@@ -12,9 +12,10 @@ import { AuthPage } from './components/AuthPage';
 import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
+import { ContactForm } from './components/ContactForm';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
-import { VersionSelection } from './components/VersionSelection';
+import { Settings } from './components/Settings';
 import { useAuth } from './providers/AuthProvider';
 import { DataBasePage } from './providers/DataBasePage';
 
@@ -43,7 +44,7 @@ export function App() {
         <Route
           path="/"
           element={
-            !user?.uid ? <AuthPage /> : version ? <Home /> : <Navigate to="/version" replace />
+            !user?.uid ? <AuthPage /> : version ? <Home /> : <Navigate to="/settings" replace />
           }
         />
         {user?.uid && (
@@ -51,8 +52,8 @@ export function App() {
             {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
               <Route path="/database" element={<DataBasePage />} />
             )}
-
-            <Route path="/version" element={<VersionSelection />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/contact" element={<ContactForm />} />
             {version && (
               <Fragment>
                 <Route path="create" element={<CharacterCreation />} />
