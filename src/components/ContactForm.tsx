@@ -40,21 +40,31 @@ enum AppArea {
   OTHER = 'Other'
 }
 
+enum RequestArea {
+  CONTENT = 'Content',
+  FEATURE = 'Feature',
+  IMPROVEMENT = 'Improvement',
+  OTHER = 'Other'
+}
+
 interface FormData {
   type: ContactType;
   canContact: boolean;
   severity?: BugSeverity;
   area?: AppArea | string;
+  requestArea?: RequestArea | string;
   summary?: string;
   reproSteps?: string;
   character?: string;
   corrupted?: boolean;
+  requestContent?: string;
   message?: string;
 }
 
 export function ContactForm() {
   const { user, version } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(true);
   const [formData, setFormDataState] = useState<FormData>({
     type: ContactType.FEEDBACK,
     canContact: false
@@ -62,6 +72,8 @@ export function ContactForm() {
   const [formError, setFormErrorState] = useState<{
     message?: boolean;
     area?: boolean;
+    requestContent?: boolean;
+    requestArea?: boolean;
     summary?: boolean;
     reproSteps?: boolean;
   }>({});
@@ -94,6 +106,10 @@ export function ContactForm() {
     if (target.id === 'area') {
       setFormError({ [target.id]: currentData === AppArea.OTHER });
     }
+
+    if (target.id === 'requestArea') {
+      setFormError({ [target.id]: currentData === RequestArea.OTHER });
+    }
   };
 
   const { data: characters, isLoading: isCharactersLoading } = useQuery({
@@ -120,6 +136,10 @@ export function ContactForm() {
 
   const isAppArea = useMemo(
     () => Object.values(AppArea).includes(formData.area as AppArea),
+    [formData.area]
+  );
+  const isRequestArea = useMemo(
+    () => Object.values(RequestArea).includes(formData.requestArea as RequestArea),
     [formData.area]
   );
 
@@ -194,7 +214,7 @@ export function ContactForm() {
                       </MenuItem>
                     ))}
                   </Select>
-                  {formData.area && (formData.area === 'Other' || !isAppArea) && (
+                  {formData.area && (formData.area === AppArea.OTHER || !isAppArea) && (
                     <ControledInput
                       required
                       id="area"
@@ -262,36 +282,109 @@ export function ContactForm() {
               </Fragment>
             )}
 
-            {/* TODO: Type (Content - race, class, language etc, Feature, Improvement, Other) */}
-            {formData.type === ContactType.REQUEST && <Fragment></Fragment>}
-
-            {/* TODO: Anonymous */}
-            {formData.type === ContactType.FEEDBACK && <Fragment></Fragment>}
-
-            {formData.type !== ContactType.BUG && (
-              <ControledInput
-                fullWidth
-                multiline
-                required
-                id="message"
-                label="Message"
-                onChange={(value) => setFormData({ message: value?.toString() })}
-                hasError={formError.message}
-                errorMessage={['Required']}
-              />
+            {formData.type === ContactType.REQUEST && (
+              <Fragment>
+                <FormControl margin="dense" fullWidth required>
+                  <InputLabel htmlFor="requestArea">Area</InputLabel>
+                  <Select
+                    id="requestArea"
+                    label="Improvement Area"
+                    value={
+                      formData.requestArea
+                        ? !isRequestArea
+                          ? RequestArea.OTHER
+                          : formData.requestArea
+                        : ''
+                    }
+                    onChange={({ target }) =>
+                      setFormData({
+                        requestArea: target.value as RequestArea,
+                        requestContent: undefined
+                      })
+                    }
+                  >
+                    {Object.values(RequestArea).map((area) => (
+                      <MenuItem key={area} value={area}>
+                        {area}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {formData.requestArea &&
+                    (formData.requestArea === RequestArea.OTHER || !isRequestArea) && (
+                      <ControledInput
+                        required
+                        id="requestArea"
+                        label="Area"
+                        onChange={(value) =>
+                          setFormData({ requestArea: value ? value.toString() : RequestArea.OTHER })
+                        }
+                        hasError={formError.requestArea}
+                        errorMessage={['Required']}
+                      />
+                    )}
+                  {formData.requestArea === RequestArea.CONTENT && (
+                    <ControledInput
+                      required
+                      id="requestContent"
+                      label="Type of content"
+                      placeholder="Race, class, language, background, spell..."
+                      onChange={(value) => setFormData({ requestContent: value?.toString() })}
+                      hasError={formError.requestContent}
+                      errorMessage={['Required']}
+                    />
+                  )}
+                </FormControl>
+                <ControledInput
+                  fullWidth
+                  multiline
+                  required
+                  id="message"
+                  label="Message"
+                  value={formData.message || ''}
+                  onChange={(value) => setFormData({ message: value?.toString() })}
+                  hasError={formError.message}
+                  errorMessage={['Required']}
+                />
+                <FormControlLabel
+                  sx={{ marginX: 0 }}
+                  control={
+                    <Checkbox
+                      id="canContact"
+                      defaultValue="false"
+                      onChange={(_, checked) => setFormData({ canContact: checked })}
+                    />
+                  }
+                  label="Accept to be contacted"
+                />
+              </Fragment>
             )}
 
-            <FormControlLabel
-              sx={{ marginX: 0 }}
-              control={
-                <Checkbox
-                  id="canContact"
-                  defaultValue="false"
-                  onChange={(_, checked) => setFormData({ canContact: checked })}
+            {formData.type === ContactType.FEEDBACK && (
+              <Fragment>
+                <ControledInput
+                  fullWidth
+                  multiline
+                  required
+                  id="message"
+                  label="Message"
+                  value={formData.message || ''}
+                  onChange={(value) => setFormData({ message: value?.toString() })}
+                  hasError={formError.message}
+                  errorMessage={['Required']}
                 />
-              }
-              label="Accept to be contacted about this"
-            />
+                <FormControlLabel
+                  sx={{ marginX: 0 }}
+                  control={
+                    <Checkbox
+                      id="anonymous"
+                      checked={isAnonymous}
+                      onChange={(_, checked) => setIsAnonymous(checked)}
+                    />
+                  }
+                  label="Anonymous"
+                />
+              </Fragment>
+            )}
           </Fragment>
         ) : (
           <CircularProgress size={24} />
