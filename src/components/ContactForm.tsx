@@ -12,8 +12,12 @@ import {
 } from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
-import { omit } from 'lodash';
+import type { Version } from '@utils/versions.constants';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { omit, omitBy } from 'lodash';
 import { Fragment, useMemo, useState, type FormEvent } from 'react';
+import toast from 'react-hot-toast';
+import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
 enum ContactType {
@@ -47,36 +51,52 @@ enum RequestArea {
   OTHER = 'Other'
 }
 
+enum TicketStatus {
+  OPEN = 'open',
+  TRIAGED = 'triaged',
+  INPROGRESS = 'inProgress',
+  RESOLVED = 'resolved',
+  CLOSED = 'closed'
+}
+
 interface FormData {
   type: ContactType;
   canContact: boolean;
   severity?: BugSeverity;
   area?: AppArea | string;
   requestArea?: RequestArea | string;
-  summary?: string;
   reproSteps?: string;
   character?: string;
   corrupted?: boolean;
   requestContent?: string;
   message?: string;
+  status: TicketStatus;
 }
+
+const DEFAULT_FORM = {
+  type: ContactType.FEEDBACK,
+  canContact: false,
+  status: TicketStatus.OPEN
+};
 
 export function ContactForm() {
   const { user, version } = useAuth();
   const [isSaving, setIsSaving] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(true);
-  const [formData, setFormDataState] = useState<FormData>({
-    type: ContactType.FEEDBACK,
-    canContact: false
-  });
+  const [formData, setFormDataState] = useState<FormData>({ ...DEFAULT_FORM });
   const [formError, setFormErrorState] = useState<{
     message?: boolean;
     area?: boolean;
     requestContent?: boolean;
     requestArea?: boolean;
-    summary?: boolean;
     reproSteps?: boolean;
   }>({});
+
+  const { data: characters, isLoading: isCharactersLoading } = useQuery({
+    queryKey: ['fetchCharacters', user?.uid, version],
+    queryFn: async () => (user && version ? await getUserCharacters(user.uid, version) : null),
+    enabled: !!(user?.uid && version)
+  });
 
   const setFormData = (values: Partial<FormData>) => {
     const formatedObject = { ...formData, ...values };
@@ -112,25 +132,40 @@ export function ContactForm() {
     }
   };
 
-  const { data: characters, isLoading: isCharactersLoading } = useQuery({
-    queryKey: ['fetchCharacters', user?.uid, version],
-    queryFn: async () => (user && version ? await getUserCharacters(user.uid, version) : null),
-    enabled: !!(user?.uid && version)
-  });
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSaving(true);
 
     if (isFormValid() && user?.uid) {
-      // TODO: save or send?
-      console.log(formData);
+      let formattedForm: Partial<FormData> & {
+        userId?: string;
+        userEmail?: string;
+        version: Version | string;
+      } = { ...formData, version: version ?? 'unknown' };
+      if (!isAnonymous || formData.type === ContactType.BUG)
+        formattedForm = { ...formattedForm, userId: user.uid };
+      if (formData.canContact) formattedForm = { ...formattedForm, userEmail: user.email ?? '' };
+      else formattedForm = omit(formattedForm, 'canContact');
+
+      try {
+        const newTicketRef = doc(collection(database, 'tickets'));
+        await setDoc(
+          newTicketRef,
+          omitBy(formattedForm, (v) => v === undefined)
+        );
+
+        toast.success('Ticket created');
+        resetForm();
+      } catch (error) {
+        toast.error(`Something went wrong\n${(error as Error).message || 'Error'}`);
+      }
     }
+
     setIsSaving(false);
   };
 
   const resetForm = () => {
-    setFormDataState({ type: ContactType.FEEDBACK, canContact: formData.canContact ?? false });
+    setFormDataState({ ...DEFAULT_FORM });
     setFormErrorState({});
   };
 
@@ -140,7 +175,7 @@ export function ContactForm() {
   );
   const isRequestArea = useMemo(
     () => Object.values(RequestArea).includes(formData.requestArea as RequestArea),
-    [formData.area]
+    [formData.requestArea]
   );
 
   return (
@@ -148,7 +183,11 @@ export function ContactForm() {
       <form
         onSubmit={handleSubmit}
         onBlur={validateInput}
-        onFocus={({ target }) => setFormError({ [target.id]: false })}
+        onFocus={({ target }) =>
+          target.id &&
+          formError[target.id as keyof typeof formError] &&
+          setFormError({ [target.id]: false })
+        }
         onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
         onReset={resetForm}
       >
@@ -164,13 +203,14 @@ export function ContactForm() {
                   const type = target.value as ContactType;
 
                   setFormDataState({
+                    ...DEFAULT_FORM,
                     type,
-                    canContact: formData.canContact || false,
                     message:
                       type === ContactType.BUG || formData.type === ContactType.BUG
                         ? undefined
                         : formData.message
                   });
+                  setFormErrorState({});
                 }}
               >
                 {Object.values(ContactType).map((contactType) => (
@@ -230,10 +270,10 @@ export function ContactForm() {
                 <ControledInput
                   fullWidth
                   required
-                  id="summary"
+                  id="message"
                   label="Summary"
-                  onChange={(value) => setFormData({ summary: value?.toString() })}
-                  hasError={formError.summary}
+                  onChange={(value) => setFormData({ message: value?.toString() })}
+                  hasError={formError.message}
                   errorMessage={['Required']}
                 />
                 <ControledInput

@@ -25,7 +25,13 @@ export function ControledInput({
   ...props
 }: ControledInputProps & OutlinedInputProps) {
   return (
-    <FormControl sx={sx} error={hasError} fullWidth={fullWidth} margin="dense">
+    <FormControl
+      sx={sx}
+      error={hasError}
+      fullWidth={fullWidth}
+      margin="dense"
+      required={props.required}
+    >
       <InputLabel htmlFor={props.id}>{props.label}</InputLabel>
       <OutlinedInput
         autoComplete={props.id}
