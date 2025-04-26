@@ -40,7 +40,8 @@ export function Home() {
 
   const { data: characters, isLoading } = useQuery({
     queryKey: ['fetchCharacters', user?.uid, version],
-    queryFn: () => (user && version ? getUserCharacters(user.uid, version) : null)
+    queryFn: async () => (user && version ? await getUserCharacters(user.uid, version) : null),
+    enabled: !!(user?.uid && version)
   });
 
   useEffect(() => {
