@@ -27,7 +27,7 @@ const RaceImages: Record<string, string> = {
   'half-elf':
     'https://images.nightcafe.studio/jobs/RDuvk28nHqHVvlpO3jFA/RDuvk28nHqHVvlpO3jFA--1--mth6c.jpg?tr=w-1600,c-at_max',
   'half-orc':
-    'https://neural.love/cdn/thumbnails/1ee9033b-8368-6cda-9037-ed2935f6a1cf/f081de57-b8ae-526b-9eaa-1dc5d199eec7.webp?Expires=1717199999&Signature=mFjxhpcM-goUQ9dp26u6OxNPaSxS4aon6tYPZ0Dljt2-kc8ZxUbwFzH-k10wxvxqVMFUCCMhjmaAODL2gbPWrD4~OU~kIyLTbt0iVb50uBgfUo4NRqPjC4hWXe8RfG3GBJGHEaOn1Xd21RBlvt796KWn8Pjo0VRpLIFIiPaPsnBSU9CrleG-KGneTfn4hhE1CekISDuQ2Z7QH9ASmaCA2R84YZqxQ51YNdaqEJDcaFJ~QzXfm-T3zXMz9p~-7U5bkSyfupcNDbCSasv-lLfu9x7duQPHVDdO3A1c3kkcSTGV16sqcCWRr3ZZuPPf9ja-~aiMteJmrIW4M4UsOVS49A__&Key-Pair-Id=K2RFTOXRBNSROX',
+    'https://images-wixmp-ed30a86b8c4ca887773594c2.wixmp.com/f/7facde28-ad26-431a-8868-f1ab10ef1c6e/dh1s7vm-a5cda15c-4633-4fea-b597-b0fa8bf02f35.jpg?token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1cm46YXBwOjdlMGQxODg5ODIyNjQzNzNhNWYwZDQxNWVhMGQyNmUwIiwiaXNzIjoidXJuOmFwcDo3ZTBkMTg4OTgyMjY0MzczYTVmMGQ0MTVlYTBkMjZlMCIsIm9iaiI6W1t7InBhdGgiOiJcL2ZcLzdmYWNkZTI4LWFkMjYtNDMxYS04ODY4LWYxYWIxMGVmMWM2ZVwvZGgxczd2bS1hNWNkYTE1Yy00NjMzLTRmZWEtYjU5Ny1iMGZhOGJmMDJmMzUuanBnIn1dXSwiYXVkIjpbInVybjpzZXJ2aWNlOmZpbGUuZG93bmxvYWQiXX0.1nkf8XcaYZBU3UNdnF8a97goGPIxBdypxQa7RU30gmc',
   halfling:
     'https://preview.redd.it/14x-halfling-portraits-v0-srbb4lemiqab1.png?width=640&crop=smart&auto=webp&s=1f026d2252c01fda7e526c2b80cf5ac79276979e',
   human: 'https://r2.starryai.com/results/1018523396/2da63fea-5b71-4956-805c-b90996f7671e.webp',
