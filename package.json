@@ -30,6 +30,7 @@
     "firebase": "^11.1.0",
     "lodash": "^4.17.21",
     "react": "^19.0.0",
+    "react-card-flip": "^1.2.3",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.4.1",
     "react-router-dom": "^7.0.2",

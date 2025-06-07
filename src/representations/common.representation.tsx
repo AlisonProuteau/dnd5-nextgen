@@ -3,6 +3,7 @@ import type { Damage, DifficultyClass } from './campaign/adventure.representatio
 export type DefaultRepresentation = {
   index: string;
   name: string;
+  desc?: string;
 };
 
 export type Choice = {
