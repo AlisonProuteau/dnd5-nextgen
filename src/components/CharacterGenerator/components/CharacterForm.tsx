@@ -95,10 +95,10 @@ export default function CharacterForm({
 
   return (
     <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Character Settings
       </Typography>
-      <Grid container spacing={2}>
+      <Grid container spacing={3} sx={{ mt: 2 }}>
         {[
           ['race', races],
           ['gender', genders],
@@ -135,7 +135,7 @@ export default function CharacterForm({
           />
         </Grid>
         <Grid item xs={12}>
-          <Button variant="contained" onClick={handleGenerate} fullWidth size="large">
+          <Button variant="contained" sx={{ borderRadius: 2, boxShadow: 2 }} onClick={handleGenerate} fullWidth size="large">
             Generate Portrait
           </Button>
         </Grid>

@@ -6,8 +6,10 @@ import {
   CardMedia,
   Checkbox,
   FormControlLabel,
+  LinearProgress,
   Typography
 } from '@mui/material';
+import { getDownloadURL } from 'firebase/storage';
 import { useEffect, useRef, useState } from 'react';
 import {
   classes as allClasses,
@@ -18,11 +20,15 @@ import {
   generateImage
 } from '../utils/buildPrompt';
 import { CharacterDetails } from '../utils/character';
+import { saveUploadMetadata, startFirebaseUpload } from '../utils/firebase';
 
 type BatchEntry = {
   character: CharacterDetails;
   status: 'pending' | 'generating' | 'done' | 'failed';
   url?: string;
+  progress?: number;
+  downloadState?: string;
+  uploadState?: string;
 };
 
 export default function BatchOptions({
@@ -36,6 +42,8 @@ export default function BatchOptions({
   const [classFilter, setClassFilter] = useState(false);
   const [raceFilter, setRaceFilter] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+  const [zipProgress, setZipProgress] = useState(0);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [queue, setQueue] = useState<BatchEntry[]>([]);
 
   const queueRef = useRef<BatchEntry[]>([]);
@@ -141,7 +149,7 @@ export default function BatchOptions({
 
   return !isLoading ? (
     <Box mt={4}>
-      <Typography variant="h6" gutterBottom>
+      <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Batch Generation Options
       </Typography>
       <FormControlLabel
@@ -160,7 +168,12 @@ export default function BatchOptions({
       />
 
       <Box mt={2}>
-        <Button variant="contained" sx={{ ml: 2 }} onClick={buildQueue} disabled={isRunning}>
+        <Button
+          variant="contained"
+          sx={{ borderRadius: 2, boxShadow: 2, ml: 2 }}
+          onClick={buildQueue}
+          disabled={isRunning}
+        >
           Start
         </Button>
         {isRunning ? (
@@ -180,30 +193,101 @@ export default function BatchOptions({
       </Box>
 
       <Box display="flex" flexWrap="wrap" gap={2} mt={3}>
-        {queue.map(({ character: currentCharacter, status, url }) => (
+        {queue.map(({ character: currentCharacter, status, url, progress }, idx) => (
           <Card
             key={`${currentCharacter.class}-${currentCharacter.race}-${currentCharacter.gender}`}
             sx={{
-              width: 180,
-              p: 1,
-              borderRadius: 2,
-              boxShadow: 2,
-              borderLeft: `6px solid ${classColors[currentCharacter.class] || '#ccc'}`
+              width: 220,
+              p: 2,
+              borderRadius: 3,
+              boxShadow: 3,
+              borderLeft: `6px solid ${classColors[currentCharacter.class] || '#ccc'}`,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              backgroundColor: '#fafafa'
             }}
           >
             <CardContent>
               <Typography
-                variant="caption"
+                variant="subtitle2"
+                gutterBottom
                 fontWeight={700}
-                style={{ color: classColors[currentCharacter.class] || '#666' }}
+                color={classColors[currentCharacter.class] || '#666'}
               >
-                {currentCharacter.gender} {currentCharacter.race} {currentCharacter.class}
+                {currentCharacter.race} {currentCharacter.class}
               </Typography>
-              {status === 'pending' && <Typography variant="body2">Pending...</Typography>}
-              {status === 'generating' && <Typography variant="body2">Generating...</Typography>}
-              {status === 'failed' && <Typography color="error">Failed</Typography>}
+              <Typography variant="caption" fontWeight={600} color="text.secondary">
+                {status}
+              </Typography>
               {status === 'done' && url && (
-                <CardMedia component="img" src={url} sx={{ borderRadius: 1, mt: 1 }} />
+                <>
+                  <CardMedia component="img" src={url} sx={{ borderRadius: 1, mt: 1 }} />
+                  <Button
+                    size="small"
+                    sx={{ mt: 1, mr: 1 }}
+                    onClick={() => {
+                      setQueue((prev) => {
+                        const updated = [...prev];
+                        updated[idx].downloadState = 'downloading';
+                        return updated;
+                      });
+                      const link = document.createElement('a');
+                      link.href = url!;
+                      link.download = `${currentCharacter.class}_${idx}.png`;
+                      link.click();
+                      setTimeout(() => {
+                        setQueue((prev) => {
+                          const updated = [...prev];
+                          updated[idx].downloadState = 'done';
+                          return updated;
+                        });
+                      }, 500);
+                    }}
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    size="small"
+                    sx={{ mt: 1 }}
+                    onClick={async () => {
+                      setQueue((prev) => {
+                        const updated = [...prev];
+                        updated[idx].uploadState = 'uploading';
+                        return updated;
+                      });
+                      const prompt = buildPrompt(currentCharacter);
+                      const { uploadTask } = startFirebaseUpload(url!, prompt, currentCharacter);
+                      uploadTask.on(
+                        'state_changed',
+                        (snapshot) => {
+                          const progress = Math.round(
+                            (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+                          );
+                          setQueue((prev) => {
+                            const updated = [...prev];
+                            updated[idx].progress = progress;
+                            return updated;
+                          });
+                        },
+                        async () => {
+                          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+                          await saveUploadMetadata(downloadUrl, prompt, currentCharacter);
+                          setQueue((prev) => {
+                            const updated = [...prev];
+                            updated[idx].uploadState = 'done';
+                            return updated;
+                          });
+                        }
+                      );
+                    }}
+                  >
+                    Upload
+                  </Button>
+                  {progress && progress < 100 && (
+                    <LinearProgress variant="determinate" value={progress} sx={{ mt: 1 }} />
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
