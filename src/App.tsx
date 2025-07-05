@@ -12,6 +12,7 @@ import { AuthPage } from './components/AuthPage';
 import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
+import CharacterGenerator from './components/CharacterGenerator/CharacterGenerator';
 import { ContactForm } from './components/ContactForm';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
@@ -54,6 +55,7 @@ export function App() {
             )}
             <Route path="/settings" element={<Settings />} />
             <Route path="/contact" element={<ContactForm />} />
+            <Route path="/character-generator" element={<CharacterGenerator />} />
             {version && (
               <Fragment>
                 <Route path="create" element={<CharacterCreation />} />

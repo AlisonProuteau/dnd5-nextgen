@@ -1,5 +1,5 @@
 import { signOut } from '@api/users';
-import { Help, Home, Menu as MenuIcon, Settings } from '@mui/icons-material';
+import { Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
@@ -40,6 +40,12 @@ export function Header() {
         title: 'Contact',
         id: 'contact',
         link: '/contact'
+      },
+      {
+        icon: <Star />,
+        title: 'Character Generator',
+        id: 'character-generator',
+        link: '/character-generator'
       }
       // TODO: { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
     ],
