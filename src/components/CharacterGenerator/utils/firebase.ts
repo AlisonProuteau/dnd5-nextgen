@@ -1,8 +1,14 @@
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
-import { omitBy } from 'lodash';
 import { database, storage } from 'src/firebase';
 import { CharacterDetails } from './character';
+
+// Remove undefined/null values from object
+const cleanObject = <T extends Record<string, any>>(obj: T): Partial<T> => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value !== undefined && value !== null)
+  ) as Partial<T>;
+};
 
 export function startFirebaseUpload(base64Url: string, character: CharacterDetails) {
   const filename = `${character.class}-${character.race}-${character.gender}_${Date.now()}.png`;
@@ -16,21 +22,20 @@ export function startFirebaseUpload(base64Url: string, character: CharacterDetai
 export async function saveUploadMetadata(downloadUrl: string, character: CharacterDetails) {
   await addDoc(collection(database, 'images'), {
     url: downloadUrl,
-    character: omitBy(character, (value) => value === undefined || value === null),
+    character: cleanObject(character),
     createdAt: Timestamp.now()
   });
 }
 
-export async function saveImageToFirebase(base64Url: string, character: any): Promise<boolean> {
+export async function saveImageToFirebase(
+  base64Url: string,
+  character: CharacterDetails
+): Promise<boolean> {
   try {
     const { uploadTask } = startFirebaseUpload(base64Url, character);
-    const downloadUrl = (await uploadTask.then(
-      async (snapshot) => await getDownloadURL(snapshot.ref),
-      (error) => {
-        throw error;
-      }
-    )) as string;
+    await uploadTask;
 
+    const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
     await saveUploadMetadata(downloadUrl, character);
 
     return true;

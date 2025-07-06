@@ -10,6 +10,7 @@ import {
   Typography
 } from '@mui/material';
 import { useState } from 'react';
+import type { CharacterDetails } from '../utils/character';
 import {
   buildPrompt,
   classes,
@@ -19,8 +20,7 @@ import {
   imageRatios,
   imageTypes,
   races
-} from '../utils/buildPrompt';
-import type { CharacterDetails } from '../utils/character';
+} from '../utils/imageUtils';
 
 export default function CharacterForm({
   setIsLoading,

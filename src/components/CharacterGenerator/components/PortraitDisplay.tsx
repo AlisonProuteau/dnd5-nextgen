@@ -1,8 +1,8 @@
-import { CloudDone, CloudOff, CloudUpload, DownloadDone, Downloading } from '@mui/icons-material';
-import { Box, Button, Card, CardMedia, CircularProgress, Typography } from '@mui/material';
-import { Fragment, useEffect, useState } from 'react';
+import { Box, Card, CardMedia, CircularProgress, Typography } from '@mui/material';
+import { Fragment, useState } from 'react';
+import { ActionState, downloadImage, uploadImage } from '../utils/actions';
 import type { CharacterDetails } from '../utils/character';
-import { saveImageToFirebase } from '../utils/firebase';
+import ActionButton from './ActionButton';
 
 export default function PortraitDisplay({
   isLoading,
@@ -11,103 +11,70 @@ export default function PortraitDisplay({
   isLoading: boolean;
   character: CharacterDetails | null;
 }) {
-  const [uploadState, setUploadState] = useState<string>('idle');
-  const [downloadState, setDownloadState] = useState<string>('idle');
+  const [uploadState, setUploadState] = useState<ActionState>('idle');
+  const [downloadState, setDownloadState] = useState<ActionState>('idle');
 
-  useEffect(() => {
-    if (isLoading) {
-      setUploadState('idle');
-      setDownloadState('idle');
-    }
-  }, [character?.url, isLoading]);
-
-  const getUploadIcon = () => {
-    switch (uploadState) {
-      case 'uploading':
-        return <CloudUpload />;
-      case 'done':
-        return <CloudDone color="success" />;
-      case 'failed':
-        return <CloudOff color="error" />;
-      default:
-        return null;
-    }
+  const handleDownload = async () => {
+    if (!character?.url) return;
+    await downloadImage(character.url, character, setDownloadState);
   };
 
-  return isLoading ? (
-    <Box mt={4} mb={2} display="flex" justifyContent="center">
-      <CircularProgress />
-    </Box>
-  ) : (
-    character !== null && (
-      <Fragment>
-        <Box mt={4} mb={2} display="flex" justifyContent="center">
-          {character.url ? (
-            <Card sx={{ maxWidth: 400, boxShadow: 4, borderRadius: 2 }}>
-              <CardMedia
-                component="img"
-                image={character.url}
-                alt="Generated Portrait"
-                sx={{ objectFit: 'contain', borderRadius: 2 }}
-              />
-            </Card>
-          ) : (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-              Your generated portrait will appear here.
-            </Typography>
-          )}
-        </Box>
-        {character.url && (
-          <Box mt={2}>
-            <Button
-              variant="outlined"
-              onClick={async () => {
-                setUploadState('uploading');
-                try {
-                  const result = await saveImageToFirebase(character.url!, character);
+  const handleUpload = async () => {
+    if (!character?.url) return;
+    await uploadImage(character.url, character, setUploadState);
+  };
 
-                  if (result) setUploadState('done');
-                  else setUploadState('failed');
-                } catch {
-                  setUploadState('failed');
-                }
-              }}
-              disabled={uploadState === 'uploading'}
-              endIcon={getUploadIcon()}
-            >
-              Upload to Firebase
-            </Button>
+  if (isLoading) {
+    return (
+      <Box
+        mt={4}
+        mb={2}
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="200px"
+      >
+        <CircularProgress size={60} />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+          Generating your portrait...
+        </Typography>
+      </Box>
+    );
+  }
 
-            <Button
-              variant="outlined"
-              sx={{ ml: 2 }}
-              onClick={() => {
-                setDownloadState('downloading');
-                const link = document.createElement('a');
-                link.href = character.url!;
-                link.download = `${character.class}-${character.race}-${
-                  character.gender
-                }_${Date.now()}.png`;
+  if (!character) return null;
 
-                link.click();
-                setTimeout(() => {
-                  setDownloadState('done');
-                }, 500);
-              }}
-              disabled={downloadState === 'downloading'}
-              endIcon={
-                downloadState === 'downloading' ? (
-                  <Downloading />
-                ) : downloadState === 'done' ? (
-                  <DownloadDone color="success" />
-                ) : null
-              }
-            >
-              Download Image
-            </Button>
-          </Box>
+  return (
+    <Fragment>
+      <Box mt={4} mb={2} display="flex" justifyContent="center">
+        {character.url ? (
+          <Card sx={{ maxWidth: 400, boxShadow: 4, borderRadius: 2 }}>
+            <CardMedia
+              component="img"
+              image={character.url}
+              alt="Generated Portrait"
+              sx={{ objectFit: 'contain', borderRadius: 2 }}
+            />
+          </Card>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+            Your generated portrait will appear here.
+          </Typography>
         )}
-      </Fragment>
-    )
+      </Box>
+
+      {character.url && (
+        <Box mt={2} display="flex" gap={2} justifyContent="center">
+          <ActionButton actionType="download" state={downloadState} onClick={handleDownload} />
+          <ActionButton
+            actionType="upload"
+            state={uploadState}
+            onClick={handleUpload}
+            disabled={uploadState === 'done'}
+          />
+        </Box>
+      )}
+    </Fragment>
   );
 }
