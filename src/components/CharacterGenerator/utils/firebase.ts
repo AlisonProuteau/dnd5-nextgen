@@ -1,55 +1,37 @@
-import { addDoc, collection, doc, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage';
+import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { omitBy } from 'lodash';
 import { database, storage } from 'src/firebase';
 import { CharacterDetails } from './character';
 
-export function startFirebaseUpload(
-  base64Url: string,
-  prompt: string,
-  character: CharacterDetails
-) {
+export function startFirebaseUpload(base64Url: string, character: CharacterDetails) {
   const filename = `${character.class}-${character.race}-${character.gender}_${Date.now()}.png`;
   const imageRef = ref(storage, `images/${filename}`);
   const binary = Uint8Array.from(atob(base64Url.split(',')[1]), (c) => c.charCodeAt(0));
   const uploadTask = uploadBytesResumable(imageRef, binary);
 
-  return { uploadTask, imageRef, prompt, character };
+  return { uploadTask, imageRef, character };
 }
 
-export async function saveUploadMetadata(
-  downloadUrl: string,
-  prompt: string,
-  character: CharacterDetails
-) {
+export async function saveUploadMetadata(downloadUrl: string, character: CharacterDetails) {
   await addDoc(collection(database, 'images'), {
     url: downloadUrl,
-    prompt,
-    character,
+    character: omitBy(character, (value) => value === undefined || value === null),
     createdAt: Timestamp.now()
   });
 }
 
-export async function saveImageToFirebase(
-  base64Url: string,
-  prompt: string,
-  character: any
-): Promise<boolean> {
+export async function saveImageToFirebase(base64Url: string, character: any): Promise<boolean> {
   try {
-    const res = await fetch(base64Url);
-    const blob = await res.blob();
+    const { uploadTask } = startFirebaseUpload(base64Url, character);
+    const downloadUrl = (await uploadTask.then(
+      async (snapshot) => await getDownloadURL(snapshot.ref),
+      (error) => {
+        throw error;
+      }
+    )) as string;
 
-    const id = `${character.class}-${character.race}-${character.gender}_${Date.now()}`;
-    const storageRef = ref(storage, `images/${id}.png`);
-    await uploadBytes(storageRef, blob);
-
-    const url = await getDownloadURL(storageRef);
-    const docRef = doc(collection(database, 'images'));
-    await setDoc(docRef, {
-      url,
-      prompt,
-      character,
-      createdAt: serverTimestamp()
-    });
+    await saveUploadMetadata(downloadUrl, character);
 
     return true;
   } catch (err) {

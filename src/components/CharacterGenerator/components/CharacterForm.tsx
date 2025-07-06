@@ -1,7 +1,7 @@
 import {
   Button,
   FormControl,
-  Grid,
+  Grid2,
   InputLabel,
   MenuItem,
   Paper,
@@ -10,54 +10,24 @@ import {
   Typography
 } from '@mui/material';
 import { useState } from 'react';
-import { buildPrompt, generateImage } from '../utils/buildPrompt';
+import {
+  buildPrompt,
+  classes,
+  ethnicities,
+  genders,
+  generateImage,
+  imageRatios,
+  imageTypes,
+  races
+} from '../utils/buildPrompt';
 import type { CharacterDetails } from '../utils/character';
 
-const races = [
-  'Human',
-  'Elf',
-  'Dwarf',
-  'Halfling',
-  'Gnome',
-  'Dragonborn',
-  'Tiefling',
-  'Half-Orc',
-  'Half-Elf'
-];
-const genders = ['gender-neutral', 'Male', 'Female', 'Non-binary'];
-const classes = [
-  'Barbarian',
-  'Bard',
-  'Cleric',
-  'Druid',
-  'Fighter',
-  'Monk',
-  'Paladin',
-  'Ranger',
-  'Rogue',
-  'Sorcerer',
-  'Warlock',
-  'Wizard'
-];
-const ethnicities = [
-  '',
-  'Caucasian',
-  'East Asian',
-  'South Asian',
-  'African',
-  'Hispanic',
-  'Middle Eastern',
-  'Native American'
-];
-const imageTypes = ['', 'portrait', 'full body'];
-const imageRatios = ['1:1', '9:16', '16:9'];
-
 export default function CharacterForm({
-  setLoading,
+  setIsLoading,
   setPrompt,
   setCharacter
 }: {
-  setLoading: (loading: boolean) => void;
+  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setPrompt: (prompt: string) => void;
   setCharacter: (character: CharacterDetails | null) => void;
 }) {
@@ -65,11 +35,22 @@ export default function CharacterForm({
     race: 'Human',
     gender: 'gender-neutral',
     class: 'Barbarian',
-    ethnicity: '',
-    imageType: '',
-    imageRatio: '1:1',
-    refinement: ''
+    ethnicity: undefined,
+    imageType: undefined,
+    imageRatio: undefined,
+    refinement: undefined
   });
+
+  const fieldNames: Record<keyof CharacterDetails, string> = {
+    race: 'Race',
+    gender: 'Gender',
+    class: 'Class',
+    ethnicity: 'Ethnicity',
+    imageType: 'Image Type',
+    imageRatio: 'Image Ratio',
+    refinement: 'Refinement',
+    url: ''
+  };
 
   const handleChange = (field: keyof CharacterDetails) => (e: any) => {
     setForm({ ...form, [field]: e.target.value });
@@ -77,8 +58,10 @@ export default function CharacterForm({
 
   const handleGenerate = async () => {
     setCharacter(null);
+    setPrompt('');
+
     try {
-      setLoading(true);
+      setIsLoading(true);
 
       const prompt = buildPrompt(form);
       setPrompt(prompt);
@@ -89,7 +72,7 @@ export default function CharacterForm({
       console.error('Generation failed:', err);
       alert(`Image generation failed: ${err.message}`);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -98,33 +81,35 @@ export default function CharacterForm({
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Character Settings
       </Typography>
-      <Grid container spacing={3} sx={{ mt: 2 }}>
-        {[
-          ['race', races],
-          ['gender', genders],
-          ['class', classes],
-          ['ethnicity', ethnicities],
-          ['imageType', imageTypes],
-          ['imageRatio', imageRatios]
-        ].map(([field, options]) => (
-          <Grid item xs={12} sm={6} md={4} key={field as string}>
+      <Grid2 container spacing={3} sx={{ mt: 2 }}>
+        {(
+          [
+            ['race', races],
+            ['gender', genders],
+            ['class', classes],
+            ['ethnicity', ethnicities],
+            ['imageType', imageTypes],
+            ['imageRatio', imageRatios]
+          ] as [keyof CharacterDetails, string[]][]
+        ).map(([field, options]) => (
+          <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field}>
             <FormControl fullWidth>
-              <InputLabel>{field}</InputLabel>
+              <InputLabel>{fieldNames[field]}</InputLabel>
               <Select
-                value={(form as any)[field as string]}
-                label={field}
-                onChange={handleChange(field as keyof CharacterDetails)}
+                value={form[field] ?? ''}
+                label={fieldNames[field]}
+                onChange={handleChange(field)}
               >
-                {(options as string[]).map((opt) => (
+                {options.map((opt) => (
                   <MenuItem key={opt} value={opt}>
                     {opt || 'None'}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-          </Grid>
+          </Grid2>
         ))}
-        <Grid item xs={12}>
+        <Grid2 size={{ xs: 12 }}>
           <TextField
             label="Refinement"
             fullWidth
@@ -133,13 +118,19 @@ export default function CharacterForm({
             value={form.refinement}
             onChange={(e) => setForm({ ...form, refinement: e.target.value })}
           />
-        </Grid>
-        <Grid item xs={12}>
-          <Button variant="contained" sx={{ borderRadius: 2, boxShadow: 2 }} onClick={handleGenerate} fullWidth size="large">
+        </Grid2>
+        <Grid2 size={{ xs: 12 }}>
+          <Button
+            variant="contained"
+            sx={{ borderRadius: 2, boxShadow: 2 }}
+            onClick={handleGenerate}
+            fullWidth
+            size="large"
+          >
             Generate Portrait
           </Button>
-        </Grid>
-      </Grid>
+        </Grid2>
+      </Grid2>
     </Paper>
   );
 }

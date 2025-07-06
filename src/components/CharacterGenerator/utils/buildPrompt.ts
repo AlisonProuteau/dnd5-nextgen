@@ -135,8 +135,49 @@ export const generateImage = async (
   details: CharacterDetails,
   prompt: string
 ): Promise<string | null> => {
+  const {
+    REACT_APP_GENERATIVE_LANGUAGE_API_KEY: apiKey,
+    FIRESTORE_EMULATOR_HOST,
+    FIREBASE_AUTH_EMULATOR_HOST
+  } = import.meta.env;
+
   try {
-    const apiKey = 'AIzaSyC-tVaeE3Q-FhgRnOfMwDdGqScGRDXlU88';
+    // TODO: Should I improve this check?
+    const DEV_MODE = FIRESTORE_EMULATOR_HOST || FIREBASE_AUTH_EMULATOR_HOST;
+    if (DEV_MODE || !apiKey) {
+      if (!apiKey) console.warn('No API key provided, using mock data');
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+      const color = classColors[details.class] || '#808080';
+      const canvas = document.createElement('canvas');
+      canvas.width = 200;
+      canvas.height = 200;
+      const ctx = canvas.getContext('2d');
+
+      if (ctx) {
+        // Fill with class color
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 200, 200);
+
+        // Add some text
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(details.race, 100, 80);
+        ctx.fillText(details.class, 100, 100);
+        ctx.fillText(details.gender, 100, 120);
+
+        // Convert to base64
+        const base64 = canvas.toDataURL('image/png');
+        return base64;
+      }
+
+      // Fallback: simple base64 encoded 1x1 red pixel
+      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+    }
+
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
     const payload = {
       instances: { prompt },
@@ -148,11 +189,18 @@ export const generateImage = async (
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
+
+    if (!response.ok) {
+      console.error('API request failed:', response.status, response.statusText);
+      return null;
+    }
+
     const result = await response.json();
     return result.predictions?.[0]?.bytesBase64Encoded
       ? `data:image/png;base64,${result.predictions[0].bytesBase64Encoded}`
       : null;
-  } catch {
+  } catch (error) {
+    console.error('Image generation error:', error);
     return null;
   }
 };

@@ -4,7 +4,7 @@ export type CharacterDetails = {
   class: string;
   ethnicity?: string;
   imageType?: string;
-  imageRatio: string;
+  imageRatio?: string;
   refinement?: string;
   url?: string;
 };
