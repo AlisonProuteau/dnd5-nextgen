@@ -1,4 +1,11 @@
-import { CloudDone, CloudOff, DownloadDone, Downloading } from '@mui/icons-material';
+import {
+  CloudDone,
+  CloudOff,
+  CloudUpload,
+  DownloadDone,
+  Downloading,
+  FileDownloadOff
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -6,12 +13,11 @@ import {
   CardContent,
   CardMedia,
   Checkbox,
-  CircularProgress,
   FormControlLabel,
   Typography
 } from '@mui/material';
 import { getDownloadURL } from 'firebase/storage';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import {
   classes as allClasses,
   genders as allGenders,
@@ -27,8 +33,8 @@ type BatchEntry = {
   character: CharacterDetails;
   status: 'pending' | 'generating' | 'done' | 'failed';
   url?: string;
-  downloadState?: string;
-  uploadState?: string;
+  downloadState?: 'downloading' | 'done' | 'failed';
+  uploadState?: 'uploading' | 'done' | 'failed';
 };
 
 export default function BatchOptions({
@@ -38,266 +44,384 @@ export default function BatchOptions({
   character: CharacterDetails;
   isLoading?: boolean;
 }) {
-  const [genderFilter, setGenderFilter] = useState(false);
-  const [classFilter, setClassFilter] = useState(false);
-  const [raceFilter, setRaceFilter] = useState(false);
+  const [filters, setFilters] = useState({
+    gender: false,
+    class: false,
+    race: false
+  });
   const [isRunning, setIsRunning] = useState(false);
   const [queue, setQueue] = useState<BatchEntry[]>([]);
 
   const queueRef = useRef<BatchEntry[]>([]);
   const cancelledRef = useRef(false);
 
+  const clearStates = () => {
+    setIsRunning(false);
+    cancelledRef.current = false;
+    setQueue([]);
+    queueRef.current = [];
+  };
+
   useEffect(() => {
-    if (isLoading) {
-      setIsRunning(false);
-      cancelledRef.current = false;
-      setQueue([]);
-      queueRef.current = [];
-    }
+    if (isLoading) clearStates();
   }, [isLoading]);
 
-  const buildQueue = () => {
-    const genders = genderFilter ? [character.gender] : allGenders;
-    const races = raceFilter ? [character.race] : allRaces;
-    const classes = classFilter ? [character.class] : allClasses;
+  useEffect(() => {
+    if (queue.length > 0 && !isRunning && !cancelledRef.current) {
+      runBatch(0);
+    }
+  }, [queue.length, isRunning, cancelledRef.current]);
+
+  const updateQueueItem = useCallback((index: number, updates: Partial<BatchEntry>) => {
+    setQueue((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], ...updates };
+      queueRef.current = updated;
+      return updated;
+    });
+  }, []);
+
+  const buildQueue = useCallback(() => {
+    const genders = filters.gender ? [character.gender] : allGenders;
+    const races = filters.race ? [character.race] : allRaces;
+    const classes = filters.class ? [character.class] : allClasses;
 
     const entries: BatchEntry[] = [];
+    clearStates();
+
     for (const gender of genders) {
       for (const race of races) {
-        const allowEthnicity = !['Dragonborn', 'Tiefling', 'Half-Orc'].includes(race);
         for (const cls of classes) {
+          const isCurrentCharacter =
+            cls === character.class && race === character.race && gender === character.gender;
+
           entries.push({
             character: {
               ...character,
               gender,
               race,
               class: cls,
-              ethnicity: allowEthnicity ? character.ethnicity : ''
+              ethnicity: ['Dragonborn', 'Tiefling', 'Half-Orc'].includes(race)
+                ? ''
+                : character.ethnicity
             },
-            status:
-              cls === character.class && race === character.race && gender === character.gender
-                ? 'done'
-                : 'pending',
-            url:
-              cls === character.class && race === character.race && gender === character.gender
-                ? character.url
-                : undefined
+            status: isCurrentCharacter ? 'done' : 'pending',
+            url: isCurrentCharacter ? character.url : undefined
           });
         }
       }
     }
 
-    setQueue(() => {
-      queueRef.current = entries;
-      return entries;
-    });
-  };
+    setQueue(entries);
+    queueRef.current = entries;
+  }, [character, filters]);
 
-  useEffect(() => {
-    if (queue.length > 0 && !isRunning && !cancelledRef.current) runBatch(0);
-  }, [queue.length, isRunning, cancelledRef.current]);
+  const runBatch = useCallback(
+    async (startIndex = 0) => {
+      setIsRunning(true);
+      cancelledRef.current = false;
 
-  const runBatch = async (startIndex = 0) => {
-    setIsRunning(true);
-    cancelledRef.current = false;
+      for (let i = startIndex; i < queue.length; i++) {
+        if (cancelledRef.current) break;
+        if (queueRef.current[i].status === 'done') continue;
 
-    const next = async (i: number) => {
-      if (cancelledRef.current || i >= queue.length) {
-        setIsRunning(false);
-        return;
+        updateQueueItem(i, { status: 'generating' });
+
+        try {
+          const prompt = buildPrompt(queueRef.current[i].character);
+          const url = await generateImage(queueRef.current[i].character, prompt);
+
+          updateQueueItem(i, {
+            status: url ? 'done' : 'failed',
+            url: url || undefined
+          });
+        } catch (error) {
+          updateQueueItem(i, { status: 'failed' });
+        }
       }
-      if (queueRef.current[i].status === 'done') return next(i + 1);
 
-      setQueue((prev) => {
-        const updated = [...prev];
-        updated[i].status = 'generating';
-        queueRef.current = updated;
-        return updated;
-      });
+      setIsRunning(false);
+    },
+    [queue.length, updateQueueItem]
+  );
 
-      const prompt = buildPrompt(queueRef.current[i].character);
-      const url = await generateImage(queueRef.current[i].character, prompt);
+  const downloadItem = async (index: number, item: BatchEntry) => {
+    if (!item.url) {
+      updateQueueItem(index, { downloadState: 'failed' });
+      return;
+    }
 
-      setQueue((prev) => {
-        const updated = [...prev];
-        updated[i] = {
-          ...updated[i],
-          status: url ? 'done' : 'failed',
-          url: url || undefined
-        };
-        queueRef.current = updated;
-        return updated;
-      });
+    try {
+      updateQueueItem(index, { downloadState: 'downloading' });
 
-      next(i + 1);
-    };
+      const link = document.createElement('a');
+      link.href = item.url;
+      link.download = `${item.character.race}_${item.character.class}_${item.character.gender}.png`;
+      link.click();
 
-    next(startIndex);
-  };
-
-  const cancelBatch = () => {
-    cancelledRef.current = true;
-    setIsRunning(false);
-  };
-
-  const resumeBatch = () => {
-    const firstUnfinished = queue.findIndex((entry) => entry.status !== 'done');
-    if (firstUnfinished !== -1) runBatch(firstUnfinished);
-  };
-
-  const getUploadIcon = (uploadState: string) => {
-    switch (uploadState) {
-      case 'uploading':
-        return <CircularProgress size={16} />;
-      case 'done':
-        return <CloudDone color="success" />;
-      case 'failed':
-        return <CloudOff color="error" />;
-      default:
-        return null;
+      setTimeout(() => {
+        updateQueueItem(index, { downloadState: 'done' });
+      }, 500);
+    } catch {
+      updateQueueItem(index, { downloadState: 'failed' });
     }
   };
 
-  return !isLoading ? (
-    <Box mt={4}>
+  const uploadItem = async (index: number, item: BatchEntry) => {
+    if (!item.url) return;
+
+    updateQueueItem(index, { uploadState: 'uploading' });
+
+    try {
+      const { uploadTask } = startFirebaseUpload(item.url, item.character);
+      await uploadTask;
+
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      await saveUploadMetadata(downloadUrl, item.character);
+
+      updateQueueItem(index, { uploadState: 'done' });
+    } catch (error) {
+      console.error('Upload failed:', error);
+      updateQueueItem(index, { uploadState: 'failed' });
+    }
+  };
+
+  const performBulkAction = useCallback(
+    async (
+      filterFn: (item: BatchEntry) => boolean,
+      actionFn: (index: number, item: BatchEntry) => Promise<void>
+    ) => {
+      const items = queue.map((item, idx) => ({ ...item, idx })).filter(filterFn);
+
+      for (const item of items) {
+        await actionFn(item.idx, item);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+    },
+    [queue]
+  );
+
+  const downloadAll = () => {
+    return performBulkAction(
+      (item) => !!(item.status === 'done' && item.url && item.downloadState !== 'done'),
+      downloadItem
+    );
+  };
+
+  const uploadAll = () => {
+    return performBulkAction(
+      (item) => !!(item.status === 'done' && item.url && item.uploadState !== 'done'),
+      uploadItem
+    );
+  };
+
+  // Computed values
+  const stats = {
+    generationCompleted: queue.filter((item) => item.status === 'done' && item.url),
+    downloadable: queue.filter(
+      (item) => item.status === 'done' && item.url && item.downloadState !== 'done'
+    ),
+    uploadable: queue.filter(
+      (item) => item.status === 'done' && item.url && item.uploadState !== 'done'
+    ),
+    isDownloading: queue.some((item) => item.downloadState === 'downloading'),
+    isUploading: queue.some((item) => item.uploadState === 'uploading'),
+    isDownloaded: queue
+      .filter((item) => item.status === 'done' && item.url)
+      .every((item) => item.downloadState === 'done' || item.downloadState === 'failed'),
+    isUploaded: queue
+      .filter((item) => item.status === 'done' && item.url)
+      .every((item) => item.uploadState === 'done' || item.uploadState === 'failed'),
+    isDownloadFailed: queue
+      .filter((item) => item.status === 'done' && item.url)
+      .every((item) => item.downloadState === 'failed'),
+    isUploadFailed: queue
+      .filter((item) => item.status === 'done' && item.url)
+      .every((item) => item.uploadState === 'failed'),
+    inProgress: queue.some(
+      (item) => item.status === 'generating' || (item.status === 'pending' && !cancelledRef.current)
+    )
+  };
+
+  const ActionButton = ({
+    type,
+    onClick,
+    status,
+    disabled,
+    count
+  }: {
+    type: 'download' | 'upload' | 'downloadAll' | 'uploadAll';
+    onClick: () => void;
+    status?: 'downloading' | 'uploading' | 'done' | 'failed';
+    disabled?: boolean;
+    count?: number;
+  }) => {
+    console.log('ActionButton', { type, status, disabled, count });
+    const endIcon = () => {
+      switch (status) {
+        case 'downloading':
+          return <Downloading />;
+        case 'uploading':
+          return <CloudUpload />;
+        case 'done':
+          return type.includes('download') ? (
+            <DownloadDone color="success" />
+          ) : (
+            <CloudDone color="success" />
+          );
+        case 'failed':
+          return type.includes('download') ? (
+            <FileDownloadOff color="error" />
+          ) : (
+            <CloudOff color="error" />
+          );
+        default:
+          return null;
+      }
+    };
+
+    return (
+      <Button
+        variant="outlined"
+        color={type.includes('download') ? 'primary' : 'secondary'}
+        onClick={onClick}
+        disabled={
+          disabled ||
+          status === 'uploading' ||
+          status === 'downloading' ||
+          (type.includes('All') && stats.inProgress)
+        }
+        endIcon={endIcon()}
+      >
+        {`${type.includes('download') ? 'Download' : 'Upload'}${
+          type.includes('All') ? ' All ' + count : ''
+        }`}
+      </Button>
+    );
+  };
+  return isLoading ? null : (
+    <Box mt={4} justifyItems="center" sx={{ px: 2 }}>
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Batch Generation Options
       </Typography>
-      <FormControlLabel
-        control={
-          <Checkbox checked={genderFilter} onChange={() => setGenderFilter(!genderFilter)} />
-        }
-        label={`Only ${character.gender}`}
-      />
-      <FormControlLabel
-        control={<Checkbox checked={classFilter} onChange={() => setClassFilter(!classFilter)} />}
-        label={`Only ${character.class}`}
-      />
-      <FormControlLabel
-        control={<Checkbox checked={raceFilter} onChange={() => setRaceFilter(!raceFilter)} />}
-        label={`Only ${character.race}`}
-      />
 
-      <Box mt={2}>
-        <Button
-          variant="contained"
-          sx={{ borderRadius: 2, boxShadow: 2, ml: 2 }}
-          onClick={buildQueue}
-          disabled={isRunning}
-        >
-          Start
-        </Button>
-        {isRunning ? (
-          <Button variant="outlined" sx={{ ml: 2 }} onClick={cancelBatch} disabled={!isRunning}>
-            Cancel
-          </Button>
-        ) : (
-          <Button
-            variant="outlined"
-            sx={{ ml: 2 }}
-            onClick={resumeBatch}
-            disabled={isRunning || queue.every((q) => q.status === 'done')}
-          >
-            Resume
-          </Button>
-        )}
+      {/* Filters */}
+      <Box display="flex" gap={2} flexWrap="wrap">
+        {Object.entries({
+          gender: character.gender,
+          class: character.class,
+          race: character.race
+        }).map(([key, value]) => (
+          <FormControlLabel
+            key={key}
+            control={
+              <Checkbox
+                checked={filters[key as keyof typeof filters]}
+                onChange={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    [key]: !prev[key as keyof typeof filters]
+                  }))
+                }
+              />
+            }
+            label={`Only ${value}`}
+          />
+        ))}
       </Box>
 
+      {/* Action Buttons */}
+      <Box mt={2} display="flex" gap={1} flexWrap="wrap">
+        <Button variant="contained" onClick={buildQueue} disabled={isRunning}>
+          Start Batch
+        </Button>
+
+        <Button
+          variant="outlined"
+          onClick={() =>
+            isRunning
+              ? ((cancelledRef.current = true), setIsRunning(false))
+              : runBatch(queue.findIndex((entry) => entry.status !== 'done'))
+          }
+          disabled={queue.length === 0 || queue.every((q) => q.status === 'done')}
+        >
+          {isRunning ? 'Cancel' : 'Resume'}
+        </Button>
+
+        <ActionButton
+          type="downloadAll"
+          onClick={downloadAll}
+          disabled={stats.downloadable.length === 0 || stats.isDownloading}
+          count={stats.downloadable.length}
+          status={
+            stats.isDownloading
+              ? 'downloading'
+              : stats.isDownloadFailed
+              ? 'failed'
+              : stats.isDownloaded
+              ? 'done'
+              : undefined
+          }
+        />
+
+        <ActionButton
+          type="uploadAll"
+          onClick={uploadAll}
+          disabled={stats.uploadable.length === 0 || stats.isUploading}
+          count={stats.uploadable.length}
+          status={
+            stats.isUploading
+              ? 'uploading'
+              : stats.isUploadFailed
+              ? 'failed'
+              : stats.isUploaded
+              ? 'done'
+              : undefined
+          }
+        />
+      </Box>
+
+      {/* Queue Display */}
       <Box display="flex" flexWrap="wrap" gap={2} mt={3}>
-        {queue.map(
-          ({ character: currentCharacter, status, url, uploadState, downloadState }, idx) => (
-            <Card
-              key={`${currentCharacter.class}-${currentCharacter.race}-${currentCharacter.gender}-${status}`}
-              sx={{
-                width: 220,
-                p: 2,
-                borderRadius: 3,
-                boxShadow: 3,
-                borderLeft: `6px solid ${classColors[currentCharacter.class] || '#ccc'}`,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}
-            >
-              <CardContent>
-                <Typography
-                  variant="subtitle2"
-                  gutterBottom
-                  fontWeight={700}
-                  color={classColors[currentCharacter.class] || '#666'}
-                >
-                  {currentCharacter.race} {currentCharacter.class}
-                </Typography>
-                <Typography variant="caption" fontWeight={600} color="text.secondary">
-                  {status}
-                </Typography>
-                {status === 'done' && url && (
-                  <>
-                    <CardMedia component="img" src={url} sx={{ borderRadius: 1, mt: 1 }} />
-                    <Button
-                      size="small"
-                      sx={{ mt: 1 }}
-                      onClick={async () => {
-                        setQueue((prev) => {
-                          const updated = [...prev];
-                          updated[idx].uploadState = 'uploading';
-                          return updated;
-                        });
-                        const { uploadTask } = startFirebaseUpload(url!, currentCharacter);
-                        await uploadTask.then(async () => {
-                          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-                          await saveUploadMetadata(downloadUrl, currentCharacter);
-                          setQueue((prev) => {
-                            const updated = [...prev];
-                            updated[idx].uploadState = 'done';
-                            return updated;
-                          });
-                        });
-                      }}
-                      endIcon={getUploadIcon(uploadState || '')}
-                      disabled={uploadState === 'uploading'}
-                    >
-                      Upload
-                    </Button>
-                    <Button
-                      size="small"
-                      sx={{ mt: 1, mr: 1 }}
-                      onClick={() => {
-                        setQueue((prev) => {
-                          const updated = [...prev];
-                          updated[idx].downloadState = 'downloading';
-                          return updated;
-                        });
-                        const link = document.createElement('a');
-                        link.href = url!;
-                        link.download = `${currentCharacter.class}_${idx}.png`;
-                        link.click();
-                        setTimeout(() => {
-                          setQueue((prev) => {
-                            const updated = [...prev];
-                            updated[idx].downloadState = 'done';
-                            return updated;
-                          });
-                        }, 500);
-                      }}
-                      endIcon={
-                        downloadState === 'downloading' ? (
-                          <Downloading />
-                        ) : downloadState === 'done' ? (
-                          <DownloadDone color="success" />
-                        ) : null
-                      }
-                      disabled={downloadState === 'downloading'}
-                    >
-                      Download
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          )
-        )}
+        {queue.map((item, idx) => (
+          <Card
+            key={`${item.character.class}-${item.character.race}-${item.character.gender}`}
+            sx={{
+              width: 220,
+              borderRadius: 3,
+              borderLeft: `6px solid ${classColors[item.character.class] || '#ccc'}`
+            }}
+          >
+            <CardContent>
+              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                {item.character.race} {item.character.class}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                {item.status}
+              </Typography>
+
+              {item.status === 'done' && item.url && (
+                <Fragment>
+                  <CardMedia component="img" src={item.url} sx={{ borderRadius: 1, mt: 1 }} />
+                  <Box mt={1} display="flex" gap={1} flexDirection={'column'}>
+                    <ActionButton
+                      type="download"
+                      onClick={() => downloadItem(idx, item)}
+                      status={item.downloadState}
+                    />
+                    <ActionButton
+                      type="upload"
+                      onClick={() => uploadItem(idx, item)}
+                      status={item.uploadState}
+                      disabled={item.uploadState === 'done'}
+                    />
+                  </Box>
+                </Fragment>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </Box>
     </Box>
-  ) : null;
+  );
 }
