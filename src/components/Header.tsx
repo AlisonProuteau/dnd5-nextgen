@@ -45,11 +45,12 @@ export function Header() {
         icon: <Star />,
         title: 'Character Generator',
         id: 'character-generator',
-        link: '/character-generator'
+        link: '/character-generator',
+        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
       }
       // TODO: { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
     ],
-    []
+    [user?.uid]
   );
 
   return (
@@ -92,18 +93,21 @@ export function Header() {
                       horizontal: 'right'
                     }}
                   >
-                    {MenuItems.map((item) => (
-                      <MenuItem>
-                        <Link
-                          to={item.link}
-                          aria-label={item.id}
-                          css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
-                        >
-                          {item.icon}
-                          <Typography> {item.title}</Typography>
-                        </Link>
-                      </MenuItem>
-                    ))}
+                    {MenuItems.map(
+                      (item) =>
+                        !item.hidden && (
+                          <MenuItem>
+                            <Link
+                              to={item.link}
+                              aria-label={item.id}
+                              css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
+                            >
+                              {item.icon}
+                              <Typography> {item.title}</Typography>
+                            </Link>
+                          </MenuItem>
+                        )
+                    )}
                   </Menu>
                 </Box>
               </Fragment>

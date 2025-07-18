@@ -51,11 +51,13 @@ export function App() {
         {user?.uid && (
           <Fragment>
             {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
-              <Route path="/database" element={<DataBasePage />} />
+              <Fragment>
+                <Route path="/database" element={<DataBasePage />} />
+                <Route path="/character-generator" element={<CharacterGenerator />} />
+              </Fragment>
             )}
             <Route path="/settings" element={<Settings />} />
             <Route path="/contact" element={<ContactForm />} />
-            <Route path="/character-generator" element={<CharacterGenerator />} />
             {version && (
               <Fragment>
                 <Route path="create" element={<CharacterCreation />} />
