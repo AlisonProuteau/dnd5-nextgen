@@ -12,6 +12,7 @@ import { AuthPage } from './components/AuthPage';
 import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
+import CharacterGenerator from './components/CharacterGenerator/CharacterGenerator';
 import { ContactForm } from './components/ContactForm';
 import { Header } from './components/Header';
 import { Home } from './components/Home';
@@ -50,7 +51,10 @@ export function App() {
         {user?.uid && (
           <Fragment>
             {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
-              <Route path="/database" element={<DataBasePage />} />
+              <Fragment>
+                <Route path="/database" element={<DataBasePage />} />
+                <Route path="/character-generator" element={<CharacterGenerator />} />
+              </Fragment>
             )}
             <Route path="/settings" element={<Settings />} />
             <Route path="/contact" element={<ContactForm />} />

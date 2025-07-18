@@ -3,10 +3,12 @@ import type { UserImportRecord } from 'firebase-admin/lib/auth/user-import-build
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
+import 'firebase/compat/storage';
 import './commands';
 
-const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST } = Cypress.env();
-if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
+const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_STORAGE_EMULATOR_HOST } =
+  Cypress.env();
+if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_EMULATOR_HOST) {
   let app: firebase.app.App;
   if (firebase.apps?.length === 0) {
     const firebaseConfig = {
@@ -17,8 +19,17 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST) {
 
     firebase.auth().useEmulator(`http://${FIREBASE_AUTH_EMULATOR_HOST}`);
 
-    const [host, port] = FIRESTORE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '8080'];
-    firebase.firestore().useEmulator(host, port);
+    const [firestoreHost, firestorePort] = FIRESTORE_EMULATOR_HOST?.split(':') || [
+      '127.0.0.1',
+      '8080'
+    ];
+    firebase.firestore().useEmulator(firestoreHost, firestorePort);
+
+    const [storageHost, storagePort] = FIREBASE_STORAGE_EMULATOR_HOST?.split(':') || [
+      '127.0.0.1',
+      '9199'
+    ];
+    firebase.storage().useEmulator(storageHost, storagePort);
   } else {
     app = firebase.app();
   }
@@ -37,8 +48,5 @@ before(() => {
   };
   cy.authImportUsers([user])
     .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
-    .login(user.uid)
-    .then(() => {
-      cy.visit('/');
-    });
+    .login(user.uid);
 });

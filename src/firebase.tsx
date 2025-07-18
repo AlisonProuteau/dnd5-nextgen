@@ -13,8 +13,14 @@ import {
   signOut
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { connectStorageEmulator, getStorage } from 'firebase/storage';
 
-const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_CONFIG } = import.meta.env;
+const {
+  FIRESTORE_EMULATOR_HOST,
+  FIREBASE_AUTH_EMULATOR_HOST,
+  FIREBASE_STORAGE_EMULATOR_HOST,
+  FIREBASE_CONFIG
+} = import.meta.env;
 const firebaseConfig: FirebaseOptions = JSON.parse(FIREBASE_CONFIG);
 
 const app = initializeApp(firebaseConfig);
@@ -29,9 +35,16 @@ if (FIRESTORE_EMULATOR_HOST) {
 
 const auth = getAuth(app);
 if (FIREBASE_AUTH_EMULATOR_HOST) {
-  connectAuthEmulator(auth, `http://l${FIREBASE_AUTH_EMULATOR_HOST}/`);
+  connectAuthEmulator(auth, `http://${FIREBASE_AUTH_EMULATOR_HOST}/`);
   console.debug(`Using Auth emulator: http://${FIREBASE_AUTH_EMULATOR_HOST}/`);
 } else console.debug('Auth production mode');
+
+const storage = getStorage(app);
+if (FIREBASE_STORAGE_EMULATOR_HOST) {
+  const [host, port] = FIREBASE_STORAGE_EMULATOR_HOST?.split(':') || ['127.0.0.1', '9199'];
+  connectStorageEmulator(storage, host, parseInt(port));
+  console.debug(`Using Storage emulator: http://${FIREBASE_STORAGE_EMULATOR_HOST}/`);
+} else console.debug('Storage production mode');
 
 export const createUserInFirebase = (email: string, password: string) =>
   createUserWithEmailAndPassword(auth, email, password);
@@ -40,4 +53,4 @@ export const signInFirebase = (email: string, password: string) =>
 export const signOutInFirebase = () => signOut(auth);
 export const onAuthChange = (fn: NextOrObserver<User>, error?: ErrorFn, completed?: CompleteFn) =>
   onAuthStateChanged(auth, fn, error, completed);
-export { analytics, database };
+export { analytics, database, storage };

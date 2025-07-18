@@ -34,14 +34,12 @@ export const signIn = (email: string, password: string) =>
     });
 
 export const signOut = () =>
-  signOutInFirebase()
-    .then(() => toast.success('Signed out successfully'))
-    .catch((error) => {
-      toast.error(
-        `Something went wrong
-        ${(error as Error).message || 'Error'}`
-      );
-    });
+  signOutInFirebase().catch((error) => {
+    toast.error(
+      `Something went wrong 
+      ${(error as Error).message || 'Error'}`
+    );
+  });
 
 export const getUserCharacters = async (
   userId: string,

@@ -1,5 +1,5 @@
 import { signOut } from '@api/users';
-import { Help, Home, Menu as MenuIcon, Settings } from '@mui/icons-material';
+import { Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
@@ -40,10 +40,17 @@ export function Header() {
         title: 'Contact',
         id: 'contact',
         link: '/contact'
+      },
+      {
+        icon: <Star />,
+        title: 'Character Generator',
+        id: 'character-generator',
+        link: '/character-generator',
+        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
       }
       // TODO: { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
     ],
-    []
+    [user?.uid]
   );
 
   return (
@@ -86,18 +93,21 @@ export function Header() {
                       horizontal: 'right'
                     }}
                   >
-                    {MenuItems.map((item) => (
-                      <MenuItem>
-                        <Link
-                          to={item.link}
-                          aria-label={item.id}
-                          css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
-                        >
-                          {item.icon}
-                          <Typography> {item.title}</Typography>
-                        </Link>
-                      </MenuItem>
-                    ))}
+                    {MenuItems.map(
+                      (item) =>
+                        !item.hidden && (
+                          <MenuItem>
+                            <Link
+                              to={item.link}
+                              aria-label={item.id}
+                              css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
+                            >
+                              {item.icon}
+                              <Typography> {item.title}</Typography>
+                            </Link>
+                          </MenuItem>
+                        )
+                    )}
                   </Menu>
                 </Box>
               </Fragment>
