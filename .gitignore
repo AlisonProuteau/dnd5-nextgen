@@ -10,6 +10,7 @@
 /build
 serviceAccount.json
 /database
+storage.rules
 
 # misc
 .DS_Store

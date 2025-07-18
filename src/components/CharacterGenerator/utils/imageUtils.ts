@@ -136,14 +136,20 @@ export const generateImage = async (
   prompt: string
 ): Promise<string | null> => {
   const {
-    REACT_APP_GENERATIVE_LANGUAGE_API_KEY: apiKey,
+    VITE_GENERATIVE_LANGUAGE_API_KEY: apiKey,
     FIRESTORE_EMULATOR_HOST,
-    FIREBASE_AUTH_EMULATOR_HOST
+    FIREBASE_AUTH_EMULATOR_HOST,
+    FIREBASE_STORAGE_EMULATOR_HOST,
+    MODE
   } = import.meta.env;
 
   try {
-    // TODO: Should I improve this check?
-    const DEV_MODE = FIRESTORE_EMULATOR_HOST || FIREBASE_AUTH_EMULATOR_HOST;
+    const DEV_MODE =
+      MODE !== 'production' ||
+      FIRESTORE_EMULATOR_HOST ||
+      FIREBASE_AUTH_EMULATOR_HOST ||
+      FIREBASE_STORAGE_EMULATOR_HOST;
+
     if (DEV_MODE || !apiKey) {
       if (!apiKey) console.warn('No API key provided, using mock data');
 
