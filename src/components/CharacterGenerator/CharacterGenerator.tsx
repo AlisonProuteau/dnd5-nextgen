@@ -8,7 +8,6 @@ import PortraitDisplay from './components/PortraitDisplay';
 import PromptDisplay from './components/PromptDisplay';
 import { CharacterDetails } from './utils/character';
 
-// TODO: Improve UX and UI
 export default function CharacterGenerator() {
   const [character, setCharacter] = useState<CharacterDetails | null>(null);
   const [prompt, setPrompt] = useState<string>('');

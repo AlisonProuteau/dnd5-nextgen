@@ -210,7 +210,7 @@ export default function BatchOptions({
   if (isLoading) return null;
 
   return (
-    <Box mt={4} sx={{ px: 2 }}>
+    <Box mt={4} sx={{ px: 2 }} display="flex" flexDirection="column" alignItems="center">
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Batch Generation Options
       </Typography>
@@ -292,7 +292,7 @@ export default function BatchOptions({
       </Box>
 
       {/* Queue Display */}
-      <Box display="flex" flexWrap="wrap" gap={2} mt={3}>
+      <Box display="flex" flexWrap="wrap" gap={2} mt={3} justifyContent="space-evenly">
         {queue.map((item, idx) => (
           <CharacterCard
             key={`${item.character.class}-${item.character.race}-${item.character.gender}`}

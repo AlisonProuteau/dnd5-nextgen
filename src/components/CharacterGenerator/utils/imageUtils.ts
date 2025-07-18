@@ -11,7 +11,7 @@ export const races = [
   'Half-Orc',
   'Half-Elf'
 ];
-export const genders = ['gender-neutral', 'Male', 'Female', 'Non-binary'];
+export const genders = ['Gender-neutral', 'Male', 'Female', 'Non-binary'];
 export const classes = [
   'Barbarian',
   'Bard',
@@ -98,7 +98,7 @@ const classTraits: Record<string, string> = {
 
 export function buildPrompt(details: CharacterDetails): string {
   const genderText =
-    details.gender === 'gender-neutral' ? 'androgynous' : details.gender.toLowerCase();
+    details.gender === 'Gender-neutral' ? 'androgynous' : details.gender.toLowerCase();
   const ethnicity =
     details.ethnicity && !['Dragonborn', 'Tiefling', 'Half-Orc'].includes(details.race)
       ? ` of ${details.ethnicity} descent`

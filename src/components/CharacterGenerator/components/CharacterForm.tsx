@@ -33,7 +33,7 @@ export default function CharacterForm({
 }) {
   const [form, setForm] = useState<CharacterDetails>({
     race: 'Human',
-    gender: 'gender-neutral',
+    gender: 'Gender-neutral',
     class: 'Barbarian',
     ethnicity: undefined,
     imageType: undefined,
