@@ -133,6 +133,7 @@ function CardCarousel({
       justifyContent="center"
       alignItems="center"
       {...swipeHandlers}
+      margin={2}
     >
       <IconButton onClick={handleBack} size="large">
         <Icon>
@@ -367,6 +368,33 @@ export function CharacterRaceForm({
         </FormControl>
       )}
 
+      {/* TODO: Finish character description display */}
+      {/* TODO: Should I add for subraces? */}
+      <Box margin={2}>
+        {selectedRace && <Typography>{selectedRace.desc}</Typography>}
+        {raceInfo && (
+          <Box>
+            <Typography>{raceInfo.size_description}</Typography>
+            <Typography>{raceInfo.speed}ft</Typography>
+            <Typography> {raceInfo.age}</Typography>
+            <Typography> {raceInfo.alignment}</Typography>
+            <Typography> {raceInfo.language_desc}</Typography>
+            {raceInfo.starting_proficiencies?.length ? (
+              <Typography> {JSON.stringify(raceInfo.starting_proficiencies)}</Typography>
+            ) : null}
+            {raceInfo.traits?.length ? (
+              <Typography>Traits: {raceInfo.traits?.map((d) => d.name).join(' ; ')}</Typography>
+            ) : null}
+            <Typography>
+              Ability Bonuses:{' '}
+              {raceInfo.ability_bonuses
+                .map((d) => `${d.ability_score.name} +${d.bonus}`)
+                .join(' ; ')}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
       {selectedRace && raceInfo?.starting_proficiency_options && (
         <Fragment>
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
@@ -384,7 +412,6 @@ export function CharacterRaceForm({
           </Box>
         </Fragment>
       )}
-
       {selectedRace && (raceInfo?.language_options || subraceInfo?.language_options) && (
         <Fragment>
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
@@ -405,7 +432,6 @@ export function CharacterRaceForm({
           </Box>
         </Fragment>
       )}
-
       {selectedRace && (
         <Fragment>
           {raceInfo?.ability_bonus_options && (
@@ -481,7 +507,6 @@ export function CharacterRaceForm({
           )}
         </Fragment>
       )}
-
       <Button
         sx={{ float: 'right', paddingBottom: '15px' }}
         disabled={!isValid()}
