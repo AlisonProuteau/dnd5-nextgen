@@ -1,24 +1,21 @@
 import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
-import {
-  KeyboardArrowLeft,
-  KeyboardArrowRight,
-  RotateLeft,
-  RotateRight
-} from '@mui/icons-material';
+import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import {
   Box,
   Button,
   Card,
   CardActionArea,
-  CardContent,
   CardMedia,
   Divider,
   FormControl,
+  Icon,
+  IconButton,
   InputLabel,
   MenuItem,
-  MobileStepper,
   Select,
-  Typography
+  Typography,
+  useMediaQuery,
+  useTheme
 } from '@mui/material';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
@@ -26,11 +23,11 @@ import type { DefaultRepresentation } from '@representations/common.representati
 import type { CharacterFormData } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useState, type ReactElement } from 'react';
-import ReactCardFlip from 'react-card-flip';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from 'src/providers/AuthProvider';
+// import type { races } from '../CharacterGenerator/utils/imageUtils';
 import { Choices } from './Choices';
 import {
   mapDataForForm,
@@ -45,92 +42,127 @@ interface CharacterRaceFormProps {
   languages?: ChoiceSelection[];
 }
 
-function DesignFlipCard({
+function DesignCard({
   title,
   img,
-  height = 430,
+  height = 400,
   onClick,
-  children
+  selected = false
 }: {
   title: string;
   img: string;
   height?: number;
   onClick?: () => any;
-  children?: ReactElement;
+  selected?: boolean;
 }) {
-  const [isFlipped, setIsFlipped] = useState<boolean>(false);
-  const borderCSS = `
-              justify-self: center;
-              position: relative;
-
-                border-radius:15px;
-                background:
-                  /*corners*/
-                  radial-gradient(farthest-side at bottom right,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) top    left /10px 10px,
-                  radial-gradient(farthest-side at top    right,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) bottom left /10px 10px,
-                  radial-gradient(farthest-side at bottom left ,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) top    right/10px 10px,
-                  radial-gradient(farthest-side at top    left ,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) bottom right/10px 10px,
-
-                  /*borders*/
-                  linear-gradient(to top   ,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) top   /calc(100% - 2*10px) 10px,
-                  linear-gradient(to bottom,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) bottom/calc(100% - 2*10px) 10px,
-                  linear-gradient(to right ,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) right /10px calc(100% - 2*10px),
-                  linear-gradient(to left  ,rgba(61, 39, 65, 0) 20%, rgba(206, 147, 216, 0.3)) left  /10px calc(100% - 2*10px);
-                background-repeat:no-repeat;`;
+  const DesignCardContent = () => {
+    const theme = useTheme();
+    return (
+      <Box height="100%" position="relative">
+        <CardMedia
+          sx={{
+            height: '100%',
+            objectFit: 'scale-down',
+            overflow: 'hidden'
+          }}
+          component="img"
+          image={img}
+          alt={`Race visual ${title}`}
+        />
+        <Typography
+          position="absolute"
+          bottom={5}
+          width={'100%'}
+          textAlign="center"
+          color="white"
+          sx={{ textShadow: `${theme.palette.primary.main} 0px 0px 1px` }}
+        >
+          {title}
+        </Typography>
+      </Box>
+    );
+  };
 
   return (
-    // @ts-ignore
-    <ReactCardFlip isFlipped={isFlipped} flipDirection="horizontal" key={`flip-card-${title}`}>
-      {...[true, false].map((recto) => (
-        <Card
-          key={`flip-card-${title}-${recto ? 'recto' : 'verso'}`}
-          style={{
-            width: `${0.65 * height}px`,
-            height: `${height}px`
-          }}
-          // @ts-ignore
-          sx={borderCSS}
-        >
-          <CardActionArea
-            onClick={() => {
-              if (children) setIsFlipped((prevState) => !prevState);
-              if (onClick) onClick();
-            }}
-            sx={{
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column'
-            }}
-          >
-            <>
-              {recto ? (
-                <CardMedia
-                  sx={{
-                    objectFit: 'scale-down',
-                    height: '100%',
-                    overflow: 'hidden',
-                    zIndex: -1,
-                    paddingTop: '15px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)'
-                  }}
-                  component="img"
-                  image={img}
-                  alt={`Race visual ${title}`}
-                />
-              ) : (
-                children
-              )}
-              <Typography position="absolute" bottom={20}>
-                {title}
-              </Typography>
-              <Box sx={{ position: 'absolute', bottom: 10, right: 10 }}>
-                {recto ? <RotateRight /> : <RotateLeft />}
-              </Box>
-            </>
-          </CardActionArea>
-        </Card>
-      ))}
-    </ReactCardFlip>
+    <Card
+      key={`card-${title}`}
+      elevation={0}
+      style={{
+        justifySelf: 'center',
+        width: `${0.65 * height}px`,
+        height: `${height}px`,
+        border: selected ? '2px solid rgb(144, 202, 249)' : '1px solid transparent',
+        boxShadow: selected
+          ? '0 0 12px rgba(144, 202, 249, 0.4)'
+          : '0 0 6px rgba(255, 255, 255, 0.3)',
+        borderRadius: 16,
+        padding: 5
+      }}
+    >
+      {onClick ? (
+        <CardActionArea sx={{ height: '100%' }} onClick={() => onClick?.()}>
+          <DesignCardContent />
+        </CardActionArea>
+      ) : (
+        <DesignCardContent />
+      )}
+    </Card>
+  );
+}
+
+function CardCarousel({
+  data,
+  activeStep,
+  handleNext,
+  handleBack,
+  swipeHandlers
+}: {
+  data: (DefaultRepresentation & { img?: string })[];
+  activeStep: number;
+  handleNext: () => void;
+  handleBack: () => void;
+  swipeHandlers: any;
+}) {
+  const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
+
+  return (
+    <Box
+      display="flex"
+      gap="15px"
+      width="100%"
+      justifyContent="center"
+      alignItems="center"
+      {...swipeHandlers}
+    >
+      <IconButton onClick={handleBack} size="large">
+        <Icon>
+          <ArrowBackIos />
+        </Icon>
+      </IconButton>
+      {!isMobile && (
+        <DesignCard
+          title={data[activeStep > 0 ? activeStep - 1 : data.length - 1].name}
+          img={data[activeStep > 0 ? activeStep - 1 : data.length - 1].img || ''}
+          height={300}
+          onClick={handleBack}
+        />
+      )}
+      <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true} />
+
+      {!isMobile && (
+        <DesignCard
+          title={data[activeStep < data.length - 1 ? activeStep + 1 : 0].name}
+          img={data[activeStep < data.length - 1 ? activeStep + 1 : 0].img || ''}
+          height={300}
+          onClick={handleNext}
+        />
+      )}
+      <IconButton onClick={handleNext} size="large">
+        <Icon>
+          <ArrowForwardIos />
+        </Icon>
+      </IconButton>
+    </Box>
   );
 }
 
@@ -298,62 +330,13 @@ export function CharacterRaceForm({
   return (
     <Box>
       {races && (
-        <Fragment>
-          <MobileStepper
-            variant="dots"
-            steps={races.length}
-            position="static"
-            activeStep={activeStep}
-            sx={{ paddingTop: 0 }}
-            nextButton={
-              <Button size="small" onClick={handleNext}>
-                <KeyboardArrowRight />
-              </Button>
-            }
-            backButton={
-              <Button size="small" onClick={handleBack}>
-                <KeyboardArrowLeft />
-              </Button>
-            }
-          />
-
-          <Box
-            display="flex"
-            gap="15px"
-            width="100%"
-            justifyContent="center"
-            alignItems="center"
-            {...swipeHandlers}
-          >
-            <DesignFlipCard
-              title={races[activeStep > 0 ? activeStep - 1 : races.length - 1].name}
-              img={races[activeStep > 0 ? activeStep - 1 : races.length - 1].img || ''}
-              height={300}
-              onClick={handleBack}
-            />
-
-            <DesignFlipCard title={races[activeStep].name} img={races[activeStep].img || ''}>
-              <CardContent
-                sx={{ flex: 1, alignContent: 'center', maxHeight: '80%', overflow: 'scroll' }}
-              >
-                <Typography
-                  typography="justifySelf"
-                  sx={{ color: 'text.secondary' }}
-                  variant="body2"
-                >
-                  {races[activeStep].desc}
-                </Typography>
-              </CardContent>
-            </DesignFlipCard>
-
-            <DesignFlipCard
-              title={races[activeStep < races.length - 1 ? activeStep + 1 : 0].name}
-              img={races[activeStep < races.length - 1 ? activeStep + 1 : 0].img || ''}
-              height={300}
-              onClick={handleNext}
-            />
-          </Box>
-        </Fragment>
+        <CardCarousel
+          data={races}
+          activeStep={activeStep}
+          handleNext={handleNext}
+          handleBack={handleBack}
+          swipeHandlers={swipeHandlers}
+        />
       )}
 
       {!!raceInfo?.subraces?.length && (
