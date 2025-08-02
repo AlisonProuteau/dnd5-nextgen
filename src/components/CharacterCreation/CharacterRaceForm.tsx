@@ -1,21 +1,20 @@
 import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
-import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Button,
-  Card,
-  CardActionArea,
-  CardMedia,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   FormControl,
-  Icon,
   IconButton,
   InputLabel,
   MenuItem,
   Select,
-  Typography,
-  useMediaQuery,
-  useTheme
+  Typography
 } from '@mui/material';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
@@ -28,6 +27,12 @@ import toast from 'react-hot-toast';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from 'src/providers/AuthProvider';
 // import type { races } from '../CharacterGenerator/utils/imageUtils';
+import { Close, ExpandMore } from '@mui/icons-material';
+import { AccordionButton } from '@shared/AccordionButton';
+import { IconText } from '@shared/IconText';
+import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
+import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
+import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
 import {
   mapDataForForm,
@@ -40,131 +45,6 @@ interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
-}
-
-function DesignCard({
-  title,
-  img,
-  height = 400,
-  onClick,
-  selected = false
-}: {
-  title: string;
-  img: string;
-  height?: number;
-  onClick?: () => any;
-  selected?: boolean;
-}) {
-  const DesignCardContent = () => {
-    const theme = useTheme();
-    return (
-      <Box height="100%" position="relative">
-        <CardMedia
-          sx={{
-            height: '100%',
-            objectFit: 'scale-down',
-            overflow: 'hidden'
-          }}
-          component="img"
-          image={img}
-          alt={`Race visual ${title}`}
-        />
-        <Typography
-          position="absolute"
-          bottom={5}
-          width={'100%'}
-          textAlign="center"
-          color="white"
-          sx={{ textShadow: `${theme.palette.primary.main} 0px 0px 1px` }}
-        >
-          {title}
-        </Typography>
-      </Box>
-    );
-  };
-
-  return (
-    <Card
-      key={`card-${title}`}
-      elevation={0}
-      style={{
-        justifySelf: 'center',
-        width: `${0.65 * height}px`,
-        height: `${height}px`,
-        border: selected ? '2px solid rgb(144, 202, 249)' : '1px solid transparent',
-        boxShadow: selected
-          ? '0 0 12px rgba(144, 202, 249, 0.4)'
-          : '0 0 6px rgba(255, 255, 255, 0.3)',
-        borderRadius: 16,
-        padding: 5
-      }}
-    >
-      {onClick ? (
-        <CardActionArea sx={{ height: '100%' }} onClick={() => onClick?.()}>
-          <DesignCardContent />
-        </CardActionArea>
-      ) : (
-        <DesignCardContent />
-      )}
-    </Card>
-  );
-}
-
-function CardCarousel({
-  data,
-  activeStep,
-  handleNext,
-  handleBack,
-  swipeHandlers
-}: {
-  data: (DefaultRepresentation & { img?: string })[];
-  activeStep: number;
-  handleNext: () => void;
-  handleBack: () => void;
-  swipeHandlers: any;
-}) {
-  const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
-
-  return (
-    <Box
-      display="flex"
-      gap="15px"
-      width="100%"
-      justifyContent="center"
-      alignItems="center"
-      {...swipeHandlers}
-      margin={2}
-    >
-      <IconButton onClick={handleBack} size="large">
-        <Icon>
-          <ArrowBackIos />
-        </Icon>
-      </IconButton>
-      {!isMobile && (
-        <DesignCard
-          title={data[activeStep > 0 ? activeStep - 1 : data.length - 1].name}
-          img={data[activeStep > 0 ? activeStep - 1 : data.length - 1].img || ''}
-          height={300}
-          onClick={handleBack}
-        />
-      )}
-      <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true} />
-
-      {!isMobile && (
-        <DesignCard
-          title={data[activeStep < data.length - 1 ? activeStep + 1 : 0].name}
-          img={data[activeStep < data.length - 1 ? activeStep + 1 : 0].img || ''}
-          height={300}
-          onClick={handleNext}
-        />
-      )}
-      <IconButton onClick={handleNext} size="large">
-        <Icon>
-          <ArrowForwardIos />
-        </Icon>
-      </IconButton>
-    </Box>
-  );
 }
 
 export function CharacterRaceForm({
@@ -181,6 +61,7 @@ export function CharacterRaceForm({
   const [selectedTraits, setSelectedTraits] = useState<ChoiceObjectType[]>([]);
   const [selectedSpells, setSelectedSpells] = useState<ChoiceObjectType[]>([]);
   const [activeStep, setActiveStep] = useState(0);
+  const [traitsOpen, setTraitsOpen] = useState(false);
 
   const { data: races } = useQuery({
     queryKey: ['fetchRaces', version],
@@ -340,6 +221,21 @@ export function CharacterRaceForm({
         />
       )}
 
+      <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={2}>
+        {raceInfo?.ability_bonuses.map((ability) => {
+          return (
+            <IconText
+              label={ability.ability_score.name.toLocaleLowerCase()}
+              value={`+${ability.bonus}`}
+              Icon={getAbilityIcon(ability.ability_score.index)}
+              color="grey"
+              top="35px"
+              size="40px"
+            />
+          );
+        })}
+      </Box>
+
       {!!raceInfo?.subraces?.length && (
         <FormControl fullWidth margin="dense">
           <InputLabel htmlFor="subRace">Sub-Race</InputLabel>
@@ -368,30 +264,79 @@ export function CharacterRaceForm({
         </FormControl>
       )}
 
-      {/* TODO: Finish character description display */}
-      {/* TODO: Should I add for subraces? */}
-      <Box margin={2}>
-        {selectedRace && <Typography>{selectedRace.desc}</Typography>}
-        {raceInfo && (
-          <Box>
-            <Typography>{raceInfo.size_description}</Typography>
-            <Typography>{raceInfo.speed}ft</Typography>
-            <Typography> {raceInfo.age}</Typography>
-            <Typography> {raceInfo.alignment}</Typography>
-            <Typography> {raceInfo.language_desc}</Typography>
-            {raceInfo.starting_proficiencies?.length ? (
-              <Typography> {JSON.stringify(raceInfo.starting_proficiencies)}</Typography>
-            ) : null}
+      {/* TODO: Add how to play*/}
+      {/* TODO: Add subrace info */}
+      <Box marginY={2} display="flex" flexDirection="column" gap={1}>
+        {selectedRace && raceInfo && (
+          <Fragment>
+            <Accordion key={`${selectedRace.index}-description`} disableGutters>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2">Description</Typography>
+                </Divider>
+              </AccordionSummary>
+              <AccordionDetails sx={{ textAlign: 'justify' }}>
+                <Typography>{selectedRace.desc}</Typography>
+              </AccordionDetails>
+            </Accordion>
+            <Accordion key={`${raceInfo.index}-characteristics`} disableGutters>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2">Characteristics</Typography>
+                </Divider>
+              </AccordionSummary>
+              <AccordionDetails sx={{ textAlign: 'justify' }}>
+                <Typography variant="overline">Size</Typography>
+                <Typography marginBottom={2}>{raceInfo.size_description}</Typography>
+
+                <Typography variant="overline">Speed</Typography>
+                <Typography marginBottom={2}>{raceInfo.speed}ft</Typography>
+
+                <Typography variant="overline">Age</Typography>
+                <Typography marginBottom={2}>{raceInfo.age}</Typography>
+
+                <Typography variant="overline">Alignment</Typography>
+                <Typography marginBottom={2}>{raceInfo.alignment}</Typography>
+
+                <Typography variant="overline">Languages</Typography>
+                <Typography marginBottom={2}>{raceInfo.language_desc}</Typography>
+
+                {raceInfo.starting_proficiencies?.length ? (
+                  <Fragment>
+                    <Typography variant="overline">Starting Proficiencies:</Typography>
+                    <Typography marginBottom={2}>
+                      {raceInfo.starting_proficiencies.map((p) => p.name).join(', ')}
+                    </Typography>
+                  </Fragment>
+                ) : null}
+              </AccordionDetails>
+            </Accordion>
             {raceInfo.traits?.length ? (
-              <Typography>Traits: {raceInfo.traits?.map((d) => d.name).join(' ; ')}</Typography>
+              <Fragment>
+                <AccordionButton fullWidth title="Traits" onClick={() => setTraitsOpen(true)} />
+                <Dialog open={traitsOpen} onClose={() => setTraitsOpen(false)}>
+                  <DialogTitle>Traits</DialogTitle>
+                  <IconButton
+                    aria-label="close"
+                    onClick={() => setTraitsOpen(false)}
+                    sx={(theme) => ({
+                      position: 'absolute',
+                      right: 2,
+                      top: 2,
+                      color: theme.palette.grey[500]
+                    })}
+                  >
+                    <Close />
+                  </IconButton>
+                  <DialogContent sx={{ paddingTop: 0 }}>
+                    <TraitsDisplay
+                      character={{ traits: raceInfo.traits, version: version || 'Legacy' }}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </Fragment>
             ) : null}
-            <Typography>
-              Ability Bonuses:{' '}
-              {raceInfo.ability_bonuses
-                .map((d) => `${d.ability_score.name} +${d.bonus}`)
-                .join(' ; ')}
-            </Typography>
-          </Box>
+          </Fragment>
         )}
       </Box>
 
