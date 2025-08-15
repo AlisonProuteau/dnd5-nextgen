@@ -1,4 +1,5 @@
 import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { Close, ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -20,16 +21,14 @@ import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
+import { AccordionButton } from '@shared/AccordionButton';
+import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { useSwipeable } from 'react-swipeable';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-// import type { races } from '../CharacterGenerator/utils/imageUtils';
-import { Close, ExpandMore } from '@mui/icons-material';
-import { AccordionButton } from '@shared/AccordionButton';
-import { IconText } from '@shared/IconText';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
 import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
@@ -137,18 +136,16 @@ export function CharacterRaceForm({
     }
   }, [races, activeStep]);
 
-  const handleNext = () =>
-    setActiveStep((prevActiveStep) =>
-      prevActiveStep < (races?.length || 0) - 1 ? prevActiveStep + 1 : 0
-    );
-  const handleBack = () =>
-    setActiveStep((prevActiveStep) =>
-      prevActiveStep > 0 ? prevActiveStep - 1 : (races?.length || 0) - 1
-    );
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: handleNext,
-    onSwipedRight: handleBack
-  });
+  const raceCardActions: Partial<SwipeableCallbacks> = {
+    onSwipedLeft: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep > 0 ? prevActiveStep - 1 : (races?.length || 0) - 1
+      ),
+    onSwipedRight: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep < (races?.length || 0) - 1 ? prevActiveStep + 1 : 0
+      )
+  };
 
   const isValid = () =>
     selectedRace?.index &&
@@ -209,20 +206,31 @@ export function CharacterRaceForm({
     selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
   };
 
+  const scrollOnOpen = useCallback(
+    ({ currentTarget }: { currentTarget: EventTarget & Element }, expanded: boolean) => {
+      expanded && setTimeout(() => currentTarget.scrollIntoView({ behavior: 'smooth' }), 100);
+    },
+    []
+  );
+
   return (
     <Box>
-      {races && (
-        <CardCarousel
-          data={races}
-          activeStep={activeStep}
-          handleNext={handleNext}
-          handleBack={handleBack}
-          swipeHandlers={swipeHandlers}
-        />
-      )}
+      {races && <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions} />}
 
       <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={2}>
         {raceInfo?.ability_bonuses.map((ability) => {
+          return (
+            <IconText
+              label={ability.ability_score.name.toLocaleLowerCase()}
+              value={`+${ability.bonus}`}
+              Icon={getAbilityIcon(ability.ability_score.index)}
+              color="grey"
+              top="35px"
+              size="40px"
+            />
+          );
+        })}
+        {subraceInfo?.ability_bonuses.map((ability) => {
           return (
             <IconText
               label={ability.ability_score.name.toLocaleLowerCase()}
@@ -264,22 +272,37 @@ export function CharacterRaceForm({
         </FormControl>
       )}
 
-      {/* TODO: Add how to play*/}
-      {/* TODO: Add subrace info */}
+      {/* TODO: Add how to play */}
       <Box marginY={2} display="flex" flexDirection="column" gap={1}>
         {selectedRace && raceInfo && (
           <Fragment>
-            <Accordion key={`${selectedRace.index}-description`} disableGutters>
+            <Accordion
+              key={`${selectedRace.index}-description`}
+              disableGutters
+              onChange={scrollOnOpen}
+            >
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
                   <Typography variant="subtitle2">Description</Typography>
                 </Divider>
               </AccordionSummary>
               <AccordionDetails sx={{ textAlign: 'justify' }}>
-                <Typography>{selectedRace.desc}</Typography>
+                <Typography variant="overline">{selectedRace.name}</Typography>
+                <Typography marginBottom={2}>{selectedRace.desc}</Typography>
+
+                {selectedSubrace && subraceInfo && (
+                  <Fragment>
+                    <Typography variant="overline">{selectedSubrace.name}</Typography>
+                    <Typography marginBottom={2}>{subraceInfo.desc}</Typography>
+                  </Fragment>
+                )}
               </AccordionDetails>
             </Accordion>
-            <Accordion key={`${raceInfo.index}-characteristics`} disableGutters>
+            <Accordion
+              key={`${raceInfo.index}-characteristics`}
+              disableGutters
+              onChange={scrollOnOpen}
+            >
               <AccordionSummary expandIcon={<ExpandMore />}>
                 <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
                   <Typography variant="subtitle2">Characteristics</Typography>
@@ -290,7 +313,7 @@ export function CharacterRaceForm({
                 <Typography marginBottom={2}>{raceInfo.size_description}</Typography>
 
                 <Typography variant="overline">Speed</Typography>
-                <Typography marginBottom={2}>{raceInfo.speed}ft</Typography>
+                <Typography marginBottom={2}>{subraceInfo?.speed ?? raceInfo.speed}ft</Typography>
 
                 <Typography variant="overline">Age</Typography>
                 <Typography marginBottom={2}>{raceInfo.age}</Typography>
@@ -301,19 +324,30 @@ export function CharacterRaceForm({
                 <Typography variant="overline">Languages</Typography>
                 <Typography marginBottom={2}>{raceInfo.language_desc}</Typography>
 
-                {raceInfo.starting_proficiencies?.length ? (
+                {raceInfo.starting_proficiencies?.length ||
+                subraceInfo?.starting_proficiencies?.length ? (
                   <Fragment>
                     <Typography variant="overline">Starting Proficiencies:</Typography>
                     <Typography marginBottom={2}>
-                      {raceInfo.starting_proficiencies.map((p) => p.name).join(', ')}
+                      {(raceInfo.starting_proficiencies || [])
+                        .concat(subraceInfo?.starting_proficiencies || [])
+                        .map((p) => p.name)
+                        .join(', ')}
                     </Typography>
                   </Fragment>
                 ) : null}
               </AccordionDetails>
             </Accordion>
-            {raceInfo.traits?.length ? (
+
+            {raceInfo.traits?.length || subraceInfo?.racial_traits.length ? (
               <Fragment>
-                <AccordionButton fullWidth title="Traits" onClick={() => setTraitsOpen(true)} />
+                <AccordionButton
+                  fullWidth
+                  title={`Traits (${
+                    (raceInfo?.traits || []).concat(subraceInfo?.racial_traits || []).length
+                  })`}
+                  onClick={() => setTraitsOpen(true)}
+                />
                 <Dialog open={traitsOpen} onClose={() => setTraitsOpen(false)}>
                   <DialogTitle>Traits</DialogTitle>
                   <IconButton
@@ -330,7 +364,11 @@ export function CharacterRaceForm({
                   </IconButton>
                   <DialogContent sx={{ paddingTop: 0 }}>
                     <TraitsDisplay
-                      character={{ traits: raceInfo.traits, version: version || 'Legacy' }}
+                      character={{
+                        traits: (raceInfo?.traits || []).concat(subraceInfo?.racial_traits || []),
+                        version: version || 'Legacy'
+                      }}
+                      useblackList={false}
                     />
                   </DialogContent>
                 </Dialog>
@@ -452,6 +490,7 @@ export function CharacterRaceForm({
           )}
         </Fragment>
       )}
+
       <Button
         sx={{ float: 'right', paddingBottom: '15px' }}
         disabled={!isValid()}

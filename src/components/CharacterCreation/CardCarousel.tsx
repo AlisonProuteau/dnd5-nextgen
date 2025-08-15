@@ -11,6 +11,8 @@ import {
   useTheme
 } from '@mui/material';
 import { DefaultRepresentation } from '@representations/common.representation';
+import { useSwipeable } from 'react-swipeable';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 
 function DesignCardContent({ title, img }: { title: string; img: string }) {
   const theme = useTheme();
@@ -84,17 +86,14 @@ function DesignCard({
 export function CardCarousel({
   data,
   activeStep,
-  handleNext,
-  handleBack,
-  swipeHandlers
+  cardActions
 }: {
   data: (DefaultRepresentation & { img?: string })[];
   activeStep: number;
-  handleNext: () => void;
-  handleBack: () => void;
-  swipeHandlers: any;
+  cardActions: Partial<SwipeableCallbacks>;
 }) {
   const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
+  const swipeHandlers = useSwipeable(cardActions);
 
   return (
     <Box
@@ -106,7 +105,7 @@ export function CardCarousel({
       {...swipeHandlers}
       marginBottom={2}
     >
-      <IconButton onClick={handleBack} size="large">
+      <IconButton onClick={cardActions.onSwipedLeft as () => void} size="large">
         <Icon>
           <ArrowBackIos />
         </Icon>
@@ -116,9 +115,10 @@ export function CardCarousel({
           title={data[activeStep > 0 ? activeStep - 1 : data.length - 1].name}
           img={data[activeStep > 0 ? activeStep - 1 : data.length - 1].img || ''}
           height={300}
-          onClick={handleBack}
+          onClick={cardActions.onSwipedLeft as () => void}
         />
       )}
+
       <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true} />
 
       {!isMobile && (
@@ -126,10 +126,10 @@ export function CardCarousel({
           title={data[activeStep < data.length - 1 ? activeStep + 1 : 0].name}
           img={data[activeStep < data.length - 1 ? activeStep + 1 : 0].img || ''}
           height={300}
-          onClick={handleNext}
+          onClick={cardActions.onSwipedRight as () => void}
         />
       )}
-      <IconButton onClick={handleNext} size="large">
+      <IconButton onClick={cardActions.onSwipedRight as () => void} size="large">
         <Icon>
           <ArrowForwardIos />
         </Icon>

@@ -11,15 +11,17 @@ import { blackList } from './utils';
 
 export function TraitsDisplay({
   character,
-  expanded = false
+  expanded = false,
+  useblackList = true
 }: {
   character: Partial<Character>;
   expanded?: boolean;
+  useblackList?: boolean;
 }) {
   const { data: traits } = useQueries({
     queries:
       character.traits
-        ?.filter(({ index }) => !blackList.includes(index))
+        ?.filter(({ index }) => (useblackList ? !blackList.includes(index) : true))
         ?.map(({ index }) => ({
           queryKey: ['fetchTrait', character.version, index],
           queryFn: async () => await getTrait(character.version || 'Legacy', index),
