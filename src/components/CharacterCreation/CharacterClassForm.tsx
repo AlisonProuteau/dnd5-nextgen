@@ -32,6 +32,7 @@ interface CharacterClassFormProps {
   proficiencies?: ChoiceSelection[];
 }
 
+// TODO: Update with new design
 export function CharacterClassForm({
   onNext,
   onPrev,
