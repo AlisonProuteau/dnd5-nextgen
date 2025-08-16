@@ -50,22 +50,17 @@ interface CharacterRaceFormProps {
   languages?: ChoiceSelection[];
 }
 
-// TODO: Move somewhere either file or firestore
-const RaceGuide: {
+export interface GuideType {
   index: string;
   name: string;
   playstyle: string;
   pros: string[];
   cons: string[];
-  bestFor: { classes: DefaultRepresentation[]; reason: string }[];
-  subraces?: {
-    index: string;
-    name: string;
-    pros: string[];
-    playstyle: string;
-    bestFor: { classes: DefaultRepresentation[]; reason: string }[];
-  }[];
-}[] = [
+  bestFor: { instances: DefaultRepresentation[]; reason: string }[];
+}
+
+// TODO: Move somewhere either file or firestore
+const RaceGuide: (GuideType & { subraces?: Omit<GuideType, 'cons'>[] })[] = [
   {
     index: 'dragonborn',
     name: 'Dragonborn',
@@ -80,7 +75,7 @@ const RaceGuide: {
     ],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Barbarian',
             index: 'barbarian'
@@ -94,7 +89,7 @@ const RaceGuide: {
           'Their natural strength bonus and resistance to a damage type make them ideal frontline combatants.'
       },
       {
-        classes: [
+        instances: [
           {
             name: 'Paladin',
             index: 'paladin'
@@ -104,7 +99,7 @@ const RaceGuide: {
           "Their strength bonus pairs well with the class, and their honorable nature fits the Paladin's code."
       },
       {
-        classes: [
+        instances: [
           {
             name: 'Sorcerer',
             index: 'sorcerer'
@@ -128,7 +123,7 @@ const RaceGuide: {
     cons: ['Slower than other races, with a base speed of 25 feet.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Cleric',
             index: 'cleric'
@@ -159,7 +154,7 @@ const RaceGuide: {
         pros: ['Bonus to Wisdom and an extra hit point per level.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Cleric',
                 index: 'cleric'
@@ -168,7 +163,7 @@ const RaceGuide: {
             reason: 'Wisdom bonus is essential.'
           },
           {
-            classes: [
+            instances: [
               {
                 name: 'Fighter',
                 index: 'fighter'
@@ -185,7 +180,7 @@ const RaceGuide: {
         pros: ['Bonus to Strength and proficiency in light and medium armor.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Barbarian',
                 index: 'barbarian'
@@ -219,7 +214,7 @@ const RaceGuide: {
     cons: ['Some subraces have vulnerabilities.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Wizard',
             index: 'wizard'
@@ -248,7 +243,7 @@ const RaceGuide: {
         pros: ['Bonus to Intelligence.', 'Learns a bonus wizard cantrip.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Wizard',
                 index: 'wizard'
@@ -257,7 +252,7 @@ const RaceGuide: {
             reason: 'Intelligence is their main spellcasting ability.'
           },
           {
-            classes: [
+            instances: [
               {
                 name: 'Rogue',
                 index: 'rogue'
@@ -278,7 +273,7 @@ const RaceGuide: {
         ],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Ranger',
                 index: 'ranger'
@@ -307,7 +302,7 @@ const RaceGuide: {
     cons: ['Small size, with a base speed of 25 feet.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Druid',
             index: 'druid'
@@ -334,7 +329,7 @@ const RaceGuide: {
         pros: ['Bonus to Dexterity.', 'Can speak with small animals and cast a minor illusion.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Druid',
                 index: 'druid'
@@ -343,7 +338,7 @@ const RaceGuide: {
             reason: 'Dexterity and talking to animals are great features.'
           },
           {
-            classes: [
+            instances: [
               {
                 name: 'Ranger',
                 index: 'ranger'
@@ -361,7 +356,7 @@ const RaceGuide: {
         pros: ['Bonus to Constitution.', 'Can tinker with small mechanical devices.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Wizard',
                 index: 'wizard'
@@ -387,7 +382,7 @@ const RaceGuide: {
     cons: ["Lacks a specific racial 'niche' compared to other races."],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Bard',
             index: 'bard'
@@ -404,7 +399,7 @@ const RaceGuide: {
         reason: 'Their Charisma bonus is essential for these classes.'
       },
       {
-        classes: [
+        instances: [
           {
             name: 'Rogue',
             index: 'rogue'
@@ -429,7 +424,7 @@ const RaceGuide: {
     cons: ['Small size, with a base speed of 25 feet.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Rogue',
             index: 'rogue'
@@ -459,7 +454,7 @@ const RaceGuide: {
         pros: ['Bonus to Charisma.', 'Can hide behind larger creatures.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Rogue',
                 index: 'rogue'
@@ -468,7 +463,7 @@ const RaceGuide: {
             reason: 'Dexterity bonus and the ability to hide are key for stealth.'
           },
           {
-            classes: [
+            instances: [
               {
                 name: 'Bard',
                 index: 'bard'
@@ -485,7 +480,7 @@ const RaceGuide: {
         pros: ['Bonus to Constitution.', 'Natural resistance to poison.'],
         bestFor: [
           {
-            classes: [
+            instances: [
               {
                 name: 'Fighter',
                 index: 'fighter'
@@ -516,7 +511,7 @@ const RaceGuide: {
     cons: ['Fewer features that assist with roleplaying or utility outside of combat.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Barbarian',
             index: 'barbarian'
@@ -547,7 +542,7 @@ const RaceGuide: {
     cons: ['Lacks special senses like Darkvision and does not have any natural resistances.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Any class',
             index: 'any'
@@ -571,7 +566,7 @@ const RaceGuide: {
     cons: ['Often viewed with suspicion and fear, which can complicate social interactions.'],
     bestFor: [
       {
-        classes: [
+        instances: [
           {
             name: 'Bard',
             index: 'bard'
@@ -592,8 +587,8 @@ const RaceGuide: {
   }
 ];
 
-// TODO: Move sub-components, maybe the playstyle section, to a separate file
-function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
+// TODO: Move subraces-components, maybe the playstyle section, to a separate file
+export function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
   const isPros = type === 'pros';
 
   return (
@@ -611,17 +606,17 @@ function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' })
   );
 }
 
-function BestForSection({ bestForArray }: { bestForArray: any }) {
+export function BestForSection({ bestForArray }: { bestForArray: GuideType['bestFor'] }) {
   return (
     <List>
       <Typography variant="overline">Best For:</Typography>
-      {bestForArray.map((bestFor: any, index: any) => (
+      {bestForArray.map((bestFor, index) => (
         <ListItem
           key={`bestFor-${index}`}
           sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}
         >
           <Box sx={{ display: 'flex', gap: 1 }}>
-            {bestFor.classes.map((cls: any, classIndex: any) => (
+            {bestFor.instances.map((cls, classIndex) => (
               <Chip key={classIndex} label={cls.name} size="small" variant="outlined" />
             ))}
           </Box>
@@ -839,11 +834,11 @@ export function CharacterRaceForm({
 
       {!!raceInfo?.subraces?.length && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="subRace">Sub-Race</InputLabel>
+          <InputLabel htmlFor="subRace">subraces-Race</InputLabel>
           <Select
             fullWidth
             id="subRace"
-            label="Sub-Race"
+            label="subraces-Race"
             value={selectedSubrace?.index || raceInfo.subraces[0].index}
             onChange={({ target }) => {
               setSelectedProficiencies([]);
