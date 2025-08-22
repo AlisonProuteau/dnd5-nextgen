@@ -8,11 +8,19 @@ import { useQueries, UseQueryResult } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { blackList } from './utils';
 
-export function FeaturesDisplay({ character }: { character: Partial<Character> }) {
+export function FeaturesDisplay({
+  character,
+  expanded = false,
+  useblackList = true
+}: {
+  character: Partial<Character>;
+  expanded?: boolean;
+  useblackList?: boolean;
+}) {
   const { data: features } = useQueries({
     queries:
       character.features
-        ?.filter(({ index }) => !blackList.includes(index))
+        ?.filter(({ index }) => (useblackList ? !blackList.includes(index) : true))
         ?.map(({ index }) => ({
           queryKey: ['fetchFeature', character.version, index],
           queryFn: async () => await getFeature(character.version || 'Legacy', index),
@@ -47,7 +55,7 @@ export function FeaturesDisplay({ character }: { character: Partial<Character> }
     features && (
       <Box paddingTop="15px">
         {features.map((feature) => (
-          <Accordion key={feature.index}>
+          <Accordion key={feature.index} defaultExpanded={expanded}>
             <AccordionSummary expandIcon={<ExpandMore />}>{feature.name}</AccordionSummary>
             <AccordionDetails sx={{ textAlign: 'justify' }}>
               {character.features
