@@ -1,17 +1,9 @@
 import { getAllClasses, getClassInfo, getFeature, getSubclassInfo } from '@api/ressources';
-import { Close, ExpandMore } from '@mui/icons-material';
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Box,
   Button,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Divider,
   FormControl,
-  IconButton,
   InputLabel,
   MenuItem,
   Select,
@@ -22,13 +14,11 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { AccordionButton } from '@shared/AccordionButton';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { CardCarousel } from './CardCarousel';
 import {
   mapDataForForm,
@@ -37,7 +27,8 @@ import {
   type ChoiceSelection
 } from './characterCreation.utils';
 import { Choices } from './Choices';
-import { BestForSection, ClassGuide, ProConList } from './utils';
+import { SelectionDetails } from './SelectionDetails';
+import { ClassGuide } from './utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -58,7 +49,6 @@ export function CharacterClassForm({
   const [selectedFeatures, setSelectedFeatures] = useState<ChoiceObjectType[]>([]);
   const [selectedExpertises, setSelectedExpertises] = useState<ChoiceObjectType[]>([]);
   const [activeStep, setActiveStep] = useState(0);
-  const [featuresOpen, setFeaturesOpen] = useState(false);
 
   const { data: classes } = useQuery({
     queryKey: ['fetchClasses', version],
@@ -217,13 +207,6 @@ export function CharacterClassForm({
       )
   };
 
-  const scrollOnOpen = useCallback(
-    ({ currentTarget }: { currentTarget: EventTarget & Element }, expanded: boolean) => {
-      expanded && setTimeout(() => currentTarget.scrollIntoView({ behavior: 'smooth' }), 100);
-    },
-    []
-  );
-
   const selectedClassPlaystyle = useMemo(
     () => ClassGuide.find(({ index }) => index === selectedClass?.index),
     [selectedClass?.index]
@@ -265,167 +248,15 @@ export function CharacterClassForm({
         </FormControl>
       )}
 
-      <Box marginY={2} display="flex" flexDirection="column" gap={1}>
-        {selectedClass && classInfo && (
-          <Fragment>
-            {/* TODO: should it be moved to a question mark action button? */}
-            {selectedClassPlaystyle && (
-              <Accordion
-                key={`${selectedClass.index}-howTo`}
-                disableGutters
-                onChange={scrollOnOpen}
-              >
-                <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2">How to Play</Typography>
-                  </Divider>
-                </AccordionSummary>
-                <AccordionDetails sx={{ textAlign: 'justify' }}>
-                  <Typography variant="overline">Playstyle</Typography>
-                  <Typography marginBottom={2}>{selectedClassPlaystyle.playstyle}</Typography>
-
-                  <Typography variant="overline">Evolution</Typography>
-                  <Typography marginBottom={2}>{selectedClassPlaystyle.evolution}</Typography>
-
-                  <ProConList items={selectedClassPlaystyle.pros} type="pros" />
-                  <ProConList items={selectedClassPlaystyle.cons} type="cons" />
-
-                  <BestForSection bestForArray={selectedClassPlaystyle.bestFor} />
-
-                  {selectedClassPlaystyle.subclasses?.length && (
-                    <Box>
-                      <Typography variant="overline">Subclasses</Typography>
-                      {selectedClassPlaystyle.subclasses.map((subclass) => (
-                        <Accordion key={subclass.index} disableGutters sx={{ boxShadow: 'none' }}>
-                          <AccordionSummary expandIcon={<ExpandMore />}>
-                            <Typography variant="overline" fontWeight="bold">
-                              {subclass.name}
-                            </Typography>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <Fragment>
-                              <Typography variant="overline">Playstyle</Typography>
-                              <Typography marginBottom={2}>{subclass.playstyle}</Typography>
-
-                              <Typography variant="overline">Evolution</Typography>
-                              <Typography marginBottom={2}>{subclass.evolution}</Typography>
-
-                              <BestForSection bestForArray={subclass.bestFor} />
-                            </Fragment>
-                          </AccordionDetails>
-                        </Accordion>
-                      ))}
-                    </Box>
-                  )}
-                </AccordionDetails>
-              </Accordion>
-            )}
-
-            <Accordion
-              key={`${selectedClass.index}-description`}
-              disableGutters
-              onChange={scrollOnOpen}
-            >
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-                  <Typography variant="subtitle2">Description</Typography>
-                </Divider>
-              </AccordionSummary>
-              <AccordionDetails sx={{ textAlign: 'justify' }}>
-                <Typography variant="overline">{selectedClass.name}</Typography>
-                <Typography marginBottom={2}>{selectedClass.desc}</Typography>
-                {/* TODO: Add to firestore */}
-
-                {selectedSubclass && subclassInfo && (
-                  <Fragment>
-                    <Typography variant="overline">
-                      {selectedSubclass.name} - {subclassInfo.subclass_flavor}
-                    </Typography>
-                    <Typography marginBottom={2}>{subclassInfo.desc}</Typography>
-                  </Fragment>
-                )}
-              </AccordionDetails>
-            </Accordion>
-
-            {/* selectedClass hit_die proficiencies saving_throws starting_equipment_options classInfo
-            ability_score_bonuses class_specific features prof_bonus */}
-            {/* <Accordion
-              key={`${classInfo.index}-characteristics`}
-              disableGutters
-              onChange={scrollOnOpen}
-            >
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-                  <Typography variant="subtitle2">Characteristics</Typography>
-                </Divider>
-              </AccordionSummary>
-              <AccordionDetails sx={{ textAlign: 'justify' }}>
-                <Typography variant="overline">Size</Typography>
-                <Typography marginBottom={2}>{classInfo.size_description}</Typography>
-
-                <Typography variant="overline">Speed</Typography>
-                <Typography marginBottom={2}>{classInfo?.speed ?? raceInfo.speed}ft</Typography>
-
-                <Typography variant="overline">Age</Typography>
-                <Typography marginBottom={2}>{classInfo.age}</Typography>
-
-                <Typography variant="overline">Alignment</Typography>
-                <Typography marginBottom={2}>{classInfo.alignment}</Typography>
-
-                <Typography variant="overline">Languages</Typography>
-                <Typography marginBottom={2}>{classInfo.language_desc}</Typography>
-
-                {classInfo.starting_proficiencies?.length ||
-                subraceInfo?.starting_proficiencies?.length ? (
-                  <Fragment>
-                    <Typography variant="overline">Starting Proficiencies:</Typography>
-                    <Typography marginBottom={2}>
-                      {(classInfo.starting_proficiencies || [])
-                        .concat(subraceInfo?.starting_proficiencies || [])
-                        .map((p) => p.name)
-                        .join(', ')}
-                    </Typography>
-                  </Fragment>
-                ) : null}
-              </AccordionDetails>
-            </Accordion> */}
-
-            {levelInfo?.features?.length ? (
-              <Fragment>
-                <AccordionButton
-                  fullWidth
-                  title={`Traits (${levelInfo.features.length})`}
-                  onClick={() => setFeaturesOpen(true)}
-                />
-                <Dialog open={featuresOpen} onClose={() => setFeaturesOpen(false)}>
-                  <DialogTitle>Features</DialogTitle>
-                  <IconButton
-                    aria-label="close"
-                    onClick={() => setFeaturesOpen(false)}
-                    sx={(theme) => ({
-                      position: 'absolute',
-                      right: 2,
-                      top: 2,
-                      color: theme.palette.grey[500]
-                    })}
-                  >
-                    <Close />
-                  </IconButton>
-                  <DialogContent sx={{ paddingTop: 0 }}>
-                    <FeaturesDisplay
-                      character={{
-                        features: levelInfo?.features,
-                        version: version || 'Legacy'
-                      }}
-                      useblackList={false}
-                    />
-                  </DialogContent>
-                </Dialog>
-              </Fragment>
-            ) : null}
-          </Fragment>
-        )}
-      </Box>
+      {selectedClass && classInfo && (
+        <SelectionDetails
+          playstyle={selectedClassPlaystyle}
+          selected={selectedClass}
+          subSelected={subclassInfo || undefined}
+          features={levelInfo?.features || []}
+          info={classInfo} // TODO: Add subclass info
+        />
+      )}
 
       {selectedClass && (
         <Fragment>
