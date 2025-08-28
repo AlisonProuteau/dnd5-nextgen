@@ -1178,10 +1178,125 @@ export const ClassGuide: (GuideType & {
           'This path is a powerful and durable spellcaster. They get a natural armor bonus and extra hit points early on. They evolve to be a master of a single damage type, gaining resistance and a boost to their damage spells. At high levels, they can grow a pair of wings and fly, becoming a true force of draconic power.'
       }
     ]
+  },
+  {
+    index: 'warlock',
+    name: 'Warlock',
+    playstyle:
+      'A powerful spellcaster who makes a pact with a supernatural being in exchange for a limited, but powerful, set of spells and abilities.',
+    pros: [
+      "Highly customizable through 'Eldritch Invocations', which alter and enhance their abilities.",
+      "The 'Pact Magic' feature allows them to regain all spell slots on a short rest."
+    ],
+    cons: [
+      'Has a very limited number of spell slots, which can be a major disadvantage in long adventuring days.',
+      'Relies on a very specific set of stats (Charisma, Constitution, and Dexterity), which can be difficult to manage.'
+    ],
+    evolution:
+      "The Warlock's journey is one of customization and deepening their connection with their patron. They start with a powerful cantrip and a limited number of spell slots. As they evolve, they customize their abilities with 'Eldritch Invocations' and can choose a pact boon to gain a special companion, weapon, or magical tome. By high levels, they become a master of a few powerful abilities, able to replicate spells, summon weapons, and gain a wide variety of passive abilities, and can even restore their power instantly with a short rest.",
+    bestFor: [
+      {
+        instances: [
+          {
+            name: 'Tiefling',
+            index: 'tiefling'
+          },
+          {
+            name: 'Half-Elf',
+            index: 'half-elf'
+          }
+        ],
+        reason:
+          "Both races offer bonuses to Charisma, which is the Warlock's key spellcasting ability."
+      }
+    ],
+    subclasses: [
+      {
+        index: 'fiend',
+        name: 'The Fiend',
+        playstyle:
+          'A pact with a powerful fiend, granting the warlock destructive magic and temporary hit points to fuel their combat prowess.',
+        bestFor: [
+          {
+            instances: [
+              {
+                name: 'Tiefling',
+                index: 'tiefling'
+              },
+              {
+                name: 'Human',
+                index: 'human'
+              }
+            ],
+            reason:
+              "The Tiefling's innate abilities and the Human's versatility are crucial for this damage-focused role."
+          }
+        ],
+        evolution:
+          'This path is a destructive and durable spellcaster. They gain temporary hit points for killing enemies early on. They evolve into a tanky damage dealer who can use their luck to turn the tide of battle and, at high levels, can send their enemies to hell, becoming an unstoppable force of destructive magic.'
+      }
+    ]
+  },
+  {
+    index: 'wizard',
+    name: 'Wizard',
+    playstyle:
+      'An arcane scholar who studies magic from a spellbook, learning new spells to overcome any challenge.',
+    pros: [
+      'Has the largest and most versatile spell list in the game.',
+      'Can learn new spells from scrolls and other sources, making them a master of all magical knowledge.'
+    ],
+    cons: [
+      'Has a very low hit point count, making them a vulnerable target.',
+      'Requires a high Intelligence score to be effective.'
+    ],
+    evolution:
+      "The Wizard's journey is one of ever-expanding knowledge. They begin with a spellbook and a limited number of spells. Their evolution is about gaining more and more spells and mastering their chosen school of magic. They become a versatile caster who can prepare for any situation, and at high levels, they can cast their favorite spells at will without using a spell slot, becoming a true master of the arcane arts.",
+    bestFor: [
+      {
+        instances: [
+          {
+            name: 'High Elf',
+            index: 'high-elf'
+          },
+          {
+            name: 'Gnome',
+            index: 'gnome'
+          }
+        ],
+        reason:
+          "The High Elf's bonus to Intelligence and the Gnome's magical resistance make them perfect for this scholarly role."
+      }
+    ],
+    subclasses: [
+      {
+        index: 'evocation',
+        name: 'School of Evocation',
+        playstyle:
+          'A master of raw magical power, specializing in spells that deal massive amounts of damage.',
+        bestFor: [
+          {
+            instances: [
+              {
+                name: 'High Elf',
+                index: 'high-elf'
+              },
+              {
+                name: 'Human',
+                index: 'human'
+              }
+            ],
+            reason:
+              "Both races offer bonuses to key stats, and the High Elf's Intelligence bonus and cantrip are great for this damage-focused role."
+          }
+        ],
+        evolution:
+          'This is a damage-focused path. They can sculpt their spells around allies early on, allowing them to use area-of-effect spells without harming their friends. They evolve into a master of raw magical power, gaining the ability to add their Intelligence modifier to spell damage and even cast spells at full power without a spell slot, becoming a true force of magical destruction.'
+      }
+    ]
   }
 ];
 
-// TODO: Move subraces-components, maybe the playstyle section, to a separate file
 export function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
   const isPros = type === 'pros';
 

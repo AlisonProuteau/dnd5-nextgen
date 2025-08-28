@@ -14,11 +14,13 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
+import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
+import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
 import {
   mapDataForForm,
@@ -214,10 +216,22 @@ export function CharacterClassForm({
 
   return (
     <Box>
-      {/* TODO: Add image to firestore */}
       {classes && (
         <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions} />
       )}
+
+      {/* {levelInfo?.ability_score_bonuses} */}
+      <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={5}>
+        {classInfo?.saving_throws.map((ability) => (
+          <IconText
+            label={ability.name.toLocaleLowerCase()}
+            Icon={getAbilityIcon(ability.index)}
+            color="grey"
+            top="35px"
+            size="40px"
+          />
+        ))}
+      </Box>
 
       {!!classInfo?.subclasses?.length && (
         <FormControl fullWidth margin="dense">
@@ -248,13 +262,24 @@ export function CharacterClassForm({
         </FormControl>
       )}
 
-      {selectedClass && classInfo && (
+      {selectedClass && classInfo && levelInfo && (
         <SelectionDetails
           playstyle={selectedClassPlaystyle}
           selected={selectedClass}
           subSelected={subclassInfo || undefined}
           features={levelInfo?.features || []}
-          info={classInfo} // TODO: Add subclass info
+          info={{
+            spellcasting: classInfo.spellcasting,
+            class_levels: classInfo.class_levels,
+            hit_die: classInfo.hit_die,
+            proficiencies: classInfo.proficiencies,
+            starting_equipment: classInfo.starting_equipment,
+            spells: subclassInfo?.spells,
+            subclass_levels: subclassInfo?.subclass_levels,
+            class_specific: levelInfo.class_specific,
+            subclass_specific: levelInfo.subclass_specific,
+            prof_bonus: levelInfo.prof_bonus
+          }} // TODO: Add subclass level info not pulled?
         />
       )}
 
@@ -325,6 +350,7 @@ export function CharacterClassForm({
             </Fragment>
           )}
 
+          {/* TODO: Expertise missing on druid subclass? */}
           {classFeatures.some((feature) => feature.feature_specific?.expertise_options) && (
             <Fragment>
               <Divider

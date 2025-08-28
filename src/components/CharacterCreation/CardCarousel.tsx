@@ -31,7 +31,7 @@ function DesignCardContent({ title, img }: { title: string; img: string }) {
       />
       <Typography
         position="absolute"
-        bottom={5}
+        bottom={-5}
         width={'100%'}
         textAlign="center"
         color="white"

@@ -11,7 +11,8 @@ import {
   IconButton,
   Typography
 } from '@mui/material';
-import type { Classes } from '@representations/character/class.representation';
+import type { Level } from '@representations/campaign/level.representation';
+import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { Race } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
@@ -40,7 +41,7 @@ export function SelectionDetails({
     );
   selected: DefaultRepresentation;
   subSelected?: { index: string; name: string; desc: string | string[]; subclass_flavor?: string };
-  info: Race | Classes | undefined;
+  info: Race | Partial<Classes & Subclass & Omit<Level, 'spellcasting'>> | undefined;
   traits?: Character['traits'];
   features?: Character['features'];
 }) {
@@ -131,7 +132,6 @@ export function SelectionDetails({
         <AccordionDetails sx={{ textAlign: 'justify' }}>
           <Typography variant="overline">{selected.name}</Typography>
           <Typography marginBottom={2}>{selected.desc}</Typography>
-          {/* TODO: Add to firestore for class*/}
 
           {subSelected && (
             <Fragment>
@@ -187,7 +187,110 @@ export function SelectionDetails({
         </Fragment>
       ) : null}
 
-      {/* TODO: add class info */}
+      {/* TODO: add missing class info + check ui/ux */}
+      {selected && info && 'class_levels' in info ? (
+        <Fragment>
+          <Accordion
+            key={`${selected.index}-characteristics`}
+            disableGutters
+            onChange={scrollOnOpen}
+          >
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                <Typography variant="subtitle2">Characteristics</Typography>
+              </Divider>
+            </AccordionSummary>
+            <AccordionDetails sx={{ textAlign: 'justify' }}>
+              <Box display={'flex'} flexWrap="wrap" marginBottom={2} justifyContent="space-evenly">
+                <Box>
+                  <Typography variant="overline">Hit Die</Typography>
+                  <Typography>{`1d${info.hit_die} per level`}</Typography>
+                </Box>
+
+                <Box>
+                  <Typography variant="overline">Proficiency Bonus</Typography>
+                  <Typography>{`1d${info.prof_bonus}`}</Typography>
+                </Box>
+              </Box>
+
+              {info.proficiencies?.length ? (
+                <Fragment>
+                  <Typography variant="overline">Proficiencies</Typography>
+                  <Typography marginBottom={2}>
+                    {info.proficiencies
+                      .map((p) => p.name)
+                      .filter((p) => !p.includes('Saving Throw'))
+                      .join(', ')}
+                  </Typography>
+                </Fragment>
+              ) : null}
+
+              {info.starting_equipment?.length ? (
+                <Fragment>
+                  <Typography variant="overline">Starting Equipment:</Typography>
+                  <Typography marginBottom={2}>
+                    {info.starting_equipment
+                      .map((e) => `${e.quantity} x ${e.equipment.name}`)
+                      .join(', ')}
+                  </Typography>
+                </Fragment>
+              ) : null}
+
+              {/* {classInfo?.class_levels} */}
+              {/* {subclassInfo?.subclass_levels} */}
+
+              {/* {levelInfo?.class_specific} */}
+              {/* {levelInfo?.subclass_specific} */}
+
+              {/* {classInfo?.spellcasting}  */}
+              {/* TODO: Spells not readable as is */}
+              {/* {info.spells?.length ? (
+                <Fragment>
+                  <Typography variant="overline">Spells</Typography>
+                  {
+                    // Object.entries(
+                    //   groupBy(info.spells, (s) =>
+                    //     s.prerequisites
+                    //       .map(
+                    //         (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
+                    //       )
+                    //       .join(' ; ')
+                    //   )
+                    // )
+                    Object.entries(
+                      groupBy(info.spells, (s) =>
+                        s.prerequisites
+                          .filter(({ type }) => type !== 'level')
+                          .map((p) => p.index)
+                          .join(' ; ')
+                      )
+                    ).map(([index, spells]) => (
+                      <Fragment>
+                        <Typography display="block" variant="caption" textTransform="capitalize">
+                          {index}
+                        </Typography>
+                        <Typography marginBottom={2}>
+                          {spells
+                            .map(
+                              (s) =>
+                                `${s.name} (${s.prerequisites
+                                  .filter(({ type }) => type === 'level')
+                                  .map((p) =>
+                                    p.name.replace(new RegExp(`^${selected.name}`), 'lvl')
+                                  )
+                                  .join(' ; ')})`
+                            )
+                            .join(', ')}
+                        </Typography>
+                      </Fragment>
+                    ))
+                  }
+                </Fragment>
+              ) : null} */}
+            </AccordionDetails>
+          </Accordion>
+        </Fragment>
+      ) : null}
 
       {[features, traits].map((value, index) => {
         const isFeature = index === 0;
