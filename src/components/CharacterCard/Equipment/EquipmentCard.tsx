@@ -14,6 +14,7 @@ import { Box } from '@mui/system';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { EquipmentLine } from '@shared/EquipmentLine';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
 import { Fragment, useCallback } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -22,7 +23,7 @@ export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipm
 
   const { data: properties } = useQueries({
     queries:
-      selectedEquipment.properties?.map(({ index }) => ({
+      uniqBy(selectedEquipment.properties, 'index')?.map(({ index }) => ({
         queryKey: ['fetchProperty', version, index],
         queryFn: async () => (version ? await getProperty(version, index) : null),
         enabled: !!index && !!version

@@ -77,11 +77,13 @@ export function CharacterRaceForm({
 
   const { data: raceTraits } = useQueries({
     queries:
-      (raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])?.map(({ index }) => ({
-        queryKey: ['fetchTrait', version, index],
-        queryFn: async () => (version ? await getTrait(version, index) : null),
-        enabled: !!index && !!version
-      })) || [],
+      uniqBy((raceInfo?.traits || []).concat(subraceInfo?.racial_traits || []), 'index')?.map(
+        ({ index }) => ({
+          queryKey: ['fetchTrait', version, index],
+          queryFn: async () => (version ? await getTrait(version, index) : null),
+          enabled: !!index && !!version
+        })
+      ) || [],
     combine: useCallback(
       (results: UseQueryResult<Trait | null, Error>[]) => ({
         data: results.map(({ data }) => data).filter((data) => data) as Trait[],
@@ -210,6 +212,7 @@ export function CharacterRaceForm({
         {raceInfo?.ability_bonuses.map((ability) => {
           return (
             <IconText
+              key={ability.ability_score.index}
               label={ability.ability_score.name.toLocaleLowerCase()}
               value={`+${ability.bonus}`}
               Icon={getAbilityIcon(ability.ability_score.index)}
@@ -222,6 +225,7 @@ export function CharacterRaceForm({
         {subraceInfo?.ability_bonuses.map((ability) => {
           return (
             <IconText
+              key={ability.ability_score.index}
               label={ability.ability_score.name.toLocaleLowerCase()}
               value={`+${ability.bonus}`}
               Icon={getAbilityIcon(ability.ability_score.index)}

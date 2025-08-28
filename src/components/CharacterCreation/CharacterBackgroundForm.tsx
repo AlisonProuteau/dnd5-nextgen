@@ -136,7 +136,7 @@ export function CharacterBackgroundForm({
             <InputLabel htmlFor="background">Background</InputLabel>
             <Select
               fullWidth
-              id="race"
+              id="background"
               label="Backgrounds"
               disabled={!backgrounds}
               value={selectedBackground?.index || ''}

@@ -5,6 +5,7 @@ import { Trait } from '@representations/abilities/trait.representation';
 import { DefaultRepresentation } from '@representations/common.representation';
 import { Character } from '@representations/user.representation';
 import { useQueries, UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
 import { Fragment, useCallback } from 'react';
 import { ActionInfo } from './ActionInfo';
 import { blackList } from './utils';
@@ -20,7 +21,7 @@ export function TraitsDisplay({
 }) {
   const { data: traits } = useQueries({
     queries:
-      character.traits
+      uniqBy(character.traits, 'index')
         ?.filter(({ index }) => (useblackList ? !blackList.includes(index) : true))
         ?.map(({ index }) => ({
           queryKey: ['fetchTrait', character.version, index],
@@ -37,14 +38,16 @@ export function TraitsDisplay({
 
   const { data: subtraits } = useQueries({
     queries:
-      character.traits
-        ?.filter(({ subtraits }) => subtraits)
-        ?.flatMap(({ subtraits }) => subtraits as DefaultRepresentation[])
-        ?.map(({ index }) => ({
-          queryKey: ['fetchTrait', character.version, index],
-          queryFn: async () => await getTrait(character.version || 'Legacy', index),
-          enabled: !!index
-        })) || [],
+      uniqBy(
+        character.traits
+          ?.filter(({ subtraits }) => subtraits)
+          ?.flatMap(({ subtraits }) => subtraits as DefaultRepresentation[]),
+        'index'
+      )?.map(({ index }) => ({
+        queryKey: ['fetchTrait', character.version, index],
+        queryFn: async () => await getTrait(character.version || 'Legacy', index),
+        enabled: !!index
+      })) || [],
     combine: useCallback((results: UseQueryResult<Trait | null, Error>[]) => {
       return {
         data: results.map(({ data }) => data).filter((data) => data) as Trait[],

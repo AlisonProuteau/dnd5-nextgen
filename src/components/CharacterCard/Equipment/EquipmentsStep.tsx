@@ -6,7 +6,7 @@ import { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
-import { flatten, groupBy } from 'lodash';
+import { flatten, groupBy, uniqBy } from 'lodash';
 import { Fragment, useCallback, useState } from 'react';
 import { EquipmentCard } from './EquipmentCard';
 
@@ -16,7 +16,7 @@ export function Equipments({ character }: { character: Character }) {
 
   const { data: equipmentList } = useQueries({
     queries:
-      character?.equipments?.map(({ index }) => ({
+      uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character.version, index],
         queryFn: async () => await getEquipment(character.version, index),
         enabled: !!index

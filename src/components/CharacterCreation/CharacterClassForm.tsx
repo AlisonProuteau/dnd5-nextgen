@@ -16,6 +16,7 @@ import type { DefaultRepresentation } from '@representations/common.representati
 import type { CharacterFormData } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
@@ -112,7 +113,7 @@ export function CharacterClassForm({
 
   const { data: classFeatures } = useQueries({
     queries:
-      levelInfo?.features?.map(({ index }) => ({
+      uniqBy(levelInfo?.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', version, index],
         queryFn: async () => (version ? await getFeature(version, index) : null),
         enabled: !!index && !!version
@@ -224,6 +225,7 @@ export function CharacterClassForm({
       <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={5}>
         {classInfo?.saving_throws.map((ability) => (
           <IconText
+            key={ability.index}
             label={ability.name.toLocaleLowerCase()}
             Icon={getAbilityIcon(ability.index)}
             color="grey"

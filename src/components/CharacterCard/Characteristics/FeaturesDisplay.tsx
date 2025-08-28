@@ -5,6 +5,7 @@ import { Feature } from '@representations/abilities/feature.representation';
 import { DefaultRepresentation } from '@representations/common.representation';
 import { Character } from '@representations/user.representation';
 import { useQueries, UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
 import { useCallback } from 'react';
 import { blackList } from './utils';
 
@@ -19,7 +20,7 @@ export function FeaturesDisplay({
 }) {
   const { data: features } = useQueries({
     queries:
-      character.features
+      uniqBy(character.features, 'index')
         ?.filter(({ index }) => (useblackList ? !blackList.includes(index) : true))
         ?.map(({ index }) => ({
           queryKey: ['fetchFeature', character.version, index],
@@ -36,14 +37,16 @@ export function FeaturesDisplay({
 
   const { data: subfeatures } = useQueries({
     queries:
-      character.features
-        ?.filter(({ subfeatures }) => subfeatures)
-        ?.flatMap(({ subfeatures }) => subfeatures as DefaultRepresentation[])
-        ?.map(({ index }) => ({
-          queryKey: ['fetchFeature', character.version, index],
-          queryFn: async () => await getFeature(character.version || 'Legacy', index),
-          enabled: !!index
-        })) || [],
+      uniqBy(
+        character.features
+          ?.filter(({ subfeatures }) => subfeatures)
+          ?.flatMap(({ subfeatures }) => subfeatures as DefaultRepresentation[]),
+        'index'
+      )?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled: !!index
+      })) || [],
     combine: useCallback((results: UseQueryResult<Feature | null, Error>[]) => {
       return {
         data: results.map(({ data }) => data).filter((data) => data) as Feature[],
