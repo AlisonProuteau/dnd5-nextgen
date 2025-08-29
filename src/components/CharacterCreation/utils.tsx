@@ -1,5 +1,3 @@
-import { CancelOutlined, CheckCircleOutline } from '@mui/icons-material';
-import { Box, Chip, List, ListItem, ListItemIcon, Typography } from '@mui/material';
 import { DefaultRepresentation } from '@representations/common.representation';
 
 export interface GuideType {
@@ -1296,44 +1294,3 @@ export const ClassGuide: (GuideType & {
     ]
   }
 ];
-
-export function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
-  const isPros = type === 'pros';
-
-  return (
-    <List dense>
-      <Typography variant="overline">{isPros ? 'Pros:' : 'Cons:'}</Typography>
-      {items.map((item, index) => (
-        <ListItem key={`${type}-${index}`}>
-          <ListItemIcon sx={{ minWidth: '32px' }}>
-            {isPros ? <CheckCircleOutline color="success" /> : <CancelOutlined color="error" />}
-          </ListItemIcon>
-          <Typography variant="body2">{item}</Typography>
-        </ListItem>
-      ))}
-    </List>
-  );
-}
-
-export function BestForSection({ bestForArray }: { bestForArray: GuideType['bestFor'] }) {
-  return (
-    <List>
-      <Typography variant="overline">Best For:</Typography>
-      {bestForArray.map((bestFor, index) => (
-        <ListItem
-          key={`bestFor-${index}`}
-          sx={{ flexDirection: 'column', alignItems: 'flex-start', gap: 1 }}
-        >
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            {bestFor.instances.map((cls, classIndex) => (
-              <Chip key={classIndex} label={cls.name} size="small" variant="outlined" />
-            ))}
-          </Box>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {bestFor.reason}
-          </Typography>
-        </ListItem>
-      ))}
-    </List>
-  );
-}

@@ -13,29 +13,20 @@ import type { Race } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
-import { Fragment, useCallback, useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
 import { SpellList } from '../CharacterCard/Spells/SpellList';
-import { BestForSection, ProConList, type GuideType } from './utils';
+import { scrollOnOpen } from './characterCreation.utils';
 
 export function SelectionDetails({
-  playstyle,
   selected,
   subSelected,
   info,
   traits,
   features
 }: {
-  playstyle?: GuideType &
-    (
-      | { subraces?: Omit<GuideType, 'cons'>[] }
-      | {
-          evolution: string;
-          subclasses: (Omit<GuideType, 'pros' | 'cons'> & { evolution: string })[];
-        }
-    );
   selected: DefaultRepresentation;
   subSelected?: { index: string; name: string; desc: string | string[]; subclass_flavor?: string };
   info: Race | Partial<Classes & Subclass & Omit<Level, 'spellcasting'>> | undefined;
@@ -43,19 +34,6 @@ export function SelectionDetails({
   features?: Character['features'];
 }) {
   const { version } = useAuth();
-
-  const scrollOnOpen = useCallback(
-    ({ currentTarget }: { currentTarget: EventTarget & Element }, expanded: boolean) => {
-      expanded && setTimeout(() => currentTarget.scrollIntoView({ behavior: 'smooth' }), 100);
-    },
-    []
-  );
-
-  const subElement = useMemo(() => {
-    if (!playstyle) return null;
-    if ('subclasses' in playstyle) return playstyle.subclasses;
-    if ('subraces' in playstyle) return playstyle.subraces;
-  }, [playstyle]);
 
   const characterInfo = useMemo(
     () => ({
@@ -69,65 +47,6 @@ export function SelectionDetails({
 
   return (
     <Box marginY={2} display="flex" flexDirection="column" gap={1}>
-      {/* TODO: should it be moved to a question mark action button? */}
-      {playstyle && (
-        <Accordion key={`${selected.index}-howTo`} disableGutters onChange={scrollOnOpen}>
-          <AccordionSummary expandIcon={<ExpandMore />}>
-            <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-              <Typography variant="subtitle2">How to Play</Typography>
-            </Divider>
-          </AccordionSummary>
-          <AccordionDetails sx={{ textAlign: 'justify' }}>
-            <Typography variant="overline">Playstyle</Typography>
-            <Typography marginBottom={2}>{playstyle.playstyle}</Typography>
-
-            {'evolution' in playstyle && (
-              <Fragment>
-                <Typography variant="overline">Evolution</Typography>
-                <Typography marginBottom={2}>{playstyle.evolution}</Typography>
-              </Fragment>
-            )}
-
-            <ProConList items={playstyle.pros} type="pros" />
-            <ProConList items={playstyle.cons} type="cons" />
-
-            <BestForSection bestForArray={playstyle.bestFor} />
-
-            {subElement && (
-              <Box>
-                <Typography variant="overline">Subclasses</Typography>
-                {subElement.map((sub) => (
-                  <Accordion key={sub.index} disableGutters sx={{ boxShadow: 'none' }}>
-                    <AccordionSummary expandIcon={<ExpandMore />}>
-                      <Typography variant="overline" fontWeight="bold">
-                        {sub.name}
-                      </Typography>
-                    </AccordionSummary>
-                    <AccordionDetails>
-                      <Fragment>
-                        <Typography variant="overline">Playstyle</Typography>
-                        <Typography marginBottom={2}>{sub.playstyle}</Typography>
-
-                        {'pros' in sub && <ProConList items={sub.pros} type="pros" />}
-
-                        {'evolution' in sub && (
-                          <Fragment>
-                            <Typography variant="overline">Evolution</Typography>
-                            <Typography marginBottom={2}>{sub.evolution}</Typography>
-                          </Fragment>
-                        )}
-
-                        <BestForSection bestForArray={sub.bestFor} />
-                      </Fragment>
-                    </AccordionDetails>
-                  </Accordion>
-                ))}
-              </Box>
-            )}
-          </AccordionDetails>
-        </Accordion>
-      )}
-
       <Accordion key={`${selected.index}-description`} disableGutters onChange={scrollOnOpen}>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
@@ -192,7 +111,6 @@ export function SelectionDetails({
         </Fragment>
       ) : null}
 
-      {/* TODO: add missing class info + check ui/ux */}
       {selected && info && 'class_levels' in info ? (
         <Fragment>
           <Accordion
@@ -241,6 +159,7 @@ export function SelectionDetails({
                 </Fragment>
               ) : null}
 
+              {/* TODO: add missing class info + check ui/ux */}
               {/* {classInfo?.class_levels} */}
               {/* {subclassInfo?.subclass_levels} */}
 
@@ -251,49 +170,16 @@ export function SelectionDetails({
             </AccordionDetails>
           </Accordion>
 
-          {/* TODO: Spells not readable as is */}
-          {/* <Fragment>
-            <Typography variant="overline">Spells</Typography>
-            {
-              // Object.entries(
-              //   groupBy(info.spells, (s) =>
-              //     s.prerequisites
-              //       .map(
-              //         (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
-              //       )
-              //       .join(' ; ')
-              //   )
-              // )
-              Object.entries(
-                groupBy(info.spells, (s) =>
-                  s.prerequisites
-                    .filter(({ type }) => type !== 'level')
-                    .map((p) => p.index)
-                    .join(' ; ')
-                )
-              ).map(([index, spells]) => (
-                <Fragment>
-                  <Typography display="block" variant="caption" textTransform="capitalize">
-                    {index}
-                  </Typography>
-                  <Typography marginBottom={2}>
-                    {spells
-                      .map(
-                        (s) =>
-                          `${s.name} (${s.prerequisites
-                            .filter(({ type }) => type === 'level')
-                            .map((p) => p.name.replace(new RegExp(`^${selected.name}`), 'lvl'))
-                            .join(' ; ')})`
-                      )
-                      .join(', ')}
-                  </Typography>
-                </Fragment>
-              ))
-            }
-          </Fragment> */}
-
-          {/* TODO: Add pre-requisites (non-level)! */}
           {info.spells?.length ? (
+            // TODO: Add pre-requisites (non-level)!
+            //  groupBy(info.spells, (s) =>
+            //      s.prerequisites
+            //        .map(
+            //          (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
+            //        )
+            //         .join(' ; ')
+            //     )
+            //   )
             <AccordionButtonDialog
               title={`${subSelected?.name} Spells (${info.spells.length})`}
               fullWidth

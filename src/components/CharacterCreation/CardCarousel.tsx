@@ -1,24 +1,48 @@
-import { ArrowBackIos, ArrowForwardIos } from '@mui/icons-material';
+import { ArrowBackIos, ArrowForwardIos, QuestionMark } from '@mui/icons-material';
 import {
   Box,
   Card,
   CardActionArea,
   CardMedia,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Icon,
   IconButton,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme
 } from '@mui/material';
 import { DefaultRepresentation } from '@representations/common.representation';
+import { useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 
-function DesignCardContent({ title, img }: { title: string; img: string }) {
+function DesignCardContent({
+  title,
+  img,
+  moreInfofn
+}: {
+  title: string;
+  img: string;
+  moreInfofn?: () => void;
+}) {
   const theme = useTheme();
 
   return (
     <Box height="100%" position="relative">
+      {moreInfofn && (
+        <Tooltip title="How to play?" placement="right">
+          <IconButton
+            size="small"
+            sx={{ position: 'absolute', top: -5, right: -5 }}
+            onClick={moreInfofn}
+          >
+            <QuestionMark />
+          </IconButton>
+        </Tooltip>
+      )}
       <CardMedia
         sx={{
           height: '100%',
@@ -48,14 +72,18 @@ function DesignCard({
   img,
   height = 400,
   onClick,
-  selected = false
+  selected = false,
+  children
 }: {
   title: string;
   img: string;
   height?: number;
   onClick?: () => any;
   selected?: boolean;
+  children?: React.ReactNode;
 }) {
+  const [infoOpen, setInfoOpen] = useState(false);
+
   return (
     <Card
       key={`card-${title}`}
@@ -77,7 +105,15 @@ function DesignCard({
           <DesignCardContent title={title} img={img} />
         </CardActionArea>
       ) : (
-        <DesignCardContent title={title} img={img} />
+        <>
+          <DesignCardContent title={title} img={img} moreInfofn={() => setInfoOpen(true)} />
+          {children && (
+            <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogContent>{children}</DialogContent>
+            </Dialog>
+          )}
+        </>
       )}
     </Card>
   );
@@ -86,11 +122,13 @@ function DesignCard({
 export function CardCarousel({
   data,
   activeStep,
-  cardActions
+  cardActions,
+  children
 }: {
   data: (DefaultRepresentation & { img?: string })[];
   activeStep: number;
   cardActions: Partial<SwipeableCallbacks>;
+  children?: React.ReactNode;
 }) {
   const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
   const swipeHandlers = useSwipeable(cardActions);
@@ -119,7 +157,9 @@ export function CardCarousel({
         />
       )}
 
-      <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true} />
+      <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true}>
+        {children}
+      </DesignCard>
 
       {!isMobile && (
         <DesignCard

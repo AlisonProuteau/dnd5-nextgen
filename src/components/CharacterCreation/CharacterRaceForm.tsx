@@ -23,6 +23,7 @@ import { useAuth } from 'src/providers/AuthProvider';
 import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
+import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';
 import {
   mapDataForForm,
@@ -206,7 +207,11 @@ export function CharacterRaceForm({
 
   return (
     <Box>
-      {races && <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions} />}
+      {races && (
+        <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions}>
+          <HowToPlaySection playstyle={selectedRacePlaystyle} />
+        </CardCarousel>
+      )}
 
       <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={2}>
         {raceInfo?.ability_bonuses.map((ability) => {
@@ -267,7 +272,6 @@ export function CharacterRaceForm({
 
       {selectedRace && raceInfo && (
         <SelectionDetails
-          playstyle={selectedRacePlaystyle}
           selected={selectedRace}
           subSelected={subraceInfo || undefined}
           info={{

@@ -30,6 +30,7 @@ import {
   type ChoiceSelection
 } from './characterCreation.utils';
 import { Choices } from './Choices';
+import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';
 import { ClassGuide } from './utils';
 
@@ -85,7 +86,7 @@ export function CharacterClassForm({
     queryKey: ['fetchClassInfoLevel', version, selectedClass?.index, selectedSubclass?.index, 1],
     queryFn: async () => {
       if (!selectedClass?.index || !version) return null;
-      let levelRes: Partial<Level> = {};
+      let levelRes: Level | undefined = undefined;
 
       const classRes = (await getClassInfo(version, selectedClass.index, 1)) as Level | null;
       if (classRes) levelRes = { ...classRes };
@@ -98,15 +99,15 @@ export function CharacterClassForm({
           1
         )) as Level | null;
 
-        // TODO: More stuff?
+        // Only features are added from subclass level, other info is on class level as of level 1
         if (subclassRes)
           levelRes = {
-            ...levelRes,
-            features: [...(levelRes.features || []), ...(subclassRes.features || [])]
+            ...(levelRes || subclassRes),
+            features: [...(levelRes?.features || []), ...(subclassRes.features || [])]
           };
       }
 
-      return Object.keys(levelRes).length ? (levelRes as Level) : null;
+      return levelRes ? levelRes : null;
     },
     enabled: !!selectedClass && !!version
   });
@@ -218,7 +219,9 @@ export function CharacterClassForm({
   return (
     <Box>
       {classes && (
-        <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions} />
+        <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions}>
+          <HowToPlaySection playstyle={selectedClassPlaystyle} />
+        </CardCarousel>
       )}
 
       {/* {levelInfo?.ability_score_bonuses} */}
@@ -266,7 +269,6 @@ export function CharacterClassForm({
 
       {selectedClass && classInfo && levelInfo && (
         <SelectionDetails
-          playstyle={selectedClassPlaystyle}
           selected={selectedClass}
           subSelected={subclassInfo || undefined}
           features={levelInfo?.features || []}
@@ -281,7 +283,7 @@ export function CharacterClassForm({
             class_specific: levelInfo.class_specific,
             subclass_specific: levelInfo.subclass_specific,
             prof_bonus: levelInfo.prof_bonus
-          }} // TODO: Add subclass level info not pulled?
+          }}
         />
       )}
 
@@ -352,7 +354,6 @@ export function CharacterClassForm({
             </Fragment>
           )}
 
-          {/* TODO: Expertise missing on druid subclass? */}
           {classFeatures.some((feature) => feature.feature_specific?.expertise_options) && (
             <Fragment>
               <Divider

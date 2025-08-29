@@ -2,6 +2,13 @@ import type { Feature } from '@representations/abilities/feature.representation'
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 
+export const scrollOnOpen = (
+  { currentTarget }: { currentTarget: EventTarget & Element },
+  expanded: boolean
+) => {
+  expanded && setTimeout(() => currentTarget.scrollIntoView({ behavior: 'smooth' }), 100);
+};
+
 export type ChoiceSelection = DefaultRepresentation & {
   type: 'class' | 'race' | 'background';
   count?: number;
