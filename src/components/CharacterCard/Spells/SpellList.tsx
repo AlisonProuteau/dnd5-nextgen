@@ -26,7 +26,7 @@ import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
 import {
   Fragment,
   useCallback,
-  useEffect,
+  useMemo,
   useState,
   type Dispatch,
   type ReactNode,
@@ -66,7 +66,6 @@ export function SpellList({
 }) {
   const { version } = useAuth();
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
-  const [allSpells, setAllSpells] = useState<Record<string, Array<Spell>>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
   const { data: spells = [], isFetching: spellsFetching } = useQuery({
@@ -106,39 +105,51 @@ export function SpellList({
     }, [])
   });
 
-  useEffect(() => {
+  const allSpells: Record<string, Array<Spell>> = useMemo(() => {
     if (
-      (spellListOnly || !spellsFetching) &&
-      !additionnalSpellsFetching &&
-      (spells.length || additionnalSpells.length)
-    ) {
-      const filteredSpells = uniqWith(
-        [
-          ...(spellListOnly ? [] : spells).filter(
-            ({ level }) =>
-              !characterInfo.slotLevels.length || characterInfo.slotLevels.includes(level)
-          ),
-          ...additionnalSpells
-        ],
-        (a, b) => a.index === b.index && a.level === b.level
-      ).sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB));
+      !(
+        (spellListOnly || !spellsFetching) &&
+        !additionnalSpellsFetching &&
+        (spells.length || additionnalSpells.length)
+      )
+    )
+      return {};
 
-      !hideLevels
-        ? setAllSpells(groupBy(filteredSpells, 'level'))
-        : setAllSpells({ all: filteredSpells });
-    }
-  }, [spellsFetching, additionnalSpellsFetching, spellListOnly]);
+    const filteredSpells = uniqWith(
+      [
+        ...(spellListOnly ? [] : spells).filter(
+          ({ level }) =>
+            !characterInfo.slotLevels.length || characterInfo.slotLevels.includes(level)
+        ),
+        ...additionnalSpells
+      ],
+      (a, b) => a.index === b.index && a.level === b.level
+    ).sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB));
 
-  function ConditionalAccordion({
-    condition,
-    children,
-    ...props
-  }: {
-    condition: boolean;
-    children: ReactNode;
-  } & AccordionProps) {
-    return condition && children ? <Accordion {...props}>{children}</Accordion> : children;
-  }
+    return !hideLevels ? groupBy(filteredSpells, 'level') : { all: filteredSpells };
+  }, [
+    spellListOnly,
+    spellsFetching,
+    additionnalSpellsFetching,
+    spells,
+    additionnalSpells,
+    characterInfo.slotLevels,
+    hideLevels
+  ]);
+
+  const ConditionalAccordion = useMemo(
+    () =>
+      ({
+        condition,
+        children,
+        ...props
+      }: {
+        condition: boolean;
+        children: ReactNode;
+      } & AccordionProps) =>
+        condition && children ? <Accordion {...props}>{children}</Accordion> : <>{children}</>,
+    []
+  );
 
   return !spellsFetching && !additionnalSpellsFetching ? (
     <Fragment>
@@ -158,14 +169,15 @@ export function SpellList({
           )}
         </Fragment>
       )}
+
       {Object.keys(allSpells).map((currentLevel) => (
         <ConditionalAccordion
           key={`spell-list-${currentLevel}-${allSpells[currentLevel]?.length}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
           expanded={isExpanded[currentLevel] ?? true}
-          onChange={() =>
-            setIsExpanded((prev) => ({ ...prev, [currentLevel]: !(prev[currentLevel] ?? true) }))
+          onChange={(_, expanded) =>
+            setIsExpanded((prev) => ({ ...prev, [currentLevel]: expanded }))
           }
           disableGutters
           condition={!hideLevels}
@@ -173,7 +185,9 @@ export function SpellList({
           {!hideLevels && (
             <AccordionSummary expandIcon={<ExpandMore />}>
               <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-                {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
+                <Typography variant="subtitle2">
+                  {currentLevel === '0' ? 'Cantrips' : `Spell Level ${currentLevel}`}
+                </Typography>
               </Divider>
             </AccordionSummary>
           )}
@@ -245,8 +259,8 @@ export function SpellList({
                       {selectedSpells.find(({ index }) => index === spell.index) ? (
                         <Button
                           onClick={() =>
-                            setSelectedSpells(
-                              selectedSpells.filter(({ index }) => index !== spell.index)
+                            setSelectedSpells((prev) =>
+                              prev.filter(({ index }) => index !== spell.index)
                             )
                           }
                         >
@@ -255,10 +269,14 @@ export function SpellList({
                       ) : (
                         <Button
                           onClick={() =>
-                            selectedSpells.filter(({ level }) =>
-                              spell.level === 0 ? level === 0 : level > 0
-                            ).length < maxSelected[spell.level === 0 ? 0 : 1] &&
-                            setSelectedSpells([...selectedSpells, spell])
+                            setSelectedSpells((prev) => {
+                              const canAdd =
+                                prev.filter(({ level }) =>
+                                  spell.level === 0 ? level === 0 : level > 0
+                                ).length < maxSelected[spell.level === 0 ? 0 : 1];
+
+                              return canAdd ? [...prev, spell] : prev;
+                            })
                           }
                           disabled={
                             selectedSpells.filter(({ level }) =>
@@ -278,7 +296,13 @@ export function SpellList({
         </ConditionalAccordion>
       ))}
 
-      <Dialog open={!!currentSpell} onClose={() => setCurrentSpell(undefined)} fullWidth>
+      <Dialog
+        open={!!currentSpell}
+        onClose={() => setCurrentSpell(undefined)}
+        fullWidth
+        disableRestoreFocus={true}
+        keepMounted={false}
+      >
         {currentSpell && (
           <SpellDetails
             spell={currentSpell}

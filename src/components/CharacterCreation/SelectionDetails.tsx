@@ -57,6 +57,16 @@ export function SelectionDetails({
     if ('subraces' in playstyle) return playstyle.subraces;
   }, [playstyle]);
 
+  const characterInfo = useMemo(
+    () => ({
+      version: version || 'Legacy',
+      classIndex: selected.index,
+      subclassIndex: subSelected?.index,
+      slotLevels: []
+    }),
+    [version, selected.index, subSelected?.index]
+  );
+
   return (
     <Box marginY={2} display="flex" flexDirection="column" gap={1}>
       {/* TODO: should it be moved to a question mark action button? */}
@@ -283,7 +293,6 @@ export function SelectionDetails({
           </Fragment> */}
 
           {/* TODO: Add pre-requisites (non-level)! */}
-          {/* TODO: Onchange and onclick not working */}
           {info.spells?.length ? (
             <AccordionButtonDialog
               title={`${subSelected?.name} Spells (${info.spells.length})`}
@@ -292,12 +301,7 @@ export function SelectionDetails({
               slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
             >
               <SpellList
-                characterInfo={{
-                  version: version || 'Legacy',
-                  classIndex: selected.index,
-                  subclassIndex: subSelected?.index,
-                  slotLevels: []
-                }}
+                characterInfo={characterInfo}
                 additionalSpellList={info.spells}
                 spellListOnly={true}
               />

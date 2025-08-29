@@ -46,20 +46,8 @@ export function AccordionButtonDialog({
 
   return (
     <Fragment>
-      <AccordionButton
-        key={`accordiionButton-${title.replaceAll(' ', '-')}`}
-        id={`accordiionButton-${title.replaceAll(' ', '-')}`}
-        fullWidth
-        title={title}
-        onClick={() => setOpen(true)}
-      />
-      <Dialog
-        key={`accordiionButtonDialog-${title.replaceAll(' ', '-')}`}
-        id={`accordiionButtonDialog-${title.replaceAll(' ', '-')}`}
-        open={isOpen}
-        onClose={() => setOpen(false)}
-        {...props}
-      >
+      <AccordionButton fullWidth title={title} onClick={() => setOpen(true)} />
+      <Dialog open={isOpen} onClose={() => setOpen(false)} {...props}>
         <DialogTitle>{title}</DialogTitle>
         <DialogActions>
           <IconButton
