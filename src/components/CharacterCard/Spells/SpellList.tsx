@@ -3,6 +3,7 @@ import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
+  AccordionProps,
   AccordionSummary,
   Box,
   Button,
@@ -14,15 +15,14 @@ import {
   CircularProgress,
   Dialog,
   Divider,
-  Typography,
-  type AccordionProps
+  Typography
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { Version } from '@utils/versions.constants';
-import { groupBy, max, maxBy, uniqWith } from 'lodash';
+import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
 import {
   Fragment,
   useCallback,
@@ -92,7 +92,7 @@ export function SpellList({
 
   const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
     queries:
-      additionalSpellList?.map(({ index }) => ({
+      uniqBy(additionalSpellList, 'index')?.map(({ index }) => ({
         queryKey: ['fetchSpell', version, index],
         queryFn: async () => (version ? await getSpell(version, index) : null),
         enabled: !!index && !!version
@@ -108,7 +108,7 @@ export function SpellList({
 
   useEffect(() => {
     if (
-      !spellsFetching &&
+      (spellListOnly || !spellsFetching) &&
       !additionnalSpellsFetching &&
       (spells.length || additionnalSpells.length)
     ) {
@@ -160,7 +160,7 @@ export function SpellList({
       )}
       {Object.keys(allSpells).map((currentLevel) => (
         <ConditionalAccordion
-          key={`spell-list-${currentLevel}-${allSpells[currentLevel].length}`}
+          key={`spell-list-${currentLevel}-${allSpells[currentLevel]?.length}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
           expanded={isExpanded[currentLevel] ?? true}

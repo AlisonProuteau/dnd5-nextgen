@@ -1,14 +1,10 @@
-import { Close, ExpandMore } from '@mui/icons-material';
+import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Box,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Divider,
-  IconButton,
   Typography
 } from '@mui/material';
 import type { Level } from '@representations/campaign/level.representation';
@@ -16,11 +12,12 @@ import type { Classes, Subclass } from '@representations/character/class.represe
 import type { Race } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
-import { AccordionButton } from '@shared/AccordionButton';
-import { Fragment, useCallback, useMemo, useState } from 'react';
+import { AccordionButtonDialog } from '@shared/AccordionButton';
+import { Fragment, useCallback, useMemo } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
+import { SpellList } from '../CharacterCard/Spells/SpellList';
 import { BestForSection, ProConList, type GuideType } from './utils';
 
 export function SelectionDetails({
@@ -46,8 +43,6 @@ export function SelectionDetails({
   features?: Character['features'];
 }) {
   const { version } = useAuth();
-  const [featuresOpen, setFeaturesOpen] = useState(false);
-  const [traitsOpen, setTraitsOpen] = useState(false);
 
   const scrollOnOpen = useCallback(
     ({ currentTarget }: { currentTarget: EventTarget & Element }, expanded: boolean) => {
@@ -243,104 +238,97 @@ export function SelectionDetails({
               {/* {levelInfo?.subclass_specific} */}
 
               {/* {classInfo?.spellcasting}  */}
-              {/* TODO: Spells not readable as is */}
-              {/* {info.spells?.length ? (
-                <Fragment>
-                  <Typography variant="overline">Spells</Typography>
-                  {
-                    // Object.entries(
-                    //   groupBy(info.spells, (s) =>
-                    //     s.prerequisites
-                    //       .map(
-                    //         (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
-                    //       )
-                    //       .join(' ; ')
-                    //   )
-                    // )
-                    Object.entries(
-                      groupBy(info.spells, (s) =>
-                        s.prerequisites
-                          .filter(({ type }) => type !== 'level')
-                          .map((p) => p.index)
-                          .join(' ; ')
-                      )
-                    ).map(([index, spells]) => (
-                      <Fragment>
-                        <Typography display="block" variant="caption" textTransform="capitalize">
-                          {index}
-                        </Typography>
-                        <Typography marginBottom={2}>
-                          {spells
-                            .map(
-                              (s) =>
-                                `${s.name} (${s.prerequisites
-                                  .filter(({ type }) => type === 'level')
-                                  .map((p) =>
-                                    p.name.replace(new RegExp(`^${selected.name}`), 'lvl')
-                                  )
-                                  .join(' ; ')})`
-                            )
-                            .join(', ')}
-                        </Typography>
-                      </Fragment>
-                    ))
-                  }
-                </Fragment>
-              ) : null} */}
             </AccordionDetails>
           </Accordion>
+
+          {/* TODO: Spells not readable as is */}
+          {/* <Fragment>
+            <Typography variant="overline">Spells</Typography>
+            {
+              // Object.entries(
+              //   groupBy(info.spells, (s) =>
+              //     s.prerequisites
+              //       .map(
+              //         (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
+              //       )
+              //       .join(' ; ')
+              //   )
+              // )
+              Object.entries(
+                groupBy(info.spells, (s) =>
+                  s.prerequisites
+                    .filter(({ type }) => type !== 'level')
+                    .map((p) => p.index)
+                    .join(' ; ')
+                )
+              ).map(([index, spells]) => (
+                <Fragment>
+                  <Typography display="block" variant="caption" textTransform="capitalize">
+                    {index}
+                  </Typography>
+                  <Typography marginBottom={2}>
+                    {spells
+                      .map(
+                        (s) =>
+                          `${s.name} (${s.prerequisites
+                            .filter(({ type }) => type === 'level')
+                            .map((p) => p.name.replace(new RegExp(`^${selected.name}`), 'lvl'))
+                            .join(' ; ')})`
+                      )
+                      .join(', ')}
+                  </Typography>
+                </Fragment>
+              ))
+            }
+          </Fragment> */}
+
+          {/* TODO: Add pre-requisites (non-level)! */}
+          {/* TODO: Onchange and onclick not working */}
+          {info.spells?.length ? (
+            <AccordionButtonDialog
+              title={`${subSelected?.name} Spells (${info.spells.length})`}
+              fullWidth
+              PaperProps={{ elevation: 0 }}
+              slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+            >
+              <SpellList
+                characterInfo={{
+                  version: version || 'Legacy',
+                  classIndex: selected.index,
+                  subclassIndex: subSelected?.index,
+                  slotLevels: []
+                }}
+                additionalSpellList={info.spells}
+                spellListOnly={true}
+              />
+            </AccordionButtonDialog>
+          ) : null}
         </Fragment>
       ) : null}
 
-      {[features, traits].map((value, index) => {
-        const isFeature = index === 0;
-        const setOpen = isFeature ? setFeaturesOpen : setTraitsOpen;
-        const isOpen = isFeature ? featuresOpen : traitsOpen;
+      {features?.length ? (
+        <AccordionButtonDialog title={`Features (${features.length})`}>
+          <FeaturesDisplay
+            character={{
+              features: features,
+              version: version || 'Legacy'
+            }}
+            useblackList={false}
+          />
+        </AccordionButtonDialog>
+      ) : null}
 
-        return value?.length ? (
-          <Fragment>
-            <AccordionButton
-              fullWidth
-              title={`${isFeature ? 'Features' : 'Traits'} (${value.length})`}
-              onClick={() => setOpen(true)}
-            />
-            <Dialog open={isOpen} onClose={() => setOpen(false)}>
-              <DialogTitle>{isFeature ? 'Features' : 'Traits'}</DialogTitle>
-              <IconButton
-                aria-label="close"
-                onClick={() => setOpen(false)}
-                sx={(theme) => ({
-                  position: 'absolute',
-                  right: 2,
-                  top: 2,
-                  color: theme.palette.grey[500]
-                })}
-              >
-                <Close />
-              </IconButton>
-              <DialogContent sx={{ paddingTop: 0 }}>
-                {isFeature ? (
-                  <FeaturesDisplay
-                    character={{
-                      features: value,
-                      version: version || 'Legacy'
-                    }}
-                    useblackList={false}
-                  />
-                ) : (
-                  <TraitsDisplay
-                    character={{
-                      traits: value,
-                      version: version || 'Legacy'
-                    }}
-                    useblackList={false}
-                  />
-                )}
-              </DialogContent>
-            </Dialog>
-          </Fragment>
-        ) : null;
-      })}
+      {traits?.length ? (
+        <AccordionButtonDialog title={`Traits (${traits.length})`}>
+          <TraitsDisplay
+            character={{
+              traits: traits,
+              version: version || 'Legacy'
+            }}
+            useblackList={false}
+          />
+        </AccordionButtonDialog>
+      ) : null}
     </Box>
   );
 }

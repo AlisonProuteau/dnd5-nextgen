@@ -1,5 +1,18 @@
-import { Add } from '@mui/icons-material';
-import { Button, Divider, Paper, Typography, type ButtonProps } from '@mui/material';
+import { Add, Close } from '@mui/icons-material';
+import {
+  Button,
+  ButtonProps,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  Paper,
+  Typography,
+  type DialogProps
+} from '@mui/material';
+import { Fragment, useState } from 'react';
 
 export function AccordionButton({ title, ...props }: { title: string } & ButtonProps) {
   return (
@@ -21,5 +34,49 @@ export function AccordionButton({ title, ...props }: { title: string } & ButtonP
       </Divider>
       <Add />
     </Button>
+  );
+}
+
+export function AccordionButtonDialog({
+  title,
+  children,
+  ...props
+}: { title: string } & Omit<DialogProps, 'open' | 'onClose'>) {
+  const [isOpen, setOpen] = useState(false);
+
+  return (
+    <Fragment>
+      <AccordionButton
+        key={`accordiionButton-${title.replaceAll(' ', '-')}`}
+        id={`accordiionButton-${title.replaceAll(' ', '-')}`}
+        fullWidth
+        title={title}
+        onClick={() => setOpen(true)}
+      />
+      <Dialog
+        key={`accordiionButtonDialog-${title.replaceAll(' ', '-')}`}
+        id={`accordiionButtonDialog-${title.replaceAll(' ', '-')}`}
+        open={isOpen}
+        onClose={() => setOpen(false)}
+        {...props}
+      >
+        <DialogTitle>{title}</DialogTitle>
+        <DialogActions>
+          <IconButton
+            aria-label="close"
+            onClick={() => setOpen(false)}
+            sx={(theme) => ({
+              position: 'absolute',
+              right: 2,
+              top: 2,
+              color: theme.palette.grey[500]
+            })}
+          >
+            <Close />
+          </IconButton>
+        </DialogActions>
+        <DialogContent sx={{ paddingTop: 0 }}>{children}</DialogContent>
+      </Dialog>
+    </Fragment>
   );
 }
