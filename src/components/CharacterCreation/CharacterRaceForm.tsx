@@ -239,11 +239,11 @@ export function CharacterRaceForm({
 
       {!!raceInfo?.subraces?.length && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="subRace">subraces-Race</InputLabel>
+          <InputLabel htmlFor="subraces">Sub-Race</InputLabel>
           <Select
             fullWidth
-            id="subRace"
-            label="subraces-Race"
+            id="subraces"
+            label="Sub-Race"
             value={selectedSubrace?.index || raceInfo.subraces[0].index}
             onChange={({ target }) => {
               setSelectedProficiencies([]);
@@ -254,7 +254,7 @@ export function CharacterRaceForm({
           >
             {raceInfo.subraces.map((currentSubrace) => (
               <MenuItem
-                key={currentSubrace.index}
+                key={`subraces-${currentSubrace.index}`}
                 id={currentSubrace.index}
                 value={currentSubrace.index}
               >

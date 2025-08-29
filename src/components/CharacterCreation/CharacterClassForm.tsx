@@ -237,10 +237,10 @@ export function CharacterClassForm({
 
       {!!classInfo?.subclasses?.length && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="subRace">Sub-Class</InputLabel>
+          <InputLabel htmlFor="subclass">Sub-Class</InputLabel>
           <Select
             fullWidth
-            id="subRace"
+            id="subclass"
             label="Sub-Class"
             value={selectedSubclass?.index || classInfo.subclasses[0].index}
             onChange={({ target }) => {
@@ -253,7 +253,7 @@ export function CharacterClassForm({
           >
             {classInfo.subclasses.map((currentSubclass) => (
               <MenuItem
-                key={currentSubclass.index}
+                key={`subclass-${currentSubclass.index}`}
                 id={currentSubclass.index}
                 value={currentSubclass.index}
               >

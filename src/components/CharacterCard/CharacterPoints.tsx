@@ -214,7 +214,7 @@ export function CharacterPoints() {
                         >
                           {abilities.map((ability) => (
                             <MenuItem
-                              key={ability.index}
+                              key={`points-${ability.index}`}
                               value={ability.index}
                               disabled={!!points[ability.index]}
                             >

@@ -96,7 +96,7 @@ export function Header() {
                     {MenuItems.map(
                       (item) =>
                         !item.hidden && (
-                          <MenuItem>
+                          <MenuItem key={`menu-item-${item.id}`}>
                             <Link
                               to={item.link}
                               aria-label={item.id}

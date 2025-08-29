@@ -60,7 +60,7 @@ export function Settings() {
             onChange={({ target }) => setSelectedVersion((target.value as Version) || null)}
           >
             {VERSIONS?.map((current) => (
-              <MenuItem key={current} value={current}>
+              <MenuItem key={`version-${current}`} value={current}>
                 {current}
               </MenuItem>
             ))}
