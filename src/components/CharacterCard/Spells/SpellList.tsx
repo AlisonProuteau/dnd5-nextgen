@@ -1,5 +1,5 @@
 import { getSpell, getSpellsForClass } from '@api/ressources';
-import { ExpandMore } from '@mui/icons-material';
+import { ExpandMore, Rule } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
@@ -12,14 +12,17 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Chip,
   CircularProgress,
   Dialog,
   Divider,
   Typography
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
+import type { Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
+import type { TypeFromArray } from '@representations/utils.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { Version } from '@utils/versions.constants';
 import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
@@ -44,12 +47,13 @@ interface SpellListProps {
     charLevel?: number;
     slotLevels: number[];
   };
-  additionalSpellList?: DefaultRepresentation[];
+  additionalSpellList?: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[];
   slotLevel?: number;
   spellListOnly?: boolean;
   selectedSpells?: Character['knownSpells'] | Character['preparedSpells'];
   maxSelected?: [number, number];
   hideLevels?: boolean;
+  showDesc?: boolean;
 }
 
 export function SpellList({
@@ -60,7 +64,8 @@ export function SpellList({
   selectedSpells = [],
   setSelectedSpells,
   maxSelected = [0, 0],
-  hideLevels = false
+  hideLevels = false,
+  showDesc = false
 }: SpellListProps & {
   setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
 }) {
@@ -68,6 +73,7 @@ export function SpellList({
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
+  // TODO: Add filter for prerequisites (maybe just subclass?)
   const { data: spells = [], isFetching: spellsFetching } = useQuery({
     queryKey: [
       'fetchCharacterSpells',
@@ -98,7 +104,24 @@ export function SpellList({
       })) || [],
     combine: useCallback((results: UseQueryResult<Spell | null, Error>[]) => {
       return {
-        data: results.map(({ data }) => data).filter((data) => data) as Spell[],
+        data: results
+          .map(({ data }) => {
+            let formattedData = { ...data } as Spell;
+            const currentSpell = additionalSpellList?.find(({ index }) => index === data?.index);
+
+            if (currentSpell?.prerequisites) {
+              const preRequisiteLevel = parseInt(
+                currentSpell.prerequisites
+                  .find(({ type }) => type === 'level')
+                  ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+              );
+
+              if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
+            }
+
+            return formattedData;
+          })
+          .filter((data) => data) as Spell[],
         isFetching: results.some((result) => result.isFetching),
         dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
       };
@@ -195,8 +218,10 @@ export function SpellList({
           <AccordionDetails>
             <Box
               display="grid"
-              gap="10px"
-              gridTemplateColumns="repeat(auto-fit, minmax(150px, 1fr))"
+              gap="20px"
+              gridTemplateColumns={`repeat(auto-fill, minmax(${
+                setSelectedSpells || showDesc ? 230 : 150
+              }px, 1fr))`}
             >
               {allSpells[currentLevel].map((spell) => (
                 <Card
@@ -206,7 +231,9 @@ export function SpellList({
                     flexDirection: 'column',
                     boxShadow:
                       selectedSpells.find(({ index }) => index === spell.index) &&
-                      'inset 0px 0px 5px 2px darkgrey'
+                      'inset 0px 0px 5px 2px darkgrey',
+                    overflow: 'visible',
+                    marginTop: '10px'
                   }}
                 >
                   <CardActionArea
@@ -221,18 +248,35 @@ export function SpellList({
                   >
                     <CardHeader
                       title={
-                        !setSelectedSpells && (
-                          <Typography
-                            display="inline"
-                            variant="subtitle2"
-                            color="darkgrey"
-                            margin="5px"
-                          >
-                            {spell.components}
-                            {spell.concentration ? ' - Con' : ''}
-                            {spell.ritual ? ' - Ritual' : ''}
-                          </Typography>
-                        )
+                        <Box width="100%" display="flex" justifyContent="space-between">
+                          {!setSelectedSpells && (
+                            <Typography variant="subtitle2" color="darkgrey" margin="5px">
+                              {spell.components}
+                              {spell.concentration ? ' - Con' : ''}
+                              {spell.ritual ? ' - Ritual' : ''}
+                            </Typography>
+                          )}
+                          {additionalSpellList
+                            ?.find(
+                              ({ index, prerequisites }) =>
+                                index === spell.index &&
+                                prerequisites?.find(({ type }) => type !== 'level')
+                            )
+                            ?.prerequisites?.map(({ name, type }) =>
+                              type !== 'level' ? (
+                                <Chip
+                                  sx={{
+                                    width: 'fit-content',
+                                    position: 'relative',
+                                    top: '-15px',
+                                    right: '-10px'
+                                  }}
+                                  icon={<Rule />}
+                                  label={name}
+                                />
+                              ) : null
+                            )}
+                        </Box>
                       }
                       subheader={
                         <Typography textAlign="center" color="primary">
@@ -242,7 +286,7 @@ export function SpellList({
                       sx={{ padding: 0, paddingTop: setSelectedSpells ? '15px' : 0 }}
                     />
 
-                    {setSelectedSpells ? (
+                    {setSelectedSpells || showDesc ? (
                       <CardContent sx={{ flex: 1 }}>
                         <Typography textAlign="justify">{spell.desc[0]}</Typography>
                       </CardContent>

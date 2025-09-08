@@ -171,25 +171,18 @@ export function SelectionDetails({
           </Accordion>
 
           {info.spells?.length ? (
-            // TODO: Add pre-requisites (non-level)!
-            //  groupBy(info.spells, (s) =>
-            //      s.prerequisites
-            //        .map(
-            //          (p) => `${p.type} ${p.name.replace(new RegExp(`^${selected.name}`), '')}`
-            //        )
-            //         .join(' ; ')
-            //     )
-            //   )
             <AccordionButtonDialog
-              title={`${subSelected?.name} Spells (${info.spells.length})`}
               fullWidth
+              maxWidth="lg"
               PaperProps={{ elevation: 0 }}
               slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+              title={`${subSelected?.name} Spells (${info.spells.length})`}
             >
               <SpellList
                 characterInfo={characterInfo}
                 additionalSpellList={info.spells}
                 spellListOnly={true}
+                showDesc={true}
               />
             </AccordionButtonDialog>
           ) : null}

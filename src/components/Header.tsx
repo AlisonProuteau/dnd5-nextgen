@@ -48,7 +48,8 @@ export function Header() {
         link: '/character-generator',
         hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
       }
-      // TODO: { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
+      // TODO: Add info page to help navigate the app and understand its features
+      // { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
     ],
     [user?.uid]
   );
