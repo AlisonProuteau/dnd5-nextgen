@@ -1,11 +1,11 @@
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
-import type { Character } from '@representations/user.representation';
 import { Fragment } from 'react';
+import type { DefaultProps } from 'src/components/Header';
 import { FeaturesDisplay } from './FeaturesDisplay';
 import { TraitsDisplay } from './TraitsDisplay';
 
-export function Characteristics({ character }: { character: Character }) {
+export function Characteristics({ character }: DefaultProps) {
   return (
     <Fragment>
       <Box>

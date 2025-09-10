@@ -9,15 +9,17 @@ import { uniqBy } from 'lodash';
 import { useCallback } from 'react';
 import { blackList } from './utils';
 
+interface FeaturesDisplayProps {
+  character: Partial<Character>;
+  expanded?: boolean;
+  useblackList?: boolean;
+}
+
 export function FeaturesDisplay({
   character,
   expanded = false,
   useblackList = true
-}: {
-  character: Partial<Character>;
-  expanded?: boolean;
-  useblackList?: boolean;
-}) {
+}: FeaturesDisplayProps) {
   const { data: features } = useQueries({
     queries:
       uniqBy(character.features, 'index')

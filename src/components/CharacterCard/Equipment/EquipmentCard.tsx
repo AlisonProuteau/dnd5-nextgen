@@ -18,7 +18,11 @@ import { uniqBy } from 'lodash';
 import { Fragment, useCallback } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 
-export function EquipmentCard({ selectedEquipment }: { selectedEquipment: Equipment }) {
+interface EquipmentCardProps {
+  selectedEquipment: Equipment;
+}
+
+export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
   const { version } = useAuth();
 
   const { data: properties } = useQueries({

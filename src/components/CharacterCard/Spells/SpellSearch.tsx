@@ -8,6 +8,7 @@ import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useLayoutEffect, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
+
 interface SpellSearchProps {
   classIndex: string;
   subclassIndex?: string;

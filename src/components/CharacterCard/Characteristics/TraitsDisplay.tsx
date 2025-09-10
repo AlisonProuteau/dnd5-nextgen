@@ -10,15 +10,17 @@ import { Fragment, useCallback } from 'react';
 import { ActionInfo } from './ActionInfo';
 import { blackList } from './utils';
 
+interface TraitsDisplayProps {
+  character: Partial<Character>;
+  expanded?: boolean;
+  useblackList?: boolean;
+}
+
 export function TraitsDisplay({
   character,
   expanded = false,
   useblackList = true
-}: {
-  character: Partial<Character>;
-  expanded?: boolean;
-  useblackList?: boolean;
-}) {
+}: TraitsDisplayProps) {
   const { data: traits } = useQueries({
     queries:
       uniqBy(character.traits, 'index')

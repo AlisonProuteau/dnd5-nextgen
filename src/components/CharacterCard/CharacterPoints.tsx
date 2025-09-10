@@ -29,7 +29,6 @@ import { getAbilityPoints, getAbilityScoreModifier, getArmorClass, randomInteger
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 
-// OK: Level one only
 export function CharacterPoints() {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
   const [points, setPoints] = useState<Record<string, number>>({});

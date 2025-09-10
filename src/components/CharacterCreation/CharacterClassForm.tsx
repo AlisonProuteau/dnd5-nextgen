@@ -274,12 +274,10 @@ export function CharacterClassForm({
           features={levelInfo?.features || []}
           info={{
             spellcasting: classInfo.spellcasting,
-            class_levels: classInfo.class_levels,
             hit_die: classInfo.hit_die,
             proficiencies: classInfo.proficiencies,
             starting_equipment: classInfo.starting_equipment,
             spells: subclassInfo?.spells,
-            subclass_levels: subclassInfo?.subclass_levels,
             class_specific: levelInfo.class_specific,
             subclass_specific: levelInfo.subclass_specific,
             prof_bonus: levelInfo.prof_bonus

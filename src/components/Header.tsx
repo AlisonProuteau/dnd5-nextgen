@@ -6,6 +6,7 @@ import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
+import type { Character } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
 import { button, linkButton } from '@utils/style.utils';
@@ -13,6 +14,10 @@ import { updateProfile } from 'firebase/auth';
 import { Fragment, useMemo, useState, type FormEvent } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
+
+export interface DefaultProps {
+  character: Character;
+}
 
 export function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -48,8 +53,6 @@ export function Header() {
         link: '/character-generator',
         hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
       }
-      // TODO: Add info page to help navigate the app and understand its features
-      // { icon:<Info /> , title: 'Info', id: 'info', link: '/' }
     ],
     [user?.uid]
   );

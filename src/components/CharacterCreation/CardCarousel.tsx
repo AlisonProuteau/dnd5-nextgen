@@ -119,17 +119,14 @@ function DesignCard({
   );
 }
 
-export function CardCarousel({
-  data,
-  activeStep,
-  cardActions,
-  children
-}: {
+interface CardCarouselProps {
   data: (DefaultRepresentation & { img?: string })[];
   activeStep: number;
   cardActions: Partial<SwipeableCallbacks>;
   children?: React.ReactNode;
-}) {
+}
+
+export function CardCarousel({ data, activeStep, cardActions, children }: CardCarouselProps) {
   const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
   const swipeHandlers = useSwipeable(cardActions);
 

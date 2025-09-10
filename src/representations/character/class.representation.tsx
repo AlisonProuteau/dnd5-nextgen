@@ -30,7 +30,6 @@ type MultiClassing = {
 };
 
 export type Classes = {
-  class_levels: string;
   multi_classing: MultiClassing;
   hit_die: number;
   index: string;
@@ -62,5 +61,4 @@ export type Subclass = {
   name: string;
   spells?: Spell[];
   subclass_flavor: string;
-  subclass_levels: string;
 };

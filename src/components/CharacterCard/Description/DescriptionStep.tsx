@@ -1,12 +1,12 @@
 import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
-import type { Character } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { Fragment } from 'react';
+import type { DefaultProps } from 'src/components/Header';
 import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
 
-export function Description({ character }: { character: Character }) {
+export function Description({ character }: DefaultProps) {
   const getGenderIcon = (genderIndex: GenderIndexes) => {
     switch (genderIndex) {
       case GenderIndexes.female:

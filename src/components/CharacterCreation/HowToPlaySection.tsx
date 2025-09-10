@@ -54,9 +54,7 @@ function BestForSection({ bestForArray }: { bestForArray: GuideType['bestFor'] }
   );
 }
 
-export function HowToPlaySection({
-  playstyle
-}: {
+interface HowToPlaySectionProps {
   playstyle?: GuideType &
     (
       | { subraces?: Omit<GuideType, 'cons'>[] }
@@ -65,7 +63,9 @@ export function HowToPlaySection({
           subclasses: (Omit<GuideType, 'pros' | 'cons'> & { evolution: string })[];
         }
     );
-}) {
+}
+
+export function HowToPlaySection({ playstyle }: HowToPlaySectionProps) {
   const subElement = useMemo(() => {
     if (!playstyle) return null;
     if ('subclasses' in playstyle) return playstyle.subclasses;
