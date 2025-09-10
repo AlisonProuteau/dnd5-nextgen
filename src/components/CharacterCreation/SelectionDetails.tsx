@@ -17,8 +17,17 @@ import { Fragment, useMemo } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
+import { EquipmentList } from '../CharacterCard/Equipment/EquipmentList';
 import { SpellList } from '../CharacterCard/Spells/SpellList';
 import { scrollOnOpen } from './characterCreation.utils';
+
+interface SelectionDetailsProps {
+  selected: DefaultRepresentation;
+  subSelected?: { index: string; name: string; desc: string | string[]; subclass_flavor?: string };
+  info: Race | Partial<Classes & Subclass & Omit<Level, 'spellcasting'>> | undefined;
+  traits?: Character['traits'];
+  features?: Character['features'];
+}
 
 export function SelectionDetails({
   selected,
@@ -26,13 +35,7 @@ export function SelectionDetails({
   info,
   traits,
   features
-}: {
-  selected: DefaultRepresentation;
-  subSelected?: { index: string; name: string; desc: string | string[]; subclass_flavor?: string };
-  info: Race | Partial<Classes & Subclass & Omit<Level, 'spellcasting'>> | undefined;
-  traits?: Character['traits'];
-  features?: Character['features'];
-}) {
+}: SelectionDetailsProps) {
   const { version } = useAuth();
 
   const characterInfo = useMemo(
@@ -54,12 +57,14 @@ export function SelectionDetails({
           </Divider>
         </AccordionSummary>
         <AccordionDetails sx={{ textAlign: 'justify' }}>
-          <Typography variant="overline">{selected.name}</Typography>
+          <Typography variant="overline" color="secondary">
+            {selected.name}
+          </Typography>
           <Typography marginBottom={2}>{selected.desc}</Typography>
 
           {subSelected && (
             <Fragment>
-              <Typography variant="overline">
+              <Typography variant="overline" color="secondary">
                 {`${subSelected.name}${
                   subSelected.subclass_flavor ? '- ' + subSelected.subclass_flavor : ''
                 }`}
@@ -83,24 +88,36 @@ export function SelectionDetails({
               </Divider>
             </AccordionSummary>
             <AccordionDetails sx={{ textAlign: 'justify' }}>
-              <Typography variant="overline">Size</Typography>
+              <Typography variant="overline" color="secondary">
+                Size
+              </Typography>
               <Typography marginBottom={2}>{info.size_description}</Typography>
 
-              <Typography variant="overline">Speed</Typography>
+              <Typography variant="overline" color="secondary">
+                Speed
+              </Typography>
               <Typography marginBottom={2}>{info.speed}ft</Typography>
 
-              <Typography variant="overline">Age</Typography>
+              <Typography variant="overline" color="secondary">
+                Age
+              </Typography>
               <Typography marginBottom={2}>{info.age}</Typography>
 
-              <Typography variant="overline">Alignment</Typography>
+              <Typography variant="overline" color="secondary">
+                Alignment
+              </Typography>
               <Typography marginBottom={2}>{info.alignment}</Typography>
 
-              <Typography variant="overline">Languages</Typography>
+              <Typography variant="overline" color="secondary">
+                Languages
+              </Typography>
               <Typography marginBottom={2}>{info.language_desc}</Typography>
 
               {info.starting_proficiencies?.length ? (
                 <Fragment>
-                  <Typography variant="overline">Starting Proficiencies:</Typography>
+                  <Typography variant="overline" color="secondary">
+                    Starting Proficiencies:
+                  </Typography>
                   <Typography marginBottom={2}>
                     {info.starting_proficiencies?.map((p) => p.name).join(', ')}
                   </Typography>
@@ -111,7 +128,7 @@ export function SelectionDetails({
         </Fragment>
       ) : null}
 
-      {selected && info && 'class_levels' in info ? (
+      {selected && info && 'hit_die' in info ? (
         <Fragment>
           <Accordion
             key={`${selected.index}-characteristics`}
@@ -125,12 +142,12 @@ export function SelectionDetails({
             </AccordionSummary>
             <AccordionDetails sx={{ textAlign: 'justify' }}>
               <Box display={'flex'} flexWrap="wrap" marginBottom={2} justifyContent="space-evenly">
-                <Box>
+                <Box textAlign="center">
                   <Typography variant="overline">Hit Die</Typography>
                   <Typography>{`1d${info.hit_die} per level`}</Typography>
                 </Box>
 
-                <Box>
+                <Box textAlign="center">
                   <Typography variant="overline">Proficiency Bonus</Typography>
                   <Typography>{`1d${info.prof_bonus}`}</Typography>
                 </Box>
@@ -138,7 +155,9 @@ export function SelectionDetails({
 
               {info.proficiencies?.length ? (
                 <Fragment>
-                  <Typography variant="overline">Proficiencies</Typography>
+                  <Typography variant="overline" color="secondary">
+                    Proficiencies
+                  </Typography>
                   <Typography marginBottom={2}>
                     {info.proficiencies
                       .map((p) => p.name)
@@ -150,25 +169,71 @@ export function SelectionDetails({
 
               {info.starting_equipment?.length ? (
                 <Fragment>
-                  <Typography variant="overline">Starting Equipment:</Typography>
-                  <Typography marginBottom={2}>
-                    {info.starting_equipment
-                      .map((e) => `${e.quantity} x ${e.equipment.name}`)
-                      .join(', ')}
+                  <Typography variant="overline" color="secondary">
+                    Starting Equipment:
                   </Typography>
+                  <EquipmentList
+                    equipmentList={info.starting_equipment.map((e) => ({
+                      ...e.equipment,
+                      quantity: e.quantity,
+                      equipment_category: { index: 'e', name: 'Equipment' },
+                      cost: { quantity: 0, unit: 'gp' },
+                      desc: []
+                    }))}
+                  />
                 </Fragment>
               ) : null}
-
-              {/* TODO: add missing class info + check ui/ux */}
-              {/* {classInfo?.class_levels} */}
-              {/* {subclassInfo?.subclass_levels} */}
-
-              {/* {levelInfo?.class_specific} */}
-              {/* {levelInfo?.subclass_specific} */}
-
-              {/* {classInfo?.spellcasting}  */}
             </AccordionDetails>
           </Accordion>
+
+          {info?.spellcasting && (
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                  <Typography variant="subtitle2">Spellcasting</Typography>
+                </Divider>
+              </AccordionSummary>
+              <AccordionDetails sx={{ textAlign: 'justify' }}>
+                <Box
+                  display={'flex'}
+                  flexWrap="wrap"
+                  marginBottom={2}
+                  justifyContent="space-evenly"
+                >
+                  <Box textAlign="center">
+                    <Typography variant="overline">Level</Typography>
+                    <Typography>{info.spellcasting.level}</Typography>
+                  </Box>
+
+                  <Box textAlign="center">
+                    <Typography variant="overline">Ability</Typography>
+                    <Typography>{info.spellcasting.spellcasting_ability.name}</Typography>
+                  </Box>
+                </Box>
+
+                <Box
+                  display="grid"
+                  columnGap={2}
+                  gridTemplateColumns="repeat(auto-fill, minmax(300px, 1fr))"
+                >
+                  {info.spellcasting.info
+                    .sort((a, b) => b.desc.join('').length - a.desc.join('').length)
+                    .map((i) => (
+                      <Box key={`spellcasting-info-${selected.index}-${i.name}`} marginBottom={2}>
+                        <Typography variant="overline" color="secondary">
+                          {i.name}
+                        </Typography>
+                        {i.desc.map((d) => (
+                          <Typography variant="body2" paddingBottom={1}>
+                            {d}
+                          </Typography>
+                        ))}
+                      </Box>
+                    ))}
+                </Box>
+              </AccordionDetails>
+            </Accordion>
+          )}
 
           {info.spells?.length ? (
             <AccordionButtonDialog
