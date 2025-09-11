@@ -18,7 +18,7 @@ const formatPath = (path: string, version?: Version) => {
 
 export async function getAllRaces(version: Version): Promise<{
   count: number;
-  results: DefaultRepresentation[];
+  results: (DefaultRepresentation & { img?: string })[];
 }> {
   return get('All Races', formatPath('races', version), 'all');
 }
@@ -47,7 +47,7 @@ export async function getSubraceInfo(
 
 export async function getAllClasses(version: Version): Promise<{
   count: number;
-  results: DefaultRepresentation[];
+  results: (DefaultRepresentation & { img?: string })[];
 }> {
   return get('All Classes', formatPath('classes', version), 'all');
 }

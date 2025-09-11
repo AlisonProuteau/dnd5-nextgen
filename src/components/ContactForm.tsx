@@ -291,7 +291,7 @@ export function ContactForm() {
                   formData.area &&
                   ![AppArea.NAV, AppArea.AUTH].includes(formData.area as AppArea) && (
                     <FormControl margin="dense" fullWidth>
-                      <InputLabel htmlFor="Character">Character</InputLabel>
+                      <InputLabel htmlFor="character">Character</InputLabel>
                       <Select
                         id="character"
                         label="Character"

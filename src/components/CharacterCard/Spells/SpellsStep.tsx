@@ -10,14 +10,14 @@ import {
 } from '@mui/material';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
-import type { Character } from '@representations/user.representation';
 import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment, useMemo, useState } from 'react';
+import type { DefaultProps } from 'src/components/Header';
 import { SpellList } from './SpellList';
 import { Spellbook } from './Spellbook';
 
-export function SpellStep({ character }: { character: Character }) {
+export function SpellStep({ character }: DefaultProps) {
   const [page, setPage] = useState<'available' | 'full' | 'howto'>('available');
 
   const { data: classSpellcasting } = useQuery({

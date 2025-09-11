@@ -13,18 +13,25 @@ import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
+import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
+import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
+import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
+import { HowToPlaySection } from './HowToPlaySection';
+import { SelectionDetails } from './SelectionDetails';
 import {
   mapDataForForm,
   mapTraits,
   type ChoiceObjectType,
   type ChoiceSelection
 } from './characterCreation.utils';
+import { RaceGuide } from './utils';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -45,6 +52,7 @@ export function CharacterRaceForm({
   const [selectedAbilities, setSelectedAbilities] = useState<RaceAbilityBonus[]>([]);
   const [selectedTraits, setSelectedTraits] = useState<ChoiceObjectType[]>([]);
   const [selectedSpells, setSelectedSpells] = useState<ChoiceObjectType[]>([]);
+  const [activeStep, setActiveStep] = useState(0);
 
   const { data: races } = useQuery({
     queryKey: ['fetchRaces', version],
@@ -70,11 +78,13 @@ export function CharacterRaceForm({
 
   const { data: raceTraits } = useQueries({
     queries:
-      (raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])?.map(({ index }) => ({
-        queryKey: ['fetchTrait', version, index],
-        queryFn: async () => (version ? await getTrait(version, index) : null),
-        enabled: !!index && !!version
-      })) || [],
+      uniqBy((raceInfo?.traits || []).concat(subraceInfo?.racial_traits || []), 'index')?.map(
+        ({ index }) => ({
+          queryKey: ['fetchTrait', version, index],
+          queryFn: async () => (version ? await getTrait(version, index) : null),
+          enabled: !!index && !!version
+        })
+      ) || [],
     combine: useCallback(
       (results: UseQueryResult<Trait | null, Error>[]) => ({
         data: results.map(({ data }) => data).filter((data) => data) as Trait[],
@@ -109,6 +119,27 @@ export function CharacterRaceForm({
       toast('Something changed in your race');
     }
   }, [languages.map(({ index }) => index).join(', ')]);
+
+  useEffect(() => {
+    if (races) {
+      setSelectedProficiencies([]);
+      setSelectedLanguages([]);
+      setSelectedAbilities([]);
+      setselectedSubrace(undefined);
+      setselectedRace(races.find((e) => e.index === races[activeStep].index));
+    }
+  }, [races, activeStep]);
+
+  const raceCardActions: Partial<SwipeableCallbacks> = {
+    onSwipedLeft: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep > 0 ? prevActiveStep - 1 : (races?.length || 0) - 1
+      ),
+    onSwipedRight: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep < (races?.length || 0) - 1 ? prevActiveStep + 1 : 0
+      )
+  };
 
   const isValid = () =>
     selectedRace?.index &&
@@ -169,40 +200,54 @@ export function CharacterRaceForm({
     selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
   };
 
+  const selectedRacePlaystyle = useMemo(
+    () => RaceGuide.find(({ index }) => index === selectedRace?.index),
+    [selectedRace?.index]
+  );
+
   return (
     <Box>
       {races && (
-        <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="race">Races</InputLabel>
-          <Select
-            fullWidth
-            id="race"
-            label="Races"
-            disabled={!races}
-            value={selectedRace?.index || ''}
-            onChange={({ target }) => {
-              setSelectedProficiencies([]);
-              setSelectedLanguages([]);
-              setSelectedAbilities([]);
-              setselectedSubrace(undefined);
-              setselectedRace(races.find((e) => e.index === target.value));
-            }}
-          >
-            {races.map((currentRace) => (
-              <MenuItem key={currentRace.index} id={currentRace.index} value={currentRace.index}>
-                {currentRace.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions}>
+          <HowToPlaySection playstyle={selectedRacePlaystyle} />
+        </CardCarousel>
       )}
+
+      <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={2}>
+        {raceInfo?.ability_bonuses.map((ability) => {
+          return (
+            <IconText
+              key={ability.ability_score.index}
+              label={ability.ability_score.name.toLocaleLowerCase()}
+              value={`+${ability.bonus}`}
+              Icon={getAbilityIcon(ability.ability_score.index)}
+              color="grey"
+              top="35px"
+              size="40px"
+            />
+          );
+        })}
+        {subraceInfo?.ability_bonuses.map((ability) => {
+          return (
+            <IconText
+              key={ability.ability_score.index}
+              label={ability.ability_score.name.toLocaleLowerCase()}
+              value={`+${ability.bonus}`}
+              Icon={getAbilityIcon(ability.ability_score.index)}
+              color="grey"
+              top="35px"
+              size="40px"
+            />
+          );
+        })}
+      </Box>
 
       {!!raceInfo?.subraces?.length && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="subRace">Sub-Race</InputLabel>
+          <InputLabel htmlFor="subraces">Sub-Race</InputLabel>
           <Select
             fullWidth
-            id="subRace"
+            id="subraces"
             label="Sub-Race"
             value={selectedSubrace?.index || raceInfo.subraces[0].index}
             onChange={({ target }) => {
@@ -214,7 +259,7 @@ export function CharacterRaceForm({
           >
             {raceInfo.subraces.map((currentSubrace) => (
               <MenuItem
-                key={currentSubrace.index}
+                key={`subraces-${currentSubrace.index}`}
                 id={currentSubrace.index}
                 value={currentSubrace.index}
               >
@@ -223,6 +268,21 @@ export function CharacterRaceForm({
             ))}
           </Select>
         </FormControl>
+      )}
+
+      {selectedRace && raceInfo && (
+        <SelectionDetails
+          selected={selectedRace}
+          subSelected={subraceInfo || undefined}
+          info={{
+            ...raceInfo,
+            speed: subraceInfo?.speed || raceInfo?.speed || 0,
+            starting_proficiencies: (raceInfo?.starting_proficiencies || []).concat(
+              subraceInfo?.starting_proficiencies || []
+            )
+          }}
+          traits={(raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])}
+        />
       )}
 
       {selectedRace && raceInfo?.starting_proficiency_options && (
@@ -242,7 +302,6 @@ export function CharacterRaceForm({
           </Box>
         </Fragment>
       )}
-
       {selectedRace && (raceInfo?.language_options || subraceInfo?.language_options) && (
         <Fragment>
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
@@ -263,7 +322,6 @@ export function CharacterRaceForm({
           </Box>
         </Fragment>
       )}
-
       {selectedRace && (
         <Fragment>
           {raceInfo?.ability_bonus_options && (

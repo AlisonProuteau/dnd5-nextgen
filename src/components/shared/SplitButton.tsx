@@ -81,7 +81,7 @@ export function SplitButton({
                 <MenuList id="split-button-menu" autoFocusItem>
                   {options.map((option) => (
                     <MenuItem
-                      key={option.value}
+                      key={`split-button-${option.value}`}
                       selected={option.value === selectedIndex}
                       onClick={() => handleMenuItemClick(option.value)}
                     >

@@ -11,20 +11,28 @@ import {
 } from '@mui/material';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Level } from '@representations/campaign/level.representation';
-import type { Classes } from '@representations/character/class.representation';
+import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
+import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { Fragment, useCallback, useEffect, useState } from 'react';
+import { uniqBy } from 'lodash';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-import { Choices } from './Choices';
+import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
+import { CardCarousel } from './CardCarousel';
 import {
   mapDataForForm,
   mapFeatures,
   type ChoiceObjectType,
   type ChoiceSelection
 } from './characterCreation.utils';
+import { Choices } from './Choices';
+import { HowToPlaySection } from './HowToPlaySection';
+import { SelectionDetails } from './SelectionDetails';
+import { ClassGuide } from './utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -44,6 +52,7 @@ export function CharacterClassForm({
   const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
   const [selectedFeatures, setSelectedFeatures] = useState<ChoiceObjectType[]>([]);
   const [selectedExpertises, setSelectedExpertises] = useState<ChoiceObjectType[]>([]);
+  const [activeStep, setActiveStep] = useState(0);
 
   const { data: classes } = useQuery({
     queryKey: ['fetchClasses', version],
@@ -60,11 +69,24 @@ export function CharacterClassForm({
     enabled: !!selectedClass?.index && !!version
   });
 
+  const { data: subclassInfo } = useQuery({
+    queryKey: ['fetchSubClassInfo', version, selectedClass?.index, selectedSubclass?.index],
+    queryFn: async () =>
+      selectedClass?.index && selectedSubclass?.index && version
+        ? ((await getSubclassInfo(
+            version,
+            selectedClass.index,
+            selectedSubclass.index
+          )) as Subclass | null)
+        : null,
+    enabled: !!selectedClass?.index && !!version
+  });
+
   const { data: levelInfo } = useQuery({
     queryKey: ['fetchClassInfoLevel', version, selectedClass?.index, selectedSubclass?.index, 1],
     queryFn: async () => {
       if (!selectedClass?.index || !version) return null;
-      let levelRes: Partial<Level> = {};
+      let levelRes: Level | undefined = undefined;
 
       const classRes = (await getClassInfo(version, selectedClass.index, 1)) as Level | null;
       if (classRes) levelRes = { ...classRes };
@@ -77,21 +99,22 @@ export function CharacterClassForm({
           1
         )) as Level | null;
 
+        // Only features are added from subclass level, other info is on class level as of level 1
         if (subclassRes)
           levelRes = {
-            ...levelRes,
-            features: [...(levelRes.features || []), ...(subclassRes.features || [])]
+            ...(levelRes || subclassRes),
+            features: [...(levelRes?.features || []), ...(subclassRes.features || [])]
           };
       }
 
-      return Object.keys(levelRes).length ? (levelRes as Level) : null;
+      return levelRes ? levelRes : null;
     },
     enabled: !!selectedClass && !!version
   });
 
   const { data: classFeatures } = useQueries({
     queries:
-      levelInfo?.features?.map(({ index }) => ({
+      uniqBy(levelInfo?.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', version, index],
         queryFn: async () => (version ? await getFeature(version, index) : null),
         enabled: !!index && !!version
@@ -108,7 +131,7 @@ export function CharacterClassForm({
   useEffect(() => {
     if (classInfo?.subclasses?.length && !selectedSubclass)
       setselectedSubclass(classInfo.subclasses[0]);
-  }, [classInfo?.subclasses?.map((r) => r.index).join(' ')]);
+  }, [classInfo?.subclasses?.map((c) => c.index).join(' ')]);
 
   useEffect(() => {
     const newProficiencies = selectedProficiencies.filter(
@@ -120,6 +143,17 @@ export function CharacterClassForm({
       toast('Something changed in your class');
     }
   }, [proficiencies.map(({ index }) => index).join(', ')]);
+
+  useEffect(() => {
+    if (classes) {
+      setSelectedProficiencies([]);
+      setSelectedEquipments([]);
+      setSelectedFeatures([]);
+      setSelectedExpertises([]);
+      setselectedSubclass(undefined);
+      setselectedClass(classes.find((e) => e.index === classes[activeStep].index));
+    }
+  }, [classes, activeStep]);
 
   const isValid = () =>
     selectedClass?.index &&
@@ -166,42 +200,51 @@ export function CharacterClassForm({
     else fn(data);
   };
 
+  const classCardActions: Partial<SwipeableCallbacks> = {
+    onSwipedLeft: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep > 0 ? prevActiveStep - 1 : (classes?.length || 0) - 1
+      ),
+    onSwipedRight: () =>
+      setActiveStep((prevActiveStep) =>
+        prevActiveStep < (classes?.length || 0) - 1 ? prevActiveStep + 1 : 0
+      )
+  };
+
+  const selectedClassPlaystyle = useMemo(
+    () => ClassGuide.find(({ index }) => index === selectedClass?.index),
+    [selectedClass?.index]
+  );
+
   return (
     <Box>
       {classes && (
-        <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="class">Classes</InputLabel>
-          <Select
-            fullWidth
-            id="class"
-            label="Classes"
-            disabled={!classes}
-            value={selectedClass?.index || ''}
-            onChange={({ target }) => {
-              setSelectedProficiencies([]);
-              setSelectedEquipments([]);
-              setSelectedFeatures([]);
-              setSelectedExpertises([]);
-              setselectedSubclass(undefined);
-              setselectedClass(classes.find((e) => e.index === target.value));
-            }}
-          >
-            {classes.map((currentClass) => (
-              <MenuItem key={currentClass.index} id={currentClass.index} value={currentClass.index}>
-                {currentClass.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions}>
+          <HowToPlaySection playstyle={selectedClassPlaystyle} />
+        </CardCarousel>
       )}
+
+      {/* {levelInfo?.ability_score_bonuses} */}
+      <Box display="flex" flexDirection="row" justifyContent="center" width="100%" marginTop={5}>
+        {classInfo?.saving_throws.map((ability) => (
+          <IconText
+            key={ability.index}
+            label={ability.name.toLocaleLowerCase()}
+            Icon={getAbilityIcon(ability.index)}
+            color="grey"
+            top="35px"
+            size="40px"
+          />
+        ))}
+      </Box>
 
       {!!classInfo?.subclasses?.length && (
         <FormControl fullWidth margin="dense">
-          <InputLabel htmlFor="subRace">Sub-Race</InputLabel>
+          <InputLabel htmlFor="subclass">Sub-Class</InputLabel>
           <Select
             fullWidth
-            id="subRace"
-            label="Sub-Race"
+            id="subclass"
+            label="Sub-Class"
             value={selectedSubclass?.index || classInfo.subclasses[0].index}
             onChange={({ target }) => {
               setSelectedProficiencies([]);
@@ -213,7 +256,7 @@ export function CharacterClassForm({
           >
             {classInfo.subclasses.map((currentSubclass) => (
               <MenuItem
-                key={currentSubclass.index}
+                key={`subclass-${currentSubclass.index}`}
                 id={currentSubclass.index}
                 value={currentSubclass.index}
               >
@@ -222,6 +265,24 @@ export function CharacterClassForm({
             ))}
           </Select>
         </FormControl>
+      )}
+
+      {selectedClass && classInfo && levelInfo && (
+        <SelectionDetails
+          selected={selectedClass}
+          subSelected={subclassInfo || undefined}
+          features={levelInfo?.features || []}
+          info={{
+            spellcasting: classInfo.spellcasting,
+            hit_die: classInfo.hit_die,
+            proficiencies: classInfo.proficiencies,
+            starting_equipment: classInfo.starting_equipment,
+            spells: subclassInfo?.spells,
+            class_specific: levelInfo.class_specific,
+            subclass_specific: levelInfo.subclass_specific,
+            prof_bonus: levelInfo.prof_bonus
+          }}
+        />
       )}
 
       {selectedClass && (

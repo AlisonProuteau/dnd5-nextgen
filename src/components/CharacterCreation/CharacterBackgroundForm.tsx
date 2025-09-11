@@ -136,7 +136,7 @@ export function CharacterBackgroundForm({
             <InputLabel htmlFor="background">Background</InputLabel>
             <Select
               fullWidth
-              id="race"
+              id="background"
               label="Backgrounds"
               disabled={!backgrounds}
               value={selectedBackground?.index || ''}
@@ -153,7 +153,7 @@ export function CharacterBackgroundForm({
             >
               {backgrounds.map((currentBackground) => (
                 <MenuItem
-                  key={currentBackground.index}
+                  key={`backgrounds-${currentBackground.index}`}
                   id={currentBackground.index}
                   value={currentBackground.index}
                 >
@@ -176,7 +176,7 @@ export function CharacterBackgroundForm({
               <MenuItem value=""> </MenuItem>
               {alignments?.map((currentAlignment: DefaultRepresentation) => (
                 <MenuItem
-                  key={currentAlignment.index}
+                  key={`alignments-${currentAlignment.index}`}
                   id={currentAlignment.index}
                   value={currentAlignment.index}
                   disabled={

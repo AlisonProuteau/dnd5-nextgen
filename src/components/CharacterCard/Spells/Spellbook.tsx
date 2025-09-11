@@ -216,6 +216,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
       <Dialog
         fullWidth
+        maxWidth="lg"
         open={isLearnOpen || isPrepareOpen}
         onClose={() => saveSpells(isLearnOpen)}
         PaperProps={{ elevation: 0 }}
@@ -253,6 +254,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
       <Dialog
         fullWidth
+        maxWidth="lg"
         open={isAddOpen}
         onClose={() => saveSpells(true)}
         PaperProps={{ elevation: 0 }}

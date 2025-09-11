@@ -94,8 +94,9 @@ export default function CharacterForm({
         ).map(([field, options]) => (
           <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field}>
             <FormControl fullWidth>
-              <InputLabel>{fieldNames[field]}</InputLabel>
+              <InputLabel htmlFor={fieldNames[field]}>{fieldNames[field]}</InputLabel>
               <Select
+                id={fieldNames[field]}
                 value={form[field] ?? ''}
                 label={fieldNames[field]}
                 onChange={handleChange(field)}

@@ -32,6 +32,7 @@ export const NumberInput = React.forwardRef(function CustomNumberInput(
         {label}
       </InputLabel>
       <BaseNumberInput
+        id={id}
         slots={{
           root: StyledInputRoot,
           input: StyledInput,

@@ -47,7 +47,11 @@ export function CharacterDescription({ setFormData, onPrev }: CharacterDescripti
           }
         >
           {genderInstances.map((currentSex: DefaultRepresentation) => (
-            <MenuItem key={currentSex.index} id={currentSex.index} value={currentSex.index}>
+            <MenuItem
+              key={`sex-${currentSex.index}`}
+              id={currentSex.index}
+              value={currentSex.index}
+            >
               {currentSex.name}
             </MenuItem>
           ))}

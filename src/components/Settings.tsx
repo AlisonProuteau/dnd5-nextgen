@@ -52,15 +52,15 @@ export function Settings() {
     <Container>
       <form onSubmit={handleSubmitVersion}>
         <FormControl fullWidth disabled={!user || isLoading}>
-          <InputLabel id="version-select">Version</InputLabel>
+          <InputLabel html-for="version-select">Version</InputLabel>
           <Select
-            labelId="version-select"
+            id="version-select"
             value={selectedVersion}
             label="Age"
             onChange={({ target }) => setSelectedVersion((target.value as Version) || null)}
           >
             {VERSIONS?.map((current) => (
-              <MenuItem key={current} value={current}>
+              <MenuItem key={`version-${current}`} value={current}>
                 {current}
               </MenuItem>
             ))}
