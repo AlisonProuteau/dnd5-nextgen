@@ -1,4 +1,4 @@
-import type { Character, UserData } from '@representations/user.representation';
+import type { Character, CharacterNote, UserData } from '@representations/user.representation';
 import { get, getAll } from '@utils/api.utils';
 import { VERSIONS, type Version } from '@utils/versions.constants';
 import { updateProfile } from 'firebase/auth';
@@ -50,6 +50,12 @@ export const getUserCharacters = async (
       { fieldPath: 'version', opStr: '==', value: version }
     ])
   ).results;
+
+export const getCharacterNotes = async (
+  userId: string,
+  characterId: string
+): Promise<CharacterNote[] | undefined> =>
+  (await getAll('All character notes', `users/${userId}/characters/${characterId}/notes`)).results;
 
 export const getCharacter = async (
   userId: string,
