@@ -60,6 +60,14 @@ export type Character = CharacterFormData & {
   version: Version;
 };
 
+export interface CharacterNote {
+  id: string;
+  content: string;
+  createdAt: Date;
+  updatedAt?: Date;
+  pinned?: boolean;
+}
+
 export type UserData = {
   identifier: string;
   admin?: boolean;

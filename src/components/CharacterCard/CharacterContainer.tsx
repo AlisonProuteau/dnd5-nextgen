@@ -1,6 +1,6 @@
 import { getClassInfo } from '@api/ressources';
 import { getCharacter } from '@api/users';
-import { EditRounded, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import { EditRounded, EventNote, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -19,6 +19,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../providers/AuthProvider';
 import { Characteristics } from './Characteristics/CharacteristicsStep';
+import { CharacterNotes } from './CharacterNotes';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
 import { SpellStep } from './Spells/SpellsStep';
@@ -31,6 +32,7 @@ export function CharacterContainer() {
   const [id, setId] = useState<string>();
   const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -161,6 +163,22 @@ export function CharacterContainer() {
           <EditRounded />
         </Link>
       </Fab>
+
+      <Fab
+        size="small"
+        sx={{ ...button, ...fab, marginRight: 6 }}
+        onClick={() => setIsNoteOpen(true)}
+        disabled={!character?.id}
+      >
+        <EventNote />
+      </Fab>
+      {character && (
+        <CharacterNotes
+          isNoteOpen={isNoteOpen}
+          setIsNoteOpen={setIsNoteOpen}
+          character={character}
+        />
+      )}
     </Container>
   );
 }
