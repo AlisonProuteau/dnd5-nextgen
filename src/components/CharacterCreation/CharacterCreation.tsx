@@ -3,7 +3,7 @@ import type { CharacterFormData } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { database } from 'src/firebase';
@@ -31,6 +31,8 @@ export function CharacterCreation() {
   });
   const [formError, setFormErrorState] = useState({});
   const [activeStep, setActiveStep] = useState(0);
+
+  useEffect(() => window.scrollTo({ top: 0, behavior: 'smooth' }), [activeStep]);
 
   const setFormData = (values: Partial<CharacterFormData>) => {
     const formatedObject = { ...formData, ...values };

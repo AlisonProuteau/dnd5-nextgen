@@ -1,5 +1,5 @@
 import { getCharacterNotes } from '@api/users';
-import { EditNote, NoteAdd } from '@mui/icons-material';
+import { EditNote, NoteAdd, PushPin, PushPinOutlined } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import type { Character, CharacterNote } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { collection, doc, setDoc, updateDoc, type Timestamp } from 'firebase/firestore';
 import { groupBy } from 'lodash';
 import { Fragment, useEffect, useMemo, useState } from 'react';
@@ -26,11 +26,45 @@ interface CharacterNotesProps {
   character: Character;
 }
 
-// TODO: Cleanup and test
 export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: CharacterNotesProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [note, setNote] = useState<Partial<CharacterNote>>({});
+
+  const formatNoteDates = (note: CharacterNote) => {
+    const createdAtFormatted =
+      note.createdAt instanceof Date
+        ? note.createdAt
+        : (note.createdAt as unknown as Timestamp).toDate();
+    const updatedAtFormatted = note.updatedAt
+      ? note.updatedAt instanceof Date
+        ? note.updatedAt
+        : (note.updatedAt as unknown as Timestamp).toDate()
+      : undefined;
+
+    return note.updatedAt
+      ? {
+          ...note,
+          createdAt: createdAtFormatted,
+          updatedAt: updatedAtFormatted
+        }
+      : { ...note, createdAt: createdAtFormatted };
+  };
+
+  const formatCharacterNotes = (
+    notes: CharacterNote[]
+  ): [CharacterNote[] | undefined, CharacterNote[] | undefined] => {
+    const formattedNotes = notes.map(formatNoteDates);
+    const pinnedNotes = formattedNotes
+      .filter((note) => note.pinned)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    const unpinnedNotes = formattedNotes
+      .filter((note) => !note.pinned)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return [pinnedNotes, unpinnedNotes];
+  };
 
   const {
     data: characterNotes,
@@ -40,19 +74,6 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
     queryKey: ['fetchNotes', user?.uid, character.id],
     queryFn: async () =>
       user?.uid && character.id ? await getCharacterNotes(user.uid, character.id) : null,
-    select(data) {
-      return data
-        ?.map((note) =>
-          note.updatedAt
-            ? {
-                ...note,
-                createdAt: (note.createdAt as unknown as Timestamp).toDate(),
-                updatedAt: (note.updatedAt as unknown as Timestamp).toDate()
-              }
-            : { ...note, createdAt: (note.createdAt as unknown as Timestamp).toDate() }
-        )
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    },
     enabled: !!user?.uid && !!character.id
   });
 
@@ -63,15 +84,23 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
   const isValid = useMemo(() => {
     if (!note.id) return !!note.content?.trim()?.length;
 
-    const existingNote = characterNotes?.filter(({ id }) => id === note.id)?.[0];
+    const existingNote = characterNotes?.flat().filter((current) => current?.id === note.id)?.[0];
     return !!note.content?.trim()?.length && note.content?.trim() !== existingNote?.content;
   }, [note, characterNotes]);
+
+  const updateNotes = (note: CharacterNote) => {
+    queryClient.setQueryData(
+      ['fetchNotes', user?.uid, character.id],
+      (oldData: CharacterNote[] | undefined) =>
+        !oldData ? oldData : [...oldData.filter(({ id }) => id !== note.id), note]
+    );
+  };
 
   const saveNote = async () => {
     if (isValid && character.id && user?.uid) {
       let formattedNote = {
         ...note,
-        content: note.content?.trim()
+        content: note.content?.trim() || ''
       };
 
       const path = `users/${user.uid}/characters/${character.id}/notes`;
@@ -86,17 +115,32 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
           await setDoc(document, formattedNote);
         } else {
           const document = doc(database, path, formattedNote.id);
-          await updateDoc(document, { ...formattedNote, updatedAt: new Date() });
+          formattedNote = { ...formattedNote, updatedAt: new Date() };
+          await updateDoc(document, formattedNote);
         }
-
-        toast.success('Character Points Updated');
       } catch (error) {
         toast.error(`Something went wrong
           ${(error as Error).message || 'Error'}`);
       } finally {
         setEditMode(false);
-        await refetchCharacterNotes();
+        updateNotes(formattedNote as CharacterNote);
       }
+    }
+  };
+
+  const pinNote = async (id: string, pinned: boolean) => {
+    const currentNote = characterNotes?.flat().filter((note) => note?.id === id)?.[0];
+
+    if (currentNote && !editMode && character.id && user?.uid) {
+      const path = `users/${user.uid}/characters/${character.id}/notes`;
+
+      const document = doc(database, path, id);
+      updateDoc(document, { pinned })
+        .catch((error) =>
+          toast.error(`Something went wrong
+          ${(error as Error).message || 'Error'}`)
+        )
+        .finally(() => updateNotes({ ...currentNote, pinned }));
     }
   };
 
@@ -106,9 +150,6 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
       open={isNoteOpen}
       onClose={() => setIsNoteOpen(false)}
       variant="temporary"
-      ModalProps={{
-        keepMounted: false
-      }}
     >
       {isCharacterNotesLoading ? (
         <CircularProgress size={24} key={`${character.id}-notes-loading`} />
@@ -153,39 +194,80 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
               </Fragment>
             ) : characterNotes?.length ? (
               <Box display="flex" flexDirection="column" gap={1} overflow="visible">
-                {Object.entries(
-                  groupBy(characterNotes, ({ createdAt }) =>
-                    createdAt.toLocaleDateString(navigator.language, {
-                      month: 'long',
-                      year: 'numeric'
-                    })
-                  )
-                ).map(([date, datedNotes]) => (
-                  <Fragment key={`notes-${date}`}>
-                    <Typography textTransform="capitalize">{date}</Typography>
-                    {datedNotes?.map((note) => (
-                      <Card key={note.id}>
-                        <IconButton
-                          sx={{ position: 'relative', float: 'right' }}
-                          onClick={() => {
-                            setNote(note);
-                            setEditMode(true);
-                          }}
-                        >
-                          <EditNote fontSize="large" />
-                        </IconButton>
-                        <CardContent>
-                          <Typography variant="caption" color="text.secondary">
-                            {note.createdAt.toLocaleDateString(navigator.language, {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </Typography>
-                          <Typography>{note.content}</Typography>
-                        </CardContent>
-                      </Card>
+                {formatCharacterNotes(characterNotes).map((noteList, free) => (
+                  <Box
+                    key={free ? 'unpinned' : 'pinned'}
+                    sx={{
+                      borderBottom: free || !noteList?.length ? '' : '1px solid',
+                      borderColor: 'divider'
+                    }}
+                    paddingBottom={1}
+                  >
+                    {Object.entries(
+                      groupBy(noteList, ({ createdAt }) =>
+                        createdAt.toLocaleDateString(navigator.language, {
+                          month: 'long',
+                          year: 'numeric'
+                        })
+                      )
+                    ).map(([date, datedNotes]) => (
+                      <Fragment key={`${!free ? 'pinned' : 'unpinned'}-notes-${date}`}>
+                        <Typography textTransform="capitalize">{date}</Typography>
+                        {datedNotes?.map((note) => (
+                          <Card key={note.id} elevation={note.pinned ? 1 : 5}>
+                            <Box
+                              sx={{
+                                position: 'relative',
+                                float: 'right',
+                                fontSize: 'medium'
+                              }}
+                            >
+                              <IconButton
+                                sx={{ paddingX: 0 }}
+                                onClick={() => {
+                                  setNote(note);
+                                  setEditMode(true);
+                                }}
+                              >
+                                <EditNote />
+                              </IconButton>
+                              <IconButton onClick={() => pinNote(note.id, !note.pinned)}>
+                                {note.pinned ? (
+                                  <PushPin />
+                                ) : (
+                                  <PushPinOutlined sx={{ transform: 'rotate(60deg)' }} />
+                                )}
+                              </IconButton>
+                            </Box>
+                            <CardContent>
+                              <Typography variant="caption" color="text.secondary">
+                                {note.createdAt.toLocaleDateString(navigator.language, {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </Typography>
+                              {note.updatedAt ? (
+                                <Typography variant="caption" color="text.secondary">
+                                  {` (last edit ${note.updatedAt.toLocaleDateString(
+                                    navigator.language,
+                                    {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    }
+                                  )})`}
+                                </Typography>
+                              ) : null}
+                              <Typography>{note.content}</Typography>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Fragment>
                     ))}
-                  </Fragment>
+                  </Box>
                 ))}
               </Box>
             ) : (
