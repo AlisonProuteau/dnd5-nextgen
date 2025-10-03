@@ -1,4 +1,10 @@
-import { getAllClasses, getClassInfo, getFeature, getSubclassInfo } from '@api/ressources';
+import {
+  getAllClasses,
+  getClassGuide,
+  getClassInfo,
+  getFeature,
+  getSubclassInfo
+} from '@api/ressources';
 import {
   Box,
   Button,
@@ -13,11 +19,12 @@ import type { Feature } from '@representations/abilities/feature.representation'
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { ClassGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -32,7 +39,6 @@ import {
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';
-import { ClassGuide } from './utils';
 
 interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
@@ -109,6 +115,15 @@ export function CharacterClassForm({
 
       return levelRes ? levelRes : null;
     },
+    enabled: !!selectedClass && !!version
+  });
+
+  const { data: classGuide } = useQuery({
+    queryKey: ['fetchClassGuide', version, selectedClass?.index],
+    queryFn: async () =>
+      !selectedClass?.index || !version
+        ? null
+        : ((await getClassGuide(version, selectedClass.index)) as ClassGuide | null) || null,
     enabled: !!selectedClass && !!version
   });
 
@@ -211,16 +226,11 @@ export function CharacterClassForm({
       )
   };
 
-  const selectedClassPlaystyle = useMemo(
-    () => ClassGuide.find(({ index }) => index === selectedClass?.index),
-    [selectedClass?.index]
-  );
-
   return (
     <Box>
       {classes && (
         <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions}>
-          <HowToPlaySection playstyle={selectedClassPlaystyle} />
+          {classGuide && <HowToPlaySection playstyle={classGuide} />}
         </CardCarousel>
       )}
 

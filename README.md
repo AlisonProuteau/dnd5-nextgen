@@ -11,3 +11,4 @@ TODO List:
 - Figure out class archetype?
 - Add 2024 version when added to DB
 - Add delete/archive characters option
+- Add delete/archive notes option
