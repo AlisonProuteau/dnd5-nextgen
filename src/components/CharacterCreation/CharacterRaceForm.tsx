@@ -1,4 +1,4 @@
-import { getAllRaces, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
 import {
   Box,
   Button,
@@ -12,11 +12,12 @@ import {
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import { RaceGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -31,7 +32,6 @@ import {
   type ChoiceObjectType,
   type ChoiceSelection
 } from './characterCreation.utils';
-import { RaceGuide } from './utils';
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -74,6 +74,15 @@ export function CharacterRaceForm({
         ? await getSubraceInfo(version, selectedRace.index, selectedSubrace.index)
         : null,
     enabled: !!selectedRace?.index && !!version
+  });
+
+  const { data: raceGuide } = useQuery({
+    queryKey: ['fetchClassGuide', version, selectedRace?.index],
+    queryFn: async () =>
+      !selectedRace?.index || !version
+        ? null
+        : ((await getRaceGuide(version, selectedRace.index)) as RaceGuide | null) || null,
+    enabled: !!selectedRace && !!version
   });
 
   const { data: raceTraits } = useQueries({
@@ -200,16 +209,11 @@ export function CharacterRaceForm({
     selectedSubrace?.index ? onNext({ ...data, subrace: selectedSubrace }) : onNext(data);
   };
 
-  const selectedRacePlaystyle = useMemo(
-    () => RaceGuide.find(({ index }) => index === selectedRace?.index),
-    [selectedRace?.index]
-  );
-
   return (
     <Box>
       {races && (
         <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions}>
-          <HowToPlaySection playstyle={selectedRacePlaystyle} />
+          {raceGuide && <HowToPlaySection playstyle={raceGuide} />}
         </CardCarousel>
       )}
 

@@ -8,6 +8,7 @@ import type { Alignment, Background } from '@representations/character/backgroun
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { Race, Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '@representations/common.representation';
+import type { ClassGuide, RaceGuide } from '@representations/guide.representation';
 import { get, getAll, type QueryObject } from '@utils/api.utils';
 import type { Version } from '@utils/versions.constants';
 
@@ -93,6 +94,25 @@ export async function getSubclassInfo(
         formatPath(`classes/${classIndex}/subclasses`, version),
         subclassIndex
       );
+}
+
+export async function getClassGuide(
+  version: Version,
+  classIndex: string
+): Promise<ClassGuide | null> {
+  return get(
+    `Class Guide`,
+    formatPath(`classes/${classIndex}/guides`, version),
+    `${classIndex}-guide-v1`
+  );
+}
+
+export async function getRaceGuide(version: Version, raceIndex: string): Promise<RaceGuide | null> {
+  return get(
+    `Race Guide`,
+    formatPath(`races/${raceIndex}/guides`, version),
+    `${raceIndex}-guide-v1`
+  );
 }
 
 export function getAllAligmenents(

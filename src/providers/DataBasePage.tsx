@@ -15,6 +15,7 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { ClassGuide, RaceGuide } from '@representations/guide.representation';
 import { getAll } from '@utils/api.utils';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
@@ -185,6 +186,22 @@ export function DataBasePage() {
                 : spell;
             }
             formattedItem = spell;
+          } else if (id === 'guides') {
+            let guide = item as ClassGuide | RaceGuide;
+            const entity = { index: guide.index, name: guide.name };
+
+            if ('evolution' in guide) {
+              path = `classes/${guide.index}/guides`;
+              guide = { ...guide, class: entity };
+            } else {
+              path = `races/${guide.index}/guides`;
+              guide = { ...guide, race: entity };
+            }
+            formattedItem = {
+              ...guide,
+              index: `${guide.index}-guide-v1`,
+              name: `${guide.name} Guide V1`
+            };
           }
 
           path = `versions/${version.toLowerCase()}/${path}`;
@@ -226,7 +243,7 @@ export function DataBasePage() {
       <Button
         fullWidth
         variant="outlined"
-        disabled={isLoading || isMigrating}
+        disabled={isLoading || isMigrating || true}
         onClick={migrateData}
       >
         {isMigrating ? <CircularProgress size={24} /> : 'Migrate All'}
@@ -244,14 +261,13 @@ export function DataBasePage() {
           />
         </FormControl>
 
-        <FormControl fullWidth margin="dense">
+        <FormControl fullWidth margin="dense" sx={{ overflow: 'scroll', height: '75vh' }}>
           <OutlinedInput
             id="data"
             autoComplete="data"
             multiline
             value={docContent}
             onChange={({ currentTarget }) => setDocContent(currentTarget.value)}
-            sx={{ overflow: 'scroll', height: '75vh' }}
           />
         </FormControl>
         <Box display="flex" gap="5px">

@@ -36,8 +36,7 @@ interface ChoicesProps {
   setSelected: (data: any) => void;
 }
 
-// TODO: Choosing a trait is sometimes confusing (ex: reference - dragon ancestry)
-// TODO: Choosing a spell is sometimes confusing (elf)
+// TODO: Choosing a trait/spell is sometimes confusing (ex: reference - dragon ancestry / elf spells)
 export function Choices({
   choices,
   setSelected,

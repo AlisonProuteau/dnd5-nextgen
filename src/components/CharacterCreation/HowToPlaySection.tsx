@@ -10,8 +10,8 @@ import {
   ListItemIcon,
   Typography
 } from '@mui/material';
+import type { ClassGuide, GuideType, RaceGuide } from '@representations/guide.representation';
 import { Fragment, useMemo } from 'react';
-import type { GuideType } from './utils';
 
 function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
   const isPros = type === 'pros';
@@ -55,14 +55,7 @@ function BestForSection({ bestForArray }: { bestForArray: GuideType['bestFor'] }
 }
 
 interface HowToPlaySectionProps {
-  playstyle?: GuideType &
-    (
-      | { subraces?: Omit<GuideType, 'cons'>[] }
-      | {
-          evolution: string;
-          subclasses: (Omit<GuideType, 'pros' | 'cons'> & { evolution: string })[];
-        }
-    );
+  playstyle?: RaceGuide | ClassGuide;
 }
 
 export function HowToPlaySection({ playstyle }: HowToPlaySectionProps) {
