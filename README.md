@@ -47,7 +47,7 @@ A modern web application for creating and managing D&D 5e characters, built with
 1. Clone the repository:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/AlisonProuteau/dnd5-nextgen.git
 cd dnd5-nextgen
 ```
 
@@ -69,6 +69,12 @@ FIREBASE_CONFIG={"apiKey":"...","authDomain":"...","projectId":"..." ...}
 ```bash
 # Place your serviceAccount.json in the root directory
 ```
+
+### Code Style
+
+- ESLint and Prettier are configured for consistent code formatting
+- Run `yarn lint` to check code style
+- TypeScript strict mode is enabled
 
 ## Project Structure
 
@@ -134,12 +140,6 @@ firebase deploy
 ### Backup and Restore
 
 The application includes scripts for backing up and restoring Firestore data. See [`import_firestore.sh`](import_firestore.sh) for details.
-
-### Code Style
-
-- ESLint and Prettier are configured for consistent code formatting
-- Run `yarn lint` to check code style
-- TypeScript strict mode is enabled
 
 ## Available Scripts
 
