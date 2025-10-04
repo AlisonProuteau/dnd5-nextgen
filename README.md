@@ -161,11 +161,10 @@ MIT License - see [package.json](package.json) for details.
 
 - [ ] Complete code styling refactor
 - [ ] Add info page for app navigation and features
-- [ ] Spell enhancements (Manually add more cantrips/slots)?
-- [ ] Class archetype support?
 - [ ] D&D 2024 edition support
 - [ ] Character deletion/archiving
-- [ ] Notes management improvements (delete/archive)
+- [ ] Spell enhancements (Manually add more cantrips/slots)?
+- [ ] Class archetype support?
 
 ## Support
 

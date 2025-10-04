@@ -19,7 +19,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { useAuth } from '../../providers/AuthProvider';
 import { Characteristics } from './Characteristics/CharacteristicsStep';
-import { CharacterNotes } from './CharacterNotes';
+import { CharacterNotes } from './CharacterNotes/CharacterNotes';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
 import { SpellStep } from './Spells/SpellsStep';

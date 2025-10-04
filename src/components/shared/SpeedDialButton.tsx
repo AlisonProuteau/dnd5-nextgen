@@ -7,14 +7,12 @@ export default function SpeedDialButton({
   disabled = false,
   ...props
 }: SpeedDialProps & {
-  actions: { icon: ReactNode; name: string }[];
+  actions: { icon: ReactNode; name: string; hidden?: boolean }[];
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
 }) {
   const getSize = (size: 'small' | 'medium' | 'large' | undefined) => {
     switch (size) {
-      case 'small':
-        return 25;
       case 'small':
         return 25;
       case 'medium':
@@ -40,16 +38,18 @@ export default function SpeedDialButton({
       icon={<SpeedDialIcon />}
       {...props}
     >
-      {actions.map((action) => (
-        <SpeedDialAction
-          key={action.name}
-          icon={action.icon}
-          slotProps={{
-            fab: { size, sx: { margin: 1, ...buttonSize }, disabled },
-            tooltip: { title: action.name }
-          }}
-        />
-      ))}
+      {actions
+        .filter(({ hidden }) => !hidden)
+        .map((action) => (
+          <SpeedDialAction
+            key={action.name}
+            icon={action.icon}
+            slotProps={{
+              fab: { size, sx: { margin: 1, ...buttonSize }, disabled },
+              tooltip: { title: action.name }
+            }}
+          />
+        ))}
     </SpeedDial>
   );
 }
