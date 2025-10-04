@@ -1,5 +1,13 @@
 import { getCharacterNotes } from '@api/users';
-import { EditNote, NoteAdd, PushPin, PushPinOutlined } from '@mui/icons-material';
+import {
+  ArchiveOutlined,
+  Delete,
+  EditNote,
+  NoteAdd,
+  PushPin,
+  PushPinOutlined,
+  Restore
+} from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -12,8 +20,9 @@ import {
 } from '@mui/material';
 import type { Character, CharacterNote } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
+import SpeedDialButton from '@shared/SpeedDialButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, doc, setDoc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { collection, deleteDoc, doc, setDoc, updateDoc, type Timestamp } from 'firebase/firestore';
 import { groupBy } from 'lodash';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -26,11 +35,13 @@ interface CharacterNotesProps {
   character: Character;
 }
 
+// TODO: Hide archived notes by default, with a button to show them
 export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: CharacterNotesProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [editMode, setEditMode] = useState(false);
   const [note, setNote] = useState<Partial<CharacterNote>>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const formatNoteDates = (note: CharacterNote) => {
     const createdAtFormatted =
@@ -88,16 +99,23 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
     return !!note.content?.trim()?.length && note.content?.trim() !== existingNote?.content;
   }, [note, characterNotes]);
 
-  const updateNotes = (note: CharacterNote) => {
+  const optimisticUpdateNotes = (note: CharacterNote, del: boolean = false) => {
     queryClient.setQueryData(
       ['fetchNotes', user?.uid, character.id],
-      (oldData: CharacterNote[] | undefined) =>
-        !oldData ? oldData : [...oldData.filter(({ id }) => id !== note.id), note]
+      (oldData: CharacterNote[] | undefined) => {
+        if (oldData)
+          return del
+            ? oldData.filter(({ id }) => id !== note.id)
+            : [...oldData.filter(({ id }) => id !== note.id), note];
+        return oldData;
+      }
     );
   };
 
   const saveNote = async () => {
     if (isValid && character.id && user?.uid) {
+      setIsLoading(true);
+
       let formattedNote = {
         ...note,
         content: note.content?.trim() || ''
@@ -118,31 +136,80 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
           formattedNote = { ...formattedNote, updatedAt: new Date() };
           await updateDoc(document, formattedNote);
         }
+
+        setEditMode(false);
+        optimisticUpdateNotes(formattedNote as CharacterNote);
       } catch (error) {
         toast.error(`Something went wrong
           ${(error as Error).message || 'Error'}`);
       } finally {
-        setEditMode(false);
-        updateNotes(formattedNote as CharacterNote);
+        setIsLoading(false);
       }
     }
   };
 
-  const pinNote = async (id: string, pinned: boolean) => {
+  const updateNote = async (
+    id: string,
+    content: Record<string, boolean | string>,
+    del: boolean = false
+  ) => {
     const currentNote = characterNotes?.flat().filter((note) => note?.id === id)?.[0];
 
     if (currentNote && !editMode && character.id && user?.uid) {
+      setIsLoading(true);
       const path = `users/${user.uid}/characters/${character.id}/notes`;
 
       const document = doc(database, path, id);
-      updateDoc(document, { pinned })
+      return await (del ? deleteDoc(document) : updateDoc(document, content))
+        .then(() => optimisticUpdateNotes({ ...currentNote, ...content }, del))
         .catch((error) =>
           toast.error(`Something went wrong
           ${(error as Error).message || 'Error'}`)
         )
-        .finally(() => updateNotes({ ...currentNote, pinned }));
+        .finally(() => setIsLoading(false));
     }
   };
+
+  const pinNote = async (id: string, pinned: boolean) => updateNote(id, { pinned });
+  const archiveNote = async (id: string, archived: boolean) => updateNote(id, { archived });
+  const deleteNote = async (id: string) => updateNote(id, {}, true);
+
+  const noteActions = (note: CharacterNote) => [
+    {
+      icon: (
+        <EditNote
+          onClick={() => {
+            setNote(note);
+            setEditMode(true);
+          }}
+        />
+      ),
+      name: 'Edit'
+    },
+    {
+      icon: note.pinned ? (
+        <PushPin onClick={() => pinNote(note.id, !note.pinned)} />
+      ) : (
+        <PushPinOutlined
+          sx={{ transform: 'rotate(60deg)' }}
+          onClick={() => pinNote(note.id, !note.pinned)}
+        />
+      ),
+      name: note.pinned ? 'Pin' : 'Unpin'
+    },
+    {
+      icon: note.archived ? (
+        <Restore onClick={() => archiveNote(note.id, !note.archived)} />
+      ) : (
+        <ArchiveOutlined onClick={() => archiveNote(note.id, !note.archived)} />
+      ),
+      name: note.archived ? 'Restore' : 'Archive'
+    },
+    {
+      icon: <Delete onClick={() => deleteNote(note.id)} />,
+      name: 'Delete'
+    }
+  ];
 
   return (
     <Drawer
@@ -216,28 +283,21 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
                         {datedNotes?.map((note) => (
                           <Card key={note.id} elevation={note.pinned ? 1 : 5}>
                             <Box
-                              sx={{
-                                position: 'relative',
-                                float: 'right',
-                                fontSize: 'medium'
-                              }}
+                              position="relative"
+                              sx={{ float: 'right', marginRight: 1 }}
+                              height="100%"
+                              width="100%"
                             >
-                              <IconButton
-                                sx={{ paddingX: 0 }}
-                                onClick={() => {
-                                  setNote(note);
-                                  setEditMode(true);
+                              <SpeedDialButton
+                                ariaLabel="SpeedDial basic example"
+                                sx={{
+                                  position: 'absolute',
+                                  right: 0
                                 }}
-                              >
-                                <EditNote />
-                              </IconButton>
-                              <IconButton onClick={() => pinNote(note.id, !note.pinned)}>
-                                {note.pinned ? (
-                                  <PushPin />
-                                ) : (
-                                  <PushPinOutlined sx={{ transform: 'rotate(60deg)' }} />
-                                )}
-                              </IconButton>
+                                direction="left"
+                                actions={noteActions(note)}
+                                disabled={isLoading}
+                              />
                             </Box>
                             <CardContent>
                               <Typography variant="caption" color="text.secondary">

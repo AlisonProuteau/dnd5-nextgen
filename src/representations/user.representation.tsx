@@ -66,6 +66,7 @@ export interface CharacterNote {
   createdAt: Date;
   updatedAt?: Date;
   pinned?: boolean;
+  archived?: boolean;
 }
 
 export type UserData = {
