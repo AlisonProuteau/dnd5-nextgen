@@ -1,12 +1,13 @@
 import { Fragment, useCallback, useState } from 'react';
-import { MoneyIcon, WeightIcon } from '@assets';
+import { CoinsIcon, WeightIcon } from '@assets';
 import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
 import { getEquipment } from '@api/ressources';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import type { Equipment } from '@representations/campaign/equipment.representation';
+import { getCoinColor } from '@utils/ui';
+import { type Equipment, MoneyUnits } from '@representations/campaign/equipment.representation';
 import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
@@ -41,14 +42,6 @@ export function Equipments({ character }: DefaultProps) {
     <Fragment>
       <Box data-testid="equipment-section" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
-          label="GP"
-          value={character.armorClass}
-          Icon={MoneyIcon}
-          color="grey"
-          top="34px"
-          testid="inventory-money"
-        />
-        <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
             (total, equipment) => total + (equipment.weight || 0),
@@ -58,6 +51,14 @@ export function Equipments({ character }: DefaultProps) {
           color="grey"
           testid="inventory-weight"
         />
+        <Box justifySelf="center" sx={{ '& > *': { my: '-5px' } }} data-testid="inventory-money">
+          {MoneyUnits.map((coin) => (
+            <Box key={coin} display="flex" columnGap="5px" alignItems="center" data-testid={coin}>
+              <Typography>{character.money?.[coin] || 0}</Typography>
+              <CoinsIcon height="20px" width="20px" fill={getCoinColor(coin)} />
+            </Box>
+          ))}
+        </Box>
       </Box>
 
       {Object.values(equipmentList).map((category) => (
