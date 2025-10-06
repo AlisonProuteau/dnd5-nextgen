@@ -1,4 +1,5 @@
 import type { ActionDamage } from '@representations/campaign/adventure.representation';
+import type { MoneyUnitType } from '@representations/campaign/equipment.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { max, uniq } from 'lodash';
 
@@ -146,4 +147,17 @@ export const getDamageMinMax = (
     );
   if (charLevel) return getSlotMinMax(damage.damage_at_character_level, [charLevel]);
   else return getSlotMinMax(damage.damage_at_slot_level || damage.damage_at_character_level);
+};
+
+export const getCoinColor = (type: MoneyUnitType) => {
+  switch (type) {
+    case 'gp':
+      return 'goldenrod';
+    case 'sp':
+      return 'silver';
+    case 'cp':
+      return '#B87333';
+    default:
+      return 'white';
+  }
 };

@@ -17,6 +17,7 @@ import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
+import { getCoinColor } from '../utils';
 
 interface EquipmentCardProps {
   selectedEquipment: Equipment;
@@ -49,7 +50,11 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         </Box>
         <Box display="flex" flexDirection="column" alignItems="flex-end">
           <Box display="flex" gap="5px">
-            <CoinsIcon height="20px" width="20px" fill="goldenrod" />
+            <CoinsIcon
+              height="20px"
+              width="20px"
+              fill={getCoinColor(selectedEquipment.cost.unit)}
+            />
             <Typography>
               {selectedEquipment.cost.quantity}
               {selectedEquipment.cost.unit}
