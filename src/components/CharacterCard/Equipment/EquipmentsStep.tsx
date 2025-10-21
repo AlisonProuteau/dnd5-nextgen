@@ -6,7 +6,7 @@ import { IconText } from '@shared/IconText';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
 import { Fragment, useCallback, useState } from 'react';
-import type { DefaultProps } from 'src/components/Header';
+import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
 

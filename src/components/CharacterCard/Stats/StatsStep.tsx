@@ -7,7 +7,7 @@ import type { DefaultRepresentation } from '@representations/common.representati
 import { IconText } from '@shared/IconText';
 import { useQuery } from '@tanstack/react-query';
 import { Fragment } from 'react';
-import type { DefaultProps } from 'src/components/Header';
+import type { DefaultProps } from 'src/pages/Header';
 import { useAuth } from 'src/providers/AuthProvider';
 import { AbilityComponent } from './AbilityComponent';
 

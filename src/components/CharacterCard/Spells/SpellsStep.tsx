@@ -13,7 +13,7 @@ import type { Classes } from '@representations/character/class.representation';
 import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
-import type { DefaultProps } from 'src/components/Header';
+import type { DefaultProps } from 'src/pages/Header';
 import { SpellList } from './SpellList';
 import { Spellbook } from './Spellbook';
 
