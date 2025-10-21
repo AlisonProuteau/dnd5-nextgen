@@ -1,9 +1,9 @@
-export { default as AbilityIcon_cha } from './ability_cha.svg?react';
-export { default as AbilityIcon_con } from './ability_con.svg?react';
-export { default as AbilityIcon_dex } from './ability_dex.svg?react';
-export { default as AbilityIcon_int } from './ability_int.svg?react';
-export { default as AbilityIcon_str } from './ability_str.svg?react';
-export { default as AbilityIcon_wis } from './ability_wis.svg?react';
+export { default as AbilityChaIcon } from './ability_cha.svg?react';
+export { default as AbilityConIcon } from './ability_con.svg?react';
+export { default as AbilityDexIcon } from './ability_dex.svg?react';
+export { default as AbilityIntIcon } from './ability_int.svg?react';
+export { default as AbilityStrIcon } from './ability_str.svg?react';
+export { default as AbilityWisIcon } from './ability_wis.svg?react';
 export { default as AgeIcon } from './age.svg?react';
 export { default as AlignmentIcon } from './alignement.svg?react';
 export { default as AreaIcon } from './area.svg?react';

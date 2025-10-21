@@ -1,10 +1,10 @@
 import {
-  AbilityIcon_cha,
-  AbilityIcon_con,
-  AbilityIcon_dex,
-  AbilityIcon_int,
-  AbilityIcon_str,
-  AbilityIcon_wis,
+  AbilityChaIcon,
+  AbilityConIcon,
+  AbilityDexIcon,
+  AbilityIntIcon,
+  AbilityStrIcon,
+  AbilityWisIcon,
   ProficiencyIcon
 } from '@assets';
 
@@ -28,17 +28,17 @@ export const blackList: string[] = [
 export const getAbilityIcon = (ability: string) => {
   switch (ability) {
     case 'str':
-      return AbilityIcon_str;
+      return AbilityStrIcon;
     case 'dex':
-      return AbilityIcon_dex;
+      return AbilityDexIcon;
     case 'con':
-      return AbilityIcon_con;
+      return AbilityConIcon;
     case 'int':
-      return AbilityIcon_int;
+      return AbilityIntIcon;
     case 'wis':
-      return AbilityIcon_wis;
+      return AbilityWisIcon;
     case 'cha':
-      return AbilityIcon_cha;
+      return AbilityChaIcon;
     default:
       return ProficiencyIcon; // Fallback icon if ability is not recognized
   }
