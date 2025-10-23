@@ -10,7 +10,7 @@ import type { Race, Subrace } from '@representations/character/race.representati
 import type { DefaultRepresentation, Option } from '@representations/common.representation';
 import type { ClassGuide, RaceGuide } from '@representations/guide.representation';
 import { get, getAll, type QueryObject } from '@utils/api.utils';
-import type { Version } from '@utils/versions.constants';
+import type { Version } from '@utils/constants';
 
 const formatPath = (path: string, version?: Version) => {
   const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;

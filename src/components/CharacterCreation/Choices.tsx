@@ -22,10 +22,10 @@ import type {
   StringOption
 } from '@representations/common.representation';
 import { useQueryClient } from '@tanstack/react-query';
+import type { ChoiceObjectType } from '@utils/character';
 import { isArray } from 'lodash';
 import { useState, type ReactNode } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
-import type { ChoiceObjectType } from './characterCreation.utils';
 
 interface ChoicesProps {
   choices: (Choice | undefined)[];

@@ -1,6 +1,6 @@
 import { Box, Card, CardMedia, CircularProgress, Typography } from '@mui/material';
+import { ActionState, downloadImage, uploadImage } from '@utils/ui';
 import { Fragment, useState } from 'react';
-import { ActionState, downloadImage, uploadImage } from '../utils/actions';
 import type { CharacterDetails } from '../utils/character';
 import ActionButton from './ActionButton';
 

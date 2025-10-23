@@ -1,6 +1,6 @@
 import { getUserData } from '@api/users';
 import { useQuery } from '@tanstack/react-query';
-import type { Version } from '@utils/versions.constants';
+import type { Version } from '@utils/constants';
 import { User } from 'firebase/auth';
 import { createContext, useContext, useEffect, useState, type JSX } from 'react';
 import { onAuthChange } from 'src/firebase';

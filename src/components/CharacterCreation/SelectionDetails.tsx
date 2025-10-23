@@ -13,13 +13,13 @@ import type { Race } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
+import { scrollOnOpen } from '@utils/ui';
 import { Fragment, useMemo } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
 import { EquipmentList } from '../CharacterCard/Equipment/EquipmentList';
 import { SpellList } from '../CharacterCard/Spells/SpellList';
-import { scrollOnOpen } from './characterCreation.utils';
 
 interface SelectionDetailsProps {
   selected: DefaultRepresentation;

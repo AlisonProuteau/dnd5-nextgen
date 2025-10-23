@@ -9,7 +9,7 @@ import Toolbar from '@mui/material/Toolbar';
 import type { Character } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
-import { button, linkButton } from '@utils/style.utils';
+import { button, linkButton } from '@utils/ui';
 import { updateProfile } from 'firebase/auth';
 import { Fragment, useMemo, useState, type FormEvent } from 'react';
 import { Link, Outlet } from 'react-router-dom';

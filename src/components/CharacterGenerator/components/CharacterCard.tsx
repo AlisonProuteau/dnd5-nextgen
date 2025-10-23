@@ -1,6 +1,6 @@
 import { Box, Card, CardContent, CardMedia, Typography } from '@mui/material';
+import { ActionState } from '@utils/ui';
 import { Fragment } from 'react';
-import { ActionState } from '../utils/actions';
 import { CharacterDetails } from '../utils/character';
 import { classColors } from '../utils/imageUtils';
 import ActionButton from './ActionButton';

@@ -14,6 +14,8 @@ import type { AbilityScore } from '@representations/campaign/adventure.represent
 import type { DefaultRepresentation } from '@representations/common.representation';
 import { useState } from 'react';
 
+const verticalSubWithMargin = { verticalAlign: 'sub', marginX: '5px' };
+
 interface AbilityProps {
   ability: AbilityScore;
   skills?: DefaultRepresentation[];
@@ -77,15 +79,9 @@ export function AbilityComponent({
           return (
             <Box key={skill.index}>
               {isProficient ? (
-                <RadioButtonChecked
-                  fontSize="small"
-                  sx={{ verticalAlign: 'sub', marginX: '5px' }}
-                />
+                <RadioButtonChecked fontSize="small" sx={verticalSubWithMargin} />
               ) : (
-                <RadioButtonUnchecked
-                  fontSize="small"
-                  sx={{ verticalAlign: 'sub', marginX: '5px' }}
-                />
+                <RadioButtonUnchecked fontSize="small" sx={verticalSubWithMargin} />
               )}
               {skill.name.replace('Skill: ', '')}
             </Box>

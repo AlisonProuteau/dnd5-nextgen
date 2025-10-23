@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import type { Classes } from '@representations/character/class.representation';
 import { useQuery } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
+import { button, fab, linkButton } from '@utils/ui';
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';

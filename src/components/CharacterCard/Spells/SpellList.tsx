@@ -24,7 +24,7 @@ import type { DefaultRepresentation } from '@representations/common.representati
 import type { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { Version } from '@utils/versions.constants';
+import type { Version } from '@utils/constants';
 import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
 import {
   Fragment,

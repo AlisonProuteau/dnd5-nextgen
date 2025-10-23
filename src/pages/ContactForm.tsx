@@ -12,7 +12,7 @@ import {
 } from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
-import type { Version } from '@utils/versions.constants';
+import type { Version } from '@utils/constants';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, omitBy } from 'lodash';
 import { Fragment, useMemo, useState, type FormEvent } from 'react';

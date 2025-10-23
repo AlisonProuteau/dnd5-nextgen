@@ -18,14 +18,10 @@ import type { Choice, DefaultRepresentation } from '@representations/common.repr
 import type { CharacterFormData } from '@representations/user.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
+import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from '@utils/character';
 import { Fragment, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
-import {
-  mapDataForForm,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from './characterCreation.utils';
 
 interface CharacterBackgroundFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;

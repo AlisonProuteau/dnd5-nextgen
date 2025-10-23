@@ -1,5 +1,5 @@
-import type { Version } from '@utils/versions.constants';
-import type { ChoiceSelection } from 'src/components/CharacterCreation/characterCreation.utils';
+import type { ChoiceSelection } from '@utils/character';
+import type { Version } from '@utils/constants';
 import type { Alignment } from './character/background.representation';
 import type { RaceAbilityBonus } from './character/race.representation';
 import type { DefaultRepresentation, Sizes } from './common.representation';

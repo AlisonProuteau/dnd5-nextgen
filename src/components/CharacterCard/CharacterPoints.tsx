@@ -17,7 +17,9 @@ import type { Classes } from '@representations/character/class.representation';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
+import { randomInteger } from '@utils/calculations';
+import { getAbilityPoints, getAbilityScoreModifier, getArmorClass } from '@utils/character';
+import { button, fab, linkButton } from '@utils/ui';
 import { doc, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { Fragment, useEffect, useState } from 'react';
@@ -25,7 +27,6 @@ import toast from 'react-hot-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
-import { getAbilityPoints, getAbilityScoreModifier, getArmorClass, randomInteger } from './utils';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 

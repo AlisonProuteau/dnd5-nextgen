@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { Container } from '@mui/system';
 import { useQueryClient } from '@tanstack/react-query';
-import { VERSIONS, type Version } from '@utils/versions.constants';
+import { VERSIONS, type Version } from '@utils/constants';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';

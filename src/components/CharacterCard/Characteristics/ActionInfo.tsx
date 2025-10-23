@@ -2,7 +2,7 @@ import { AreaIcon, BladeIcon, DodgeIcon, TimeIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import type { Action } from '@representations/abilities/trait.representation';
-import { getDamageMinMax } from '../utils';
+import { getDamageMinMax } from '@utils/character';
 
 interface ActionInfoProps {
   action: Action;

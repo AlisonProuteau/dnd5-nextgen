@@ -10,8 +10,8 @@ import {
 } from '@mui/material';
 import type { Spell } from '@representations/abilities/magic.representation';
 import { EquipmentLine } from '@shared/EquipmentLine';
+import { getDamageMinMax, getSlotMinMax } from '@utils/character';
 import { Fragment } from 'react';
-import { getDamageMinMax, getSlotMinMax } from '../utils';
 
 interface SpellDetailsProps {
   spell: Spell;

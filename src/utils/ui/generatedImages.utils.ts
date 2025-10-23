@@ -1,12 +1,23 @@
 import { getDownloadURL } from 'firebase/storage';
-import { CharacterDetails } from './character';
-import { saveUploadMetadata, startFirebaseUpload } from './firebase';
+import {
+  saveUploadMetadata,
+  startFirebaseUpload
+} from '../../components/CharacterGenerator/utils/firebase';
 
 export type ActionState = 'idle' | 'downloading' | 'uploading' | 'done' | 'failed';
 
+export interface DownloadableItem {
+  race: string;
+  class: string;
+  gender: string;
+}
+
+/**
+ * Download an image with a formatted filename
+ */
 export const downloadImage = async (
   url: string,
-  character: CharacterDetails,
+  character: DownloadableItem,
   onStateChange?: (state: ActionState) => void
 ): Promise<boolean> => {
   try {
@@ -29,9 +40,12 @@ export const downloadImage = async (
   }
 };
 
+/**
+ * Upload an image to Firebase storage
+ */
 export const uploadImage = async (
   url: string,
-  character: CharacterDetails,
+  character: DownloadableItem,
   onStateChange?: (state: ActionState) => void
 ): Promise<boolean> => {
   try {

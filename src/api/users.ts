@@ -1,6 +1,6 @@
 import type { Character, CharacterNote, UserData } from '@representations/user.representation';
 import { get, getAll } from '@utils/api.utils';
-import { VERSIONS, type Version } from '@utils/versions.constants';
+import { VERSIONS, type Version } from '@utils/constants';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';

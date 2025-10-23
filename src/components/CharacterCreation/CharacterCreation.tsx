@@ -1,6 +1,7 @@
 import { Box, Button, CircularProgress, Container, Step, StepLabel, Stepper } from '@mui/material';
 import type { CharacterFormData } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
+import type { ChoiceSelection } from '@utils/character';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -12,7 +13,6 @@ import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterDescription, GenderIndexes } from './CharacterDescription';
 import { CharacterRaceForm } from './CharacterRaceForm';
-import type { ChoiceSelection } from './characterCreation.utils';
 
 const steps = [
   { id: 'race', label: 'Race' },

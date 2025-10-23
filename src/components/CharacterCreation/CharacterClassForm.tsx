@@ -23,6 +23,12 @@ import type { ClassGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import {
+  mapDataForForm,
+  mapFeatures,
+  type ChoiceObjectType,
+  type ChoiceSelection
+} from '@utils/character';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -30,12 +36,6 @@ import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
 import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
-import {
-  mapDataForForm,
-  mapFeatures,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from './characterCreation.utils';
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';

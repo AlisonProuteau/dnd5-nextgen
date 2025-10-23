@@ -16,6 +16,12 @@ import { RaceGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
 import { IconText } from '@shared/IconText';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import {
+  mapDataForForm,
+  mapTraits,
+  type ChoiceObjectType,
+  type ChoiceSelection
+} from '@utils/character';
 import { uniqBy } from 'lodash';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
@@ -26,12 +32,8 @@ import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';
-import {
-  mapDataForForm,
-  mapTraits,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from './characterCreation.utils';
+
+const flexRowGap50 = { display: 'flex', flexDirection: 'row', columnGap: '50px' };
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -300,7 +302,7 @@ export function CharacterRaceForm({
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>Choose proficiencies</Typography>
           </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+          <Box sx={flexRowGap50}>
             <Choices
               choices={[
                 {
@@ -324,7 +326,7 @@ export function CharacterRaceForm({
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>Choose Languages</Typography>
           </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+          <Box sx={flexRowGap50}>
             <Choices
               choices={[
                 raceInfo?.language_options
@@ -367,7 +369,7 @@ export function CharacterRaceForm({
               >
                 <Typography>Choose Bonus Abilities</Typography>
               </Divider>
-              <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+              <Box sx={flexRowGap50}>
                 <Choices
                   choices={[
                     {

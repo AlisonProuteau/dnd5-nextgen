@@ -12,7 +12,7 @@ import {
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
+import { button, fab, linkButton } from '@utils/ui';
 import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
