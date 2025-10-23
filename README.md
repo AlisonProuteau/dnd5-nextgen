@@ -91,6 +91,7 @@ src/
 ├── representations/      # TypeScript type definitions
 ├── tests/               # Test utilities and mocks
 └── utils/               # Utility functions
+└── hooks/               # Custom hooks
 ```
 
 ## Key Components
