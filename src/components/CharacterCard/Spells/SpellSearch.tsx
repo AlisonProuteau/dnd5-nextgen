@@ -1,7 +1,7 @@
 import { getMatchingSpells, getSpellsForClass } from '@api/ressources';
 import { AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
-import { Character } from '@representations/user.representation';
+import type { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';

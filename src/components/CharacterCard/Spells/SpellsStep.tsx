@@ -14,8 +14,8 @@ import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo, useState } from 'react';
 import type { DefaultProps } from 'src/pages/Header';
-import { SpellList } from './SpellList';
 import { Spellbook } from './Spellbook';
+import { SpellList } from './SpellList';
 
 export function SpellStep({ character }: DefaultProps) {
   const [page, setPage] = useState<'available' | 'full' | 'howto'>('available');

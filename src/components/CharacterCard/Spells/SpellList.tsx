@@ -1,9 +1,17 @@
-import { getSpell, getSpellsForClass } from '@api/ressources';
+import {
+  type Dispatch,
+  Fragment,
+  type ReactNode,
+  type SetStateAction,
+  useCallback,
+  useMemo,
+  useState
+} from 'react';
 import { ExpandMore, Rule } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
-  AccordionProps,
+  type AccordionProps,
   AccordionSummary,
   Box,
   Button,
@@ -18,23 +26,15 @@ import {
   Divider,
   Typography
 } from '@mui/material';
+import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
+import { getSpell, getSpellsForClass } from '@api/ressources';
+import type { Version } from '@utils/constants';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { Version } from '@utils/constants';
-import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
-import {
-  Fragment,
-  useCallback,
-  useMemo,
-  useState,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction
-} from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { SpellCardContent } from './SpellCardContent';
 import { SpellDetails } from './SpellDetails';

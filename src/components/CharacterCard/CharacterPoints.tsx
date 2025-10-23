@@ -1,5 +1,11 @@
-import { getAllAbilities, getClassInfo } from '@api/ressources';
-import { getCharacter } from '@api/users';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { doc, updateDoc } from 'firebase/firestore';
+import { omit } from 'lodash';
+import toast from 'react-hot-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
+import { Fragment, useEffect, useState } from 'react';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
   Box,
@@ -13,20 +19,14 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import type { Classes } from '@representations/character/class.representation';
+import { getAllAbilities, getClassInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { randomInteger } from '@utils/calculations';
 import { getAbilityPoints, getAbilityScoreModifier, getArmorClass } from '@utils/character';
 import { button, fab, linkButton } from '@utils/ui';
-import { doc, updateDoc } from 'firebase/firestore';
-import { omit } from 'lodash';
-import { Fragment, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
+import type { Classes } from '@representations/character/class.representation';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 

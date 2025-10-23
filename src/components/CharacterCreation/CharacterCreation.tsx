@@ -1,14 +1,14 @@
-import { Box, Button, CircularProgress, Container, Step, StepLabel, Stepper } from '@mui/material';
-import type { CharacterFormData } from '@representations/user.representation';
 import { useQueryClient } from '@tanstack/react-query';
-import type { ChoiceSelection } from '@utils/character';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { omit, pickBy, uniqBy } from 'lodash';
-import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
+import { type FormEvent, useEffect, useState } from 'react';
+import { Box, Button, CircularProgress, Container, Step, StepLabel, Stepper } from '@mui/material';
+import type { ChoiceSelection } from '@utils/character';
+import type { CharacterFormData } from '@representations/user.representation';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
 import { CharacterClassForm } from './CharacterClassForm';
 import { CharacterDescription, GenderIndexes } from './CharacterDescription';

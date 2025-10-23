@@ -1,6 +1,6 @@
+import type { FunctionComponent, SVGProps } from 'react';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
-import type { FunctionComponent, SVGProps } from 'react';
 
 interface IconTextProps {
   Icon: FunctionComponent<SVGProps<SVGSVGElement> & { title?: string | undefined }>;

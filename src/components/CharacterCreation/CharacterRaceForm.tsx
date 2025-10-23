@@ -1,4 +1,6 @@
-import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { Fragment, useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import {
   Box,
   Button,
@@ -9,25 +11,23 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
+import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { IconText } from '@shared/IconText';
+import {
+  type ChoiceObjectType,
+  type ChoiceSelection,
+  mapDataForForm,
+  mapTraits
+} from '@utils/character';
+import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { RaceGuide } from '@representations/guide.representation';
+import type { RaceGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { IconText } from '@shared/IconText';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import {
-  mapDataForForm,
-  mapTraits,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from '@utils/character';
-import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';

@@ -1,5 +1,5 @@
-import type { ActionDamage } from '@representations/campaign/adventure.representation';
 import { max, uniq } from 'lodash';
+import type { ActionDamage } from '@representations/campaign/adventure.representation';
 
 /**
  * Get min-max values for spell slots based on level

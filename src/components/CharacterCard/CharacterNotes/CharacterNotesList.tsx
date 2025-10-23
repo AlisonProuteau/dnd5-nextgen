@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import {
   ArchiveOutlined,
   Delete,
@@ -8,11 +9,10 @@ import {
   Restore
 } from '@mui/icons-material';
 import { Box, Card, CardContent, IconButton, Typography } from '@mui/material';
-import type { CharacterNote } from '@representations/user.representation';
-import SpeedDialButton from '@shared/SpeedDialButton';
-import { type Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase/firestore';
 import { groupBy } from 'lodash';
-import { Fragment } from 'react';
+import SpeedDialButton from '@shared/SpeedDialButton';
+import type { CharacterNote } from '@representations/user.representation';
 
 interface CharacterNotesListProps {
   characterNotes: CharacterNote[];

@@ -1,14 +1,14 @@
-import { getCharacterNotes } from '@api/users';
-import { ArchiveOutlined, NoteAdd, NoteAlt } from '@mui/icons-material';
-import { Box, Button, CircularProgress, Drawer, IconButton, Typography } from '@mui/material';
-import type { Character, CharacterNote } from '@representations/user.representation';
-import { ControledInput } from '@shared/ControledInput';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
-import { Fragment, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { ArchiveOutlined, NoteAdd, NoteAlt } from '@mui/icons-material';
+import { Box, Button, CircularProgress, Drawer, IconButton, Typography } from '@mui/material';
+import { getCharacterNotes } from '@api/users';
+import { ControledInput } from '@shared/ControledInput';
+import type { Character, CharacterNote } from '@representations/user.representation';
 import { CharacterNotesList } from './CharacterNotesList';
 
 interface CharacterNotesProps {

@@ -6,8 +6,8 @@ import {
   Downloading,
   FileDownloadOff
 } from '@mui/icons-material';
-import { Button, ButtonProps, CircularProgress } from '@mui/material';
-import { ActionState } from '@utils/ui';
+import { Button, type ButtonProps, CircularProgress } from '@mui/material';
+import type { ActionState } from '@utils/ui';
 
 interface ActionButtonProps extends Omit<ButtonProps, 'onClick'> {
   actionType: 'download' | 'upload';

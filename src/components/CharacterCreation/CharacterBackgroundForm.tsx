@@ -1,4 +1,4 @@
-import { getAllAligmenents, getAllBackgrounds } from '@api/ressources';
+import { Fragment, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -13,13 +13,13 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { getAllAligmenents, getAllBackgrounds } from '@api/ressources';
+import { ControledInput } from '@shared/ControledInput';
+import { type ChoiceObjectType, type ChoiceSelection, mapDataForForm } from '@utils/character';
 import type { Alignment, Background } from '@representations/character/background.representation';
 import type { Choice, DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { ControledInput } from '@shared/ControledInput';
-import { useQuery } from '@tanstack/react-query';
-import { mapDataForForm, type ChoiceObjectType, type ChoiceSelection } from '@utils/character';
-import { Fragment, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
 

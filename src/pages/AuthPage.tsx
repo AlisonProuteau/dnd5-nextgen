@@ -1,4 +1,5 @@
-import { createUser, signIn } from '@api/users';
+import { omit } from 'lodash';
+import { type FormEvent, Fragment, useState } from 'react';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Backdrop,
@@ -9,9 +10,8 @@ import {
   IconButton,
   InputAdornment
 } from '@mui/material';
+import { createUser, signIn } from '@api/users';
 import { ControledInput } from '@shared/ControledInput';
-import { omit } from 'lodash';
-import { Fragment, useState, type FormEvent } from 'react';
 
 interface FormData {
   name?: string;

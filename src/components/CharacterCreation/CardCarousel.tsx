@@ -14,8 +14,8 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material';
-import { DefaultRepresentation } from '@representations/common.representation';
-import { useState } from 'react';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import { type ReactNode, useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 
@@ -81,7 +81,7 @@ function DesignCard({
   height?: number;
   onClick?: () => any;
   selected?: boolean;
-  children?: React.ReactNode;
+  children?: ReactNode;
   'data-testid'?: string;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
@@ -126,7 +126,7 @@ interface CardCarouselProps {
   data: (DefaultRepresentation & { img?: string })[];
   activeStep: number;
   cardActions: Partial<SwipeableCallbacks>;
-  children?: React.ReactNode;
+  children?: ReactNode;
   carouselType?: string;
 }
 

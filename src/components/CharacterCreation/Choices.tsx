@@ -1,4 +1,4 @@
-import { getResourceList } from '@api/ressources';
+import { type ReactNode, useState } from 'react';
 import {
   Box,
   Checkbox,
@@ -9,6 +9,10 @@ import {
   FormLabel,
   Typography
 } from '@mui/material';
+import { useQueryClient } from '@tanstack/react-query';
+import { isArray } from 'lodash';
+import { getResourceList } from '@api/ressources';
+import type { ChoiceObjectType } from '@utils/character';
 import type { Alignment } from '@representations/character/background.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type {
@@ -21,10 +25,6 @@ import type {
   ReferenceOption,
   StringOption
 } from '@representations/common.representation';
-import { useQueryClient } from '@tanstack/react-query';
-import type { ChoiceObjectType } from '@utils/character';
-import { isArray } from 'lodash';
-import { useState, type ReactNode } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 
 interface ChoicesProps {

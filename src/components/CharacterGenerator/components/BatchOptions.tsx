@@ -1,7 +1,7 @@
-import { Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
-import { ActionState, downloadImage, uploadImage } from '@utils/ui';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CharacterDetails } from '../utils/character';
+import { Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
+import { type ActionState, downloadImage, uploadImage } from '@utils/ui';
+import type { CharacterDetails } from '../utils/character';
 import {
   classes as allClasses,
   genders as allGenders,
@@ -78,7 +78,7 @@ export default function BatchOptions({
             status: url ? 'done' : 'failed',
             url: url || undefined
           });
-        } catch (error) {
+        } catch {
           updateQueueItem(i, { status: 'failed' });
         }
       }

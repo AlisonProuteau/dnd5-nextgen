@@ -1,6 +1,6 @@
+import { Fragment } from 'react';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
-import { Fragment } from 'react';
 import type { DefaultProps } from 'src/pages/Header';
 import { FeaturesDisplay } from './FeaturesDisplay';
 import { TraitsDisplay } from './TraitsDisplay';

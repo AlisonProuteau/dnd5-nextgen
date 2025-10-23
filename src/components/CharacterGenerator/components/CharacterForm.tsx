@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Button,
   FormControl,
@@ -9,7 +10,6 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { useState } from 'react';
 import type { CharacterDetails } from '../utils/character';
 import {
   buildPrompt,

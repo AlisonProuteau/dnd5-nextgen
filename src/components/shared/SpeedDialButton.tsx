@@ -1,5 +1,5 @@
+import { type ReactNode, useMemo } from 'react';
 import { SpeedDial, SpeedDialAction, SpeedDialIcon, type SpeedDialProps } from '@mui/material';
-import { useMemo, type ReactNode } from 'react';
 
 export default function SpeedDialButton({
   actions,

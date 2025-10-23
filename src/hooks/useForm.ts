@@ -1,4 +1,4 @@
-import { useEffect, useState, type Dispatch } from 'react';
+import { type Dispatch, type SetStateAction, useEffect, useState } from 'react';
 
 export interface Step {
   id: string;
@@ -73,7 +73,7 @@ export interface UseFormReturn<T> {
   isValid: boolean;
   setFormData: (values: Partial<T>) => void;
   setErrors: (values: Record<string, string>) => void;
-  setActiveStep: Dispatch<React.SetStateAction<number>>;
+  setActiveStep: Dispatch<SetStateAction<number>>;
   nextStep: () => void;
   prevStep: () => void;
   goToStep: (stepIndex: number) => void;

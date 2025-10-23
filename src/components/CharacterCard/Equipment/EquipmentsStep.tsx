@@ -1,12 +1,12 @@
-import { getEquipment } from '@api/ressources';
 import { MoneyIcon, WeightIcon } from '@assets';
-import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
-import { Equipment } from '@representations/campaign/equipment.representation';
-import { IconText } from '@shared/IconText';
-import { useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { type UseQueryResult, useQueries } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
-import { Fragment, useCallback, useState } from 'react';
 import type { DefaultProps } from 'src/pages/Header';
+import { Fragment, useCallback, useState } from 'react';
+import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
+import { getEquipment } from '@api/ressources';
+import { IconText } from '@shared/IconText';
+import { Equipment } from '@representations/campaign/equipment.representation';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
 

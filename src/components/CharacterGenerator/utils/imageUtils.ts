@@ -1,4 +1,4 @@
-import { CharacterDetails } from './character';
+import type { CharacterDetails } from './character';
 
 export const races = [
   'Human',
@@ -107,8 +107,8 @@ export function buildPrompt(details: CharacterDetails): string {
     details.imageType === 'portrait'
       ? 'portrait'
       : details.imageType === 'full body'
-      ? 'full body artwork'
-      : 'image';
+        ? 'full body artwork'
+        : 'image';
   const composition = imageDesc ? `${imageDesc} of a ` : '';
   const magicClasses = [
     'Bard',

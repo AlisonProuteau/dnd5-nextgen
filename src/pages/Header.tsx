@@ -1,4 +1,6 @@
-import { signOut } from '@api/users';
+import { updateProfile } from 'firebase/auth';
+import { Link, Outlet } from 'react-router-dom';
+import { type FormEvent, Fragment, useMemo, useState } from 'react';
 import { Add, Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -6,13 +8,11 @@ import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import type { Character } from '@representations/user.representation';
+import { signOut } from '@api/users';
 import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
 import { button, linkButton } from '@utils/ui';
-import { updateProfile } from 'firebase/auth';
-import { Fragment, useMemo, useState, type FormEvent } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import type { Character } from '@representations/user.representation';
 import { useAuth } from '../providers/AuthProvider';
 
 export interface DefaultProps {

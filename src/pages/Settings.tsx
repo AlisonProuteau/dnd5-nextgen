@@ -1,3 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
+import { doc, updateDoc } from 'firebase/firestore';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
+import { database } from 'src/firebase';
+import { type FormEvent, useEffect, useState } from 'react';
 import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
@@ -9,13 +15,7 @@ import {
   Typography
 } from '@mui/material';
 import { Container } from '@mui/system';
-import { useQueryClient } from '@tanstack/react-query';
 import { VERSIONS, type Version } from '@utils/constants';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useEffect, useState, type FormEvent } from 'react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { database } from 'src/firebase';
 import { useAuth } from '../providers/AuthProvider';
 
 export function Settings() {

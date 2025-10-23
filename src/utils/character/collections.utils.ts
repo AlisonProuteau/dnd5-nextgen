@@ -1,5 +1,5 @@
-import type { DefaultRepresentation } from '@representations/common.representation';
 import { uniqBy } from 'lodash';
+import type { DefaultRepresentation } from '@representations/common.representation';
 
 /**
  * Filter proficiencies by type (skills, saving throws, etc.)

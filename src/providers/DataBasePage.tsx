@@ -1,4 +1,5 @@
-import { getAllClasses, getAllRaces, getAllSubclasses, getAllSubraces } from '@api/ressources';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 import {
   Box,
   Button,
@@ -10,17 +11,16 @@ import {
   InputLabel,
   OutlinedInput
 } from '@mui/material';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { omit, uniqBy } from 'lodash';
+import { getAllClasses, getAllRaces, getAllSubclasses, getAllSubraces } from '@api/ressources';
+import { getAll } from '@utils/api.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { ClassGuide, RaceGuide } from '@representations/guide.representation';
-import { getAll } from '@utils/api.utils';
-import { doc, setDoc, updateDoc } from 'firebase/firestore';
-import { omit, uniqBy } from 'lodash';
-import { useState } from 'react';
-import toast from 'react-hot-toast';
 import { database } from 'src/firebase';
 import { useAuth } from './AuthProvider';
 

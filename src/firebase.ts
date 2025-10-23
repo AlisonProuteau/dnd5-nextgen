@@ -1,16 +1,16 @@
 import { getAnalytics } from 'firebase/analytics';
-import { initializeApp, type FirebaseOptions } from 'firebase/app';
+import { type FirebaseOptions, initializeApp } from 'firebase/app';
 import {
-  CompleteFn,
-  ErrorFn,
-  NextOrObserver,
-  User,
+  type CompleteFn,
   connectAuthEmulator,
   createUserWithEmailAndPassword,
+  type ErrorFn,
   getAuth,
+  type NextOrObserver,
   onAuthStateChanged,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  type User
 } from 'firebase/auth';
 import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 import { connectStorageEmulator, getStorage } from 'firebase/storage';

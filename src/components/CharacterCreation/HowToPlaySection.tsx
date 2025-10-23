@@ -1,3 +1,4 @@
+import { Fragment, useMemo } from 'react';
 import { CancelOutlined, CheckCircleOutline, ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -11,7 +12,6 @@ import {
   Typography
 } from '@mui/material';
 import type { ClassGuide, GuideType, RaceGuide } from '@representations/guide.representation';
-import { Fragment, useMemo } from 'react';
 
 function ProConList({ items, type }: { items: string[]; type: 'pros' | 'cons' }) {
   const isPros = type === 'pros';

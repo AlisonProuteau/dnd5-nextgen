@@ -1,4 +1,10 @@
-import { getUserCharacters } from '@api/users';
+import { useQuery } from '@tanstack/react-query';
+import { collection, doc, setDoc } from 'firebase/firestore';
+import { omit, omitBy } from 'lodash';
+import toast from 'react-hot-toast';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
+import { type FormEvent, Fragment, useMemo, useState } from 'react';
 import {
   Button,
   Checkbox,
@@ -10,15 +16,9 @@ import {
   MenuItem,
   Select
 } from '@mui/material';
+import { getUserCharacters } from '@api/users';
 import { ControledInput } from '@shared/ControledInput';
-import { useQuery } from '@tanstack/react-query';
 import type { Version } from '@utils/constants';
-import { collection, doc, setDoc } from 'firebase/firestore';
-import { omit, omitBy } from 'lodash';
-import { Fragment, useMemo, useState, type FormEvent } from 'react';
-import toast from 'react-hot-toast';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
 
 enum ContactType {
   FEEDBACK = 'Feedback',

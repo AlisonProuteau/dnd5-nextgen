@@ -1,4 +1,11 @@
 import { PrepareIcon, SpellbookIcon } from '@assets';
+import { useQueryClient } from '@tanstack/react-query';
+import { doc, updateDoc } from 'firebase/firestore';
+import { isEqual, max } from 'lodash';
+import toast from 'react-hot-toast';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
+import { Fragment, useMemo, useState } from 'react';
 import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
   Accordion,
@@ -15,13 +22,6 @@ import {
 } from '@mui/material';
 import { Box } from '@mui/system';
 import type { Character } from '@representations/user.representation';
-import { useQueryClient } from '@tanstack/react-query';
-import { doc, updateDoc } from 'firebase/firestore';
-import { isEqual, max } from 'lodash';
-import { Fragment, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
 

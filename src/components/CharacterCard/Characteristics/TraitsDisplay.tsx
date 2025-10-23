@@ -1,14 +1,14 @@
-import { getTrait } from '@api/ressources';
+import { Fragment, useCallback } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
-import { Trait } from '@representations/abilities/trait.representation';
-import { DefaultRepresentation } from '@representations/common.representation';
-import { Character } from '@representations/user.representation';
-import { useQueries, UseQueryResult } from '@tanstack/react-query';
+import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback } from 'react';
+import { getTrait } from '@api/ressources';
+import { blackList } from '@utils/character/characteristics.utils';
+import type { Trait } from '@representations/abilities/trait.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 import { ActionInfo } from './ActionInfo';
-import { blackList } from './utils';
 
 interface TraitsDisplayProps {
   character: Partial<Character>;

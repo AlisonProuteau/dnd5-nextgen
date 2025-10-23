@@ -1,6 +1,7 @@
 /**
  * Form validation utilities for consistent form handling across the application
  */
+import type { Dispatch, SetStateAction } from 'react';
 
 /**
  * Check if all form fields are valid (no validation errors)
@@ -26,7 +27,7 @@ export const hasRequiredFormData = <T extends Record<string, any>>(
  * Generic form data setter with merge capability
  */
 export const createFormDataSetter = <T extends Record<string, any>>(
-  setFormData: React.Dispatch<React.SetStateAction<T>>
+  setFormData: Dispatch<SetStateAction<T>>
 ) => {
   return (values: Partial<T>) => {
     setFormData((prev) => ({ ...prev, ...values }));
@@ -37,7 +38,7 @@ export const createFormDataSetter = <T extends Record<string, any>>(
  * Generic form error setter with merge capability
  */
 export const createFormErrorSetter = <T extends Record<string, any>>(
-  setFormError: React.Dispatch<React.SetStateAction<T>>
+  setFormError: Dispatch<SetStateAction<T>>
 ) => {
   return (values: Partial<T>) => {
     setFormError((prev) => ({ ...prev, ...values }));

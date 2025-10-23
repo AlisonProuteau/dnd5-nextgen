@@ -1,8 +1,8 @@
+import { Fragment } from 'react';
 import { AreaIcon, BladeIcon, HealIcon, RangeIcon, TimeIcon } from '@assets';
 import { Box, CardContent, Typography } from '@mui/material';
-import type { Spell } from '@representations/abilities/magic.representation';
 import { getDamageMinMax, getSlotMinMax } from '@utils/character';
-import { Fragment } from 'react';
+import type { Spell } from '@representations/abilities/magic.representation';
 
 interface SpellCardContentProps {
   spell: Spell;

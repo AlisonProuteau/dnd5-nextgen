@@ -1,3 +1,5 @@
+import { get, getAll, type QueryObject } from '@utils/api.utils';
+import type { Version } from '@utils/constants';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
@@ -9,8 +11,6 @@ import type { Classes, Subclass } from '@representations/character/class.represe
 import type { Race, Subrace } from '@representations/character/race.representation';
 import type { DefaultRepresentation, Option } from '@representations/common.representation';
 import type { ClassGuide, RaceGuide } from '@representations/guide.representation';
-import { get, getAll, type QueryObject } from '@utils/api.utils';
-import type { Version } from '@utils/constants';
 
 const formatPath = (path: string, version?: Version) => {
   const pathFormatted = path.startsWith('/') ? path.replace('/', '') : path;

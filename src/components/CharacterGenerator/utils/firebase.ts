@@ -1,7 +1,7 @@
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
 import { database, storage } from 'src/firebase';
-import { CharacterDetails } from './character';
+import type { CharacterDetails } from './character';
 
 // Remove undefined/null values from object
 const cleanObject = <T extends Record<string, any>>(obj: T): Partial<T> => {

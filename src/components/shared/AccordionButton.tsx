@@ -1,3 +1,4 @@
+import { Fragment, useState } from 'react';
 import { Add, Close } from '@mui/icons-material';
 import {
   Button,
@@ -5,14 +6,13 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
+  type DialogProps,
   DialogTitle,
   Divider,
   IconButton,
   Paper,
-  Typography,
-  type DialogProps
+  Typography
 } from '@mui/material';
-import { Fragment, useState } from 'react';
 
 export function AccordionButton({ title, ...props }: { title: string } & ButtonProps) {
   return (

@@ -1,10 +1,6 @@
-import {
-  getAllClasses,
-  getClassGuide,
-  getClassInfo,
-  getFeature,
-  getSubclassInfo
-} from '@api/ressources';
+import { Fragment, useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import {
   Box,
   Button,
@@ -15,26 +11,30 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
+import {
+  getAllClasses,
+  getClassGuide,
+  getClassInfo,
+  getFeature,
+  getSubclassInfo
+} from '@api/ressources';
+import { IconText } from '@shared/IconText';
+import {
+  type ChoiceObjectType,
+  type ChoiceSelection,
+  mapDataForForm,
+  mapFeatures
+} from '@utils/character';
+import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { ClassGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { IconText } from '@shared/IconText';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import {
-  mapDataForForm,
-  mapFeatures,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from '@utils/character';
-import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';
@@ -335,7 +335,7 @@ export function CharacterClassForm({
               <Choices
                 choices={classInfo.starting_equipment_options}
                 proficiencies={[...proficiencies, ...selectedProficiencies].map(
-                  ({ index, name }) => ({ index, name } as DefaultRepresentation)
+                  ({ index, name }) => ({ index, name }) as DefaultRepresentation
                 )}
                 selected={selectedEquipments}
                 setSelected={setSelectedEquipments}

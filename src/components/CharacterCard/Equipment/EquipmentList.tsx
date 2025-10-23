@@ -1,7 +1,7 @@
 import { BladeIcon, ShieldIcon } from '@assets';
 import { InfoOutlined } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
-import { Equipment } from '@representations/campaign/equipment.representation';
+import type { Equipment } from '@representations/campaign/equipment.representation';
 
 interface EquipmentListProps {
   equipmentList: (Equipment & { count?: number })[];

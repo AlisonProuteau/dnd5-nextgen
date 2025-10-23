@@ -1,8 +1,8 @@
-import { getUserData } from '@api/users';
+import { createContext, type JSX, useContext, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import type { User } from 'firebase/auth';
+import { getUserData } from '@api/users';
 import type { Version } from '@utils/constants';
-import { User } from 'firebase/auth';
-import { createContext, useContext, useEffect, useState, type JSX } from 'react';
 import { onAuthChange } from 'src/firebase';
 
 interface AuthContextProps {

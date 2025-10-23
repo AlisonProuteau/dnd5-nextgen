@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { RadioButtonChecked, RadioButtonUnchecked, Shield } from '@mui/icons-material';
 import {
   Badge,
@@ -12,7 +13,6 @@ import {
 } from '@mui/material';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { useState } from 'react';
 
 const verticalSubWithMargin = { verticalAlign: 'sub', marginX: '5px' };
 

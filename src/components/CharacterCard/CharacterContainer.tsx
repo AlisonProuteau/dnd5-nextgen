@@ -1,5 +1,7 @@
-import { getClassInfo } from '@api/ressources';
-import { getCharacter } from '@api/users';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
+import { useQuery } from '@tanstack/react-query';
 import { EditRounded, EventNote, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
@@ -11,15 +13,13 @@ import {
   MobileStepper,
   Typography
 } from '@mui/material';
-import type { Classes } from '@representations/character/class.representation';
-import { useQuery } from '@tanstack/react-query';
+import { getClassInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
 import { button, fab, linkButton } from '@utils/ui';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSwipeable } from 'react-swipeable';
-import { useAuth } from '../../providers/AuthProvider';
-import { Characteristics } from './Characteristics/CharacteristicsStep';
+import type { Classes } from '@representations/character/class.representation';
+import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterNotes } from './CharacterNotes/CharacterNotes';
+import { Characteristics } from './Characteristics/CharacteristicsStep';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
 import { SpellStep } from './Spells/SpellsStep';
