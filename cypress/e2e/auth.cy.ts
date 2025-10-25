@@ -71,6 +71,11 @@ describe(`Authentication End-to-End`, () => {
     });
 
     it('should handle authentication errors, network failures, and recovery workflows', () => {
+      cy.callFirestore('update', `users/${signInUser.uid}`, {
+        displayName: 'Sign In User',
+        version: 'Legacy'
+      });
+
       // Test: invalid user error handling
       cy.get('#email').type('invalid@example.com');
       cy.get('#password').type('password');
@@ -147,7 +152,7 @@ describe(`Authentication End-to-End`, () => {
 
       // Test: email validation
       cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
-      cy.get('#email').closest('form').should('contain.text', 'Invalid Email');
+      cy.get('#email').closest('form').should('contain.text', 'Email invalid');
       cy.get('button[type="submit"]').should('be.disabled');
 
       cy.get('#email').clear().type(Cypress.testUser.email);
@@ -168,7 +173,7 @@ describe(`Authentication End-to-End`, () => {
         .parent()
         .find('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]')
         .click();
-      cy.get('#password').should('have.attr', 'type', 'input');
+      cy.get('#password').should('have.attr', 'type', 'text');
       cy.get('#password').should('have.value', 'weak');
       cy.get('#password')
         .parent()

@@ -160,7 +160,8 @@ MIT License - see [package.json](package.json) for details.
 
 ### Current TODO List
 
-- [ ] Merge the code updates
+- [ ] Test latest and merge
+- [ ] Merge money feature update
 - [ ] Add cypress code coverage
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor

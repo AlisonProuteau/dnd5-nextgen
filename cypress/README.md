@@ -145,7 +145,7 @@ yarn cy
 yarn cy:local
 
 # Run specific test file
-yarn SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" run-p -r start:dist 'cy:base run --browser chrome --spec "cypress/e2e/auth.cy.ts'"
+SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" yarn run-p -r start:dist 'cy:base run --browser chrome --spec "cypress/e2e/auth.cy.ts'"
 
 # Run tests for specific viewport
 CYPRESS_VIEWPORT_WIDTH=375 CYPRESS_VIEWPORT_HEIGHT=667 yarn cy:ci  # Mobile

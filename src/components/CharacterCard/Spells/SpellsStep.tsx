@@ -1,4 +1,4 @@
-import { getClassInfo, getSubclassInfo } from '@api/ressources';
+import { useMemo, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -8,11 +8,11 @@ import {
   CircularProgress,
   Typography
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { getClassInfo, getSubclassInfo } from '@api/ressources';
+import { SplitButton } from '@shared/SplitButton';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
-import { SplitButton } from '@shared/SplitButton';
-import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
 import type { DefaultProps } from 'src/pages/Header';
 import { Spellbook } from './Spellbook';
 import { SpellList } from './SpellList';

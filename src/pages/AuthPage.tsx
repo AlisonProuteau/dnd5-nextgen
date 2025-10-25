@@ -1,5 +1,4 @@
-import { omit } from 'lodash';
-import { type FormEvent, Fragment, useState } from 'react';
+import { type FormEvent, Fragment, useEffect, useState } from 'react';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import {
   Backdrop,
@@ -11,7 +10,9 @@ import {
   InputAdornment
 } from '@mui/material';
 import { createUser, signIn } from '@api/users';
+import { useForm, useToggle } from '@hooks/index';
 import { ControledInput } from '@shared/ControledInput';
+import { getLoginValidationSchema } from '@utils/ui/auth.utils';
 
 interface FormData {
   name?: string;
@@ -23,80 +24,27 @@ interface FormData {
 
 export function AuthPage() {
   const [isSaving, setIsSaving] = useState(false);
-  const [formData, setFormDataState] = useState<FormData>({ showPassword: false });
-  const [formError, setFormErrorState] = useState<{
-    name?: boolean;
-    email?: boolean;
-    password?: string[];
-    passwordConfrim?: boolean;
-  }>({});
-  const [hasAccount, setHasAccount] = useState(true);
+  const { isOn: isLogin, toggle: toggleLogin } = useToggle(true);
 
-  const setFormData = (values: Partial<FormData>) => {
-    const formatedObject = { ...formData, ...values };
+  const form = useForm<FormData>({
+    initialData: { showPassword: false },
+    validationSchema: getLoginValidationSchema(true)
+  });
 
-    Object.keys(formatedObject).forEach((key) => {
-      if (values[key as keyof FormData] === undefined || values[key as keyof FormData] === '')
-        omit(formatedObject, key);
-    });
-
-    setFormDataState(formatedObject);
-  };
-
-  const setFormError = (values: Partial<typeof formError>) => {
-    setFormErrorState({ ...formError, ...values });
-  };
-
-  const isFormValid = () => {
-    return (
-      (hasAccount || formData.name) &&
-      formData.email &&
-      formData.password &&
-      (hasAccount || formData.passwordConfrim) &&
-      !Object.values(formError).some((v) => v)
-    );
-  };
-
-  const validateInput = ({ target }: { target: EventTarget & HTMLFormElement }) => {
-    const currentData = formData[target.id as keyof FormData]?.toString();
-    if (!target.checkValidity() || !currentData || hasAccount) return;
-
-    if (target.id === 'password') {
-      let currentPasswordError = formError.password || [];
-      const specialCharacters = '.,:;?!@$%&*^=+~_-';
-
-      if (currentData.length < 8)
-        currentPasswordError = [...currentPasswordError, 'Must be at least 8 characters'];
-      if (currentData.search(/[0-9]/) === -1)
-        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 number'];
-      if (currentData.search(/[a-z]/) === -1)
-        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 lowercase'];
-      if (currentData.search(/[A-Z]/) === -1)
-        currentPasswordError = [...currentPasswordError, 'Must contain at least 1 uppercase'];
-      if (
-        currentData.search(new RegExp(`[${specialCharacters}]`)) === -1 ||
-        !new RegExp(`^[a-zA-Z0-9${specialCharacters}]*$`).test(currentData)
-      )
-        currentPasswordError = [
-          ...currentPasswordError,
-          `Must contain at least 1 special character in ${specialCharacters}`
-        ];
-
-      setFormError({ password: currentPasswordError.length ? currentPasswordError : undefined });
-    } else if (target.id === 'passwordConfrim') {
-      setFormError({ [target.id]: currentData !== formData.password });
-    }
-  };
+  useEffect(() => {
+    form.clearErrors();
+    form.updateValidationSchema(getLoginValidationSchema(isLogin));
+  }, [isLogin]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!isSaving) {
       setIsSaving(true);
 
-      if (formData.email && formData.password && isFormValid()) {
-        if (!hasAccount) {
-          await createUser(formData.email, formData.password, formData.name);
-        } else await signIn(formData.email, formData.password);
+      if (form.formData.email && form.formData.password && form.isValid) {
+        if (!isLogin)
+          await createUser(form.formData.email, form.formData.password, form.formData.name);
+        else await signIn(form.formData.email, form.formData.password);
       }
       setIsSaving(false);
     }
@@ -111,87 +59,92 @@ export function AuthPage() {
 
       <form
         onSubmit={handleSubmit}
-        onBlur={validateInput}
-        onFocus={({ target }) => setFormError({ [target.id]: false })}
-        onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
-        onReset={() => {
-          setFormDataState({ showPassword: false });
-          setFormErrorState({});
-        }}
+        onFocus={({ target }) => target.id && form.clearFieldError(target.id as keyof FormData)}
+        onBlur={({ target }) => target.id && form.validateField(target.id as keyof FormData)}
+        onReset={() => form.resetForm()}
       >
-        <Fragment>
-          {!hasAccount && (
+        {!isSaving ? (
+          <Fragment>
+            {!isLogin && (
+              <ControledInput
+                fullWidth
+                id="name"
+                type="text"
+                label="Display name"
+                onChange={(value) => form.setFormData({ name: value as string })}
+                errorMessage={form.getFieldError('name')}
+                hasError={!form.isFieldValid('name')}
+              />
+            )}
+
             <ControledInput
               fullWidth
-              id="name"
-              type="name"
-              label="Display name"
-              onChange={(value) => setFormData({ name: value as string })}
-              errorMessage={['Invalid Name']}
-              hasError={formError.name}
+              id="email"
+              type="email"
+              label="Email address"
+              onChange={(value) => form.setFormData({ email: value as string })}
+              errorMessage={form.getFieldError('email')}
+              hasError={!form.isFieldValid('email')}
             />
-          )}
 
-          <ControledInput
-            fullWidth
-            id="email"
-            type="email"
-            label="Email address"
-            onChange={(value) => setFormData({ email: value as string })}
-            errorMessage={['Invalid Email']}
-            hasError={formError.email}
-          />
-
-          <ControledInput
-            fullWidth
-            id="password"
-            type={formData.showPassword ? 'input' : 'password'}
-            label="Password"
-            onChange={(value) => setFormData({ password: value as string })}
-            errorMessage={formError.password}
-            hasError={!!formError.password}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
-                  {formData.showPassword ? <VisibilityOff /> : <Visibility />}
-                </IconButton>
-              </InputAdornment>
-            }
-          />
-
-          {!hasAccount && (
             <ControledInput
               fullWidth
-              id="passwordConfrim"
-              type={formData.showPassword ? 'input' : 'password'}
-              label="Confrim Password"
-              onChange={(value) => setFormData({ passwordConfrim: value as string })}
-              errorMessage={['Passwords mismatch']}
-              hasError={formError.passwordConfrim}
+              id="password"
+              type={form.formData.showPassword ? 'text' : 'password'}
+              label="Password"
+              onChange={(value) => form.setFormData({ password: value as string })}
+              errorMessage={form.getFieldError('password')}
+              hasError={!form.isFieldValid('password')}
               endAdornment={
                 <InputAdornment position="end">
-                  <IconButton onClick={() => setFormData({ showPassword: !formData.showPassword })}>
-                    {formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                  <IconButton
+                    onClick={() => form.setFormData({ showPassword: !form.formData.showPassword })}
+                  >
+                    {form.formData.showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>
                 </InputAdornment>
               }
             />
-          )}
-        </Fragment>
+            {!isLogin && (
+              <ControledInput
+                fullWidth
+                id="passwordConfrim"
+                type={form.formData.showPassword ? 'text' : 'password'}
+                label="Confirm Password"
+                onChange={(value) => form.setFormData({ passwordConfrim: value as string })}
+                errorMessage={form.getFieldError('passwordConfrim')}
+                hasError={!form.isFieldValid('passwordConfrim')}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() =>
+                        form.setFormData({ showPassword: !form.formData.showPassword })
+                      }
+                    >
+                      {form.formData.showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+              />
+            )}
+          </Fragment>
+        ) : (
+          <CircularProgress size={24} />
+        )}
 
         <Button
-          disabled={!isFormValid() || isSaving}
+          disabled={!form.isValid || isSaving}
           sx={{ marginTop: '1rem' }}
           fullWidth
           type="submit"
           variant="contained"
         >
-          {hasAccount ? 'Sign In' : 'Sign Up'}
+          {isLogin ? 'Sign In' : 'Sign Up'}
         </Button>
         <Box display="flex" justifyContent="center" alignItems="center">
-          {hasAccount ? "Don't have an account?" : 'Already have an account?'}
-          <Button type="reset" onClick={() => setHasAccount(!hasAccount)} disabled={isSaving}>
-            {hasAccount ? 'Sign Up' : 'Sign In'}
+          {isLogin ? "Don't have an account?" : 'Already have an account?'}
+          <Button type="reset" onClick={toggleLogin} disabled={isSaving}>
+            {isLogin ? 'Sign Up' : 'Sign In'}
           </Button>
         </Box>
       </form>

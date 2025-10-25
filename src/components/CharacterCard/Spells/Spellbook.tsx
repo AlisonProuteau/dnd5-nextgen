@@ -1,11 +1,6 @@
-import { PrepareIcon, SpellbookIcon } from '@assets';
-import { useQueryClient } from '@tanstack/react-query';
-import { doc, updateDoc } from 'firebase/firestore';
-import { isEqual, max } from 'lodash';
-import toast from 'react-hot-toast';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
 import { Fragment, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
+import { PrepareIcon, SpellbookIcon } from '@assets';
 import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
   Accordion,
@@ -21,7 +16,13 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { useQueryClient } from '@tanstack/react-query';
+import { doc, updateDoc } from 'firebase/firestore';
+import { isEqual, max } from 'lodash';
+import { useToggle } from '@hooks/useToggle';
 import type { Character } from '@representations/user.representation';
+import { database } from 'src/firebase';
+import { useAuth } from 'src/providers/AuthProvider';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
 
@@ -40,14 +41,14 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const { user } = useAuth();
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
-  const [isLearnOpen, setIsLearnOpen] = useState(false);
-  const [isPrepareOpen, setIsPrepareOpen] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
+  const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
+  const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
   const [isSaving, setIsSaving] = useState(false);
 
   const saveSpells = async (learn: boolean = false) => {
-    if (learn) isAddOpen ? setIsAddOpen(false) : setIsLearnOpen(false);
-    else setIsPrepareOpen(false);
+    if (learn) isAddOpen ? closeAdd() : closeLearn();
+    else closePrepare();
 
     if (
       !character.id ||
@@ -173,7 +174,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               flexDirection: 'column',
               alignItems: 'center'
             }}
-            onClick={() => setIsLearnOpen(true)}
+            onClick={openLearn}
             disabled={isSaving}
           >
             <SpellbookIcon
@@ -198,7 +199,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               flexDirection: 'column',
               alignItems: 'center'
             }}
-            onClick={() => setIsPrepareOpen(true)}
+            onClick={openPrepare}
             disabled={shouldLearn || isSaving}
           >
             <PrepareIcon
@@ -246,7 +247,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         </DialogContent>
         <DialogActions>
           {isLearnOpen && character.class.index === 'wizard' && (
-            <Button onClick={() => setIsAddOpen(true)}>More spells</Button>
+            <Button onClick={openAdd}>More spells</Button>
           )}
           <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
         </DialogActions>

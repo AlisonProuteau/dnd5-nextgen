@@ -1,10 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { collection, doc, setDoc } from 'firebase/firestore';
-import { omit, omitBy } from 'lodash';
-import toast from 'react-hot-toast';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
-import { type FormEvent, Fragment, useMemo, useState } from 'react';
+import { type FormEvent, Fragment, useEffect, useMemo } from 'react';
 import {
   Button,
   Checkbox,
@@ -16,9 +10,14 @@ import {
   MenuItem,
   Select
 } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { omit, omitBy } from 'lodash';
 import { getUserCharacters } from '@api/users';
+import { useFirebaseCrud, useForm, type ValidationRule, validationRules } from '@hooks/index';
+import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
 import type { Version } from '@utils/constants';
+import { useAuth } from 'src/providers/AuthProvider';
 
 enum ContactType {
   FEEDBACK = 'Feedback',
@@ -81,16 +80,22 @@ const DEFAULT_FORM = {
 
 export function ContactForm() {
   const { user, version } = useAuth();
-  const [isSaving, setIsSaving] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(true);
-  const [formData, setFormDataState] = useState<FormData>({ ...DEFAULT_FORM });
-  const [formError, setFormErrorState] = useState<{
-    message?: boolean;
-    area?: boolean;
-    requestContent?: boolean;
-    requestArea?: boolean;
-    reproSteps?: boolean;
-  }>({});
+  const { isOn: isAnonymous, setIsOn: setIsAnonymous } = useToggle(true);
+
+  const form = useForm<FormData>({
+    initialData: { ...DEFAULT_FORM },
+    validationSchema: {
+      type: [validationRules.required()],
+      message: [validationRules.required()]
+    }
+  });
+
+  const firebaseCrud = useFirebaseCrud<FormData>({
+    collectionPath: 'tickets',
+    successMessages: {
+      create: 'Ticket created'
+    }
+  });
 
   const { data: characters, isLoading: isCharactersLoading } = useQuery({
     queryKey: ['fetchCharacters', user?.uid, version],
@@ -98,101 +103,87 @@ export function ContactForm() {
     enabled: !!(user?.uid && version)
   });
 
-  const setFormData = (values: Partial<FormData>) => {
-    const formatedObject = { ...formData, ...values };
+  useEffect(() => {
+    let newSchema: Record<string, ValidationRule<FormData>[]> = {
+      type: [validationRules.required()],
+      message: [validationRules.required()]
+    };
 
-    if (formatedObject) {
-      Object.keys(formatedObject).forEach((key) => {
-        if (values[key as keyof FormData] === undefined || values[key as keyof FormData] === '')
-          omit(formatedObject, key);
-      });
-
-      setFormDataState(formatedObject);
-    }
-  };
-
-  const setFormError = (values: Partial<typeof formError>) => {
-    setFormErrorState({ ...formError, ...values });
-  };
-
-  const isFormValid = () => {
-    return formData.type && !Object.values(formError).some((v) => v);
-  };
-
-  const validateInput = ({ target }: { target: EventTarget & HTMLFormElement }) => {
-    const currentData = formData[target.id as keyof FormData]?.toString();
-    if (!target.checkValidity || !target.checkValidity() || !currentData) return;
-
-    if (target.id === 'area') {
-      setFormError({ [target.id]: currentData === AppArea.OTHER });
+    if (form.formData.type === ContactType.BUG) {
+      newSchema = {
+        ...newSchema,
+        reproSteps: [validationRules.required()],
+        severity: [validationRules.required()],
+        area: [
+          validationRules.required(),
+          (value: AppArea) => (value === AppArea.OTHER ? `Required` : undefined)
+        ]
+      };
     }
 
-    if (target.id === 'requestArea') {
-      setFormError({ [target.id]: currentData === RequestArea.OTHER });
+    if (form.formData.type === ContactType.REQUEST) {
+      newSchema = {
+        ...newSchema,
+        requestContent:
+          form.formData.requestArea === RequestArea.CONTENT ? [validationRules.required()] : [],
+        requestArea: [
+          validationRules.required(),
+          (value: RequestArea) => (value === RequestArea.OTHER ? `Required` : undefined)
+        ]
+      };
     }
-  };
+
+    form.updateValidationSchema(newSchema);
+  }, [form.formData.type, form.formData.requestArea]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsSaving(true);
 
-    if (isFormValid() && user?.uid) {
+    if (user?.uid) {
       let formattedForm: Partial<FormData> & {
         userId?: string;
         userEmail?: string;
         version: Version | string;
-      } = { ...formData, version: version ?? 'unknown' };
-      if (!isAnonymous || formData.type === ContactType.BUG)
+      } = { ...form.formData, version: version ?? 'unknown' };
+
+      if (!isAnonymous || form.formData.type === ContactType.BUG)
         formattedForm = { ...formattedForm, userId: user.uid };
-      if (formData.canContact) formattedForm = { ...formattedForm, userEmail: user.email ?? '' };
+      if (form.formData.canContact)
+        formattedForm = { ...formattedForm, userEmail: user.email ?? '' };
       else formattedForm = omit(formattedForm, 'canContact');
 
-      try {
-        const newTicketRef = doc(collection(database, 'tickets'));
-        await setDoc(
-          newTicketRef,
-          omitBy(formattedForm, (v) => v === undefined)
-        );
-
-        toast.success('Ticket created');
-        resetForm();
-      } catch (error) {
-        toast.error(`Something went wrong\n${(error as Error).message || 'Error'}`);
-      }
+      const cleanedData = omitBy(formattedForm, (v) => v === undefined) as any;
+      await firebaseCrud.create(cleanedData);
+      if (!firebaseCrud.isLoading) form.resetForm();
     }
-
-    setIsSaving(false);
-  };
-
-  const resetForm = () => {
-    setFormDataState({ ...DEFAULT_FORM });
-    setFormErrorState({});
   };
 
   const isAppArea = useMemo(
-    () => Object.values(AppArea).includes(formData.area as AppArea),
-    [formData.area]
+    () => Object.values(AppArea).includes(form.formData.area as AppArea),
+    [form.formData.area]
   );
+
   const isRequestArea = useMemo(
-    () => Object.values(RequestArea).includes(formData.requestArea as RequestArea),
-    [formData.requestArea]
+    () => Object.values(RequestArea).includes(form.formData.requestArea as RequestArea),
+    [form.formData.requestArea]
   );
 
   return (
     <Container maxWidth="xs">
       <form
         onSubmit={handleSubmit}
-        onBlur={validateInput}
+        onBlur={({ target }) =>
+          (target.id as keyof FormData) && form.validateField(target.id as keyof FormData)
+        }
         onFocus={({ target }) =>
           target.id &&
-          formError[target.id as keyof typeof formError] &&
-          setFormError({ [target.id]: false })
+          !form.isFieldValid(target.id as keyof FormData) &&
+          form.clearFieldError(target.id as keyof FormData)
         }
-        onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
-        onReset={resetForm}
+        onReset={form.resetForm}
         data-testid="contact-form"
       >
-        {!isSaving ? (
+        {!firebaseCrud.isLoading ? (
           <Fragment>
             <FormControl margin="dense" fullWidth required data-testid="type-form">
               <InputLabel htmlFor="type">Contact Type</InputLabel>
@@ -200,19 +191,19 @@ export function ContactForm() {
                 id="type"
                 name="type"
                 label="Contact Type"
-                value={formData.type}
+                value={form.formData.type}
                 onChange={({ target }) => {
                   const type = target.value as ContactType;
 
-                  setFormDataState({
+                  form.setFormData({
                     ...DEFAULT_FORM,
                     type,
                     message:
-                      type === ContactType.BUG || formData.type === ContactType.BUG
+                      type === ContactType.BUG || form.formData.type === ContactType.BUG
                         ? undefined
-                        : formData.message
+                        : form.formData.message
                   });
-                  setFormErrorState({});
+                  form.clearErrors();
                 }}
               >
                 {Object.values(ContactType).map((contactType) => (
@@ -223,16 +214,16 @@ export function ContactForm() {
               </Select>
             </FormControl>
 
-            {formData.type === ContactType.BUG && (
+            {form.formData.type === ContactType.BUG && (
               <Fragment>
                 <FormControl margin="dense" fullWidth required data-testid="severity-form">
                   <InputLabel htmlFor="severity">Severity</InputLabel>
                   <Select
                     id="severity"
                     label="Severity"
-                    value={formData.severity || BugSeverity.MEDIUM}
+                    value={form.formData.severity || BugSeverity.MEDIUM}
                     onChange={({ target }) =>
-                      setFormData({ severity: target.value as BugSeverity })
+                      form.setFormData({ severity: target.value as BugSeverity })
                     }
                   >
                     {Object.values(BugSeverity).map((bugSeverity) => (
@@ -247,8 +238,11 @@ export function ContactForm() {
                   <Select
                     id="area"
                     label="Area"
-                    value={formData.area ? (!isAppArea ? AppArea.OTHER : formData.area) : ''}
-                    onChange={({ target }) => setFormData({ area: target.value as AppArea })}
+                    value={
+                      form.formData.area ? (!isAppArea ? AppArea.OTHER : form.formData.area) : ''
+                    }
+                    onChange={({ target }) => form.setFormData({ area: target.value as AppArea })}
+                    error={!form.isFieldValid('area')}
                   >
                     {Object.values(AppArea).map((area) => (
                       <MenuItem key={area} value={area}>
@@ -256,16 +250,16 @@ export function ContactForm() {
                       </MenuItem>
                     ))}
                   </Select>
-                  {formData.area && (formData.area === AppArea.OTHER || !isAppArea) && (
+                  {form.formData.area && (form.formData.area === AppArea.OTHER || !isAppArea) && (
                     <ControledInput
                       required
                       id="area"
                       label="Area"
                       onChange={(value) =>
-                        setFormData({ area: value ? value.toString() : AppArea.OTHER })
+                        form.setFormData({ area: value ? value.toString() : AppArea.OTHER })
                       }
-                      hasError={formError.area}
-                      errorMessage={['Required']}
+                      hasError={!form.isFieldValid('area')}
+                      errorMessage={form.getFieldError('area')}
                       data-testid="area-input"
                     />
                   )}
@@ -275,9 +269,9 @@ export function ContactForm() {
                   required
                   id="message"
                   label="Summary"
-                  onChange={(value) => setFormData({ message: value?.toString() })}
-                  hasError={formError.message}
-                  errorMessage={['Required']}
+                  onChange={(value) => form.setFormData({ message: value?.toString() })}
+                  hasError={!form.isFieldValid('message')}
+                  errorMessage={form.getFieldError('message')}
                   data-testid="message-input"
                 />
                 <ControledInput
@@ -286,24 +280,24 @@ export function ContactForm() {
                   required
                   id="reproSteps"
                   label="Reproduction Steps"
-                  onChange={(value) => setFormData({ reproSteps: value?.toString() })}
-                  hasError={formError.reproSteps}
-                  errorMessage={['Required']}
+                  onChange={(value) => form.setFormData({ reproSteps: value?.toString() })}
+                  hasError={!form.isFieldValid('reproSteps')}
+                  errorMessage={form.getFieldError('reproSteps')}
                   data-testid="reproSteps-input"
                 />
                 {!isCharactersLoading &&
                   characters?.length &&
-                  formData.area &&
-                  ![AppArea.NAV, AppArea.AUTH].includes(formData.area as AppArea) && (
+                  form.formData.area &&
+                  ![AppArea.NAV, AppArea.AUTH].includes(form.formData.area as AppArea) && (
                     <FormControl margin="dense" fullWidth data-testid="character-form">
                       <InputLabel htmlFor="character">Character</InputLabel>
                       <Select
                         id="character"
                         name="character"
                         label="Character"
-                        value={formData.character || ''}
+                        value={form.formData.character || ''}
                         onChange={({ target }) =>
-                          setFormData({ character: target.value.toString() })
+                          form.setFormData({ character: target.value.toString() })
                         }
                       >
                         {characters.map((character) => (
@@ -321,7 +315,7 @@ export function ContactForm() {
                     <Checkbox
                       id="corrupted"
                       defaultValue="false"
-                      onChange={(_, checked) => setFormData({ corrupted: checked })}
+                      onChange={(_, checked) => form.setFormData({ corrupted: checked })}
                     />
                   }
                   label="Data is corrupted"
@@ -329,7 +323,7 @@ export function ContactForm() {
               </Fragment>
             )}
 
-            {formData.type === ContactType.REQUEST && (
+            {form.formData.type === ContactType.REQUEST && (
               <Fragment>
                 <FormControl margin="dense" fullWidth required data-testid="request-area-form">
                   <InputLabel htmlFor="requestArea">Area</InputLabel>
@@ -337,14 +331,14 @@ export function ContactForm() {
                     id="requestArea"
                     label="Improvement Area"
                     value={
-                      formData.requestArea
+                      form.formData.requestArea
                         ? !isRequestArea
                           ? RequestArea.OTHER
-                          : formData.requestArea
+                          : form.formData.requestArea
                         : ''
                     }
                     onChange={({ target }) =>
-                      setFormData({
+                      form.setFormData({
                         requestArea: target.value as RequestArea,
                         requestContent: undefined
                       })
@@ -356,29 +350,31 @@ export function ContactForm() {
                       </MenuItem>
                     ))}
                   </Select>
-                  {formData.requestArea &&
-                    (formData.requestArea === RequestArea.OTHER || !isRequestArea) && (
+                  {form.formData.requestArea &&
+                    (form.formData.requestArea === RequestArea.OTHER || !isRequestArea) && (
                       <ControledInput
                         required
                         id="requestArea"
                         label="Area"
                         onChange={(value) =>
-                          setFormData({ requestArea: value ? value.toString() : RequestArea.OTHER })
+                          form.setFormData({
+                            requestArea: value ? value.toString() : RequestArea.OTHER
+                          })
                         }
-                        hasError={formError.requestArea}
-                        errorMessage={['Required']}
+                        hasError={!form.isFieldValid('requestArea')}
+                        errorMessage={form.getFieldError('requestArea')}
                         data-testid="requestArea-input"
                       />
                     )}
-                  {formData.requestArea === RequestArea.CONTENT && (
+                  {form.formData.requestArea === RequestArea.CONTENT && (
                     <ControledInput
                       required
                       id="requestContent"
                       label="Type of content"
                       placeholder="Race, class, language, background, spell..."
-                      onChange={(value) => setFormData({ requestContent: value?.toString() })}
-                      hasError={formError.requestContent}
-                      errorMessage={['Required']}
+                      onChange={(value) => form.setFormData({ requestContent: value?.toString() })}
+                      hasError={!form.isFieldValid('requestContent')}
+                      errorMessage={form.getFieldError('requestContent')}
                       data-testid="requestContent-input"
                     />
                   )}
@@ -389,10 +385,10 @@ export function ContactForm() {
                   required
                   id="message"
                   label="Message"
-                  value={formData.message || ''}
-                  onChange={(value) => setFormData({ message: value?.toString() })}
-                  hasError={formError.message}
-                  errorMessage={['Required']}
+                  value={form.formData.message || ''}
+                  onChange={(value) => form.setFormData({ message: value?.toString() })}
+                  hasError={!form.isFieldValid('message')}
+                  errorMessage={form.getFieldError('message')}
                   data-testid="message-input"
                 />
                 <FormControlLabel
@@ -402,7 +398,7 @@ export function ContactForm() {
                     <Checkbox
                       id="canContact"
                       defaultValue="false"
-                      onChange={(_, checked) => setFormData({ canContact: checked })}
+                      onChange={(_, checked) => form.setFormData({ canContact: checked })}
                     />
                   }
                   label="Accept to be contacted"
@@ -410,7 +406,7 @@ export function ContactForm() {
               </Fragment>
             )}
 
-            {formData.type === ContactType.FEEDBACK && (
+            {form.formData.type === ContactType.FEEDBACK && (
               <Fragment>
                 <ControledInput
                   fullWidth
@@ -419,10 +415,10 @@ export function ContactForm() {
                   id="message"
                   name="message"
                   label="Message"
-                  value={formData.message || ''}
-                  onChange={(value) => setFormData({ message: value?.toString() })}
-                  hasError={formError.message}
-                  errorMessage={['Required']}
+                  value={form.formData.message || ''}
+                  onChange={(value) => form.setFormData({ message: value?.toString() })}
+                  hasError={!form.isFieldValid('message')}
+                  errorMessage={form.getFieldError('message')}
                   data-testid="message-input"
                 />
                 <FormControlLabel
@@ -445,7 +441,7 @@ export function ContactForm() {
         )}
 
         <Button
-          disabled={!isFormValid() || isSaving}
+          disabled={!form.isValid || firebaseCrud.isLoading}
           sx={{ marginY: 1 }}
           fullWidth
           type="submit"

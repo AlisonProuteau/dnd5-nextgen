@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import {
   Button,
   FormControl,
@@ -10,6 +10,7 @@ import {
   TextField,
   Typography
 } from '@mui/material';
+import { useForm } from '@hooks/useForm';
 import type { CharacterDetails } from '../utils/character';
 import {
   buildPrompt,
@@ -27,18 +28,20 @@ export default function CharacterForm({
   setPrompt,
   setCharacter
 }: {
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
   setPrompt: (prompt: string) => void;
   setCharacter: (character: CharacterDetails | null) => void;
 }) {
-  const [form, setForm] = useState<CharacterDetails>({
-    race: 'Human',
-    gender: 'Gender-neutral',
-    class: 'Barbarian',
-    ethnicity: undefined,
-    imageType: undefined,
-    imageRatio: undefined,
-    refinement: undefined
+  const form = useForm<CharacterDetails>({
+    initialData: {
+      race: 'Human',
+      gender: 'Gender-neutral',
+      class: 'Barbarian',
+      ethnicity: undefined,
+      imageType: undefined,
+      imageRatio: undefined,
+      refinement: undefined
+    }
   });
 
   const fieldNames: Record<keyof CharacterDetails, string> = {
@@ -53,7 +56,7 @@ export default function CharacterForm({
   };
 
   const handleChange = (field: keyof CharacterDetails) => (e: any) => {
-    setForm({ ...form, [field]: e.target.value });
+    form.setFormData({ [field]: e.target.value });
   };
 
   const handleGenerate = async () => {
@@ -63,11 +66,11 @@ export default function CharacterForm({
     try {
       setIsLoading(true);
 
-      const prompt = buildPrompt(form);
+      const prompt = buildPrompt(form.formData as CharacterDetails);
       setPrompt(prompt);
 
-      const url = await generateImage(form, prompt);
-      if (url) setCharacter({ ...form, url });
+      const url = await generateImage(form.formData as CharacterDetails, prompt);
+      if (url) setCharacter({ ...(form.formData as CharacterDetails), url });
     } catch (err: any) {
       console.error('Generation failed:', err);
       alert(`Image generation failed: ${err.message}`);
@@ -98,7 +101,7 @@ export default function CharacterForm({
               <Select
                 id={fieldNames[field]}
                 data-testid={`${field}-select`}
-                value={form[field] ?? ''}
+                value={form.formData[field] ?? ''}
                 label={fieldNames[field]}
                 onChange={handleChange(field)}
               >
@@ -118,8 +121,8 @@ export default function CharacterForm({
             fullWidth
             multiline
             minRows={2}
-            value={form.refinement}
-            onChange={(e) => setForm({ ...form, refinement: e.target.value })}
+            value={form.formData.refinement || ''}
+            onChange={(e) => form.setFormData({ refinement: e.target.value })}
           />
         </Grid2>
         <Grid2 size={{ xs: 12 }}>

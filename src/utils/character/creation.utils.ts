@@ -1,6 +1,10 @@
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
+import type { AbilityScore } from '@representations/campaign/adventure.representation';
+import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
+import { getAbilityScoreModifier, getArmorClass } from './abilities.utils';
 
 export type ChoiceSelection = DefaultRepresentation & {
   type: 'class' | 'race' | 'background';
@@ -117,3 +121,61 @@ export const mapTraits = (
     secondOptionMatcher: (f, index) => f.index === index,
     secondOptionKey: 'spells'
   });
+
+export const formatPointsForDB = (
+  character: Character,
+  points: Record<string, number>,
+  abilities?: AbilityScore[] | null,
+  classInfo?: Classes | null
+) => {
+  let formattedAbilities: Record<
+    string,
+    {
+      index: string;
+      name: string;
+      full_name: string;
+      score: number;
+      modifier: number;
+    }
+  > = character?.abilityScores || {};
+  if (!character?.abilityScores)
+    abilities?.forEach((ability) => {
+      const raceModifier = character?.abilities.find(
+        (bonusAbility) => bonusAbility.ability_score.index === ability.index
+      );
+      const finalScore = raceModifier
+        ? points[ability.index] + raceModifier.bonus
+        : points[ability.index];
+
+      formattedAbilities = {
+        ...formattedAbilities,
+        [ability.index]: {
+          index: ability.index,
+          name: ability.name,
+          full_name: ability.full_name,
+          score: finalScore,
+          modifier: getAbilityScoreModifier(finalScore)
+        }
+      };
+    });
+
+  const hitPoints =
+    (classInfo?.hit_die || 6) +
+    formattedAbilities['con'].modifier +
+    (character?.features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
+
+  return {
+    hit_die: classInfo?.hit_die,
+    hit_points: hitPoints,
+    saving_throws: classInfo?.saving_throws,
+    armorClass: getArmorClass(
+      formattedAbilities['dex'].modifier,
+      character?.equipments,
+      character?.features,
+      character?.class.index === 'monk'
+        ? formattedAbilities['wis'].modifier
+        : formattedAbilities['con'].modifier
+    ),
+    abilityScores: formattedAbilities
+  };
+};

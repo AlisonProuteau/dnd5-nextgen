@@ -1,8 +1,8 @@
-import { Fragment, useState } from 'react';
+import { Fragment } from 'react';
 import { Add, Close } from '@mui/icons-material';
 import {
   Button,
-  ButtonProps,
+  type ButtonProps,
   Dialog,
   DialogActions,
   DialogContent,
@@ -13,6 +13,7 @@ import {
   Paper,
   Typography
 } from '@mui/material';
+import { useToggle } from '@hooks/useToggle';
 
 export function AccordionButton({ title, ...props }: { title: string } & ButtonProps) {
   return (
@@ -44,17 +45,17 @@ export function AccordionButtonDialog({
   children,
   ...props
 }: { title: string } & Omit<DialogProps, 'open' | 'onClose'>) {
-  const [isOpen, setOpen] = useState(false);
+  const { isOn: isOpen, turnOn: open, turnOff: close } = useToggle();
 
   return (
     <Fragment>
-      <AccordionButton fullWidth title={title} onClick={() => setOpen(true)} />
-      <Dialog open={isOpen} onClose={() => setOpen(false)} {...props}>
+      <AccordionButton fullWidth title={title} onClick={open} />
+      <Dialog {...props} open={isOpen} onClose={close}>
         <DialogTitle>{title}</DialogTitle>
         <DialogActions>
           <IconButton
             aria-label="close"
-            onClick={() => setOpen(false)}
+            onClick={close}
             sx={(theme) => ({
               position: 'absolute',
               right: 2,

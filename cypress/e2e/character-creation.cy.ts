@@ -12,6 +12,76 @@ describe(`Character Creation End-to-End`, () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${this.characterId}`);
   });
 
+  // TODO: Implement history persistency to enable this test
+  it.skip('should handle browser back button during character creation workflow', function () {
+    cy.getByTestId('create-character-fab').click();
+    cy.url().should('include', '/create');
+
+    // Test: Select race and move to class step
+    cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
+    cy.getByTestId('race-choices-')
+      .getByRole('presentation')
+      .should('have.length', 1)
+      .get('label:visible:contains("Black")')
+      .click();
+    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+
+    // Test: Browser back button should navigate back to race step
+    // cy.go('back');
+    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.url().should('include', '/create');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
+    cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
+    cy.get('button:contains("Next"):visible').click();
+
+    // Test: Select class and move to background
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    (this.isMobile
+      ? cy.getByTestId('class-card-current').prev()
+      : cy.getByTestId('class-card-prev', { selector: ' button' })
+    ).click();
+    cy.getByTestId('class-card-current').should('contain.text', 'Wizard');
+    cy.getByTestId('class-choices-').should('have.length', 2);
+    cy.getByTestId('class-choices-')
+      .first()
+      .within(() => {
+        cy.get('label:visible:contains("Skill: Arcana")').click();
+        cy.get('label:visible:contains("Skill: History")').click();
+      });
+    cy.getByTestId('class-choices-')
+      .first()
+      .next()
+      .within(() => {
+        cy.get('label:visible:contains("1 Dagger")').click();
+        cy.get('label:visible:contains("Crystal")').click();
+        cy.get('label:visible:contains("1 Scholar\'s Pack")').click();
+      });
+    cy.get('button:contains("Next"):visible').click();
+
+    // Test: Browser back button from background to class
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    // cy.go('back');
+    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.url().should('include', '/create');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.getByTestId('class-card-current').should('contain.text', 'Wizard');
+
+    // Test: Browser back button should work multiple times
+    // cy.go('back');
+    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
+    cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
+    cy.getByTestId('race-choices-trait').within(() => {
+      cy.get('label:visible').should('have.length', 1).should('contain.text', 'Black');
+    });
+
+    // Test: Browser back button from creation page should go to home
+    cy.go('back');
+    cy.url().should('eq', Cypress.config().baseUrl + '/');
+    cy.getByTestId('create-character-fab').should('be.visible');
+  });
+
   it('should complete the full character sheet happy path workflow', function () {
     cy.getByTestId('create-character-fab').click();
     cy.url().should('include', '/create');
@@ -195,6 +265,51 @@ describe(`Character Creation End-to-End`, () => {
 
     // TODO: Check background step details
     cy.getButton('Create').should('be.enabled');
+
+    // Test: Backward Navigation - Navigate back through all steps and verify data persistence
+    cy.getButton('Back', ':visible').should('be.enabled').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.get('#background').should('contain.text', 'Custom');
+    cy.get('#alignment').should('contain.text', 'Lawful Good');
+
+    cy.getButton('Back', ':visible').should('be.enabled').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.getByTestId('class-card-current').should('contain.text', 'Sorcerer');
+    cy.get('#subclass').should('contain.text', 'Draconic');
+    cy.getByTestId('class-choices-proficiency').within(() => {
+      cy.get('label:visible')
+        .should('have.length', 2)
+        .should('contain.text', 'Skill: Arcana')
+        .and('contain.text', 'Skill: Persuasion');
+    });
+    cy.getByTestId('class-choices-equipment').within(() => {
+      cy.get('label:visible')
+        .should('have.length', 3)
+        .should('contain.text', 'Quarterstaff')
+        .and('contain.text', '1 Component pouch')
+        .and('contain.text', "1 Explorer's Pack");
+    });
+    cy.getByTestId('class-choices-feature').within(() => {
+      cy.get('label:visible').should('have.length', 1).should('contain.text', 'Copper');
+    });
+
+    cy.getButton('Back', ':visible').should('be.enabled').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
+    cy.getByTestId('race-card-current').should('contain.text', 'Dwarf');
+    cy.get('#subraces').should('contain.text', 'Hill Dwarf');
+    cy.getByTestId('race-choices-proficiency').within(() => {
+      cy.get('label:visible').should('have.length', 1).should('contain.text', "Brewer's Supplies");
+    });
+
+    // Test: Navigate forward again to Character Info
+    cy.get('button:contains("Next"):visible').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.get('button:contains("Next"):visible').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.get('button:contains("Next"):visible').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
+    cy.get('input[name="name"], input[id="name"]').should('have.value', 'Test Character');
+    cy.get('input[name="age"], input[id="age"]').should('have.value', '25');
 
     // Test: Character Creation Submission
     cy.getButton('Create').click();

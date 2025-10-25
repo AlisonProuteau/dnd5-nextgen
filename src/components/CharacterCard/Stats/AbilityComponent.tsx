@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { RadioButtonChecked, RadioButtonUnchecked, Shield } from '@mui/icons-material';
 import {
   Badge,
@@ -11,6 +10,7 @@ import {
   Paper,
   Typography
 } from '@mui/material';
+import { useToggle } from '@hooks/useToggle';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 
@@ -24,7 +24,6 @@ interface AbilityProps {
   modifier?: number;
 }
 
-const CIRCLE_SIZE = '80px';
 export function AbilityComponent({
   ability,
   skills,
@@ -32,14 +31,14 @@ export function AbilityComponent({
   score,
   modifier = 0
 }: AbilityProps) {
-  const [isDialogOpen, setIsDialogueOpen] = useState(false);
+  const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
 
   return (
     <Box display="flex" data-testid={`ability-${ability.index}`}>
       <Badge
         badgeContent={
           savingThrows?.find(({ index }) => index === ability.index) ? (
-            <IconButton onClick={() => setIsDialogueOpen(true)}>
+            <IconButton onClick={openDialog}>
               <Shield color="info" aria-label="Saving Throw" />
             </IconButton>
           ) : null
@@ -89,11 +88,7 @@ export function AbilityComponent({
         })}
       </Box>
 
-      <Dialog
-        open={isDialogOpen}
-        onClose={() => setIsDialogueOpen(false)}
-        data-testid="saving-throws-dialog"
-      >
+      <Dialog open={isDialogOpen} onClose={closeDialog} data-testid="saving-throws-dialog">
         <DialogTitle>Saving Throws</DialogTitle>
         <DialogContent>
           <DialogContentText>{savingThrows?.map(({ name }) => name).join(', ')}</DialogContentText>

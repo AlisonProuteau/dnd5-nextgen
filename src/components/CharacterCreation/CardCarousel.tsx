@@ -1,3 +1,6 @@
+import type { ReactNode } from 'react';
+import { useSwipeable } from 'react-swipeable';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { ArrowBackIos, ArrowForwardIos, QuestionMark } from '@mui/icons-material';
 import {
   Box,
@@ -14,10 +17,8 @@ import {
   useMediaQuery,
   useTheme
 } from '@mui/material';
+import { useToggle } from '@hooks/useToggle';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { type ReactNode, useState } from 'react';
-import { useSwipeable } from 'react-swipeable';
-import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 
 function DesignCardContent({
   title,
@@ -84,7 +85,7 @@ function DesignCard({
   children?: ReactNode;
   'data-testid'?: string;
 }) {
-  const [infoOpen, setInfoOpen] = useState(false);
+  const { isOn: isInfoOpen, turnOn: openInfo, turnOff: closeInfo } = useToggle();
 
   return (
     <Card
@@ -109,9 +110,9 @@ function DesignCard({
         </CardActionArea>
       ) : (
         <>
-          <DesignCardContent title={title} img={img} moreInfofn={() => setInfoOpen(true)} />
+          <DesignCardContent title={title} img={img} moreInfofn={openInfo} />
           {children && (
-            <Dialog open={infoOpen} onClose={() => setInfoOpen(false)}>
+            <Dialog open={isInfoOpen} onClose={closeInfo}>
               <DialogTitle>{title}</DialogTitle>
               <DialogContent>{children}</DialogContent>
             </Dialog>

@@ -14,16 +14,14 @@ export interface UseFirebaseCrudOptions {
     update?: string;
     delete?: string;
   };
-  redirectPaths?: {
-    create?: string;
-    update?: string;
-    delete?: string;
-  };
+  redirect?: Partial<
+    Record<'create' | 'update' | 'delete', { path: string; state?: Record<string, any> }>
+  >;
 }
 
 export interface UseFirebaseCrudReturn<T> {
   isLoading: boolean;
-  create: (data: Partial<T>, customPath?: string) => Promise<string | null>;
+  create: (data: Partial<T> & any, customPath?: string) => Promise<string | null>;
   update: (id: string, data: Partial<T>, customPath?: string) => Promise<void>;
   remove: (id: string, customPath?: string) => Promise<void>;
   getById: (id: string, customPath?: string) => Promise<T | null>;
@@ -34,13 +32,26 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 ): UseFirebaseCrudReturn<T> => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user, version } = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const { collectionPath, invalidateQueryKey, successMessages = {}, redirectPaths = {} } = options;
+  const { collectionPath, invalidateQueryKey, successMessages = {}, redirect = {} } = options;
 
   const buildPath = (customPath?: string): string => {
     const path = customPath || collectionPath;
     return path.replace('{userId}', user?.uid || '');
+  };
+
+  const stateWithId = (
+    id: string,
+    state?: Record<string, any>
+  ): Record<string, any> | undefined => {
+    if (!state) return;
+
+    const newState = { ...state };
+    Object.entries(state).forEach(([keyBy, value]) => {
+      if (value === '{id}') newState[keyBy] = id;
+    });
+    return { state: newState };
   };
 
   const create = async (data: Partial<T>, customPath?: string): Promise<string | null> => {
@@ -56,17 +67,18 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
       const documentData = {
         ...data,
-        id: newDocRef.id,
-        version: version,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        id: newDocRef.id
       } as unknown as T;
 
       await setDoc(newDocRef, documentData);
 
       if (invalidateQueryKey)
-        queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
-      if (redirectPaths.create) navigate(redirectPaths.create.replace('{id}', newDocRef.id));
+        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+      if (redirect.create)
+        navigate(
+          redirect.create.path.replace('{id}', newDocRef.id),
+          stateWithId(newDocRef.id, redirect.create.state)
+        );
 
       toast.success(successMessages.create || 'Created successfully');
       return newDocRef.id;
@@ -89,16 +101,12 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      const updateData = {
-        ...data,
-        updatedAt: new Date(),
-        version: version
-      };
-      await updateDoc(docRef, updateData);
+      await updateDoc(docRef, data as unknown as T);
 
       if (invalidateQueryKey)
-        queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
-      if (redirectPaths.update) navigate(redirectPaths.update.replace('{id}', id));
+        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+      if (redirect.update)
+        navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
       toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
@@ -122,8 +130,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       await deleteDoc(docRef);
 
       if (invalidateQueryKey)
-        queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
-      if (redirectPaths.delete) navigate(redirectPaths.delete);
+        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+      if (redirect.delete) navigate(redirect.delete.path, { state: redirect.delete.state });
 
       toast.success(successMessages.delete || 'Deleted successfully');
     } catch (error) {
