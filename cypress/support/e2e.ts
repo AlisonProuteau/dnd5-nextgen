@@ -1,5 +1,4 @@
 import { attachCustomCommands } from 'cypress-firebase';
-import type { UserImportRecord } from 'firebase-admin/lib/auth/user-import-builder';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
@@ -40,13 +39,31 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
 // returning false here prevents Cypress from failing the test
 Cypress.on('uncaught:exception', () => false);
 
+// Global test user
+export const testUser = {
+  displayName: 'Test',
+  uid: '12345',
+  email: 'test@test.com',
+  password: 'v@lidPassword123'
+};
+
+declare global {
+  namespace Cypress {
+    interface Cypress {
+      testUser: typeof testUser;
+    }
+  }
+}
+
+Cypress.testUser = testUser;
+
 before(() => {
-  const user: UserImportRecord = {
-    displayName: 'Test',
-    uid: '12345',
-    email: 'test@test.com'
-  };
-  cy.authImportUsers([user])
-    .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
-    .login(user.uid);
+  cy.deleteAllAuthUsers().callFirestore('delete', `users/`);
+  cy.authCreateUser(testUser).callFirestore('set', `/users/${testUser.uid}`, {
+    identifier: testUser.email,
+    version: 'Legacy',
+    displayName: testUser.displayName
+  });
 });
+
+beforeEach(() => cy.logout());

@@ -159,6 +159,8 @@ MIT License - see [package.json](package.json) for details.
 
 ### Current TODO List
 
+- [ ] Fix all cypress tests, check all changes and then merge the code updates
+- [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor
 - [ ] Add info page for app navigation and features
 - [ ] D&D 2024 edition support
