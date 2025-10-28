@@ -17,7 +17,7 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
   };
 
   return equipmentList.map((equipment) => (
-    <Box key={equipment.index}>
+    <Box key={equipment.index} data-testid={`equipment-item-${equipment.index}`}>
       {onClick && (
         <IconButton sx={{ verticalAlign: 'center' }} onClick={() => onClick(equipment)}>
           <InfoOutlined color="info" fontSize="small" />

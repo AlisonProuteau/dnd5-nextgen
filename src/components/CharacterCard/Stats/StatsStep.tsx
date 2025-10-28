@@ -38,20 +38,39 @@ export function Stats({ character }: DefaultProps) {
 
   return (
     <Fragment>
-      <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" paddingTop="15px">
-        <IconText label="Armor" value={character.armorClass} Icon={ArmorIcon} color="grey" />
+      <Box
+        data-testid="stats-section"
+        display="grid"
+        gridTemplateColumns="1fr 1fr 1fr 1fr"
+        paddingTop="15px"
+      >
+        <IconText
+          label="Armor"
+          value={character.armorClass}
+          Icon={ArmorIcon}
+          color="grey"
+          testid="armor-class"
+        />
         <IconText
           label="Hit Points"
           value={character.hit_points}
           Icon={HitPointsIcon}
           color="grey"
+          testid="hit-points"
         />
-        <IconText label="Speed" value={character.speed} Icon={SpeedIcon} color="grey" />
+        <IconText
+          label="Speed"
+          value={character.speed}
+          Icon={SpeedIcon}
+          color="grey"
+          testid="speed"
+        />
         <IconText
           label="Proficiency Bonus"
           value={character.proficiencyBonus}
           Icon={ProficiencyIcon}
           color="grey"
+          testid="proficiency-bonus"
         />
       </Box>
 

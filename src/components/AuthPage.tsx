@@ -96,9 +96,7 @@ export function AuthPage() {
       if (formData.email && formData.password && isFormValid()) {
         if (!hasAccount) {
           await createUser(formData.email, formData.password, formData.name);
-        }
-
-        await signIn(formData.email, formData.password);
+        } else await signIn(formData.email, formData.password);
       }
       setIsSaving(false);
     }

@@ -72,6 +72,8 @@ export function CharacterCreation() {
     const formattedData = pickBy(
       {
         ...formData,
+        class: { index: formData.class?.name, name: formData.class?.name },
+        race: { index: formData.race?.name, name: formData.race?.name },
         languages: uniqBy(formData.languages, 'index'),
         proficiencies: uniqBy(formattedProficiencies, 'index'),
         skills: uniqBy(skills, 'index'),
@@ -114,10 +116,23 @@ export function CharacterCreation() {
 
   return (
     <Container sx={{ overflowX: 'clip' }}>
-      <Stepper activeStep={activeStep} sx={{ marginBottom: '15px' }} alternativeLabel>
-        {steps.map(({ id, label }) => (
+      <Stepper
+        activeStep={activeStep}
+        sx={{ marginBottom: '15px' }}
+        alternativeLabel
+        data-testid="character-stepper"
+        role="tablist"
+      >
+        {steps.map(({ id, label }, index) => (
           <Step key={id} active={steps[activeStep].id === id}>
-            <StepLabel>{label}</StepLabel>
+            <StepLabel
+              data-testid="step-label"
+              className={steps[activeStep].id === id ? 'active' : ''}
+              role="tab"
+              aria-selected={steps[activeStep].id === id}
+            >
+              {label}
+            </StepLabel>
           </Step>
         ))}
       </Stepper>

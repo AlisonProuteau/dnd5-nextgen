@@ -34,6 +34,8 @@ export default function PortraitDisplay({
         justifyContent="center"
         alignItems="center"
         minHeight="200px"
+        data-testid="loading"
+        role="progressbar"
       >
         <CircularProgress size={60} />
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -54,6 +56,7 @@ export default function PortraitDisplay({
               component="img"
               image={character.url}
               alt="Generated Portrait"
+              data-testid="generated-image"
               sx={{ objectFit: 'contain', borderRadius: 2 }}
             />
           </Card>

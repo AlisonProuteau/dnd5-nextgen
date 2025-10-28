@@ -190,13 +190,15 @@ export function ContactForm() {
         }
         onInvalid={({ target }) => setFormError({ [(target as HTMLFormElement).id]: true })}
         onReset={resetForm}
+        data-testid="contact-form"
       >
         {!isSaving ? (
           <Fragment>
-            <FormControl margin="dense" fullWidth required>
+            <FormControl margin="dense" fullWidth required data-testid="type-form">
               <InputLabel htmlFor="type">Contact Type</InputLabel>
               <Select
                 id="type"
+                name="type"
                 label="Contact Type"
                 value={formData.type}
                 onChange={({ target }) => {
@@ -223,10 +225,10 @@ export function ContactForm() {
 
             {formData.type === ContactType.BUG && (
               <Fragment>
-                <FormControl margin="dense" fullWidth required>
+                <FormControl margin="dense" fullWidth required data-testid="severity-form">
                   <InputLabel htmlFor="severity">Severity</InputLabel>
                   <Select
-                    id={`severity`}
+                    id="severity"
                     label="Severity"
                     value={formData.severity || BugSeverity.MEDIUM}
                     onChange={({ target }) =>
@@ -240,7 +242,7 @@ export function ContactForm() {
                     ))}
                   </Select>
                 </FormControl>
-                <FormControl margin="dense" fullWidth required>
+                <FormControl margin="dense" fullWidth required data-testid="area-form">
                   <InputLabel htmlFor="area">Area</InputLabel>
                   <Select
                     id="area"
@@ -264,6 +266,7 @@ export function ContactForm() {
                       }
                       hasError={formError.area}
                       errorMessage={['Required']}
+                      data-testid="area-input"
                     />
                   )}
                 </FormControl>
@@ -275,6 +278,7 @@ export function ContactForm() {
                   onChange={(value) => setFormData({ message: value?.toString() })}
                   hasError={formError.message}
                   errorMessage={['Required']}
+                  data-testid="message-input"
                 />
                 <ControledInput
                   fullWidth
@@ -285,15 +289,17 @@ export function ContactForm() {
                   onChange={(value) => setFormData({ reproSteps: value?.toString() })}
                   hasError={formError.reproSteps}
                   errorMessage={['Required']}
+                  data-testid="reproSteps-input"
                 />
                 {!isCharactersLoading &&
                   characters?.length &&
                   formData.area &&
                   ![AppArea.NAV, AppArea.AUTH].includes(formData.area as AppArea) && (
-                    <FormControl margin="dense" fullWidth>
+                    <FormControl margin="dense" fullWidth data-testid="character-form">
                       <InputLabel htmlFor="character">Character</InputLabel>
                       <Select
                         id="character"
+                        name="character"
                         label="Character"
                         value={formData.character || ''}
                         onChange={({ target }) =>
@@ -302,7 +308,7 @@ export function ContactForm() {
                       >
                         {characters.map((character) => (
                           <MenuItem key={`character-${character.id}`} value={character.id}>
-                            {character.name} - {character.race.name} {character.class.name}
+                            {character.name} - {character.race?.name} {character.class?.name}
                           </MenuItem>
                         ))}
                       </Select>
@@ -310,6 +316,7 @@ export function ContactForm() {
                   )}
                 <FormControlLabel
                   sx={{ marginX: 0 }}
+                  data-testid="corrupted-form"
                   control={
                     <Checkbox
                       id="corrupted"
@@ -324,7 +331,7 @@ export function ContactForm() {
 
             {formData.type === ContactType.REQUEST && (
               <Fragment>
-                <FormControl margin="dense" fullWidth required>
+                <FormControl margin="dense" fullWidth required data-testid="request-area-form">
                   <InputLabel htmlFor="requestArea">Area</InputLabel>
                   <Select
                     id="requestArea"
@@ -360,6 +367,7 @@ export function ContactForm() {
                         }
                         hasError={formError.requestArea}
                         errorMessage={['Required']}
+                        data-testid="requestArea-input"
                       />
                     )}
                   {formData.requestArea === RequestArea.CONTENT && (
@@ -371,6 +379,7 @@ export function ContactForm() {
                       onChange={(value) => setFormData({ requestContent: value?.toString() })}
                       hasError={formError.requestContent}
                       errorMessage={['Required']}
+                      data-testid="requestContent-input"
                     />
                   )}
                 </FormControl>
@@ -384,9 +393,11 @@ export function ContactForm() {
                   onChange={(value) => setFormData({ message: value?.toString() })}
                   hasError={formError.message}
                   errorMessage={['Required']}
+                  data-testid="message-input"
                 />
                 <FormControlLabel
                   sx={{ marginX: 0 }}
+                  data-testid="can-contact-form"
                   control={
                     <Checkbox
                       id="canContact"
@@ -406,14 +417,17 @@ export function ContactForm() {
                   multiline
                   required
                   id="message"
+                  name="message"
                   label="Message"
                   value={formData.message || ''}
                   onChange={(value) => setFormData({ message: value?.toString() })}
                   hasError={formError.message}
                   errorMessage={['Required']}
+                  data-testid="message-input"
                 />
                 <FormControlLabel
                   sx={{ marginX: 0 }}
+                  data-testid="anonymous-form"
                   control={
                     <Checkbox
                       id="anonymous"
@@ -432,7 +446,7 @@ export function ContactForm() {
 
         <Button
           disabled={!isFormValid() || isSaving}
-          sx={{ marginTop: '1rem' }}
+          sx={{ marginY: 1 }}
           fullWidth
           type="submit"
           variant="contained"

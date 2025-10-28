@@ -26,6 +26,7 @@ export default function CharacterCard({
 }: CharacterCardProps) {
   return (
     <Card
+      data-testid={`character-card-${character.class}-${character.race}-${character.gender}`}
       sx={{
         width: 220,
         borderRadius: 3,

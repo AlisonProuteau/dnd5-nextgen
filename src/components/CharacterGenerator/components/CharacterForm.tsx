@@ -77,11 +77,11 @@ export default function CharacterForm({
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
+    <Paper elevation={3} sx={{ p: 3, mt: 4 }} data-testid="character-form">
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Character Settings
       </Typography>
-      <Grid2 container spacing={3} sx={{ mt: 2 }}>
+      <Grid2 container spacing={3} sx={{ mt: 2 }} data-testid="form-container">
         {(
           [
             ['race', races],
@@ -97,6 +97,7 @@ export default function CharacterForm({
               <InputLabel htmlFor={fieldNames[field]}>{fieldNames[field]}</InputLabel>
               <Select
                 id={fieldNames[field]}
+                data-testid={`${field}-select`}
                 value={form[field] ?? ''}
                 label={fieldNames[field]}
                 onChange={handleChange(field)}
@@ -113,6 +114,7 @@ export default function CharacterForm({
         <Grid2 size={{ xs: 12 }}>
           <TextField
             label="Refinement"
+            id="Refinement"
             fullWidth
             multiline
             minRows={2}

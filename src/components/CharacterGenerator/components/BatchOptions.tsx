@@ -210,7 +210,14 @@ export default function BatchOptions({
   if (isLoading) return null;
 
   return (
-    <Box mt={4} sx={{ px: 2 }} display="flex" flexDirection="column" alignItems="center">
+    <Box
+      mt={4}
+      sx={{ px: 2 }}
+      display="flex"
+      flexDirection="column"
+      alignItems="center"
+      data-testid="batch-options"
+    >
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Batch Generation Options
       </Typography>

@@ -50,17 +50,23 @@ export function Settings() {
 
   return (
     <Container>
-      <form onSubmit={handleSubmitVersion}>
+      <div data-testid="user-info">
+        <Typography>User: {user?.displayName}</Typography>
+        <Typography>Email: {user?.email}</Typography>
+      </div>
+      <form onSubmit={handleSubmitVersion} data-testid="version-form">
         <FormControl fullWidth disabled={!user || isLoading}>
           <InputLabel html-for="version-select">Version</InputLabel>
           <Select
             id="version-select"
+            name="version"
             value={selectedVersion}
             label="Age"
+            data-testid="version-select"
             onChange={({ target }) => setSelectedVersion((target.value as Version) || null)}
           >
             {VERSIONS?.map((current) => (
-              <MenuItem key={`version-${current}`} value={current}>
+              <MenuItem key={`version-${current}`} value={current} data-testid="version-option">
                 {current}
               </MenuItem>
             ))}
@@ -76,7 +82,13 @@ export function Settings() {
           </Button>
 
           {selectedVersion !== 'Legacy' && (
-            <Typography color="warning" variant="overline" textTransform="none" align="center">
+            <Typography
+              color="warning"
+              variant="overline"
+              textTransform="none"
+              align="center"
+              data-testid="helper-text"
+            >
               <InfoOutlined
                 fontSize="small"
                 sx={{ verticalAlign: 'middle', paddingRight: '3px' }}

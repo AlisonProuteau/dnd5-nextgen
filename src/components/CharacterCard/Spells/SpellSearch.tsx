@@ -1,12 +1,11 @@
 import { getMatchingSpells, getSpellsForClass } from '@api/ressources';
 import { AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
-import type { Spell } from '@representations/abilities/magic.representation';
 import { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useLayoutEffect, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 
 interface SpellSearchProps {
@@ -25,7 +24,6 @@ export function SpellSearch({
   onSelect
 }: SpellSearchProps) {
   const { version } = useAuth();
-  const [spells, setSpells] = useState<Spell[]>([]);
   const [search, setSearch] = useState('');
   const [runningTimer, setRunningTimer] = useState<NodeJS.Timeout>();
 
@@ -44,19 +42,32 @@ export function SpellSearch({
     enabled: !!classIndex && !!allSpells?.length && !!version
   });
 
-  useLayoutEffect(() => {
-    if (!allSpells?.length || !search.length || spellsFetching) setSpells([]);
+  const spells = useMemo(() => {
+    if (!allSpells?.length || !search.length || spellsFetching) return [];
     else {
-      const filteredSpells =
+      return (
         allSpells
           .filter(({ name }) => name.toLowerCase().includes(search.toLowerCase()))
           .filter(({ index }) => !knownSpells.find((known) => known.index === index))
-          .filter(({ index }) => !selectedSpells.find((selected) => selected.index === index)) ||
-        [];
-
-      setSpells(filteredSpells);
+          .filter(({ index }) => !selectedSpells.find((selected) => selected.index === index)) || []
+      );
     }
-  }, [allSpells, spellsFetching, knownSpells, search, selectedSpells]);
+  }, [
+    spellsFetching,
+    search,
+    allSpells
+      ?.map(({ index }) => index)
+      .sort((a, b) => a.localeCompare(b))
+      .join(', '),
+    knownSpells
+      .map(({ index }) => index)
+      .sort((a, b) => a.localeCompare(b))
+      .join(', '),
+    selectedSpells
+      .map(({ index }) => index)
+      .sort((a, b) => a.localeCompare(b))
+      .join(', ')
+  ]);
 
   return onSelect ? (
     <Fragment>
@@ -78,21 +89,21 @@ export function SpellSearch({
         justifySelf="center"
       >
         {selectedSpells.map((spell) => (
-          <Fragment>
+          <Box key={spell.index} data-testid={`search-spell-item-${spell.index}-selected`}>
             <IconButton onClick={() => onSelect(spell, true)}>
               <RemoveCircleOutline color="info" fontSize="small" />
             </IconButton>
-            <Typography key={spell.index}>{spell.name}</Typography>
-          </Fragment>
+            <Typography>{spell.name}</Typography>
+          </Box>
         ))}
 
         {spells.map((spell) => (
-          <Fragment>
+          <Box key={spell.index} data-testid={`search-spell-item-${spell.index}`}>
             <IconButton onClick={() => onSelect(spell)}>
               <AddCircleOutline color="info" fontSize="small" />
             </IconButton>
-            <Typography key={spell.index}>{spell.name}</Typography>
-          </Fragment>
+            <Typography>{spell.name}</Typography>
+          </Box>
         ))}
       </Box>
     </Fragment>

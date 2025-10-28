@@ -31,6 +31,7 @@ export function ControledInput({
       fullWidth={fullWidth}
       margin="dense"
       required={props.required}
+      data-testid={props?.id ? `${props.id}-form` : undefined}
     >
       <InputLabel htmlFor={props.id}>{props.label}</InputLabel>
       <OutlinedInput

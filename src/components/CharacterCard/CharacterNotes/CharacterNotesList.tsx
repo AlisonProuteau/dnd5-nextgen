@@ -97,7 +97,7 @@ export function CharacterNotesList({
           onClick={() => pinNote(note.id, !note.pinned)}
         />
       ),
-      name: note.pinned ? 'Pin' : 'Unpin',
+      name: note.pinned ? 'Unpin' : 'Pin',
       hidden: note.archived
     },
     {
@@ -119,7 +119,7 @@ export function CharacterNotesList({
   const deleteNote = async (id: string) => updateNote(id, {}, true);
 
   return characterNotes?.filter(({ archived }) => (archived || false) === showArchived)?.length ? (
-    <Box display="flex" flexDirection="column" gap={1} overflow="visible">
+    <Box display="flex" flexDirection="column" gap={1} overflow="visible" data-testid="notes-list">
       {formatCharacterNotes(characterNotes, showArchived).map((noteList, free) => (
         <Box
           key={free ? 'unpinned' : 'pinned'}
@@ -140,7 +140,11 @@ export function CharacterNotesList({
             <Fragment key={`${!free ? 'pinned' : 'unpinned'}-notes-${date}`}>
               <Typography textTransform="capitalize">{date}</Typography>
               {datedNotes?.map((note) => (
-                <Card key={note.id} elevation={note.pinned ? 1 : 5}>
+                <Card
+                  key={note.id}
+                  elevation={note.pinned ? 1 : 5}
+                  data-testid={`note-card-${note.id}`}
+                >
                   <Box
                     position="relative"
                     sx={{ float: 'right', marginRight: 1 }}
@@ -156,6 +160,7 @@ export function CharacterNotesList({
                       direction="left"
                       actions={noteActions(note)}
                       disabled={isLoading}
+                      data-testid={`note-actions-${note.id}`}
                     />
                   </Box>
                   <CardContent>
@@ -177,7 +182,7 @@ export function CharacterNotesList({
                         })})`}
                       </Typography>
                     ) : null}
-                    <Typography>{note.content}</Typography>
+                    <Typography data-testid={`note-content-${note.id}`}>{note.content}</Typography>
                   </CardContent>
                 </Card>
               ))}

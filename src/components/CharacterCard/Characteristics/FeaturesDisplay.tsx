@@ -58,15 +58,31 @@ export function FeaturesDisplay({
   });
   return (
     features && (
-      <Box paddingTop="15px">
+      <Box paddingTop="15px" data-testid="features-section">
         {features.map((feature) => (
-          <Accordion key={feature.index} defaultExpanded={expanded}>
-            <AccordionSummary expandIcon={<ExpandMore />}>{feature.name}</AccordionSummary>
-            <AccordionDetails sx={{ textAlign: 'justify' }}>
+          <Accordion
+            key={feature.index}
+            defaultExpanded={expanded}
+            data-testid={`feature-${feature.index}`}
+          >
+            <AccordionSummary
+              expandIcon={<ExpandMore />}
+              data-testid={`feature-name-${feature.index}`}
+            >
+              {feature.name}
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{ textAlign: 'justify' }}
+              data-testid={`feature-details-${feature.index}`}
+            >
               {character.features
                 ?.find(({ index }) => index === feature.index)
                 ?.expertises?.map((e) => (
-                  <Typography textTransform="capitalize" key={e.index}>
+                  <Typography
+                    textTransform="capitalize"
+                    key={e.index}
+                    data-testid={`feature-expertise-${e.index}`}
+                  >
                     {e.name}
                   </Typography>
                 ))}
@@ -74,10 +90,20 @@ export function FeaturesDisplay({
                 ? subfeatures
                     .filter(({ parent }) => parent?.index === feature.index)
                     ?.map((subfeature) => (
-                      <Box key={subfeature.index}>
-                        <Typography>{subfeature.name}</Typography>
+                      <Box
+                        key={subfeature.index}
+                        data-testid={`feature-subfeature-${subfeature.index}`}
+                      >
+                        <Typography data-testid={`feature-subfeature-name-${subfeature.index}`}>
+                          {subfeature.name}
+                        </Typography>
                         {subfeature.feature_specific?.invocations?.map((invoc) => (
-                          <Typography key={invoc.index}>{invoc.name}</Typography>
+                          <Typography
+                            key={invoc.index}
+                            data-testid={`feature-invocation-${invoc.index}`}
+                          >
+                            {invoc.name}
+                          </Typography>
                         ))}
                         {subfeature.desc.map((d, i) => (
                           <Typography key={i}>{d}</Typography>
