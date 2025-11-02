@@ -1,191 +1,276 @@
 /// <reference types="cypress" />
-import type { UserImportRecord } from 'firebase-admin/lib/auth/user-import-builder';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
 import { random } from 'lodash';
+import { Character } from 'src/representations/user.representation';
+import { baseCharacter } from './mocks/baseCharacter';
 
-// TODO: Update
 declare global {
   namespace Cypress {
     interface Chainable {
       /**
-       * Login as a new user
+       * Logs in as a new user. Creates the user if not present.
+       * @returns Chainable<string> - The user ID.
        */
       loginNewUser(): Chainable<string>;
 
       /**
-       * Login as admin user (for character generator access)
+       * Logs in as the admin user.
+       * @returns Chainable<void>
        */
       loginAsAdmin(): Chainable<void>;
 
       /**
-       * Create a test character for testing purposes
+       * Creates a test character for testing purposes.
+       * Merges baseCharacter with any overrides.
+       * @param userId - The user ID.
+       * @param characterId - Optional character ID.
+       * @param character - Partial<Character> overrides.
+       * @returns Chainable<string> - The character ID.
        */
-      createTestCharacter(): Chainable<void>;
+      createTestCharacter(
+        userId: string,
+        characterId?: string,
+        character?: Partial<Character>
+      ): Chainable<string>;
 
       /**
-       * Clear all characters for current user
+       * Clears all data for the input user (deletes user and all characters).
+       * @param uid - The user ID.
+       * @returns Chainable<void>
        */
-      clearUserCharacters(): Chainable<void>;
+      clearUser(uid: string): Chainable<void>;
 
       /**
-       * Wait for page to load completely
+       * Clears all users that are not default users (test user and admin).
+       * @returns Chainable<void>
        */
-      waitForPageLoad(): Chainable<void>;
+      clearAllNonDefaultUsers(): Chainable<void>;
 
       /**
-       * Fill character creation form
+       * Selects an action for a note card (Edit, Pin, Archive, etc).
+       * @param data - Note card selector data (id or text).
+       * @param action - Action to perform.
+       * @returns Chainable<JQuery<HTMLElement>>
        */
-      fillCharacterCreationForm(): Chainable<void>;
+      selectCardAction(
+        data: { id?: string; text?: string },
+        action: 'Edit' | 'Pin' | 'Unpin' | 'Archive' | 'Restore' | 'Delete'
+      ): Chainable<JQuery<HTMLElement>>;
 
       /**
-       * Select from Material-UI Select component
+       * Selects an option from a dropdown by visible text.
+       * @param selectSelector - Selector for the dropdown.
+       * @param optionText - Text of the option to select.
+       * @returns Chainable<void>
        */
-      selectMuiOption(selectId: string, option: string): Chainable<void>;
+      selectOption(selectSelector: string, optionText: string | RegExp): Chainable<void>;
 
       /**
-       * Check authentication state
+       * Gets a button by its text content (supports chaining).
+       * @param text - Button text or RegExp.
+       * @returns Chainable<JQuery<HTMLButtonElement>>
        */
-      checkAuthState(shouldBeAuthenticated?: boolean): Chainable<void>;
+      getButton(text: string | RegExp): Chainable<JQuery<HTMLButtonElement>>;
 
       /**
-       * Fill Material-UI TextField
+       * Waits for loading spinner to disappear.
+       * @returns Chainable<void>
        */
-      fillMuiTextField(selector: string, value: string): Chainable<void>;
+      waitForLoading(): Chainable<void>;
 
       /**
-       * Wait for React Query to settle
+       * Gets an element by ARIA role (supports chaining).
+       * @param role - ARIA role.
+       * @param name - Optional accessible name.
+       * @returns Chainable<JQuery<HTMLElement>>
        */
-      waitForReactQuery(): Chainable<void>;
+      getByRole(role: string, name?: string): Chainable<JQuery<HTMLElement>>;
+
+      /**
+       * Gets an element by test id (preferred method, supports chaining).
+       * @param testId - The data-testid value.
+       * @param options - Selector and type options.
+       * @returns Chainable<JQuery<HTMLElement>>
+       */
+      getByTestId(
+        testId: string,
+        { selector, type }?: { selector?: string; type?: 'exact' | 'starts' | 'contains' }
+      ): Chainable<JQuery<HTMLElement>>;
     }
   }
 }
 
-// Login as regular user - simplified for testing
+/**
+ * Cypress command: loginNewUser
+ * Logs in as a regular user for testing. Creates the user if not present.
+ */
 Cypress.Commands.add('loginNewUser', (id?: string) => {
-  if (id && cy.callFirestore('get', `users/${id}`).then((doc) => doc.exists)) {
-    cy.login(id);
+  const userId = id ? id : random(10000, 99999).toString();
+
+  return cy.authGetUser(userId).then((existingUser) => {
+    if (existingUser?.uid) {
+    } else {
+      const user = {
+        displayName: `New User ${userId}`,
+        uid: userId,
+        email: 'test@test.com'
+      };
+      cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
+        identifier: user.email,
+        version: 'Legacy'
+      });
+    }
+
+    cy.login(userId);
+    return cy.wrap(userId);
+  });
+});
+
+/**
+ * Cypress command: loginAsAdmin
+ * Logs in as the admin user for character generator access. Creates the user if not present.
+ */
+Cypress.Commands.add('loginAsAdmin', () => {
+  const adminId = '8lFf6wEj9ARVlilMOrOxYDZOkSS2'; // Admin UID from App.tsx
+
+  cy.authGetUser(adminId).then((existingUser) => {
+    if (!existingUser?.uid) {
+      const user = {
+        displayName: 'Admin User',
+        uid: adminId,
+        email: 'admin@test.com'
+      };
+      cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
+        identifier: user.email,
+        version: 'Legacy'
+      });
+    }
+
+    cy.login(adminId);
+  });
+});
+
+/**
+ * Cypress command: createTestCharacter
+ * Creates a test character for the given user, merging baseCharacter with overrides.
+ */
+Cypress.Commands.add(
+  'createTestCharacter',
+  (userId: string, characterId?: string, character = {}) => {
+    const id: string =
+      characterId ?? (character?.id as string | undefined) ?? random(10000, 99999).toString();
+    const data = { ...baseCharacter, ...character, id };
+
+    cy.callFirestore('set', `users/${userId}/characters/${id}`, data);
     return cy.wrap(id);
   }
+);
 
-  const user: UserImportRecord = {
-    displayName: 'Test',
-    uid: id ? id : random(1000000, 9999999).toString(),
-    email: 'test@test.com'
-  };
-  cy.authImportUsers([user])
-    .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
-    .login(user.uid);
-  return cy.wrap(user.uid);
+/**
+ * Cypress command: clearUser
+ * Clears all data for the input user, including all characters.
+ */
+Cypress.Commands.add('clearUser', (uid: string) => {
+  cy.authGetUser(uid).then((existingUser) => existingUser && cy.authDeleteUser(uid));
+  cy.callFirestore('delete', `users/${uid}/characters`);
+  cy.callFirestore('delete', `users/${uid}`);
+  cy.reload();
 });
 
-// Login as admin user (for character generator access)
-Cypress.Commands.add('loginAsAdmin', () => {
-  const adminUid = '8lFf6wEj9ARVlilMOrOxYDZOkSS2'; // Admin UID from App.tsx
-  if (adminUid && cy.callFirestore('get', `users/${adminUid}`).then((doc) => doc.exists)) {
-    cy.login(adminUid);
-    return;
+/**
+ * Cypress command: clearAllNonDefaultUsers
+ * Clears all users except the default test and admin users.
+ */
+Cypress.Commands.add('clearAllNonDefaultUsers', () => {
+  cy.authListUsers().then((users) => {
+    users.users.forEach((user) => {
+      if (user.uid !== Cypress.testUser.uid && user.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2') {
+        cy.authDeleteUser(user.uid);
+        cy.callFirestore('delete', `users/${user.uid}/characters`);
+        cy.callFirestore('delete', `users/${user.uid}`);
+      }
+    });
+  });
+});
+
+/**
+ * Cypress command: selectCardAction
+ * Selects an action (Edit, Pin, etc) for a note card by id or text.
+ */
+Cypress.Commands.add(
+  'selectCardAction',
+  (
+    data: { id?: string; text?: string },
+    action: 'Edit' | 'Pin' | 'Unpin' | 'Archive' | 'Restore' | 'Delete'
+  ) =>
+    (data.id
+      ? cy.getByTestId(`note-card-${data.id}`)
+      : cy.getByTestId('note-card-', { selector: `:contains("${data.text}")` })
+    ).within(() => {
+      cy.getByTestId('note-actions-', { selector: '>button' }).focus();
+      cy.getByTestId(action, { type: 'exact' }).click();
+    })
+);
+
+/**
+ * Cypress command: selectOption
+ * Selects an option from a Select dropdown by visible text.
+ */
+Cypress.Commands.add('selectOption', (selectId: string, option?: string | RegExp) => {
+  cy.get(selectId).click();
+  option && cy.get(`[role="option"]`).contains(option).click();
+});
+
+/**
+ * Cypress command: waitForLoading
+ * Waits for loading spinner or progress bar to disappear.
+ */
+Cypress.Commands.add('waitForLoading', () => {
+  cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('not.exist');
+});
+
+/**
+ * Cypress command: getByRole
+ * Gets an element by ARIA role and optional accessible name. Supports chaining.
+ */
+Cypress.Commands.add(
+  'getByRole',
+  { prevSubject: 'optional' },
+  (subject, role: string, name?: string) => {
+    const current = name ? `[role="${role}"]:contains("${name}")` : `[role="${role}"]`;
+
+    return subject ? cy.wrap(subject).find(current) : cy.get(current);
   }
+);
 
-  const user: UserImportRecord = {
-    displayName: 'Test',
-    uid: adminUid,
-    email: 'test@test.com'
-  };
-  cy.authImportUsers([user])
-    .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
-    .login(user.uid);
-});
+/**
+ * Cypress command: getByTestId
+ * Gets an element by data-testid, with selector and type options. Supports chaining.
+ */
+Cypress.Commands.add(
+  'getByTestId',
+  { prevSubject: 'optional' },
+  (subject, testId: string, { selector, type = 'starts' } = { type: 'starts' }) => {
+    let baseSelector = `[data-testid^="${testId}"]`;
+    if (type === 'exact' || type === 'contains') {
+      baseSelector = type === 'exact' ? `[data-testid="${testId}"]` : `[data-testid*="${testId}"]`;
+    }
+    const current = selector ? `${baseSelector}${selector}` : baseSelector;
 
-// Create a test character
-Cypress.Commands.add('createTestCharacter', () => {
-  const characterData = {
-    id: 'test-character-1',
-    name: 'Test Character',
-    age: 25,
-    sex: { index: 'M', name: 'Male' },
-    race: { index: 'human', name: 'Human' },
-    subrace: null,
-    class: { index: 'fighter', name: 'Fighter' },
-    subclass: null,
-    background: { index: 'soldier', name: 'Soldier' },
-    alignment: { index: 'lawful-good', name: 'Lawful Good' },
-    level: 1,
-    version: 'Legacy',
-    languages: [],
-    proficiencies: [],
-    skills: [],
-    equipments: []
-  };
-
-  cy.callFirestore('set', 'users/test-user/characters/test-character-1', characterData);
-});
-
-// Clear all characters for current user
-Cypress.Commands.add('clearUserCharacters', () => {
-  // TODO: clear all characters programmatically
-  // Use multiple delete calls for subcollections since cypress-firebase doesn't support recursive delete
-  cy.callFirestore('delete', 'users/test-user/characters/test-character-1');
-  cy.callFirestore('delete', 'users/test-user/characters/test-character-2');
-  cy.callFirestore('delete', 'users/test-user/characters/test-character-3');
-});
-
-// Custom command to wait for page to load
-Cypress.Commands.add('waitForPageLoad', () => {
-  cy.get('body').should('be.visible');
-  cy.get('.MuiCircularProgress-root').should('not.exist');
-});
-
-// Custom command to fill character creation form
-Cypress.Commands.add('fillCharacterCreationForm', () => {
-  // Step 1: Race
-  cy.get('[data-testid="race-card"]').first().click();
-  cy.get('button:contains("Next")').click();
-
-  // Step 2: Class
-  cy.get('[data-testid="class-card"]').first().click();
-  cy.get('button:contains("Next")').click();
-
-  // Step 3: Background
-  cy.get('.MuiSelect-select').first().click();
-  cy.get('.MuiMenuItem-root').first().click();
-  cy.get('button:contains("Next")').click();
-
-  // Step 4: Character Info
-  cy.get('input[id="name"]').type('Test Character');
-  cy.get('input[id="age"]').type('25');
-});
-
-// Custom command to select from Material-UI Select component
-Cypress.Commands.add('selectMuiOption', (selectId: string, option: string) => {
-  cy.get(`[id="${selectId}"]`).click();
-  cy.get('.MuiMenuItem-root').contains(option).click();
-});
-
-// Custom command to check if user is authenticated
-Cypress.Commands.add('checkAuthState', (shouldBeAuthenticated = true) => {
-  if (shouldBeAuthenticated) {
-    cy.window()
-      .its('localStorage')
-      .should('have.property', 'firebase:authUser:dnd5-nextgen:[DEFAULT]');
-  } else {
-    cy.window()
-      .its('localStorage')
-      .should('not.have.property', 'firebase:authUser:dnd5-nextgen:[DEFAULT]');
+    return subject ? cy.wrap(subject).find(current) : cy.get(current);
   }
+);
+
+/**
+ * Cypress command: getButton
+ * Gets a button by its text content. Supports chaining.
+ */
+Cypress.Commands.add('getButton', { prevSubject: 'optional' }, (subject, text: string | RegExp) => {
+  const current = subject ? cy.wrap(subject).find('button') : cy.get('button');
+
+  return current.contains(text).closest('button');
 });
 
-// Custom command to handle Material-UI form interactions
-Cypress.Commands.add('fillMuiTextField', (selector: string, value: string) => {
-  cy.get(selector).click().clear().type(value);
-});
-
-// Custom command to wait for React Query to settle
-Cypress.Commands.add('waitForReactQuery', () => {
-  cy.window().should('have.property', '__REACT_QUERY_STATE__');
-  cy.window().its('__REACT_QUERY_STATE__').should('have.property', 'queries');
-});
-
-export { };
-
+export {};

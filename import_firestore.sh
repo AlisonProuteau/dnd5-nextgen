@@ -77,7 +77,7 @@ handle_options "$@"
 localPath='./database'
 project='dnd5-nextgen'
 metadata_file='firebase-export-metadata.json'
-collections='ability-scores','alignments','backgrounds','classes','conditions','damage-types','equipment-categories','equipment','feats','features','languages','levels','magic-items','magic-schools','monsters','proficiencies','races','rule-sections','rules','skills','spells','subclasses','subraces','traits','weapon-properties'
+collections='ability-scores','alignments','backgrounds','classes','conditions','damage-types','equipment-categories','equipment','feats','features','languages','levels','magic-items','magic-schools','monsters','proficiencies','races','rule-sections','rules','skills','spells','subclasses','subraces','traits','weapon-properties','guides'
 
 info "Clean local database"
 rm -r $localPath

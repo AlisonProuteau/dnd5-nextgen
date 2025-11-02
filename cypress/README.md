@@ -1,308 +1,151 @@
 # Cypress Tests for D&D 5e NextGen
 
-This directory contains comprehensive end-to-end tests for the D&D 5e NextGen character generator application using Cypress. The test suite follows a consolidated approach where each test file contains comprehensive workflow tests that cover validation-before-success patterns, ensuring real end-to-end user experiences.
+Comprehensive end-to-end tests using a **consolidated full-flow approach** - each test covers complete user workflows with validation, error handling, and success scenarios in single cohesive tests.
 
-## Test Structure
+## Test Files
 
-### Test Files Overview
+- **`auth.cy.ts`** - Authentication workflows (sign in/up, validation, error handling, persistence, network failures)
+- **`character-creation.cy.ts`** - Character creation stepper (race/class/background selection, navigation, validation, edge cases)
+- **`character-generator.cy.ts`** - AI character portrait generation (admin-only, batch, error handling, download/upload)
+- **`character-sheet.cy.ts`** - Character management (display, editing, notes, spell workflow, features, equipment, error recovery)
+- **`contact-settings.cy.ts`** - Contact form and settings workflows (feedback, bug report, feature request, validation, submission)
 
-All test files follow a consolidated approach with comprehensive workflow tests rather than fragmented unit-like tests:
+## Test Philosophy
 
-- **`auth.cy.ts`** - Complete authentication workflows (sign in/up with full validation and error handling)
-- **`character-creation.cy.ts`** - Complete character creation stepper workflow (race/class/background selection with validation)
-- **`character-generator.cy.ts`** - Complete AI character portrait generation workflow (admin-only feature with full form validation)
-- **`character-sheet.cy.ts`** - Complete character sheet management workflows (display, editing, notes, persistence)
-- **`contact-settings.cy.ts`** - Complete contact form and settings workflows (validation, submission, version management)
-- **`navigation.py.ts`** - Complete navigation and authentication state workflows (route protection, redirects, responsive design)
+### Core Principles
 
-### Test Design Philosophy
+- **Minimal Test Splitting** - Prefer complete workflows in single tests, not fragmented steps
+- **Validation-Before-Success** - Test errors, validation, and edge cases within main flows
+- **Feature-Focused** - Each test covers one feature area comprehensively
+- **Real User Journeys** - Mirror actual user behavior patterns
+- **Complex Feature Exception** - For complex features, use one E2E "happy path" test plus targeted specific tests when needed
 
-Each test follows the **validation-before-success pattern**:
-1. **Validation Testing** - Tests form validation, error states, and edge cases first
-2. **Loading States** - Tests intermediate states and user feedback
-3. **Error Handling** - Tests network failures and unexpected conditions  
-4. **Success Workflows** - Tests complete successful user journeys
-5. **Post-Action Behavior** - Tests what happens after successful operations
+### Test Structure Approach
 
-### Custom Commands
+**Primary:** One comprehensive test covering the complete workflow (setup → validation → errors → success → cleanup)
 
-Custom Cypress commands are defined in `support/commands.ts`:
+**When Complex:** Add specific tests for intricate parts that need detailed validation, but keep the main E2E flow test
 
-- `cy.login()` - Authenticates as a regular test user
-- `cy.loginAsAdmin()` - Authenticates as admin user (for character generator access)
-- `cy.logout()` - Logs out current user
-- `cy.createTestCharacter()` - Creates a test character in Firestore
-- `cy.clearUserCharacters()` - Removes all test characters
-- `cy.waitForPageLoad()` - Waits for page to fully load
-- `cy.fillCharacterCreationForm()` - Fills out the character creation form
-- `cy.selectMuiOption(selectId, option)` - Selects option from Material-UI Select component
+### Flow Structure
 
-## Test Coverage
+1. Setup & Navigation → 2. Validation Testing → 3. Error Handling → 4. Success Workflow → 5. Cleanup
 
-### Authentication Tests (`auth.cy.ts`)
+**Examples:**
 
-**Complete Sign In Flow**
-- Email and password validation with real-time feedback
-- Loading states during authentication attempts
-- Error handling for invalid credentials and network issues
-- Form field interactions and accessibility features
-- Successful authentication and redirect to home page
+```javascript
+// ✅ Preferred - Comprehensive Flow
+it('should complete full character creation with validation and error handling');
 
-**Sign Up and Onboarding Flow**  
-- Comprehensive form validation (email format, password requirements, confirmation matching)
-- Password visibility toggle functionality
-- Loading states and error handling during account creation
-- Complete onboarding process with version selection
-- Post-signup navigation and user state management
+// ✅ Acceptable for Complex Features - Happy Path + Specific Tests
+it('should complete character creation workflow (E2E happy path)');
+it('should validate complex race trait selection edge cases');
+it('should handle spell slot calculation for multiclass characters');
 
-### Character Creation Tests (`character-creation.cy.ts`)
+// ✅ Acceptable for Multiple Distinct Flows - Different User Journeys
+it('should handle feedback contact type workflow');
+it('should handle bug report contact type workflow');
+it('should handle feature request contact type workflow');
 
-**Complete Stepper Workflow with Validation**
-- Form validation at each step before allowing progression
-- Race selection with details display and validation
-- Class selection with features, proficiencies, and validation
-- Background and alignment selection with comprehensive options
-- Character information form with all required field validation
-- Stepper navigation (forward/backward) with state persistence
-- Loading states during character creation process
-- Final character creation, database save, and success confirmation
-- Error handling for creation failures and network issues
-- Responsive design across all viewport sizes
+// ❌ Avoid - Basic Feature Fragmentation
+it('should validate race selection');
+it('should validate class selection');
+```
 
-### Character Generator Tests (`character-generator.py.ts`)
+**Decision Guidelines:**
 
-**Complete Generation Workflow with Validation and Error Handling**
-- Admin-only access control and permission validation
-- Comprehensive form validation for all customization options
-- Character customization (race, gender, class, style) with real-time validation
-- Image generation workflow with loading states and progress feedback
-- Prompt display, refinement, and regeneration options
-- Batch generation capabilities with queue management
-- Error handling for API failures and rate limiting
-- Form reset functionality and state management
-- Accessibility features and keyboard navigation
-- Responsive design testing across devices
+- **Same workflow, different paths:** One comprehensive test
+- **Completely different user journeys:** Separate tests per journey
+- **Complex features:** One E2E + specific edge case tests
 
-### Character Sheet Tests (`character-sheet.cy.ts`)
+## Custom Commands
 
-**Complete Character Display and Navigation**
-- Character sheet layout with all sections (stats, equipment, features)
-- Ability scores display with calculated modifiers
-- Navigation to character points allocation page
-- Equipment and inventory management interface
-- Spells section display for spellcaster classes
-- Complete tab/section navigation workflow
+### Authentication & Setup
 
-**Complete Character Editing Workflow with Validation**
-- Character name editing with form validation (required fields)
-- Character notes editing with length validation and persistence
-- Image upload functionality with file validation
-- Loading states during save operations
-- Data persistence testing after page reload
-- Error handling for save failures and network issues
-- Character deletion workflow with confirmation dialog
-- Security testing (protecting other users' characters)
+- `cy.login()` / `cy.loginNewUser()`/ `cy.loginAsAdmin()` / `cy.logout()`
+- `cy.createTestCharacter()`
 
-### Navigation Tests (`navigation.cy.ts`)
+### Element Selection (MUI-Independent)
 
-**Complete Authentication Workflow with Proper Redirects**
-- Unauthenticated user access control and redirect validation
-- Version requirement validation before accessing features
-- Character requirement validation for home page access
-- Successful authentication flow with all validations passing
-- Character card display and interaction workflows
+- `cy.getByRole('button', 'Submit')` - ARIA-compliant selection
+- `cy.getByTestId('submit-button')` - Data-testid selection
+- `cy.selectOption('select', 'Option')` - Dropdown selection
+- `cy.waitForLoading()` - Loading state handling
+- `cy.selectCardAction({ text: 'Note' }, 'Edit')` - Note card actions
+- `cy.getButton('Create')` - Button by text
+- `cy.press('Escape')` - Keyboard interaction
 
-**Complete Navigation and Character Management**
-- Header navigation between all pages
-- Floating action button functionality and accessibility
-- Character grid layout with multiple characters
-- Protected route access control and security
-- Admin feature visibility and access control
-- Loading states and error handling for navigation
-- Responsive design across all viewport sizes
+### Selector Strategy
 
-### Contact & Settings Tests (`contact-settings.cy.ts`)
+1. **Semantic HTML** - `button`, `form`, `input`
+2. **Text Content** - Button text, labels, headings
+3. **ARIA Attributes** - `[role="button"]`, `[aria-label="Close"]`
+4. **Data-TestId** - `[data-testid="submit-button"]` when needed
+5. **Form Elements** - `input[type="email"]`, `select[name="version"]`
 
-**Complete Contact Form Workflow**
-- Form validation for all fields before submission
-- Message type selection with conditional field validation
-- Character reference selection for bug reports
-- Anonymous contact option functionality
-- Loading states during form submission
-- Error handling for submission failures
-- Success confirmation and form reset
-
-**Complete Settings Management Workflow**
-- Version selection interface with validation
-- Available vs unavailable version handling
-- Loading states during version updates
-- Error handling for update failures
-- Success confirmation and post-update navigation
-- Accessibility features and responsive design
-
-## Firebase Integration
-
-The tests use Firebase emulators for:
-
-- **Authentication** - User sign in/up and session management
-- **Firestore** - Character data storage and retrieval
-- **Storage** - File uploads (if applicable)
-
-### Emulator Configuration
-
-Tests run against local Firebase emulators configured in `cypress.config.ts`:
-
-- Auth Emulator: `localhost:9099`
-- Firestore Emulator: `localhost:8080`
-- Storage Emulator: `localhost:9199`
+**Avoided:** MUI selectors (`.MuiButton-root`, `.MuiCard-root`) which break with updates.
 
 ## Running Tests
 
 ### Prerequisites
 
-1. Start Firebase emulators: `yarn firebase:emulate`
-2. Start the development server: `yarn start:dist`
-
-### Run Tests
-
 ```bash
-# Open Cypress Test Runner
-yarn cy:open
-
-# Run all tests headlessly
-yarn cypress run
-
-# Run specific test file
-yarn cypress run --spec "cypress/e2e/auth.cy.ts"
-
-# Run tests in specific browser
-yarn cypress run --browser chrome
+yarn firebase:emulate  # Start Firebase emulators
+yarn start:dist        # Start development server
 ```
 
-### Test Data Setup
+### Commands
 
-Tests automatically create and clean up test data:
+```bash
+yarn cy                                           # Test Runner
+yarn cy:ci                                      # Run all tests
+```
 
-- Test users with predictable UIDs
-- Sample characters for testing interactions
-- Proper Firestore document structure
+### Environment
 
-## Test Best Practices
-
-### 1. Consolidated Workflow Testing
-
-- Each test covers complete user workflows rather than isolated functions
-- Tests follow validation-before-success patterns for realistic user experiences
-- Comprehensive error handling and edge case coverage within single test cases
-- Real end-to-end flows that mirror actual user behavior
-
-### 2. Test Independence and Data Management
-
-- Each test is independent and can run in isolation
-- Tests clean up their own data using custom Cypress commands
-- No dependencies between test files or individual tests
-- Proper Firebase emulator integration for consistent test data
-
-### 3. Real User Experience Testing
-
-- Tests follow actual user navigation patterns and workflows
-- Use realistic data and interactions throughout test scenarios
-- Comprehensive validation testing before testing success scenarios
-- Loading states, error conditions, and recovery testing
-
-### 4. Responsive and Accessible Design Testing
-
-- Tests run on multiple viewport sizes (mobile, tablet, desktop)
-- Keyboard navigation and accessibility feature validation
-- Touch-friendly interaction testing for mobile devices
-- ARIA labels, roles, and screen reader compatibility checks
-
-### 5. Comprehensive Error and Edge Case Handling
-
-- Network failure simulation and recovery testing
-- Invalid data handling and form validation testing
-- User permission and security validation
-- API failure simulation and graceful degradation testing
-
-## Test Configuration
-
-### Viewport Sizes
-
-- Mobile: 375x667 (iPhone SE)
-- Tablet: 768x1024 (iPad)
-- Desktop: 1920x1080 (Full HD)
-
-### Browser Support
-
-- Chrome (primary)
-- Firefox
-- Edge
-- Safari (via webkit)
-
-## Debugging Tests
-
-### Common Issues
-
-1. **Firebase Connection** - Ensure emulators are running
-2. **Timing Issues** - Use proper waits for async operations
-3. **Element Selection** - Use reliable selectors (data-testid preferred)
-4. **Test Data** - Verify test user and character creation
-
-### Debug Tools
-
-- Cypress Test Runner for interactive debugging
-- Browser DevTools integration
-- Screenshots and videos on failure
-- Console logs and network requests
-
-## Continuous Integration
-
-Tests are configured to run in CI/CD pipelines:
-
-- Headless browser execution
-- Parallel test execution support
-- Test result reporting
-- Failure screenshots and videos
+- **Emulators:** Auth (9099), Firestore (8080), Storage (9199)
+- **Viewports:** Mobile (375x667), Tablet (768x1024), Desktop (1920x1080)
+- **Browsers:** Chrome (primary), Firefox, Edge, Safari
 
 ## Contributing
 
-When adding new tests to the consolidated test suite:
+### Test Structure
 
-### Test Structure Guidelines
+1. **Prefer Comprehensive Tests** - Start with complete feature workflows in single tests
+2. **Full-Flow Integration** - Validation, errors, loading, success in same test
+3. **Feature-Focused Scope** - One feature area per test comprehensively
+4. **Complex Feature Strategy** - One E2E "happy path" + specific tests for intricate parts when needed
+5. **Avoid Basic Fragmentation** - Don't split simple workflows unnecessarily
+6. **Realistic Journeys** - Follow actual user navigation patterns
 
-1. **Follow Consolidated Workflow Patterns** - Create comprehensive tests that cover complete user workflows rather than fragmented unit-like tests
-2. **Use Validation-Before-Success Pattern** - Always test validation, loading states, and error handling before testing successful scenarios
-3. **Include Comprehensive Coverage** - Each test should cover the complete user journey including edge cases and error conditions
-4. **Follow Existing Naming Conventions** - Use descriptive test names that explain the complete workflow being tested
+**Decision Framework:**
+
+- **Simple/Medium Features:** One comprehensive test covering all scenarios
+- **Complex Features:** One E2E test + targeted tests for complex edge cases, calculations, or integrations
+- **Never:** Split basic workflows into multiple small tests
 
 ### Technical Requirements
 
-1. **Use Custom Commands** - Leverage existing custom commands for common operations (login, character creation, etc.)
-2. **Add Proper Test Descriptions** - Include detailed descriptions that explain the complete workflow and validation patterns
-3. **Include Responsive Design Testing** - Test across multiple viewport sizes within comprehensive workflow tests
-4. **Add Accessibility Testing** - Include keyboard navigation and ARIA validation within workflow tests
-5. **Implement Proper Cleanup** - Use afterEach/after hooks for data cleanup and test isolation
+- Use custom commands for common operations
+- Include responsive design testing within workflows
+- Add accessibility validation within comprehensive tests
+- Implement proper cleanup for test independence
+- Use semantic selectors with data-testid fallbacks
 
-### Code Quality Standards
+### Code Quality
 
-1. **Real E2E Testing** - Ensure tests represent actual user workflows, not isolated component testing
-2. **Error Handling Coverage** - Include network failures, validation errors, and edge cases in comprehensive tests
-3. **Loading State Testing** - Test intermediate states and user feedback during async operations
-4. **Security Testing** - Include permission validation and data protection testing where applicable
-5. **Performance Considerations** - Optimize test execution while maintaining comprehensive coverage
+- Real E2E workflows, not isolated component tests
+- Comprehensive error handling within main flows
+- Loading state testing during async operations
+- Security and permission validation where applicable
+- Optimize execution while maintaining full coverage
 
-### File Organization
+### Test Commenting Standard
 
-- Each test file should focus on a specific feature area but contain comprehensive workflow tests
-- Group related test scenarios within describe blocks that represent complete user journeys
-- Use meaningful describe block names that indicate the scope of the comprehensive workflow testing
+- **Prefix all comments in Cypress test files with `Test:`**
+  - Example: `// Test: Setup & Navigation - Verify feedback form`
+  - This ensures clarity and consistency for all contributors.
 
-## Environment Variables
+## Debugging
 
-Required environment variables for testing:
-
-- `FIREBASE_AUTH_EMULATOR_HOST`
-- `FIRESTORE_EMULATOR_HOST`
-- `FIREBASE_STORAGE_EMULATOR_HOST`
-
-These are automatically set by the test configuration.
+**Common Issues:** Firebase connection, timing, element selection, test data
+**Tools:** Test Runner, DevTools, screenshots/videos, console logs

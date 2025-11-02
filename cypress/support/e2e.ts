@@ -39,30 +39,55 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
 // returning false here prevents Cypress from failing the test
 Cypress.on('uncaught:exception', () => false);
 
-// Global test user
-export const testUser = {
-  displayName: 'Test',
-  uid: '12345',
-  email: 'test@test.com',
-  password: 'v@lidPassword123'
+const hideFirebaseEmulatorWarning = () => {
+  cy.get('body').then((body) => {
+    // After navigation, check for the emulator warning and dismiss it if present
+    if (body.find('.firebase-emulator-warning').length > 0) {
+      cy.get('.firebase-emulator-warning').invoke('css', 'z-index', '-1000');
+    }
+  });
 };
+
+Cypress.Commands.overwrite('visit', (originalFn, options) =>
+  originalFn(options).then((res) => {
+    hideFirebaseEmulatorWarning();
+    return res;
+  })
+);
+
+Cypress.Commands.overwrite('reload', (originalFn, forceReload, options) =>
+  originalFn(forceReload, options).then((res) => {
+    hideFirebaseEmulatorWarning();
+    return res;
+  })
+);
 
 declare global {
   namespace Cypress {
     interface Cypress {
-      testUser: typeof testUser;
+      testUser: { displayName: string; uid: string; email: string; password: string };
+      viewports: Array<{ name: string; width: number; height: number }>;
     }
   }
 }
 
-Cypress.testUser = testUser;
+Cypress.testUser = {
+  displayName: 'Test User',
+  uid: '12345',
+  email: 'test@test.com',
+  password: 'v@lidPassword123'
+};
+Cypress.viewports = [
+  { name: 'Mobile', width: 375, height: 667 },
+  // { name: 'Tablet', width: 768, height: 1024 },
+  { name: 'Desktop', width: 1920, height: 1080 }
+];
 
 before(() => {
   cy.deleteAllAuthUsers().callFirestore('delete', `users/`);
-  cy.authCreateUser(testUser).callFirestore('set', `/users/${testUser.uid}`, {
-    identifier: testUser.email,
-    version: 'Legacy',
-    displayName: testUser.displayName
+  cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
+    identifier: Cypress.testUser.email,
+    version: 'Legacy'
   });
 });
 
