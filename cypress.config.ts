@@ -34,6 +34,14 @@ export default defineConfig({
           }
         }
       );
+    },
+    reporter: 'mochawesome',
+    reporterOptions: {
+      reportFilename: 'cypress-report',
+      reportDir: './cypress/reports',
+      overwrite: false,
+      html: true,
+      json: true
     }
   }
 });

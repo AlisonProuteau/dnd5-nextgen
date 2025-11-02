@@ -1,0 +1,98 @@
+name: Cypress E2E Tests
+on:
+  pull_request:
+    branches:
+      - master
+env:
+  SERVICE_ACCOUNT: ${{ secrets.CI_SERVICE_ACCOUNT }}
+  FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@master
+        with:
+          node-version: '20.x'
+          cache: 'yarn'
+      - run: yarn install --frozen-lockfile
+      - run: yarn global add firebase-tools
+
+      - name: Write Cypress env to file
+        run: echo "$CYPRESS_ENV" > cypress.env.json
+        shell: bash
+        env:
+          CYPRESS_ENV: ${{ secrets.CYPRESS_ENV }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.CI_SERVICE_ACCOUNT }}
+      - name: Set up Google Cloud Auth
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: dnd5-nextgen
+          install_components: 'gke-gcloud-auth-plugin'
+
+      - name: Restore Firestore data
+        id: cache-database-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ./database
+          key: ${{ runner.os }}-database-${{ github.event.pull_request.base.sha }}
+          restore-keys: ${{ runner.os }}-database-
+      - name: Import Firestore data
+        id: import-database
+        if: steps.cache-database-restore.outputs.cache-hit != 'true'
+        run: ./import_firestore.sh
+      - name: Save Firestore data
+        id: cache-database-save
+        if: always() && steps.cache-database-restore.outputs.cache-hit != 'true' && steps.import-database.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: ./database
+          key: ${{ runner.os }}-database-${{ github.event.pull_request.base.sha }}
+      - name: Add Storage rules
+        if: steps.cache-database-restore.outputs.cache-hit == 'true'
+        run: echo {{ secrets.STORAGE_RULES }} >> storage.rules
+
+      - name: Cache firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: /home/runner/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators-${{ github.event.pull_request.base.sha }}
+          restore-keys: ${{ runner.os }}-firebase-emulators-
+
+      - name: Remove existing Cypress results
+        run: (rm -rf ./cypress/reports || true) && (rm -rf ./cypress/screenshots || true)
+
+      - name: Run Cypress tests
+        continue-on-error: true
+        run: yarn cy:ci
+      - name: Kill all processes
+        continue-on-error: true
+        run: sleep 5 && pkill -f firebase && sleep 5 && pkill -f cypress && sleep 500
+
+      - name: Upload test screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: ./cypress/screenshots
+
+      - name: Upload test reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ./cypress/reports
+      - name: Generate Cypress report
+        id: run_cypress_report
+        run: echo "$(node generate-text-report.js)" >> ./cypress/reports/results.txt
+      - name: Display Cypress report
+        run: cat ./cypress/reports/results.txt
+
+      - name: Send results to Pull Request
+        uses: mshick/add-pr-comment@v2
+        if: steps.run_cypress_report.outcome == 'success'
+        with:
+          message-path: ./cypress/reports/results.txt
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
