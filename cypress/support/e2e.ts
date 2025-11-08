@@ -84,11 +84,14 @@ Cypress.viewports = [
 ];
 
 before(() => {
-  cy.deleteAllAuthUsers().callFirestore('delete', `users/`);
-  cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
-    identifier: Cypress.testUser.email,
-    version: 'Legacy'
-  });
+  cy.deleteAllAuthUsers()
+    .callFirestore('delete', `users/`)
+    .then(() =>
+      cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
+        identifier: Cypress.testUser.email,
+        version: 'Legacy'
+      })
+    );
 });
 
 beforeEach(() => cy.logout());

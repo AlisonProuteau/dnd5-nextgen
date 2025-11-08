@@ -67,7 +67,7 @@ export function CharacterPoints() {
     if (!res) {
       let values: number[] = [];
 
-      for (let index = 0; index < 4; index++) {
+      for (let i = 0; i < 4; i++) {
         values = [...values, randomInteger(1, 6)];
       }
 
@@ -75,10 +75,14 @@ export function CharacterPoints() {
       res = values.reduce((total, current) => total + current, 0);
     }
 
-    setPoints((current) => ({
-      ...current,
-      [index]: res || 0
-    }));
+    if (res !== points[index] || val !== undefined) {
+      setPoints((current) => ({
+        ...current,
+        [index]: res || 0
+      }));
+    } else setScore(index);
+
+    return;
   };
 
   useEffect(() => {
@@ -267,6 +271,7 @@ export function CharacterPoints() {
                         onChange={(_, value) => setScore(ability.index, value ?? undefined)}
                       />
                       <IconButton
+                        data-testid={`randomize-${ability.index}`}
                         sx={{ paddingTop: '29px' }}
                         onClick={() => setScore(ability.index)}
                       >

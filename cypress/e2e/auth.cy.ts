@@ -32,20 +32,20 @@ Cypress.viewports.forEach(({ name, width, height }) =>
         // TODO: Add check for validation message once implemented
 
         // Test: complete first-time sign-in flow
-        cy.get('input[id="email"]').type(signInUser.email);
+        cy.get('#email').type(signInUser.email);
         cy.get('button[type="submit"]').should('be.disabled');
-        cy.get('input[id="password"]').type(signInUser.password);
+        cy.get('#password').type(signInUser.password);
         cy.get('button[type="submit"]').should('be.enabled');
-        cy.get('input[id="email"]').clear();
+        cy.get('#email').clear();
         cy.get('button[type="submit"]').should('be.disabled');
-        cy.get('input[id="email"]').type(signInUser.email);
+        cy.get('#email').type(signInUser.email);
         cy.get('button[type="submit"]').click();
 
         // Test: first-time display name setup
         cy.get('div:contains("Update your display name") form')
           .should('be.visible')
           .within(() => {
-            cy.get('input[id="name"]').clear().type('Sign In User');
+            cy.get('#name').clear().type('Sign In User');
             cy.get('button[type="submit"]').click();
           });
 
@@ -57,9 +57,9 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
         // Test: subsequent login workflow (skips settings)
         cy.logout();
-        cy.get('input[id="email"]').should('be.visible');
-        cy.get('input[id="email"]').type(signInUser.email);
-        cy.get('input[id="password"]').type(signInUser.password);
+        cy.get('#email').should('be.visible');
+        cy.get('#email').type(signInUser.email);
+        cy.get('#password').type(signInUser.password);
         cy.get('button[type="submit"]').click();
 
         cy.url().should('not.include', '/settings');
@@ -77,8 +77,8 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
       it('should handle authentication errors, network failures, and recovery workflows', () => {
         // Test: invalid user error handling
-        cy.get('input[id="email"]').type('invalid@example.com');
-        cy.get('input[id="password"]').type('password');
+        cy.get('#email').type('invalid@example.com');
+        cy.get('#password').type('password');
         cy.get('button[type="submit"]').click();
 
         cy.url().should('include', '/');
@@ -89,14 +89,14 @@ Cypress.viewports.forEach(({ name, width, height }) =>
         cy.getByRole('status', 'Something went wrong').should('not.exist');
 
         // Test: invalid password error handling
-        cy.get('input[id="email"]').clear().type(Cypress.testUser.email);
-        cy.get('input[id="password"]').clear().type('wrongpassword');
+        cy.get('#email').clear().type(signInUser.email);
+        cy.get('#password').clear().type('wrongpassword');
         cy.get('button[type="submit"]').click();
 
         cy.getByRole('status', 'Something went wrong').should('contain.text', 'wrong-password');
 
         // Test: network failure simulation and retry capability
-        cy.get('input[id="password"]').clear().type(Cypress.testUser.password);
+        cy.get('#password').clear().type(signInUser.password);
 
         cy.intercept(
           {
@@ -126,14 +126,14 @@ Cypress.viewports.forEach(({ name, width, height }) =>
         // Test: session expiration and logout behavior
         cy.logout();
         cy.url().should('not.include', '/create');
-        cy.get('input[id="email"]').should('be.visible');
+        cy.get('#email').should('be.visible');
       });
     });
 
     describe('Sign Up and Onboarding Flow', () => {
       const testUser = {
-        uid: 'incomplete-user-id',
-        email: 'incomplete@example.com',
+        uid: `signup-user-id-${name}`,
+        email: `signup-${name}@example.com`,
         password: 'v@lidPassword123'
       };
 
@@ -145,23 +145,20 @@ Cypress.viewports.forEach(({ name, width, height }) =>
         cy.get('button[type="submit"]').should('contain.text', 'Sign Up');
 
         // Test: name field validation (minimum length)
-        cy.get('input[id="name"]').type('Jo').should('have.value', 'Jo').blur();
+        cy.get('#name').type('Jo').should('have.value', 'Jo').blur();
         cy.get('button[type="submit"]').should('be.disabled');
         // TODO: Add check for validation message once implemented
 
         // Test: email validation
-        cy.get('input[id="email"]')
-          .type('invalid-email')
-          .should('have.value', 'invalid-email')
-          .blur();
-        cy.get('input[id="email"]').closest('form').should('contain.text', 'Invalid Email');
+        cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
+        cy.get('#email').closest('form').should('contain.text', 'Invalid Email');
         cy.get('button[type="submit"]').should('be.disabled');
 
-        cy.get('input[id="email"]').clear().type(Cypress.testUser.email);
+        cy.get('#email').clear().type(Cypress.testUser.email);
 
         // Test: password complexity validation
-        cy.get('input[id="password"]').type('weak').should('have.value', 'weak').blur();
-        cy.get('input[id="password"]')
+        cy.get('#password').type('weak').should('have.value', 'weak').blur();
+        cy.get('#password')
           .closest('form')
           .should(
             'contain.text',
@@ -170,26 +167,30 @@ Cypress.viewports.forEach(({ name, width, height }) =>
         cy.get('button[type="submit"]').should('be.disabled');
 
         // Test: password visibility toggle
-        cy.get('input[id="password"]').should('have.attr', 'type', 'password');
-        cy.get('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]').first().click();
-        cy.get('input[id="password"]').should('have.attr', 'type', 'input');
-        cy.get('input[id="password"]').should('have.value', 'weak');
-        cy.get('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]').first().click();
-        cy.get('input[id="password"]').should('have.attr', 'type', 'password');
+        cy.get('#password').should('have.attr', 'type', 'password');
+        cy.get('#password')
+          .parent()
+          .find('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]')
+          .click();
+        cy.get('#password').should('have.attr', 'type', 'input');
+        cy.get('#password').should('have.value', 'weak');
+        cy.get('#password')
+          .parent()
+          .find('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]')
+          .click();
+        cy.get('#password').should('have.attr', 'type', 'password');
 
-        cy.get('input[id="password"]').clear().type('P@ssWord123');
+        cy.get('#password').clear().type('P@ssWord123');
 
         // Test: password confirmation matching
-        cy.get('input[id="passwordConfrim"]')
+        cy.get('#passwordConfrim')
           .type('differentPassword')
           .should('have.value', 'differentPassword')
           .blur();
-        cy.get('input[id="passwordConfrim"]')
-          .closest('form')
-          .should('contain.text', 'Passwords mismatch');
+        cy.get('#passwordConfrim').closest('form').should('contain.text', 'Passwords mismatch');
         cy.get('button[type="submit"]').should('be.disabled');
 
-        cy.get('input[id="passwordConfrim"]').clear().type('P@ssWord123').blur();
+        cy.get('#passwordConfrim').clear().type('P@ssWord123').blur();
         cy.get('button[type="submit"]').should('be.enabled').click();
 
         // Test: duplicate email error handling
@@ -200,25 +201,123 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
         // Test: form reset functionality
         cy.get('button[type="reset"]').click();
-        cy.get('input[id="email"]').should('have.value', '');
-        cy.get('input[id="password"]').should('have.value', '');
-        cy.get('input[id="name"]').should('not.exist');
+        cy.get('#email').should('have.value', '');
+        cy.get('#password').should('have.value', '');
+        cy.get('#name').should('not.exist');
 
-        cy.get('input[id="email"]').type('user@example.com');
-        cy.get('input[id="password"]').type('Pa@ssWord123');
+        cy.get('#email').type('user@example.com');
+        cy.get('#password').type('Pa@ssWord123');
         cy.get('button[type="reset"]').click();
-        cy.get('input[id="email"]').should('have.value', '');
-        cy.get('input[id="password"]').should('have.value', '');
+        cy.get('#email').should('have.value', '');
+        cy.get('#password').should('have.value', '');
 
         // Test: complete successful sign-up flow
-        cy.get('input[id="name"]').type('Test User for Sign Up');
-        cy.get('input[id="email"]').type(testUser.email);
-        cy.get('input[id="password"]').type(testUser.password);
-        cy.get('input[id="passwordConfrim"]').type(testUser.password);
+        cy.get('#name').type('Test User for Sign Up');
+        cy.get('#email').type(testUser.email);
+        cy.get('#password').type(testUser.password);
+        cy.get('#passwordConfrim').type(testUser.password);
         cy.get('button[type="submit"]').click();
 
         cy.url().should('include', '/settings');
         cy.get('[id="version-select"]').should('be.visible');
+      });
+    });
+
+    describe('Header Navigation and Menu', () => {
+      beforeEach(() => {
+        cy.createTestCharacter(Cypress.testUser.uid);
+        cy.login(Cypress.testUser.uid);
+        cy.visit('/');
+      });
+
+      it('should display header elements, navigate through menu, and handle menu interactions for regular users', () => {
+        // Test: User display name/email is shown
+        cy.getByTestId('user-display-name')
+          .should('be.visible')
+          .and('contain', Cypress.testUser.displayName || Cypress.testUser.email);
+
+        // Test: Home link is visible and functional
+        cy.getByTestId('home-link').should('be.visible');
+        cy.visit('/settings');
+        cy.getByTestId('home-link').click();
+        cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+        // Test: Logout button exists
+        cy.getByTestId('logout-button').should('be.visible');
+
+        // Test: Menu button exists and opens menu
+        cy.getByTestId('menu-button').should('be.visible').click();
+        cy.getByRole('menu').should('be.visible');
+
+        // Test: Menu contains expected items (non-admin user)
+        cy.getByRole('menu').within(($el) => {
+          cy.wrap($el).getByTestId('settings-link').should('exist');
+          cy.wrap($el).getByTestId('contact-link').should('exist');
+
+          // Admin-only items should not be visible for regular user
+          cy.wrap($el).getByTestId('character-generator-link').should('not.exist');
+          cy.wrap($el).getByTestId('database-link').should('not.exist');
+        });
+
+        // Test: Close menu by clicking outside
+        cy.get('body').click(0, 0);
+        cy.getByRole('menu').should('not.be.visible');
+
+        // Test: Reopen menu and navigate to Settings
+        cy.getByTestId('menu-button').click();
+        cy.getByRole('menu').should('be.visible');
+        cy.getByTestId('settings-link').click();
+        cy.url().should('include', '/settings');
+
+        // Test: Return home and navigate to Contact via menu
+        cy.visit('/');
+        cy.getByTestId('menu-button').click();
+        cy.getByTestId('contact-link').click();
+        cy.url().should('include', '/contact');
+      });
+
+      it('should show admin menu items and allow navigation to admin routes', () => {
+        cy.loginAsAdmin();
+        cy.visit('/');
+
+        // Test: Open menu
+        cy.getByTestId('menu-button').click();
+        cy.getByRole('menu').should('be.visible');
+
+        // Test: Admin-only menu items are visible
+        cy.getByTestId('character-generator-link').should('exist');
+        cy.getByTestId('database-link').should('exist');
+
+        // Test: Regular menu items are also present
+        cy.getByTestId('settings-link').should('exist');
+        cy.getByTestId('contact-link').should('exist');
+
+        // Test: Can navigate to admin route
+        cy.getByTestId('character-generator-link').click();
+        cy.url().should('include', '/character-generator');
+
+        // Test: Can navigate to database route
+        cy.visit('/');
+        cy.getByTestId('menu-button').click();
+        cy.getByTestId('database-link').click();
+        cy.url().should('include', '/database');
+      });
+
+      it('should redirect invalid routes to home page', () => {
+        // Test: Invalid route redirects to home
+        cy.visit('/invalid-route-that-does-not-exist');
+        cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+        // Test: Invalid nested route redirects to home
+        cy.visit('/some/random/nested/path');
+        cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+        // Test: Typo in valid route redirects to home
+        cy.visit('/sett1ngs'); // typo in 'settings'
+        cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+        // Test: Character grid is visible after redirect
+        cy.getByTestId('character-grid').should('be.visible');
       });
     });
   })

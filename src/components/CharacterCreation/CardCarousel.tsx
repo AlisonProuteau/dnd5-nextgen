@@ -162,7 +162,7 @@ export function CardCarousel({
           img={data[activeStep > 0 ? activeStep - 1 : data.length - 1].img || ''}
           height={300}
           onClick={cardActions.onSwipedLeft as () => void}
-          data-testid={`${carouselType}-card-previous`}
+          data-testid={`${carouselType}-card-prev`}
         />
       )}
 

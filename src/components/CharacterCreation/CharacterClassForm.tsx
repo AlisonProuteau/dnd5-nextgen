@@ -344,7 +344,7 @@ export function CharacterClassForm({
           )}
 
           {classFeatures.some((feature) => feature.feature_specific?.subfeature_options) && (
-            <Box data-testid="class-choices-features">
+            <Box data-testid="class-choices-feature">
               <Divider
                 component="div"
                 role="presentation"

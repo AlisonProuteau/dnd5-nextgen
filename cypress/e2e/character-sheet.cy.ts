@@ -218,20 +218,26 @@ Cypress.viewports.forEach(({ name, width, height }) => {
       cy.url().should('not.include', '/character');
 
       // TODO: Add tests for character not found and permission issues (how to state)
-      // TODO: Add error handling so it doesn't infinite loop
-      // cy.reload();
+      // Test: Network error handling during character fetch
+      // cy.visit('/');
       // cy.intercept(
-      //   { method: 'GET', url: '**/google.firestore.v1.Firestore/**' },
-      //   //,  times: 2 },
-      //   { forceNetworkError: true }
+      //   {
+      //     method: 'POST',
+      //     url: '**/google.firestore.v1.Firestore/BatchGetDocuments**',
+      //     times: 1
+      //   },
+      //   {
+      //     forceNetworkError: true
+      //   }
       // ).as('networkFailure');
-      // cy.getByTestId('character-card').first().click();
-      // cy.wait('@networkFailure');
-      // cy.getByTestId('error-message').should('be.visible');
-      // cy.intercept({ method: 'GET', url: '**/firestore.googleapis.com/**' });
-      // cy.getButton('Retry').click();
-      // cy.getByTestId('character-container').should('be.visible');
 
+      // cy.getByTestId(`character-card-${characterData.id}`).click();
+      // cy.wait('@networkFailure');
+
+      // // After retry, should eventually load
+      // cy.getByTestId('character-container').should('be.visible', { timeout: 10000 });
+
+      // Test: Incomplete character should not be displayed
       cy.callFirestore('set', `users/${Cypress.testUser.uid}/characters/test-character-1`, {
         id: 'test-character-1',
         name: '',
@@ -266,14 +272,15 @@ Cypress.viewports.forEach(({ name, width, height }) => {
       cy.getByTestId(`notes-drawer-${characterData.id}`).within(($el) => {
         cy.wrap($el).should('contain.text', 'No notes yet');
 
-        cy.getByTestId('NoteAddIcon').click();
-        cy.getButton('Save').should('be.disabled');
+        cy.wrap($el).getByTestId('NoteAddIcon').click();
+        cy.wrap($el).getButton('Save').should('be.disabled');
         cy.get('#content').clear().blur();
-        cy.getButton('Save').should('be.disabled');
+        cy.wrap($el).getButton('Save').should('be.disabled');
         cy.get('#content').type('E2E test note');
         cy.get('button').contains('Save').should('be.enabled').click();
 
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 1)
           .should('contain.text', 'E2E test note');
       });
@@ -282,57 +289,66 @@ Cypress.viewports.forEach(({ name, width, height }) => {
       cy.getByTestId(`notes-${characterData.id}`).click();
       cy.getByTestId(`notes-drawer-${characterData.id}`).within(($el) => {
         cy.wrap($el).should('not.contain.text', 'No notes yet');
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 1)
           .should('contain.text', 'E2E test note');
 
         // Test: Edit note
         cy.selectCardAction({ text: 'E2E test note' }, 'Edit');
         cy.get('#content').clear().type('E2E test note - edited');
-        cy.getButton('Save').should('be.enabled').click();
+        cy.wrap($el).getButton('Save').should('be.enabled').click();
 
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 1)
           .should('contain.text', 'E2E test note - edited');
 
         // Test: Add 2 notes to archive
-        cy.getByTestId('add-note').click();
-        cy.getButton('Save').should('be.disabled');
+        cy.wrap($el).getByTestId('add-note').click();
+        cy.wrap($el).getButton('Save').should('be.disabled');
         cy.get('#content').clear().type('Note to archive');
-        cy.getButton('Save').should('be.enabled').click();
+        cy.wrap($el).getButton('Save').should('be.enabled').click();
 
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 2)
           .should('contain.text', 'Note to archive');
 
-        cy.getByTestId('add-note').click();
-        cy.getButton('Save').should('be.disabled');
+        cy.wrap($el).getByTestId('add-note').click();
+        cy.wrap($el).getButton('Save').should('be.disabled');
         cy.get('#content').type('Second note to archive');
-        cy.getButton('Save').should('be.enabled').click();
+        cy.wrap($el).getButton('Save').should('be.enabled').click();
 
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 3)
           .should('contain.text', 'Second note to archive');
 
         // Test: Add a note to delete
-        cy.getByTestId('add-note').click();
-        cy.getButton('Save').should('be.disabled');
+        cy.wrap($el).getByTestId('add-note').click();
+        cy.wrap($el).getButton('Save').should('be.disabled');
         cy.get('#content').type('Note to delete');
-        cy.getButton('Save').should('be.enabled').click();
+        cy.wrap($el).getButton('Save').should('be.enabled').click();
 
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .should('have.length', 4)
           .should('contain.text', 'Note to delete');
 
         // Test: Pin notes
         cy.selectCardAction({ text: 'E2E test note - edited' }, 'Pin');
-        cy.getByTestId('note-card-').first().should('contain.text', 'E2E test note - edited');
+        cy.wrap($el)
+          .getByTestId('note-card-')
+          .first()
+          .should('contain.text', 'E2E test note - edited');
 
         cy.selectCardAction({ text: 'Note to delete' }, 'Pin');
-        cy.getByTestId('note-card-').first().should('contain.text', 'Note to delete');
+        cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to delete');
 
         cy.selectCardAction({ text: 'Note to archive' }, 'Pin');
-        cy.getByTestId('note-card-')
+        cy.wrap($el)
+          .getByTestId('note-card-')
           .first()
           .should('contain.text', 'Note to delete')
           .next()
@@ -340,40 +356,66 @@ Cypress.viewports.forEach(({ name, width, height }) => {
 
         // Test: Unpin note
         cy.selectCardAction({ text: 'Note to delete' }, 'Unpin');
-        cy.getByTestId('note-card-').first().should('not.contain.text', 'Note to delete');
+        cy.wrap($el).getByTestId('note-card-').first().should('not.contain.text', 'Note to delete');
 
         // Test: Delete note
         cy.selectCardAction({ text: 'Note to delete' }, 'Delete');
-        cy.getByTestId('note-card-').should('not.contain.text', 'Note to delete');
+        cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
         // Test: Archive note
         cy.selectCardAction({ text: 'Note to archive' }, 'Archive');
-        cy.getByTestId('note-card-').should('not.contain.text', 'Note to archive');
+        cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to archive');
         cy.selectCardAction({ text: 'Second note to archive' }, 'Archive');
-        cy.getByTestId('note-card-').should('not.contain.text', 'Second note to archive');
+        cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Second note to archive');
 
         // Test: View archived notes
-        cy.getByTestId('archive-toggle').click();
-        cy.getByTestId('notes-list').should('not.contain.text', 'E2E test note - edited');
-        cy.getByTestId('notes-list').should('not.contain.text', 'Note to delete');
-        cy.getByTestId('note-card-').should('contain.text', 'Note to archive');
-        cy.getByTestId('note-card-').first().should('contain.text', 'Second note to archive');
+        cy.wrap($el).getByTestId('archive-toggle').click();
+        cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'E2E test note - edited');
+        cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to delete');
+        cy.wrap($el).getByTestId('note-card-').should('contain.text', 'Note to archive');
+        cy.wrap($el)
+          .getByTestId('note-card-')
+          .first()
+          .should('contain.text', 'Second note to archive');
 
         cy.selectCardAction({ text: 'Note to archive' }, 'Restore');
-        cy.getByTestId('notes-list').should('not.contain.text', 'Note to archive');
+        cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to archive');
 
-        cy.getByTestId('archive-toggle').click();
-        cy.getByTestId('note-card-').first().should('contain.text', 'Note to archive');
+        cy.wrap($el).getByTestId('archive-toggle').click();
+        cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to archive');
       });
 
       // Test: Close notes drawer
       cy.press('Escape');
       cy.getByTestId(`notes-drawer-${characterData.id}`).should('not.exist');
+
+      // TODO: Add tests after fixed so it doesn't retry infinitely
+      // Test: Network error during note save
+      // cy.getByTestId(`notes-${characterData.id}`).click();
+      // cy.getByTestId('NoteAddIcon').click();
+      // cy.get('#content').type('This note will fail to save');
+      // cy.intercept(
+      //   {
+      //     method: 'POST',
+      //     url: '**/google.firestore.v1.Firestore/**',
+      //     times: 1
+      //   },
+      //   {
+      //     statusCode: 500,
+      //     body: { error: 'Internal Server Error' }
+      //   }
+      // ).as('saveError');
+      // cy.getButton('Save').click();
+      // cy.wait('@saveError');
+
+      // Test: Error toast should appear
+      // cy.getByRole('status', 'Something went wrong').should('be.visible');
+      // cy.getByTestId('note-card-').should('not.contain.text', 'This note will fail to save');
     });
   });
 
   // TODO: Add leveling when implemented
-  describe(`${name} - Character Sheet Spellcasting`, () => {
+  describe(`${name} - Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => {
     const spellcastingClasses = [
       {
         classData: { index: 'wizard', name: 'Wizard' },
@@ -449,42 +491,54 @@ Cypress.viewports.forEach(({ name, width, height }) => {
         cy.getByTestId('spells-section').should('be.visible');
 
         if (learnNum > 0) {
-          cy.getButton(/Learn spells/).should('be.enabled', { timeout: 10000 });
+          cy.get("button:contains('Learn spells')").should('be.enabled');
           if (prepareSNum > 0)
             cy.getButton(/Learn spells/)
               .next()
               .should('be.disabled');
           cy.getButton(/Learn spells/).click();
-          cy.getByRole('dialog', 'Learn').within(() => {
+          cy.getByRole('dialog', 'Learn').within(($el) => {
             cy.waitForLoading();
             cy.get('p').contains(`0/${learnNum} spells selected`).should('be.visible');
 
             // Test: Add/remove spell and selected count updates
-            cy.getByTestId('edit-spell-item-').first().getButton(/^Add$/).should('exist').click();
-            cy.getByTestId('edit-spell-item-')
+            cy.wrap($el)
+              .getByTestId('edit-spell-item-')
+              .first()
+              .getButton(/^Add$/)
+              .should('exist')
+              .click();
+            cy.wrap($el)
+              .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^(Add|Remove)$/)
               .should('not.contain.text', 'Add');
 
             cy.contains(`1/${learnNum} spells selected`).scrollIntoView().should('be.visible');
-            cy.getByTestId('edit-spell-item-')
+            cy.wrap($el)
+              .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^Remove$/)
               .should('exist')
               .click();
 
-            cy.getByTestId('edit-spell-item-')
+            cy.wrap($el)
+              .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^(Add|Remove)$/)
               .should('not.contain.text', 'Remove');
-            cy.getByTestId('edit-spell-item-').first().getButton(/^Add$/).should('exist');
+            cy.wrap($el).getByTestId('edit-spell-item-').first().getButton(/^Add$/).should('exist');
           });
 
           // Test: View spell details
           cy.getByTestId(`edit-spell-item-${spell.index}`).click();
-          cy.getByRole('dialog', `${spell.name}lvl`).within(() => {
-            cy.getByTestId('spell-dialog-title').should('exist').should('contain.text', spell.name);
-            cy.getByTestId('spell-dialog-description')
+          cy.getByRole('dialog', `${spell.name}lvl`).within(($el) => {
+            cy.wrap($el)
+              .getByTestId('spell-dialog-title')
+              .should('exist')
+              .should('contain.text', spell.name);
+            cy.wrap($el)
+              .getByTestId('spell-dialog-description')
               .should('exist')
               .should('contain.text', 'Casting Time');
             cy.press('Escape');
@@ -493,39 +547,43 @@ Cypress.viewports.forEach(({ name, width, height }) => {
 
           // test wizard can search more spells
           if (classData.index === 'wizard') {
-            cy.getByRole('dialog', 'Learn').within(() => cy.getButton('More spells').click());
+            cy.getByRole('dialog', 'Learn').getButton('More spells').click();
             cy.waitForLoading();
-            cy.getByRole('dialog', 'Additional spells').within(() => {
+            cy.getByRole('dialog', 'Additional spells').within(($el) => {
               cy.get('#search').type('F');
-              cy.getByTestId('search-spell-item-')
+              cy.wrap($el)
+                .getByTestId('search-spell-item-')
                 .first()
                 .should('not.contain.text', 'Faerie Fire');
-              cy.getByTestId('search-spell-item-faerie-fire').should('be.visible');
-              cy.getByTestId('search-spell-item-faerie-fire').find('button').click();
-              cy.getByTestId('search-spell-item-').first().should('contain.text', 'Faerie Fire');
+              cy.wrap($el).getByTestId('search-spell-item-faerie-fire').should('be.visible');
+              cy.wrap($el).getByTestId('search-spell-item-faerie-fire').find('button').click();
+              cy.wrap($el)
+                .getByTestId('search-spell-item-')
+                .first()
+                .should('contain.text', 'Faerie Fire');
 
-              cy.getByTestId('search-spell-item-faerie-fire', { type: 'exact' }).should(
-                'not.exist'
-              );
-              cy.getByTestId('search-spell-item-faerie-fire-selected', { type: 'exact' }).should(
-                'exist'
-              );
+              cy.wrap($el)
+                .getByTestId('search-spell-item-faerie-fire', { type: 'exact' })
+                .should('not.exist');
+              cy.wrap($el)
+                .getByTestId('search-spell-item-faerie-fire-selected', { type: 'exact' })
+                .should('exist');
 
-              cy.getButton('Close').click();
+              cy.wrap($el).getButton('Close').click();
             });
             cy.getByRole('dialog', 'Additional spells').should('not.exist');
           }
 
-          cy.getByRole('dialog', 'Learn').within(() => {
+          cy.getByRole('dialog', 'Learn').within(($el) => {
             // Test: Learn spells with 1 missing
             // TODO: get the spell levels available and add a little in each
             for (let i = 0; i < learnNum - 1; i++) {
-              cy.getByTestId('edit-spell-item-').eq(i).getButton(/^Add$/).click();
+              cy.wrap($el).getByTestId('edit-spell-item-').eq(i).getButton(/^Add$/).click();
             }
             cy.contains(`${learnNum - 1}/${learnNum} spells selected`)
               .scrollIntoView()
               .should('be.visible');
-            cy.getButton('Close').click();
+            cy.wrap($el).getButton('Close').click();
           });
           cy.getByRole('dialog').should('not.exist');
 
@@ -536,37 +594,39 @@ Cypress.viewports.forEach(({ name, width, height }) => {
           cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
 
           // Test: Learn remaining spell
-          cy.getButton(/Learn spells/).should('be.enabled', { timeout: 10000 });
+          cy.get("button:contains('Learn spells')").should('be.enabled');
           cy.getButton(/Learn spells/).click();
-          cy.getByRole('dialog', 'Learn').within(() => {
-            cy.getByTestId('edit-spell-item-').getButton(/^Add$/).first().click();
+          cy.getByRole('dialog', 'Learn').within(($el) => {
+            cy.wrap($el).getByTestId('edit-spell-item-').getButton(/^Add$/).first().click();
             cy.contains(`${learnNum}/${learnNum} spells selected`)
               .scrollIntoView()
               .should('be.visible');
-            cy.getButton('Close').click();
+            cy.wrap($el).getButton('Close').click();
           });
           cy.getByRole('dialog').should('not.exist');
         }
 
         if (prepareSNum > 0 || prepareCNum > 0) {
-          cy.getButton(/Prepare your spells/).should('be.enabled', { timeout: 10000 });
+          cy.get("button:contains('Prepare your spells')").should('be.enabled');
           cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
 
           cy.getButton(/Prepare your spells/).click();
-          cy.getByRole('dialog', 'Prepare').within(() => {
+          cy.getByRole('dialog', 'Prepare').within(($el) => {
             cy.waitForLoading();
             cy.get('p').contains(`0/${prepareCNum} cantrips selected`).should('be.visible');
             if (prepareSNum > 0)
               cy.get('p').contains(`0/${prepareSNum} spells selected`).should('be.visible');
 
             // Test: Add/remove cantrips and selected count updates
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^Add$/)
               .should('exist')
               .click();
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^(Add|Remove)$/)
@@ -576,19 +636,22 @@ Cypress.viewports.forEach(({ name, width, height }) => {
               .contains(`1/${prepareCNum} cantrips selected`)
               .scrollIntoView()
               .should('be.visible');
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^Remove$/)
               .should('exist')
               .click();
 
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^(Add|Remove)$/)
               .should('not.contain.text', 'Remove');
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .first()
               .getButton(/^Add$/)
@@ -596,35 +659,41 @@ Cypress.viewports.forEach(({ name, width, height }) => {
 
             // Test: Add/remove spells and selected count updates
             if (prepareSNum > 0) {
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .first()
                 .getButton(/^Add$/)
                 .should('exist')
                 .click();
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .first()
                 .getButton(/^(Add|Remove)$/)
                 .should('not.contain.text', 'Add');
 
-              cy.get('p')
+              cy.wrap($el)
+                .get('p')
                 .contains(`1/${prepareSNum} spells selected`)
                 .scrollIntoView()
                 .should('be.visible');
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .first()
                 .getButton(/^Remove$/)
                 .should('exist')
                 .click();
 
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .first()
                 .getButton(/^(Add|Remove)$/)
                 .should('not.contain.text', 'Remove');
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .first()
                 .getButton(/^Add$/)
@@ -635,11 +704,13 @@ Cypress.viewports.forEach(({ name, width, height }) => {
           // Test: View spell details
           if (learnNum === 0) {
             cy.getByTestId(`edit-spell-item-${spell.index}`).click();
-            cy.getByRole('dialog', `${spell.name}lvl`).within(() => {
-              cy.getByTestId('spell-dialog-title')
+            cy.getByRole('dialog', `${spell.name}lvl`).within(($el) => {
+              cy.wrap($el)
+                .getByTestId('spell-dialog-title')
                 .should('exist')
                 .should('contain.text', spell.name);
-              cy.getByTestId('spell-dialog-description')
+              cy.wrap($el)
+                .getByTestId('spell-dialog-description')
                 .should('exist')
                 .should('contain.text', 'Casting Time');
               cy.press('Escape');
@@ -680,11 +751,12 @@ Cypress.viewports.forEach(({ name, width, height }) => {
           cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
 
           // Test: Learn remaining spell and verify they appears in known list
-          cy.getButton(/Prepare your spells/).should('be.enabled', { timeout: 10000 });
+          cy.get("button:contains('Prepare your spells')").should('be.enabled');
           cy.getButton(/Prepare your spells/).click();
-          cy.getByRole('dialog', 'Prepare').within(() => {
+          cy.getByRole('dialog', 'Prepare').within(($el) => {
             cy.waitForLoading();
-            cy.getByTestId('spell-list-0')
+            cy.wrap($el)
+              .getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
               .getButton(/^Add$/)
               .first()
@@ -693,17 +765,19 @@ Cypress.viewports.forEach(({ name, width, height }) => {
               .scrollIntoView()
               .should('be.visible');
             if (prepareSNum > 0) {
-              cy.getByTestId('spell-list-1')
+              cy.wrap($el)
+                .getByTestId('spell-list-1')
                 .getByTestId('edit-spell-item-')
                 .getButton(/^Add$/)
                 .first()
                 .click();
-              cy.contains(`${prepareSNum}/${prepareSNum} spells selected`)
+              cy.wrap($el)
+                .contains(`${prepareSNum}/${prepareSNum} spells selected`)
                 .scrollIntoView()
                 .should('be.visible');
             }
 
-            cy.getButton('Close').click();
+            cy.wrap($el).getButton('Close').click();
           });
           cy.getByRole('dialog').should('not.exist');
         }

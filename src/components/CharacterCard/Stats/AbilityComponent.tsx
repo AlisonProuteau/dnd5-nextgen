@@ -93,7 +93,11 @@ export function AbilityComponent({
         })}
       </Box>
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogueOpen(false)}>
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogueOpen(false)}
+        data-testid="saving-throws-dialog"
+      >
         <DialogTitle>Saving Throws</DialogTitle>
         <DialogContent>
           <DialogContentText>{savingThrows?.map(({ name }) => name).join(', ')}</DialogContentText>

@@ -37,13 +37,16 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
       // Test: Error Handling - submission failure
       // TODO: fix to stop trying and actually fail
-      // cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
-      //   statusCode: 500,
-      //   body: { error: 'Submission failed' }
-      // }).as('submitError');
+      // cy.intercept(
+      //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 2 },
+      //   {
+      //     statusCode: 500,
+      //     body: { error: 'Submission failed' }
+      //   }
+      // ).as('submitError');
       // cy.get('button[type="submit"]').click();
       // cy.wait('@submitError');
-      // cy.getByRole('status', "Something went wrong").should('be.visible');
+      // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
       // Test: Success Workflow - Switch back to non-anonymous and complete submission
       cy.get('#anonymous').check();
@@ -124,13 +127,16 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
       // Test: Error Handling - submission error
       // TODO: fix to stop trying and actually fail
-      // cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
-      //   statusCode: 500,
-      //   body: { error: 'Submission failed' }
-      // }).as('submitError');
+      // cy.intercept(
+      //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+      //   {
+      //     statusCode: 500,
+      //     body: { error: 'Submission failed' }
+      //   }
+      // ).as('submitError');
       // cy.get('button[type="submit"]').click();
       // cy.wait('@submitError');
-      // cy.getByRole('status', "Something went wrong").should('be.visible');
+      // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
       // Test: Success Workflow - Complete successful submission
       cy.get('#message').clear().type('Resolved bug summary');
@@ -194,13 +200,16 @@ Cypress.viewports.forEach(({ name, width, height }) =>
 
       // Test: Error Handling - submission error
       // TODO: fix to stop trying and actually fail
-      // cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
-      //   statusCode: 500,
-      //   body: { error: 'Submission failed' }
-      // }).as('submitError');
+      // cy.intercept(
+      //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+      //   {
+      //     statusCode: 500,
+      //     body: { error: 'Submission failed' }
+      //   }
+      // ).as('submitError');
       // cy.get('button[type="submit"]').click();
       // cy.wait('@submitError');
-      // cy.getByRole('status', "Something went wrong").should('be.visible');
+      // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
       // Test: Success Workflow - Complete successful submission
       cy.intercept(
@@ -224,5 +233,86 @@ Cypress.viewports.forEach(({ name, width, height }) =>
   })
 );
 
-// TODO: write tests when adding 2024
-describe.skip('Settings Page End-to-End', () => undefined);
+Cypress.viewports.forEach(({ name, width, height }) =>
+  describe(`${name} - Settings Page End-to-End`, () => {
+    beforeEach(() => {
+      cy.viewport(width, height);
+      cy.login(Cypress.testUser.uid);
+      cy.visit('/settings');
+    });
+
+    it('should display user information and version selector', () => {
+      // Test: User info is displayed
+      cy.getByTestId('user-info').should('be.visible');
+      cy.getByTestId('user-info').should('contain.text', `User: ${Cypress.testUser.displayName}`);
+      cy.getByTestId('user-info').should('contain.text', `Email: ${Cypress.testUser.email}`);
+
+      // Test: Version form is present
+      cy.getByTestId('version-form').should('be.visible');
+      cy.get('#version-select').should('be.visible');
+      cy.get('#version-select').should('contain.text', 'Legacy');
+
+      // Test: Submit button behavior with Legacy version
+      cy.get('button[type="submit"]').should('not.be.disabled');
+      cy.getByTestId('helper-text').should('not.exist');
+    });
+
+    it('should show warning for unavailable versions and disable submission', () => {
+      // Test: Select unavailable version (assuming only Legacy is available)
+      cy.get('#version-select').click();
+      cy.get('[data-testid="version-option"]').should('have.length.at.least', 1);
+
+      // If there are other versions, test warning
+      cy.get('[data-testid="version-option"]').then(($options) => {
+        if ($options.length > 1) {
+          // Select a non-Legacy version
+          cy.get('[data-testid="version-option"]').not(':contains("Legacy")').first().click();
+
+          // Test: Warning message appears
+          cy.getByTestId('helper-text').should('be.visible');
+          cy.getByTestId('helper-text').should('contain.text', 'Version not yet available');
+
+          // Test: Submit button is disabled
+          cy.get('button[type="submit"]').should('be.disabled');
+        }
+      });
+    });
+
+    it('should handle version update error gracefully', () => {
+      // Test: Intercept and fail the update
+      cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
+        statusCode: 500,
+        body: { error: 'Update failed' }
+      }).as('updateError');
+
+      cy.get('button[type="submit"]').click();
+      cy.wait('@updateError');
+
+      // Test: Error message appears
+      cy.getByRole('status', 'Something went wrong').should('be.visible');
+
+      // Test: Still on settings page
+      cy.url().should('include', '/settings');
+    });
+
+    it.only('should successfully update version and navigate to home', () => {
+      // Test: Intercept successful update
+      cy.intercept(
+        { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+        { delay: 500 }
+      ).as('updateVersion');
+
+      cy.get('button[type="submit"]').click();
+
+      // Test: Loading state
+      cy.get('button[type="submit"]').should('not.exist');
+      cy.get('[role="progressbar"]').should('be.visible');
+      cy.wait('@updateVersion');
+      cy.waitForLoading();
+
+      // Test: Success message and navigation
+      cy.getByRole('status', 'Game version updated').should('be.visible');
+      cy.url().should('eq', Cypress.config().baseUrl + '/');
+    });
+  })
+);

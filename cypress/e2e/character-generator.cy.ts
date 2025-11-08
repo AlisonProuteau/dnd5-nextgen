@@ -1,4 +1,22 @@
 describe(`Character Generator End-to-End`, () => {
+  const imageObj = {
+    bucket: 'dnd5-nextgen.firebasestorage.app',
+    generation: '1762736803456',
+    metageneration: '1',
+    contentType: 'application/octet-stream',
+    timeCreated: '2025-11-10T01:06:43.456Z',
+    updated: '2025-11-10T01:06:43.456Z',
+    storageClass: 'STANDARD',
+    size: '5711',
+    md5Hash: 'PvaCjHLYCSAyKH4JFWuiRw==',
+    crc32c: '4124607903',
+    etag: 'ikKc7wBRmHH4tTwP3lsAiS2EHxg',
+    downloadTokens: 'db53b816-4137-4143-8b80-8757324fc8bb',
+    contentEncoding: 'identity',
+    contentDisposition: 'inline',
+    metadata: {}
+  };
+
   it('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
     // Test: Admin route protection
     cy.visit('/character-generator');
@@ -125,57 +143,92 @@ describe(`Character Generator End-to-End`, () => {
     // Test: Resume restarts everything (pending/failed images)
     cy.contains('button', 'Resume').should('be.visible').click();
     cy.wait(5000); // Wait 5 seconds for images to generate
-    cy.get('[data-testid^="character-card-"] span').should('not.contain.text', 'pending');
+    cy.getByTestId('character-card-').find('span').should('not.contain.text', 'pending');
 
     // Test: All images generated successfully
-    cy.get('[data-testid^="character-card-"] span').should('not.contain.text', 'pending');
-    cy.get('[data-testid^="character-card-"] span').should('not.contain.text', 'failed');
-    cy.get('[data-testid^="character-card-"] span').should('contain.text', 'done');
+    cy.getByTestId('character-card-').find('span').should('not.contain.text', 'pending');
+    cy.getByTestId('character-card-').find('span').should('not.contain.text', 'failed');
+    cy.getByTestId('character-card-').find('span').should('contain.text', 'done');
 
     // Test: Download functionality
     // TODO: check it was downloaded
-    cy.getByTestId('batch-options').within(() => {
-      cy.get('[data-testid^="character-card-"] button:contains("Download")')
+    cy.getByTestId('batch-options').within(($el) => {
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .find(' button:contains("Download")')
         .should('have.length', 4)
         .first()
         .click();
 
-      cy.get('[data-testid^="character-card-"] button:contains("Download")').should('be.disabled');
-      cy.get('[data-testid^="character-card-"]')
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .find(' button:contains("Download")')
+        .should('be.disabled');
+      cy.wrap($el)
+        .getByTestId('character-card-')
         .first()
-        .find('[data-testid="DownloadingIcon"]')
+        .getByTestId('DownloadingIcon')
         .should('be.visible');
-      cy.get('[data-testid^="character-card-"]')
-        .first()
-        .find('[data-testid="DownloadDoneIcon"]')
-        .should('be.visible');
-      // cy.get('@downloadImageStub').should('have.been.called.times', 1);
 
-      cy.getButton('Download All').click();
-      cy.getByTestId('DownloadDoneIcon').should('have.length', 4);
-      // cy.get('@downloadImageStub').should('have.been.called.times', 4);
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .first()
+        .getByTestId('DownloadDoneIcon')
+        .should('be.visible');
+
+      cy.getButton(/Download All/).click();
+      cy.wrap($el).getByTestId('DownloadDoneIcon').should('have.length', 4);
     });
 
     // Test: Upload functionality
-    // TODO: check it was uploaded
-    cy.getByTestId('batch-options').within(() => {
-      cy.get('[data-testid^="character-card-"] button:contains("Upload")')
+    // TODO: check it was uploaded?
+    cy.intercept('POST', '**/dnd5-nextgen*/o?name=images**', (req) => {
+      return {
+        statusCode: 200,
+        body: {
+          ...imageObj,
+          name: req.url.replace(/.*name=/, '')
+        },
+        delay: 1000
+      };
+    }).as('uploadImage');
+    cy.intercept('GET', '**/dnd5-nextgen*/o/images**', (req) => ({
+      statusCode: 200,
+      body: { ...imageObj, name: req.url.replace(/.*\/images\//, 'images/') }
+    })).as('getUploadedImage');
+
+    cy.getByTestId('batch-options').within(($el) => {
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .find(' button:contains("Upload")')
         .should('have.length', 4)
         .first()
         .click();
 
-      cy.get('[data-testid^="character-card-"] button:contains("Upload")').should('be.disabled');
-      cy.get('[data-testid^="character-card-"]')
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .find(' button:contains("Upload")')
+        .should('be.disabled');
+      cy.wait('@uploadImage');
+      cy.wait('@getUploadedImage');
+      cy.wrap($el)
+        .getByTestId('character-card-')
         .first()
-        .find('[data-testid="CloudUploadIcon"]')
-        .should('be.visible');
-      cy.get('[data-testid^="character-card-"]')
-        .first()
-        .find('[data-testid="CloudDoneIcon"]')
+        .getByTestId('CloudUploadIcon')
         .should('be.visible');
 
-      cy.getButton('Upload All').click();
-      cy.getByTestId('CloudDoneIcon').should('have.length', 4);
+      cy.wrap($el)
+        .getByTestId('character-card-')
+        .first()
+        .getByTestId('CloudDoneIcon')
+        .should('be.visible');
+
+      cy.getButton(/Upload All/).click();
+      for (let i = 0; i < 3; i++) {
+        cy.wait('@uploadImage');
+        cy.wait('@getUploadedImage');
+      }
+      cy.wrap($el).getByTestId('CloudDoneIcon').should('have.length', 4);
       cy.get('button:contains("Upload")')
         .should('have.length', 5)
         .each(($element) => cy.wrap($element).should('be.disabled'));

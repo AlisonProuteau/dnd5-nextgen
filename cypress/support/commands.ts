@@ -68,23 +68,25 @@ declare global {
       selectOption(selectSelector: string, optionText: string | RegExp): Chainable<void>;
 
       /**
-       * Gets a button by its text content (supports chaining).
-       * @param text - Button text or RegExp.
-       * @returns Chainable<JQuery<HTMLButtonElement>>
-       */
-      getButton(text: string | RegExp): Chainable<JQuery<HTMLButtonElement>>;
-
-      /**
        * Waits for loading spinner to disappear.
        * @returns Chainable<void>
        */
       waitForLoading(): Chainable<void>;
 
       /**
+       * Gets a button by its text content (supports chaining).
+       * @param text - Button text or RegExp.
+       * @returns Chainable<JQuery<HTMLButtonElement>>
+       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+       */
+      getButton(text: string | RegExp, selector?: string): Chainable<JQuery<HTMLButtonElement>>;
+
+      /**
        * Gets an element by ARIA role (supports chaining).
        * @param role - ARIA role.
        * @param name - Optional accessible name.
        * @returns Chainable<JQuery<HTMLElement>>
+       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
        */
       getByRole(role: string, name?: string): Chainable<JQuery<HTMLElement>>;
 
@@ -93,6 +95,7 @@ declare global {
        * @param testId - The data-testid value.
        * @param options - Selector and type options.
        * @returns Chainable<JQuery<HTMLElement>>
+       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
        */
       getByTestId(
         testId: string,
@@ -174,7 +177,6 @@ Cypress.Commands.add(
  */
 Cypress.Commands.add('clearUser', (uid: string) => {
   cy.authGetUser(uid).then((existingUser) => existingUser && cy.authDeleteUser(uid));
-  cy.callFirestore('delete', `users/${uid}/characters`);
   cy.callFirestore('delete', `users/${uid}`);
   cy.reload();
 });
@@ -208,9 +210,9 @@ Cypress.Commands.add(
     (data.id
       ? cy.getByTestId(`note-card-${data.id}`)
       : cy.getByTestId('note-card-', { selector: `:contains("${data.text}")` })
-    ).within(() => {
-      cy.getByTestId('note-actions-', { selector: '>button' }).focus();
-      cy.getByTestId(action, { type: 'exact' }).click();
+    ).within(($el) => {
+      cy.wrap($el).getByTestId('note-actions-', { selector: '>button' }).focus();
+      cy.wrap($el).getByTestId(action, { type: 'exact' }).click();
     })
 );
 
@@ -234,43 +236,47 @@ Cypress.Commands.add('waitForLoading', () => {
 /**
  * Cypress command: getByRole
  * Gets an element by ARIA role and optional accessible name. Supports chaining.
+ * @description WARNING: Doesn't work from "within" due to Cypress limitations.
  */
-Cypress.Commands.add(
-  'getByRole',
-  { prevSubject: 'optional' },
-  (subject, role: string, name?: string) => {
+Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
+  return (subject) => {
     const current = name ? `[role="${role}"]:contains("${name}")` : `[role="${role}"]`;
-
-    return subject ? cy.wrap(subject).find(current) : cy.get(current);
-  }
-);
+    return subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+  };
+});
 
 /**
  * Cypress command: getByTestId
  * Gets an element by data-testid, with selector and type options. Supports chaining.
+ * @description WARNING: Doesn't work from "within" due to Cypress limitations.
  */
-Cypress.Commands.add(
+Cypress.Commands.addQuery(
   'getByTestId',
-  { prevSubject: 'optional' },
-  (subject, testId: string, { selector, type = 'starts' } = { type: 'starts' }) => {
-    let baseSelector = `[data-testid^="${testId}"]`;
-    if (type === 'exact' || type === 'contains') {
-      baseSelector = type === 'exact' ? `[data-testid="${testId}"]` : `[data-testid*="${testId}"]`;
-    }
-    const current = selector ? `${baseSelector}${selector}` : baseSelector;
+  function (testId: string, { selector, type = 'starts' } = { type: 'starts' }) {
+    return (subject) => {
+      let baseSelector = `[data-testid^="${testId}"]`;
+      if (type === 'exact' || type === 'contains') {
+        baseSelector =
+          type === 'exact' ? `[data-testid="${testId}"]` : `[data-testid*="${testId}"]`;
+      }
 
-    return subject ? cy.wrap(subject).find(current) : cy.get(current);
+      const current = selector ? `${baseSelector}${selector}` : baseSelector;
+      return subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+    };
   }
 );
 
 /**
  * Cypress command: getButton
  * Gets a button by its text content. Supports chaining.
+ * @description WARNING: Doesn't work from "within" due to Cypress limitations.
  */
-Cypress.Commands.add('getButton', { prevSubject: 'optional' }, (subject, text: string | RegExp) => {
-  const current = subject ? cy.wrap(subject).find('button') : cy.get('button');
-
-  return current.contains(text).closest('button');
+Cypress.Commands.addQuery('getButton', function (text: string | RegExp, selector?: string) {
+  return (subject) => {
+    const currentSelector = selector ? `button${selector}` : 'button';
+    const current = subject ? cy.$$(subject).find(currentSelector) : cy.$$(currentSelector);
+    return current.filter((_, btn) =>
+      text instanceof RegExp ? text.test(btn.textContent) : btn.textContent === text
+    );
+  };
 });
-
-export {};

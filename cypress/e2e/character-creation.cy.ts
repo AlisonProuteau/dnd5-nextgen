@@ -81,7 +81,7 @@ Cypress.viewports.forEach(({ name, width, height }) =>
       // Test: Back button
       cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
       cy.getByTestId('class-carousel').should('be.visible');
-      cy.getButton('Back').should('be.enabled').click();
+      cy.getButton('Back', ':visible').should('be.enabled').click();
       cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
       cy.getByTestId('race-carousel').should('be.visible');
       cy.get('button:contains("Next"):visible').should('be.enabled').click();
