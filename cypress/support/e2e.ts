@@ -66,7 +66,6 @@ declare global {
   namespace Cypress {
     interface Cypress {
       testUser: { displayName: string; uid: string; email: string; password: string };
-      viewports: Array<{ name: string; width: number; height: number }>;
     }
   }
 }
@@ -77,11 +76,6 @@ Cypress.testUser = {
   email: 'test@test.com',
   password: 'v@lidPassword123'
 };
-Cypress.viewports = [
-  { name: 'Mobile', width: 375, height: 667 },
-  // { name: 'Tablet', width: 768, height: 1024 },
-  { name: 'Desktop', width: 1920, height: 1080 }
-];
 
 before(() => {
   cy.deleteAllAuthUsers()

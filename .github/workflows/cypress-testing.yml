@@ -10,9 +10,9 @@ jobs:
   cypress-run:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
-      # matrix:
-      #   containers: [1, 2] # Uses 2 parallel instances
+      fail-fast: false
+      matrix:
+        device: [mobile, desktop]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@master
@@ -76,8 +76,10 @@ jobs:
         with:
           start: yarn start:dist
           wait-on: 'http://localhost:3000'
+          browser: chrome
           record: true
-          # parallel: true
+          parallel: true
+          group: ${{ matrix.device }}
         env:
           COMMIT_INFO_MESSAGE: ${{github.event.pull_request.title}}
           COMMIT_INFO_SHA: ${{github.event.pull_request.head.sha}}
@@ -88,27 +90,20 @@ jobs:
           SERVICE_ACCOUNT: ${{ secrets.CI_SERVICE_ACCOUNT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Run Cypress tests
-      #   continue-on-error: true
-      #   run: yarn cy:ci
-      # - name: Kill all processes
-      #   continue-on-error: true
-      #   run: sleep 5 && pkill -f firebase && sleep 5 && pkill -f cypress && sleep 500
-
-      - name: Upload test screenshots
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-screenshots
-          path: ./cypress/screenshots
+      # - name: Upload test screenshots
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-screenshots
+      #     path: ./cypress/screenshots
 
       - name: Generate Cypress report
         id: run_cypress_report
         run: yarn merge:reports && yarn generate:reports
-      - name: Upload test reports
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: ./cypress/reports
+      # - name: Upload test reports
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: test-results
+      #     path: ./cypress/reports
 
       - name: Send results to Pull Request
         uses: mshick/add-pr-comment@v2
