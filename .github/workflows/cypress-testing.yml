@@ -9,6 +9,10 @@ env:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
+      # matrix:
+      #   containers: [1, 2] # Uses 2 parallel instances
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@master
@@ -66,12 +70,30 @@ jobs:
       - name: Remove existing Cypress results
         run: (rm -rf ./cypress/reports || true) && (rm -rf ./cypress/screenshots || true)
 
-      - name: Run Cypress tests
+      - name: Cypress run
+        uses: cypress-io/github-action@v6
         continue-on-error: true
-        run: yarn cy:ci
-      - name: Kill all processes
-        continue-on-error: true
-        run: sleep 5 && pkill -f firebase && sleep 5 && pkill -f cypress && sleep 500
+        with:
+          start: yarn start:dist
+          wait-on: 'http://localhost:3000'
+          record: true
+          # parallel: true
+        env:
+          COMMIT_INFO_MESSAGE: ${{github.event.pull_request.title}}
+          COMMIT_INFO_SHA: ${{github.event.pull_request.head.sha}}
+          CYPRESS_VIEWPORT_WIDTH: ${{ matrix.device == 'desktop' && 1920 || 375 }}
+          CYPRESS_VIEWPORT_HEIGHT: ${{ matrix.device == 'desktop' && 1080 || 667 }}
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          FIREBASE_CONFIG: ${{ secrets.FIREBASE_CONFIG }}
+          SERVICE_ACCOUNT: ${{ secrets.CI_SERVICE_ACCOUNT }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Run Cypress tests
+      #   continue-on-error: true
+      #   run: yarn cy:ci
+      # - name: Kill all processes
+      #   continue-on-error: true
+      #   run: sleep 5 && pkill -f firebase && sleep 5 && pkill -f cypress && sleep 500
 
       - name: Upload test screenshots
         uses: actions/upload-artifact@v4

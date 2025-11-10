@@ -8,6 +8,7 @@ const FIRESTORE_EMULATOR_HOST = `${emulators.firestore.host}:${emulators.firesto
 const FIREBASE_STORAGE_EMULATOR_HOST = `${emulators.storage.host}:${emulators.storage.port}`;
 
 export default defineConfig({
+  projectId: 'bgqe2g',
   e2e: {
     env: {
       FIREBASE_AUTH_EMULATOR_HOST,
