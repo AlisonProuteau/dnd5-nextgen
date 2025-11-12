@@ -182,20 +182,23 @@ describe(`Character Generator End-to-End`, () => {
 
     // Test: Upload functionality
     // TODO: check it was uploaded?
-    cy.intercept('POST', '**/dnd5-nextgen*/o?name=images**', (req) => {
-      return {
+    cy.intercept('POST', '**/dnd5-nextgen*/o?name=images*', (req) =>
+      req.reply({
+        delay: 500,
         statusCode: 200,
         body: {
           ...imageObj,
           name: req.url.replace(/.*name=/, '')
-        },
-        delay: 1000
-      };
-    }).as('uploadImage');
-    cy.intercept('GET', '**/dnd5-nextgen*/o/images**', (req) => ({
-      statusCode: 200,
-      body: { ...imageObj, name: req.url.replace(/.*\/images\//, 'images/') }
-    })).as('getUploadedImage');
+        }
+      })
+    ).as('uploadImage');
+    cy.intercept('GET', '**/dnd5-nextgen*/o/images*', (req) =>
+      req.reply({
+        delay: 500,
+        statusCode: 200,
+        body: { ...imageObj, name: req.url.replace(/.*\/images\//, 'images/') }
+      })
+    ).as('getUploadedImage');
 
     cy.getByTestId('batch-options').within(($el) => {
       cy.wrap($el)

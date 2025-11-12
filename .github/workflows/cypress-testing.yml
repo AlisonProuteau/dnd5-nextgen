@@ -57,8 +57,7 @@ jobs:
           path: ./database
           key: ${{ runner.os }}-database-${{ github.event.pull_request.base.sha }}
       - name: Add Storage rules
-        if: steps.cache-database-restore.outputs.cache-hit == 'true'
-        run: echo {{ secrets.STORAGE_RULES }} >> storage.rules
+        run: (rm -rf storage.rules || true) && echo {{ secrets.STORAGE_RULES }} >> storage.rules
 
       - name: Cache firebase emulators
         uses: actions/cache@v4

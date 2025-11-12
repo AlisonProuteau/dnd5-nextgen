@@ -47,6 +47,7 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/settings');
       cy.get('[id="version-select"]').should('be.visible');
       cy.get('button[type="submit"]').click();
+      cy.get('[id="version-select"]').should('not.exist');
       cy.url().should('eq', Cypress.config().baseUrl + '/');
 
       // Test: subsequent login workflow (skips settings)

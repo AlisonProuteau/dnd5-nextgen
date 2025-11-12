@@ -26,16 +26,9 @@ describe(`Character Sheet End-to-End`, () => {
   beforeEach(() => cy.login(Cypress.testUser.uid));
 
   it('should complete the full character sheet happy path workflow', () => {
-    // Test: Fetch character with delay
-    cy.intercept(
-      { method: 'GET', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-      { delay: 1000 }
-    ).as('fetchCharacter');
     cy.visit('/');
     cy.getByTestId('character-card-').should('have.length.at.least', 1);
     cy.getByTestId(`character-card-${characterData.id}`).click();
-    cy.wait('@fetchCharacter');
-    cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
 
     // Test: Stats section
@@ -412,6 +405,7 @@ describe(`Character Sheet End-to-End`, () => {
 
 // TODO: Add leveling when implemented
 describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => {
+  const isMobile = Cypress.config('viewportWidth') === 375;
   const spellcastingClasses = [
     {
       classData: { index: 'wizard', name: 'Wizard' },
@@ -457,41 +451,48 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
     }
   ];
 
-  before(() =>
+  before(() => {
     characters.forEach((char) => {
+      const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
       if (spellcastingClasses.some(({ classData }) => classData.index === char.class.index))
-        cy.createTestCharacter(Cypress.testUser.uid, `test-${char.class.index}`, {
+        cy.createTestCharacter(Cypress.testUser.uid, id, {
           ...char,
-          id: `test-${char.class.index}`,
+          id,
+          name: `Test ${char.class.name} ${isMobile ? 'Mobile' : 'Desktop'}`,
           version: 'Legacy'
         });
-    })
-  );
+    });
+  });
 
-  beforeEach(() => cy.login(Cypress.testUser.uid));
+  spellcastingClasses.map(({ classData, spell, learnNum, prepareCNum, prepareSNum }) =>
+    it(`${classData.name} - should handle spells workflow (complex)`, { retries: 2 }, () => {
+      const charID = `test-${classData.index}-${isMobile ? 'mobile' : 'desktop'}`;
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
+        knownSpells: null,
+        preparedSpells: null
+      });
 
-  spellcastingClasses.map(({ classData, spell, learnNum, prepareCNum, prepareSNum }) => {
-    const spells = characters
-      .find((char) => char.class.index === classData.index)!
-      .traits?.flatMap(({ spells }) => spells)
-      .filter(Boolean);
-    it(`${classData.name} - should handle spells workflow (complex)`, () => {
+      const spells = characters
+        .find((char) => char.class.index === classData.index)!
+        .traits?.flatMap(({ spells }) => spells)
+        .filter(Boolean);
+
+      cy.login(Cypress.testUser.uid);
       cy.visit('/');
-      cy.getByTestId(`character-card-test-${classData.index}`).click();
+      cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
-      cy.waitForLoading();
+      cy.get('.MuiMobileStepper-dot').should('have.length', 5);
       cy.getByTestId('KeyboardArrowLeftIcon').click();
       cy.getByTestId('spells-section').should('be.visible');
 
       if (learnNum > 0) {
-        cy.get("button:contains('Learn spells')").should('be.enabled');
+        cy.getButton(/Learn spells/).should('be.enabled');
         if (prepareSNum > 0)
           cy.getButton(/Learn spells/)
             .next()
             .should('be.disabled');
         cy.getButton(/Learn spells/).click();
         cy.getByRole('dialog', 'Learn').within(($el) => {
-          cy.waitForLoading();
           cy.get('p').contains(`0/${learnNum} spells selected`).should('be.visible');
 
           // Test: Add/remove spell and selected count updates
@@ -541,7 +542,6 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
         // test wizard can search more spells
         if (classData.index === 'wizard') {
           cy.getByRole('dialog', 'Learn').getButton('More spells').click();
-          cy.waitForLoading();
           cy.getByRole('dialog', 'Additional spells').within(($el) => {
             cy.get('#search').type('F');
             cy.wrap($el)
@@ -587,8 +587,9 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
         cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
 
         // Test: Learn remaining spell
-        cy.get("button:contains('Learn spells')").should('be.enabled');
-        cy.getButton(/Learn spells/).click();
+        cy.getButton(/Learn spells/)
+          .should('be.enabled')
+          .click();
         cy.getByRole('dialog', 'Learn').within(($el) => {
           cy.wrap($el).getByTestId('edit-spell-item-').getButton(/^Add$/).first().click();
           cy.contains(`${learnNum}/${learnNum} spells selected`)
@@ -600,12 +601,11 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
       }
 
       if (prepareSNum > 0 || prepareCNum > 0) {
-        cy.get("button:contains('Prepare your spells')").should('be.enabled');
         cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
-
-        cy.getButton(/Prepare your spells/).click();
+        cy.getButton(/Prepare your spells/)
+          .should('be.enabled')
+          .click();
         cy.getByRole('dialog', 'Prepare').within(($el) => {
-          cy.waitForLoading();
           cy.get('p').contains(`0/${prepareCNum} cantrips selected`).should('be.visible');
           if (prepareSNum > 0)
             cy.get('p').contains(`0/${prepareSNum} spells selected`).should('be.visible');
@@ -744,10 +744,10 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
         cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
 
         // Test: Learn remaining spell and verify they appears in known list
-        cy.get("button:contains('Prepare your spells')").should('be.enabled');
-        cy.getButton(/Prepare your spells/).click();
+        cy.getButton(/Prepare your spells/)
+          .should('be.enabled')
+          .click();
         cy.getByRole('dialog', 'Prepare').within(($el) => {
-          cy.waitForLoading();
           cy.wrap($el)
             .getByTestId('spell-list-0')
             .getByTestId('edit-spell-item-')
@@ -776,7 +776,6 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
       }
 
       // TODO: should test specific spell names + levels
-      console.log(spells);
       cy.getByTestId('spells-section')
         .getByTestId('spell-list-0')
         .getByTestId('view-spell-item-')
@@ -788,8 +787,8 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
         .first()
         .getByTestId('view-spell-item-')
         .should('have.length', prepareSNum === 0 ? learnNum : prepareSNum);
-    });
-  });
+    })
+  );
 
   // it('Should not display spell section for non-spellcaster', () => {
   //   cy.createTestCharacter(Cypress.testUser.uid, 'test-nonspell');

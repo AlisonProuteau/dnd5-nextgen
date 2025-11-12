@@ -325,7 +325,6 @@ export function SpellList({
                                     spell.level === 0 ? level === 0 : level > 0
                                   ).length < maxSelected[spell.level === 0 ? 0 : 1];
 
-                              console.log({ prev, spell, maxSelected, selectedSpells, canAdd });
                               return canAdd ? [...prev, spell] : prev;
                             })
                           }

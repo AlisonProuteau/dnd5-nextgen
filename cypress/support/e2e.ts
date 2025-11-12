@@ -22,7 +22,9 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
       '127.0.0.1',
       '8080'
     ];
-    firebase.firestore().useEmulator(firestoreHost, firestorePort);
+    const firestore = firebase.firestore();
+    firestore.settings({ experimentalForceLongPolling: true });
+    firestore.useEmulator(firestoreHost, firestorePort);
 
     const [storageHost, storagePort] = FIREBASE_STORAGE_EMULATOR_HOST?.split(':') || [
       '127.0.0.1',

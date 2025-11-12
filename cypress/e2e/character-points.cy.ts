@@ -173,8 +173,8 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getButton('Custom').should('be.visible');
 
     // Test: All ability inputs have random values
+    cy.get('input[id^="ability-"]').first().should('not.have.value', 0); // Wait for first input to populate
     cy.get('input[id^="ability-"]').each(($input) => {
-      cy.wrap($input).invoke('val').should('not.be.empty');
       cy.wrap($input)
         .invoke('val')
         .then((val) => {

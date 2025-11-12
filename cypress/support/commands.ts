@@ -230,7 +230,10 @@ Cypress.Commands.add('selectOption', (selectId: string, option?: string | RegExp
  * Waits for loading spinner or progress bar to disappear.
  */
 Cypress.Commands.add('waitForLoading', () => {
-  cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('not.exist');
+  cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('exist');
+  cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('not.exist', {
+    timeout: 10000
+  });
 });
 
 /**
@@ -239,9 +242,18 @@ Cypress.Commands.add('waitForLoading', () => {
  * @description WARNING: Doesn't work from "within" due to Cypress limitations.
  */
 Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
+  const nextCommand: Cypress.Command = (this as any)['attributes'].next;
+
   return (subject) => {
     const current = name ? `[role="${role}"]:contains("${name}")` : `[role="${role}"]`;
-    return subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+    const res = subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+
+    if (
+      res.length === 0 &&
+      !(nextCommand.get('name') === 'should' && nextCommand.get('args')[0] === 'not.exist')
+    )
+      throw new Error(`No element found for role: ${role} with text: ${name}`);
+    return res;
   };
 });
 
@@ -253,6 +265,8 @@ Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
 Cypress.Commands.addQuery(
   'getByTestId',
   function (testId: string, { selector, type = 'starts' } = { type: 'starts' }) {
+    const nextCommand: Cypress.Command = (this as any)['attributes'].next;
+
     return (subject) => {
       let baseSelector = `[data-testid^="${testId}"]`;
       if (type === 'exact' || type === 'contains') {
@@ -261,7 +275,14 @@ Cypress.Commands.addQuery(
       }
 
       const current = selector ? `${baseSelector}${selector}` : baseSelector;
-      return subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+      const res = subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+
+      if (
+        res.length === 0 &&
+        !(nextCommand.get('name') === 'should' && nextCommand.get('args')[0] === 'not.exist')
+      )
+        throw new Error(`No element found for testId: ${testId} with selector: ${selector}`);
+      return res;
     };
   }
 );
@@ -272,11 +293,20 @@ Cypress.Commands.addQuery(
  * @description WARNING: Doesn't work from "within" due to Cypress limitations.
  */
 Cypress.Commands.addQuery('getButton', function (text: string | RegExp, selector?: string) {
+  const nextCommand: Cypress.Command = (this as any)['attributes'].next;
+
   return (subject) => {
     const currentSelector = selector ? `button${selector}` : 'button';
     const current = subject ? cy.$$(subject).find(currentSelector) : cy.$$(currentSelector);
-    return current.filter((_, btn) =>
+    const res = current.filter((_, btn) =>
       text instanceof RegExp ? text.test(btn.textContent) : btn.textContent === text
     );
+
+    if (
+      res.length === 0 &&
+      !(nextCommand.get('name') === 'should' && nextCommand.get('args')[0] === 'not.exist')
+    )
+      throw new Error(`No button found with text: ${text} and selector: ${selector}`);
+    return res;
   };
 });

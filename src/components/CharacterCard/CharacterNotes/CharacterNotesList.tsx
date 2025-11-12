@@ -55,7 +55,6 @@ export function CharacterNotesList({
     notes: CharacterNote[],
     archived: boolean = false
   ): [CharacterNote[] | undefined, CharacterNote[] | undefined] => {
-    console.log('Formatting notes', notes, archived);
     const formattedNotes = notes
       .filter((note) => (note.archived || false) === archived)
       .map(formatNoteDates);
