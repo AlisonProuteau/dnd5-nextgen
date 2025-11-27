@@ -125,6 +125,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
       open={isNoteOpen}
       onClose={() => setIsNoteOpen(false)}
       variant="temporary"
+      data-testid={`notes-drawer-${character.id}`}
     >
       <Box height="500px" padding={2} display="flex" flexDirection="column" gap={2} overflow="auto">
         <Box display="flex" alignItems="center" justifyContent="space-between">
@@ -135,7 +136,10 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
           {!editMode && !isCharacterNotesLoading && (
             <Box>
               {characterNotes?.filter(({ archived }) => archived).length ? (
-                <IconButton onClick={() => setArchiveMode((mode) => !mode)}>
+                <IconButton
+                  onClick={() => setArchiveMode((mode) => !mode)}
+                  data-testid="archive-toggle"
+                >
                   {archiveMode ? (
                     <NoteAlt fontSize="medium" />
                   ) : (
@@ -149,6 +153,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
                     setNote({});
                     setEditMode(true);
                   }}
+                  data-testid="add-note"
                 >
                   <NoteAdd fontSize="medium" />
                 </IconButton>

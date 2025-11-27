@@ -22,7 +22,6 @@ export const blackList: string[] = [
   'menacing',
   'sorcerous-origin',
   'draconic-resilience',
-  'otherworldly-patron',
   'tool-proficiency'
 ];
 

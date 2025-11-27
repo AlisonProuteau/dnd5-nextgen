@@ -59,11 +59,20 @@ export function TraitsDisplay({
   });
   return (
     traits && (
-      <Box paddingTop="15px">
+      <Box paddingTop="15px" data-testid="traits-section">
         {traits.map((trait) => (
-          <Accordion key={trait.index} defaultExpanded={expanded}>
-            <AccordionSummary expandIcon={<ExpandMore />}>{trait.name}</AccordionSummary>
-            <AccordionDetails sx={{ textAlign: 'justify' }}>
+          <Accordion
+            key={trait.index}
+            defaultExpanded={expanded}
+            data-testid={`trait-${trait.index}`}
+          >
+            <AccordionSummary expandIcon={<ExpandMore />} data-testid={`trait-name-${trait.index}`}>
+              {trait.name}
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{ textAlign: 'justify' }}
+              data-testid={`trait-details-${trait.index}`}
+            >
               {subtraits
                 .filter(({ trait_specific }) => trait_specific?.action?.index === trait.index)
                 .map(
@@ -73,20 +82,23 @@ export function TraitsDisplay({
                         key={trait_specific?.action.index}
                         action={trait_specific?.action}
                         charLevel={character.level || 1}
+                        data-testid={`trait-action-${trait_specific?.action.index}`}
                       />
                     )
                 )}
               {character.traits
                 ?.find(({ index }) => index === trait.index)
                 ?.spells?.map((s) => (
-                  <Typography key={s.index}>{s.name}</Typography>
+                  <Typography key={s.index} data-testid={`trait-spell-${s.index}`}>
+                    {s.name}
+                  </Typography>
                 ))}
               {subtraits.filter(({ parent }) => parent?.index === trait.index).length
                 ? subtraits
                     .filter(({ parent }) => parent?.index === trait.index)
                     ?.map((subtrait) => (
-                      <Box key={subtrait.index}>
-                        <Typography>
+                      <Box key={subtrait.index} data-testid={`trait-subtrait-${subtrait.index}`}>
+                        <Typography data-testid={`trait-subtrait-name-${subtrait.index}`}>
                           {subtrait.name}
                           {subtrait.trait_specific?.damage_type?.name
                             ? ` - ${subtrait.trait_specific?.damage_type?.name}`
@@ -101,15 +113,31 @@ export function TraitsDisplay({
                             <ActionInfo
                               action={subtrait.trait_specific?.action}
                               charLevel={character.level || 1}
+                              data-testid={`trait-subtrait-action-${subtrait.trait_specific?.action.index}`}
                             />
-                            <Typography>{subtrait.trait_specific?.action.desc}</Typography>
+                            <Typography
+                              data-testid={`trait-subtrait-action-desc-${subtrait.trait_specific?.action.index}`}
+                            >
+                              {subtrait.trait_specific?.action.desc}
+                            </Typography>
                           </Fragment>
                         ) : (
-                          subtrait.desc.map((d, i) => <Typography key={i}>{d}</Typography>)
+                          subtrait.desc.map((d, i) => (
+                            <Typography
+                              key={i}
+                              data-testid={`trait-subtrait-desc-${subtrait.index}-${i}`}
+                            >
+                              {d}
+                            </Typography>
+                          ))
                         )}
                       </Box>
                     ))
-                : trait.desc.map((s, i) => <Typography key={`desc-${i}`}>{s}</Typography>)}
+                : trait.desc.map((s, i) => (
+                    <Typography key={`desc-${i}`} data-testid={`trait-desc-${trait.index}-${i}`}>
+                      {s}
+                    </Typography>
+                  ))}
             </AccordionDetails>
           </Accordion>
         ))}

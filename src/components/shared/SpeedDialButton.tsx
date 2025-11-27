@@ -43,6 +43,7 @@ export default function SpeedDialButton({
         .map((action) => (
           <SpeedDialAction
             key={action.name}
+            data-testid={action.name}
             icon={action.icon}
             slotProps={{
               fab: { size, sx: { margin: 1, ...buttonSize }, disabled },

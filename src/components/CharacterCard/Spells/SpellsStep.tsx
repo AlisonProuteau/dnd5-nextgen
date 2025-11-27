@@ -12,7 +12,7 @@ import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
 import { SplitButton } from '@shared/SplitButton';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { DefaultProps } from 'src/components/Header';
 import { SpellList } from './SpellList';
 import { Spellbook } from './Spellbook';
@@ -109,7 +109,7 @@ export function SpellStep({ character }: DefaultProps) {
   }, [slots.cantrips, slots.learn, slots.prepare]);
 
   return slots ? (
-    <Fragment>
+    <Box data-testid="spells-section">
       <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
         <SplitButton
           options={spellMenu}
@@ -144,7 +144,7 @@ export function SpellStep({ character }: DefaultProps) {
             </AccordionDetails>
           </Accordion>
         ))}
-    </Fragment>
+    </Box>
   ) : (
     <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
   );

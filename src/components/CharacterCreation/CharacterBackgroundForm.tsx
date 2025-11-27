@@ -129,7 +129,7 @@ export function CharacterBackgroundForm({
   };
 
   return (
-    <Box>
+    <Box data-testid="background-selection">
       {backgrounds && (
         <Box display="flex" gap="15px">
           <FormControl margin="dense" fullWidth required>
@@ -137,6 +137,7 @@ export function CharacterBackgroundForm({
             <Select
               fullWidth
               id="background"
+              name="background"
               label="Backgrounds"
               disabled={!backgrounds}
               value={selectedBackground?.index || ''}
@@ -167,6 +168,7 @@ export function CharacterBackgroundForm({
             <Select
               fullWidth
               id="alignment"
+              name="alignment"
               label="Alignment"
               value={selectedAlignment?.index || ''}
               onChange={({ target }) =>

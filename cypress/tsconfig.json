@@ -5,6 +5,7 @@
     "moduleResolution": "node",
     "lib": ["dom", "esnext"],
     "types": ["node", "cypress"],
+    "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".."
   },

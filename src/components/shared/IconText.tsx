@@ -9,6 +9,7 @@ interface IconTextProps {
   color?: string;
   size?: string;
   top?: string;
+  testid?: string;
 }
 
 export function IconText({
@@ -17,7 +18,8 @@ export function IconText({
   label,
   color,
   size = '50px',
-  top = '38px'
+  top = '38px',
+  testid
 }: IconTextProps) {
   return (
     <Box
@@ -27,8 +29,9 @@ export function IconText({
       textAlign="center"
       marginTop={`-${top}`}
       paddingBottom={label ? '0px' : '20px'}
+      data-testid={testid}
     >
-      {value && (
+      {value !== undefined && value !== null ? (
         <Typography
           position="relative"
           top={top}
@@ -36,7 +39,7 @@ export function IconText({
         >
           {value}
         </Typography>
-      )}
+      ) : null}
       <Icon title={label} aria-label={label} width={size} height={size} fill={color} />
       {label && <Typography>{label}</Typography>}
     </Box>

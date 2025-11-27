@@ -51,14 +51,14 @@ export function Header() {
         title: 'Database Editor',
         id: 'database',
         link: '/database',
-        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
+        hidden: user?.uid !== import.meta.env.FIREBASE_ADMIN_UID
       },
       {
         icon: <Star />,
         title: 'Character Generator',
         id: 'character-generator',
         link: '/character-generator',
-        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
+        hidden: user?.uid !== import.meta.env.FIREBASE_ADMIN_UID
       }
     ],
     [user?.uid]
@@ -72,15 +72,22 @@ export function Header() {
             {user ? (
               <Fragment>
                 <Box display="flex" alignItems="center">
-                  <Typography>{user.displayName || user.email}</Typography>
-                  <IconButton size="large" edge="end" onClick={() => user && signOut()}>
+                  <Typography data-testid="user-display-name">
+                    {user.displayName || user.email}
+                  </Typography>
+                  <IconButton
+                    size="large"
+                    edge="end"
+                    onClick={() => user && signOut()}
+                    data-testid="logout-button"
+                  >
                     <LogoutIcon />
                   </IconButton>
                 </Box>
 
                 <Box display="flex" alignItems="center">
                   <Box sx={button}>
-                    <Link to="/" aria-label="home" css={linkButton}>
+                    <Link to="/" aria-label="home" data-testid="home-link" css={linkButton}>
                       <Home />
                     </Link>
                   </Box>
@@ -90,6 +97,7 @@ export function Header() {
                     edge="end"
                     onClick={({ currentTarget }) => setAnchorEl(currentTarget)}
                     aria-haspopup="true"
+                    data-testid="menu-button"
                   >
                     <MenuIcon />
                   </IconButton>
@@ -107,10 +115,14 @@ export function Header() {
                     {MenuItems.map(
                       (item) =>
                         !item.hidden && (
-                          <MenuItem key={`menu-item-${item.id}`}>
+                          <MenuItem
+                            key={`menu-item-${item.id}`}
+                            data-testid={`menu-item-${item.id}`}
+                          >
                             <Link
                               to={item.link}
                               aria-label={item.id}
+                              data-testid={`${item.id}-link`}
                               css={{ ...linkButton, textDecoration: 'unset', gap: '5px' }}
                             >
                               {item.icon}

@@ -229,7 +229,12 @@ export function CharacterClassForm({
   return (
     <Box>
       {classes && (
-        <CardCarousel data={classes} activeStep={activeStep} cardActions={classCardActions}>
+        <CardCarousel
+          data={classes}
+          activeStep={activeStep}
+          cardActions={classCardActions}
+          carouselType="class"
+        >
           {classGuide && <HowToPlaySection playstyle={classGuide} />}
         </CardCarousel>
       )}
@@ -292,13 +297,14 @@ export function CharacterClassForm({
             subclass_specific: levelInfo.subclass_specific,
             prof_bonus: levelInfo.prof_bonus
           }}
+          detailsType="class"
         />
       )}
 
       {selectedClass && (
         <Fragment>
           {classInfo?.proficiency_choices && (
-            <Fragment>
+            <Box data-testid="class-choices-proficiency">
               <Divider
                 component="div"
                 role="presentation"
@@ -313,11 +319,11 @@ export function CharacterClassForm({
                 selected={selectedProficiencies}
                 setSelected={setSelectedProficiencies}
               />
-            </Fragment>
+            </Box>
           )}
 
           {classInfo?.starting_equipment_options && (
-            <Fragment>
+            <Box data-testid="class-choices-equipment">
               <Divider
                 component="div"
                 role="presentation"
@@ -334,11 +340,11 @@ export function CharacterClassForm({
                 selected={selectedEquipments}
                 setSelected={setSelectedEquipments}
               />
-            </Fragment>
+            </Box>
           )}
 
           {classFeatures.some((feature) => feature.feature_specific?.subfeature_options) && (
-            <Fragment>
+            <Box data-testid="class-choices-feature">
               <Divider
                 component="div"
                 role="presentation"
@@ -359,11 +365,11 @@ export function CharacterClassForm({
                 selected={selectedFeatures}
                 setSelected={setSelectedFeatures}
               />
-            </Fragment>
+            </Box>
           )}
 
           {classFeatures.some((feature) => feature.feature_specific?.expertise_options) && (
-            <Fragment>
+            <Box data-testid="class-choices-expertise">
               <Divider
                 component="div"
                 role="presentation"
@@ -384,7 +390,7 @@ export function CharacterClassForm({
                 selected={selectedExpertises}
                 setSelected={setSelectedExpertises}
               />
-            </Fragment>
+            </Box>
           )}
         </Fragment>
       )}

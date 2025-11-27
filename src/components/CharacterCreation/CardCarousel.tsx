@@ -73,7 +73,8 @@ function DesignCard({
   height = 400,
   onClick,
   selected = false,
-  children
+  children,
+  'data-testid': dataTestId
 }: {
   title: string;
   img: string;
@@ -81,6 +82,7 @@ function DesignCard({
   onClick?: () => any;
   selected?: boolean;
   children?: React.ReactNode;
+  'data-testid'?: string;
 }) {
   const [infoOpen, setInfoOpen] = useState(false);
 
@@ -88,6 +90,7 @@ function DesignCard({
     <Card
       key={`card-${title}`}
       elevation={0}
+      data-testid={dataTestId}
       style={{
         justifySelf: 'center',
         width: `${0.65 * height}px`,
@@ -124,9 +127,16 @@ interface CardCarouselProps {
   activeStep: number;
   cardActions: Partial<SwipeableCallbacks>;
   children?: React.ReactNode;
+  carouselType?: string;
 }
 
-export function CardCarousel({ data, activeStep, cardActions, children }: CardCarouselProps) {
+export function CardCarousel({
+  data,
+  activeStep,
+  cardActions,
+  children,
+  carouselType = 'generic'
+}: CardCarouselProps) {
   const isMobile = useMediaQuery((theme: any) => theme.breakpoints.down('sm'));
   const swipeHandlers = useSwipeable(cardActions);
 
@@ -139,6 +149,7 @@ export function CardCarousel({ data, activeStep, cardActions, children }: CardCa
       alignItems="center"
       {...swipeHandlers}
       marginBottom={2}
+      data-testid={`${carouselType}-carousel`}
     >
       <IconButton onClick={cardActions.onSwipedLeft as () => void} size="large">
         <Icon>
@@ -151,10 +162,16 @@ export function CardCarousel({ data, activeStep, cardActions, children }: CardCa
           img={data[activeStep > 0 ? activeStep - 1 : data.length - 1].img || ''}
           height={300}
           onClick={cardActions.onSwipedLeft as () => void}
+          data-testid={`${carouselType}-card-prev`}
         />
       )}
 
-      <DesignCard title={data[activeStep].name} img={data[activeStep].img || ''} selected={true}>
+      <DesignCard
+        title={data[activeStep].name}
+        img={data[activeStep].img || ''}
+        selected={true}
+        data-testid={`${carouselType}-card-current`}
+      >
         {children}
       </DesignCard>
 
@@ -164,6 +181,7 @@ export function CardCarousel({ data, activeStep, cardActions, children }: CardCa
           img={data[activeStep < data.length - 1 ? activeStep + 1 : 0].img || ''}
           height={300}
           onClick={cardActions.onSwipedRight as () => void}
+          data-testid={`${carouselType}-card-next`}
         />
       )}
       <IconButton onClick={cardActions.onSwipedRight as () => void} size="large">

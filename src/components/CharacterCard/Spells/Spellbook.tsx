@@ -310,8 +310,8 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                   )
                 ) {
                   remove
-                    ? setKnownSpells(knownSpells.filter(({ index }) => index !== spell.index))
-                    : setKnownSpells([...knownSpells, { ...spell, added: true }]);
+                    ? setKnownSpells((prev) => prev.filter(({ index }) => index !== spell.index))
+                    : setKnownSpells((prev) => [...prev, { ...spell, added: true }]);
                 }
               }}
             />

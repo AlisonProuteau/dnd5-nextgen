@@ -60,7 +60,7 @@ export function CharacterContainer() {
 
   const canCastSpells = useMemo(
     () =>
-      (character && classInfo?.spellcasting && classInfo.spellcasting.level === character.level) ||
+      (character && classInfo?.spellcasting && classInfo.spellcasting.level <= character.level) ||
       (character?.traits?.filter(({ spells }) => spells).length || 0) > 0,
     [
       classInfo?.spellcasting?.level,
@@ -99,10 +99,15 @@ export function CharacterContainer() {
   });
 
   return (
-    <Container sx={{ paddingBottom: '30px' }}>
+    <Container sx={{ paddingBottom: '30px' }} data-testid="character-container">
       {character?.id && character.abilityScores ? (
         <Fragment>
-          <Box display="flex" justifyContent="space-between" alignItems="baseline">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="baseline"
+            data-testid="character-card"
+          >
             <Box flex={1}>
               <Typography variant="subtitle1" color="text.secondary">
                 {character.class.name}
@@ -155,7 +160,7 @@ export function CharacterContainer() {
           </Box>
         </Fragment>
       ) : (
-        <CircularProgress size={24} />
+        <CircularProgress size={24} data-testid="loading" />
       )}
 
       <Fab size="small" sx={{ ...button, ...fab }} disabled={true}>
@@ -169,6 +174,7 @@ export function CharacterContainer() {
         sx={{ ...button, ...fab, marginRight: 6 }}
         onClick={() => setIsNoteOpen(true)}
         disabled={!character?.id}
+        data-testid={`notes-${character?.id}`}
       >
         <EventNote />
       </Fab>

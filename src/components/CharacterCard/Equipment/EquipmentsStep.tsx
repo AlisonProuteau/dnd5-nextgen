@@ -38,13 +38,14 @@ export function Equipments({ character }: DefaultProps) {
 
   return (
     <Fragment>
-      <Box display="grid" gridTemplateColumns="1fr 1fr">
+      <Box data-testid="equipment-section" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
           label="GP"
           value={character.armorClass}
           Icon={MoneyIcon}
           color="grey"
           top="34px"
+          testid="inventory-money"
         />
         <IconText
           label="Weight"
@@ -54,6 +55,7 @@ export function Equipments({ character }: DefaultProps) {
           )}
           Icon={WeightIcon}
           color="grey"
+          testid="inventory-weight"
         />
       </Box>
 

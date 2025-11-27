@@ -1,6 +1,7 @@
 import { defineConfig } from 'cypress';
 import { plugin as cypressFirebasePlugin } from 'cypress-firebase';
 import * as admin from 'firebase-admin';
+import * as env from './cypress.env.json';
 import { emulators } from './firebase.json';
 
 const FIREBASE_AUTH_EMULATOR_HOST = `${emulators.auth.host}:${emulators.auth.port}`;
@@ -8,11 +9,13 @@ const FIRESTORE_EMULATOR_HOST = `${emulators.firestore.host}:${emulators.firesto
 const FIREBASE_STORAGE_EMULATOR_HOST = `${emulators.storage.host}:${emulators.storage.port}`;
 
 export default defineConfig({
+  projectId: env.CYPRESS_PROJECT_ID,
   e2e: {
     env: {
       FIREBASE_AUTH_EMULATOR_HOST,
       FIRESTORE_EMULATOR_HOST,
-      FIREBASE_STORAGE_EMULATOR_HOST
+      FIREBASE_STORAGE_EMULATOR_HOST,
+      ...env
     },
     baseUrl: `http://${emulators.hosting.host}:${emulators.hosting.port}`,
     setupNodeEvents: (on, config) => {
@@ -34,6 +37,14 @@ export default defineConfig({
           }
         }
       );
+    },
+    reporter: 'mochawesome',
+    reporterOptions: {
+      reportFilename: 'cypress-report',
+      reportDir: './cypress/reports',
+      overwrite: false,
+      html: false,
+      json: true
     }
   }
 });

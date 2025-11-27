@@ -155,8 +155,8 @@ export function SpellList({
     spellsFetching,
     additionnalSpellsFetching,
     spells,
-    additionnalSpells,
-    characterInfo.slotLevels,
+    additionnalSpells.map(({ index, level }) => `${index}-${level}`).join(', '),
+    characterInfo.slotLevels.join(', '),
     hideLevels
   ]);
 
@@ -196,6 +196,7 @@ export function SpellList({
       {Object.keys(allSpells).map((currentLevel) => (
         <ConditionalAccordion
           key={`spell-list-${currentLevel}-${allSpells[currentLevel]?.length}`}
+          data-testid={`spell-list-${currentLevel}`}
           sx={{ '&:before': { display: 'none' } }}
           elevation={0}
           expanded={isExpanded[currentLevel] ?? true}
@@ -226,6 +227,7 @@ export function SpellList({
               {allSpells[currentLevel].map((spell) => (
                 <Card
                   key={`spell-${spell.index}-${spell.level}`}
+                  data-testid={`${setSelectedSpells ? 'edit' : 'view'}-spell-item-${spell.index}`}
                   sx={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -302,6 +304,7 @@ export function SpellList({
                     <CardActions sx={{ alignSelf: 'center' }}>
                       {selectedSpells.find(({ index }) => index === spell.index) ? (
                         <Button
+                          data-testid={`remove-spell-${spell.index}`}
                           onClick={() =>
                             setSelectedSpells((prev) =>
                               prev.filter(({ index }) => index !== spell.index)
@@ -312,12 +315,15 @@ export function SpellList({
                         </Button>
                       ) : (
                         <Button
+                          data-testid={`add-spell-${spell.index}`}
                           onClick={() =>
                             setSelectedSpells((prev) => {
                               const canAdd =
-                                prev.filter(({ level }) =>
-                                  spell.level === 0 ? level === 0 : level > 0
-                                ).length < maxSelected[spell.level === 0 ? 0 : 1];
+                                prev
+                                  .filter((s) => ('added' in s ? !s.added : true))
+                                  .filter(({ level }) =>
+                                    spell.level === 0 ? level === 0 : level > 0
+                                  ).length < maxSelected[spell.level === 0 ? 0 : 1];
 
                               return canAdd ? [...prev, spell] : prev;
                             })

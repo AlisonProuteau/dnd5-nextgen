@@ -212,7 +212,12 @@ export function CharacterRaceForm({
   return (
     <Box>
       {races && (
-        <CardCarousel data={races} activeStep={activeStep} cardActions={raceCardActions}>
+        <CardCarousel
+          data={races}
+          activeStep={activeStep}
+          cardActions={raceCardActions}
+          carouselType="race"
+        >
           {raceGuide && <HowToPlaySection playstyle={raceGuide} />}
         </CardCarousel>
       )}
@@ -286,72 +291,103 @@ export function CharacterRaceForm({
             )
           }}
           traits={(raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])}
+          detailsType="race"
         />
       )}
 
       {selectedRace && raceInfo?.starting_proficiency_options && (
-        <Fragment>
+        <Box data-testid="race-choices-proficiency">
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
-            <Typography>
-              Choose proficiencies {raceInfo?.starting_proficiency_options?.choose || 0}
-            </Typography>
+            <Typography>Choose proficiencies</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
             <Choices
-              choices={[raceInfo?.starting_proficiency_options]}
+              choices={[
+                {
+                  ...raceInfo.starting_proficiency_options,
+                  desc:
+                    raceInfo.starting_proficiency_options.desc ||
+                    `Select ${raceInfo?.starting_proficiency_options?.choose || 0} proficienc${
+                      raceInfo?.starting_proficiency_options?.choose === 1 ? 'y' : 'ies'
+                    }`
+                }
+              ]}
               inherited={proficiencies.filter(({ type }) => type !== 'race')}
               selected={selectedProficiencies}
               setSelected={setSelectedProficiencies}
             />
           </Box>
-        </Fragment>
+        </Box>
       )}
       {selectedRace && (raceInfo?.language_options || subraceInfo?.language_options) && (
-        <Fragment>
+        <Box data-testid="race-choices-language">
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
-            <Typography>
-              Choose Languages (
-              {(raceInfo?.language_options?.choose || 0) +
-                (subraceInfo?.language_options?.choose || 0)}
-              )
-            </Typography>
+            <Typography>Choose Languages</Typography>
           </Divider>
           <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
             <Choices
-              choices={[raceInfo?.language_options, subraceInfo?.language_options]}
+              choices={[
+                raceInfo?.language_options
+                  ? {
+                      ...raceInfo.language_options,
+                      desc:
+                        raceInfo.language_options.desc ||
+                        `Select ${raceInfo.language_options.choose || 0} language${
+                          raceInfo.language_options.choose === 1 ? '' : 's'
+                        }`
+                    }
+                  : undefined,
+                subraceInfo?.language_options
+                  ? {
+                      ...subraceInfo.language_options,
+                      desc:
+                        subraceInfo.language_options.desc ||
+                        `Select ${subraceInfo.language_options.choose || 0} language${
+                          subraceInfo.language_options.choose === 1 ? '' : 's'
+                        }`
+                    }
+                  : undefined
+              ]}
               inherited={languages.filter(({ type }) => type !== 'race')}
               selected={selectedLanguages}
               setSelected={setSelectedLanguages}
             />
           </Box>
-        </Fragment>
+        </Box>
       )}
       {selectedRace && (
         <Fragment>
           {raceInfo?.ability_bonus_options && (
-            <Fragment>
+            <Box data-testid="race-choices-bonus-ability">
               <Divider
                 component="div"
                 role="presentation"
                 sx={{ paddingTop: '15px' }}
                 variant="middle"
               >
-                <Typography>
-                  Choose Bonus Abilities {raceInfo?.ability_bonus_options?.choose || 0}
-                </Typography>
+                <Typography>Choose Bonus Abilities</Typography>
               </Divider>
               <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
                 <Choices
-                  choices={[raceInfo?.ability_bonus_options]}
+                  choices={[
+                    {
+                      ...raceInfo.ability_bonus_options,
+                      desc:
+                        raceInfo.ability_bonus_options.desc ||
+                        `Select ${raceInfo.ability_bonus_options.choose || 0} ability bonus${
+                          raceInfo.ability_bonus_options.choose === 1 ? '' : 'es'
+                        }`
+                    }
+                  ]}
                   selected={selectedAbilities}
                   setSelected={setSelectedAbilities}
                 />
               </Box>
-            </Fragment>
+            </Box>
           )}
 
           {raceTraits.some((trait) => trait.trait_specific?.subtrait_options) && (
-            <Fragment>
+            <Box data-testid="race-choices-trait">
               <Divider
                 component="div"
                 role="presentation"
@@ -364,19 +400,24 @@ export function CharacterRaceForm({
                 choices={raceTraits.map((trait) =>
                   trait.trait_specific?.subtrait_options
                     ? {
-                        ...trait.trait_specific?.subtrait_options,
-                        desc: trait.desc.find((d) => d.includes('1st'))
+                        ...trait.trait_specific.subtrait_options,
+                        desc:
+                          trait.desc.find((d) => d.includes('1st')) ||
+                          trait.desc[0] ||
+                          `Select ${trait.trait_specific.subtrait_options.choose} trait ${
+                            trait.trait_specific.subtrait_options.choose === 1 ? '' : 's'
+                          }`
                       }
                     : undefined
                 )}
                 selected={selectedTraits}
                 setSelected={setSelectedTraits}
               />
-            </Fragment>
+            </Box>
           )}
 
           {raceTraits.some((trait) => trait.trait_specific?.spell_options) && (
-            <Fragment>
+            <Box data-testid="race-choices-spell">
               <Divider
                 component="div"
                 role="presentation"
@@ -389,15 +430,20 @@ export function CharacterRaceForm({
                 choices={raceTraits.map((trait) =>
                   trait.trait_specific?.spell_options
                     ? {
-                        ...trait.trait_specific?.spell_options,
-                        desc: trait.desc.find((d) => d.includes('1st'))
+                        ...trait.trait_specific.spell_options,
+                        desc:
+                          trait.desc.find((d) => d.includes('1st')) ||
+                          trait.desc[0] ||
+                          `Select ${trait.trait_specific.spell_options.choose} trait ${
+                            trait.trait_specific.spell_options.choose === 1 ? '' : 's'
+                          }`
                       }
                     : undefined
                 )}
                 selected={selectedSpells}
                 setSelected={setSelectedSpells}
               />
-            </Fragment>
+            </Box>
           )}
         </Fragment>
       )}

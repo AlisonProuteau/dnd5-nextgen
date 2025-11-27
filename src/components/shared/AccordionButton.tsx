@@ -30,7 +30,9 @@ export function AccordionButton({ title, ...props }: { title: string } & ButtonP
       {...props}
     >
       <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-        <Typography variant="subtitle2">{title}</Typography>
+        <Typography component="h3" variant="subtitle2">
+          {title}
+        </Typography>
       </Divider>
       <Add />
     </Button>

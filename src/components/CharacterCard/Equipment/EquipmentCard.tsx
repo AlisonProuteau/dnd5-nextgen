@@ -55,12 +55,12 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
               {selectedEquipment.cost.unit}
             </Typography>
           </Box>
-          {selectedEquipment.weight && (
+          {selectedEquipment.weight ? (
             <Box display="flex" paddingLeft="50px" gap="5px">
               <WeightIcon height="20px" width="20px" fill="slategrey" />
               <Typography sx={{ float: 'right' }}>{selectedEquipment.weight}</Typography>
             </Box>
-          )}
+          ) : null}
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
@@ -109,9 +109,9 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
             data={`${selectedEquipment.two_handed_damage.damage_dice} ${selectedEquipment.two_handed_damage.damage_type.name}`}
           />
         )}
-        {selectedEquipment.capacity && (
+        {selectedEquipment.capacity ? (
           <EquipmentLine label="Capacity" data={selectedEquipment.capacity.toString()} />
-        )}
+        ) : null}
         {selectedEquipment.contents?.map((content) => (
           <Typography key={content.item.index}>
             {content.quantity} {content.item.name}
@@ -126,7 +126,9 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         {selectedEquipment.str_minimum ? (
           <EquipmentLine label="Minimum Strength" data={selectedEquipment.str_minimum.toString()} />
         ) : null}
-        {selectedEquipment.stealth_disadvantage && <Typography>Stealth Disadvantage</Typography>}
+        {selectedEquipment.stealth_disadvantage ? (
+          <Typography>Stealth Disadvantage</Typography>
+        ) : null}
         {selectedEquipment.special && (
           <EquipmentLine label="Special" data={selectedEquipment.special} />
         )}

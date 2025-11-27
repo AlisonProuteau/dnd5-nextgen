@@ -1,5 +1,4 @@
 import { attachCustomCommands } from 'cypress-firebase';
-import type { UserImportRecord } from 'firebase-admin/lib/auth/user-import-builder';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
@@ -23,7 +22,9 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
       '127.0.0.1',
       '8080'
     ];
-    firebase.firestore().useEmulator(firestoreHost, firestorePort);
+    const firestore = firebase.firestore();
+    firestore.settings({ experimentalForceLongPolling: true });
+    firestore.useEmulator(firestoreHost, firestorePort);
 
     const [storageHost, storagePort] = FIREBASE_STORAGE_EMULATOR_HOST?.split(':') || [
       '127.0.0.1',
@@ -40,13 +41,62 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
 // returning false here prevents Cypress from failing the test
 Cypress.on('uncaught:exception', () => false);
 
+const hideFirebaseEmulatorWarning = () =>
+  cy.get('body').then((body) => {
+    // After navigation, check for the emulator warning and dismiss it if present
+    if (body.find('.firebase-emulator-warning').length > 0) {
+      return cy.get('.firebase-emulator-warning').invoke('css', 'z-index', '-1000');
+    }
+  });
+
+Cypress.Commands.overwrite('visit', (originalFn, options) =>
+  originalFn(options).then((res) => {
+    hideFirebaseEmulatorWarning();
+    return res;
+  })
+);
+
+Cypress.Commands.overwrite('reload', (originalFn, forceReload, options) =>
+  originalFn(forceReload, options).then((res) => {
+    hideFirebaseEmulatorWarning();
+    return res;
+  })
+);
+
+declare global {
+  namespace Cypress {
+    interface Cypress {
+      testUser: { displayName: string; uid: string; email: string; password: string };
+    }
+  }
+}
+
+Cypress.testUser = {
+  displayName: 'Test User',
+  uid: '12345',
+  email: 'test@test.com',
+  password: 'v@lidPassword123'
+};
+
 before(() => {
-  const user: UserImportRecord = {
-    displayName: 'Test',
-    uid: '12345',
-    email: 'test@test.com'
-  };
-  cy.authImportUsers([user])
-    .callFirestore('set', `/users/${user.uid}`, { identifier: user.email, version: 'Legacy' })
-    .login(user.uid);
+  cy.log('🔧 Setting up test environment...');
+
+  return cy
+    .deleteAllAuthUsers()
+    .callFirestore('delete', `users/`)
+    .then(() =>
+      cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
+        identifier: Cypress.testUser.email,
+        version: 'Legacy'
+      })
+    )
+    .then(() =>
+      cy
+        .callFirestore('get', `/users/${Cypress.testUser.uid}`)
+        .should('exist', 'User data should exist in Firestore')
+        .should('have.property', 'identifier', Cypress.testUser.email)
+    )
+    .then(() => cy.log('✨ Test environment ready'));
 });
+
+beforeEach(() => cy.logout());

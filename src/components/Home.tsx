@@ -52,43 +52,49 @@ export function Home() {
     <Container>
       <Box
         display="grid"
+        data-testid="character-grid"
         sx={{
           gridGap: '50px',
           gridTemplateColumns: `repeat(auto-fit, minmax(275px, 1fr))`
         }}
       >
-        {characters.map((character) => (
-          <Box key={character.id} sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Card sx={{ flex: 1, maxWidth: '500px' }}>
-              <CardActionArea
-                onClick={() => navigate(`/character`, { state: { characterId: character.id } })}
+        {characters
+          .filter((c) => !!c.class && !!c.race)
+          .map((character) => (
+            <Box key={character.id} sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Card
+                sx={{ flex: 1, maxWidth: '500px' }}
+                data-testid={`character-card-${character.id}`}
               >
-                <CardMedia
-                  alt="Character"
-                  component="img"
-                  height="250"
-                  src={RaceImages[character.race.index]}
-                  sx={{ objectPosition: 'top' }}
-                />
-                <CardContent>
-                  <Typography variant="h5" component="div">
-                    {character.name}
-                  </Typography>
-                  <Typography sx={{ mb: 1.5 }} color="text.secondary">
-                    {character.race.name}
-                    {character.subrace && ` - ${character.subrace.name}`}
-                  </Typography>
-                  <Typography variant="body2">
-                    {character.class.name}
-                    {character.subclass && ` - ${character.subclass.name}`}
-                  </Typography>
-                </CardContent>
-              </CardActionArea>
-            </Card>
-          </Box>
-        ))}
+                <CardActionArea
+                  onClick={() => navigate(`/character`, { state: { characterId: character.id } })}
+                >
+                  <CardMedia
+                    alt="Character"
+                    component="img"
+                    height="250"
+                    src={RaceImages[character.race.index]}
+                    sx={{ objectPosition: 'top' }}
+                  />
+                  <CardContent>
+                    <Typography variant="h5" component="div">
+                      {character.name}
+                    </Typography>
+                    <Typography sx={{ mb: 1.5 }} color="text.secondary">
+                      {character.race.name}
+                      {character.subrace && ` - ${character.subrace.name}`}
+                    </Typography>
+                    <Typography variant="body2">
+                      {character.class.name}
+                      {character.subclass && ` - ${character.subclass.name}`}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
+            </Box>
+          ))}
 
-        <Fab size="small" sx={{ ...button, ...fab }}>
+        <Fab size="small" sx={{ ...button, ...fab }} data-testid="create-character-fab">
           <Link to="/create" css={linkButton}>
             <AddRounded />
           </Link>

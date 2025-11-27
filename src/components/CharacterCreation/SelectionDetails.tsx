@@ -27,6 +27,7 @@ interface SelectionDetailsProps {
   info: Race | Partial<Classes & Subclass & Omit<Level, 'spellcasting'>> | undefined;
   traits?: Character['traits'];
   features?: Character['features'];
+  detailsType?: string;
 }
 
 export function SelectionDetails({
@@ -34,7 +35,8 @@ export function SelectionDetails({
   subSelected,
   info,
   traits,
-  features
+  features,
+  detailsType
 }: SelectionDetailsProps) {
   const { version } = useAuth();
 
@@ -49,7 +51,13 @@ export function SelectionDetails({
   );
 
   return (
-    <Box marginY={2} display="flex" flexDirection="column" gap={1}>
+    <Box
+      marginY={2}
+      display="flex"
+      flexDirection="column"
+      gap={1}
+      data-testid={`${detailsType}-details`}
+    >
       <Accordion key={`${selected.index}-description`} disableGutters onChange={scrollOnOpen}>
         <AccordionSummary expandIcon={<ExpandMore />}>
           <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>

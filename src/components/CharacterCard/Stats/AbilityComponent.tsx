@@ -33,7 +33,7 @@ export function AbilityComponent({
   const [isDialogOpen, setIsDialogueOpen] = useState(false);
 
   return (
-    <Box display="flex">
+    <Box display="flex" data-testid={`ability-${ability.index}`}>
       <Badge
         badgeContent={
           savingThrows?.find(({ index }) => index === ability.index) ? (
@@ -93,7 +93,11 @@ export function AbilityComponent({
         })}
       </Box>
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogueOpen(false)}>
+      <Dialog
+        open={isDialogOpen}
+        onClose={() => setIsDialogueOpen(false)}
+        data-testid="saving-throws-dialog"
+      >
         <DialogTitle>Saving Throws</DialogTitle>
         <DialogContent>
           <DialogContentText>{savingThrows?.map(({ name }) => name).join(', ')}</DialogContentText>

@@ -50,7 +50,7 @@ export function App() {
         />
         {user?.uid && (
           <Fragment>
-            {user.uid === '8lFf6wEj9ARVlilMOrOxYDZOkSS2' && (
+            {user.uid === import.meta.env.FIREBASE_ADMIN_UID && (
               <Fragment>
                 <Route path="/database" element={<DataBasePage />} />
                 <Route path="/character-generator" element={<CharacterGenerator />} />

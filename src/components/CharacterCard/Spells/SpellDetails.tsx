@@ -22,7 +22,7 @@ interface SpellDetailsProps {
 export function SpellDetails({ spell, charLevel, slotLevels }: SpellDetailsProps) {
   return (
     <Fragment>
-      <DialogTitle>
+      <DialogTitle data-testid="spell-dialog-title">
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography variant="h5">{spell.name}</Typography>
           <Typography variant="subtitle2" color="primary">
@@ -43,7 +43,10 @@ export function SpellDetails({ spell, charLevel, slotLevels }: SpellDetailsProps
           </Typography>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
+      <DialogContent
+        data-testid="spell-dialog-description"
+        sx={{ display: 'flex', flexDirection: 'column' }}
+      >
         <EquipmentLine label="Casting Time" data={spell.casting_time} />
         <EquipmentLine label="Duration" data={spell.duration} />
         {spell.area_of_effect && (
