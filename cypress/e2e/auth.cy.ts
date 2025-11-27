@@ -126,9 +126,10 @@ describe(`Authentication End-to-End`, () => {
   });
 
   describe('Sign Up and Onboarding Flow', () => {
+    const uniqueSuffix = Date.now();
     const testUser = {
-      uid: `signup-user-id-${name}`,
-      email: `signup-${name}@example.com`,
+      uid: `signup-user-id-${uniqueSuffix}`,
+      email: `signup-${uniqueSuffix}@example.com`,
       password: 'v@lidPassword123'
     };
 

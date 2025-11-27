@@ -2960,4 +2960,4 @@ export const characters: Character[] = [
       }
     ]
   }
-] as any[];
+] as unknown[] as Character[];

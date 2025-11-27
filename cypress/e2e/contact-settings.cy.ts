@@ -5,9 +5,8 @@ import 'firebase/compat/storage';
 // TODO: move all the should be disabled before the blur
 describe(`Contact Form End-to-End`, () => {
   const charName = 'My Test Character';
-  beforeEach(() => {
-    // cy.viewport(width, height);
 
+  beforeEach(() => {
     cy.createTestCharacter(Cypress.testUser.uid, undefined, { name: charName });
     cy.login(Cypress.testUser.uid);
     cy.visit('/contact');
@@ -233,7 +232,6 @@ describe(`Contact Form End-to-End`, () => {
 
 describe(`Settings Page End-to-End`, () => {
   beforeEach(() => {
-    // cy.viewport(width, height);
     cy.login(Cypress.testUser.uid);
     cy.visit('/settings');
   });
@@ -292,7 +290,7 @@ describe(`Settings Page End-to-End`, () => {
     cy.url().should('include', '/settings');
   });
 
-  it.only('should successfully update version and navigate to home', () => {
+  it('should successfully update version and navigate to home', () => {
     // Test: Intercept successful update
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },

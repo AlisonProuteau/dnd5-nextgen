@@ -202,7 +202,5 @@ describe(`Character Creation End-to-End`, () => {
     cy.getByRole('progressbar').should('be.visible');
     cy.getByRole('status', 'Character created').should('be.visible');
     cy.url().should('include', '/character');
-
-    // TODO: Add points test + navigation
   });
 });

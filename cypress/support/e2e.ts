@@ -41,14 +41,13 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
 // returning false here prevents Cypress from failing the test
 Cypress.on('uncaught:exception', () => false);
 
-const hideFirebaseEmulatorWarning = () => {
+const hideFirebaseEmulatorWarning = () =>
   cy.get('body').then((body) => {
     // After navigation, check for the emulator warning and dismiss it if present
     if (body.find('.firebase-emulator-warning').length > 0) {
-      cy.get('.firebase-emulator-warning').invoke('css', 'z-index', '-1000');
+      return cy.get('.firebase-emulator-warning').invoke('css', 'z-index', '-1000');
     }
   });
-};
 
 Cypress.Commands.overwrite('visit', (originalFn, options) =>
   originalFn(options).then((res) => {
@@ -80,14 +79,24 @@ Cypress.testUser = {
 };
 
 before(() => {
-  cy.deleteAllAuthUsers()
+  cy.log('🔧 Setting up test environment...');
+
+  return cy
+    .deleteAllAuthUsers()
     .callFirestore('delete', `users/`)
     .then(() =>
       cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
         identifier: Cypress.testUser.email,
         version: 'Legacy'
       })
-    );
+    )
+    .then(() =>
+      cy
+        .callFirestore('get', `/users/${Cypress.testUser.uid}`)
+        .should('exist', 'User data should exist in Firestore')
+        .should('have.property', 'identifier', Cypress.testUser.email)
+    )
+    .then(() => cy.log('✨ Test environment ready'));
 });
 
 beforeEach(() => cy.logout());

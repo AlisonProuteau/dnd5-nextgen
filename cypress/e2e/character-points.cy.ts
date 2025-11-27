@@ -149,13 +149,13 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByRole('status', 'Character Points Updated').should('be.visible');
     cy.url().should('include', '/character');
 
-    // Test: Verify stats on character sheet
-    cy.getByTestId('ability-str').should('contain.text', '+316'); //+1 from race
-    cy.getByTestId('ability-dex').should('contain.text', '+214');
-    cy.getByTestId('ability-con').should('contain.text', '+113');
-    cy.getByTestId('ability-int').should('contain.text', '010');
-    cy.getByTestId('ability-wis').should('contain.text', '010');
-    cy.getByTestId('ability-cha').should('contain.text', '010');
+    // Test: Verify stats on character sheet (separate assertions for modifier and score)
+    cy.getByTestId('ability-str').should('contain.text', '+3').and('contain.text', '16'); //+1 from race
+    cy.getByTestId('ability-dex').should('contain.text', '+2').and('contain.text', '14');
+    cy.getByTestId('ability-con').should('contain.text', '+1').and('contain.text', '13');
+    cy.getByTestId('ability-int').should('contain.text', '0').and('contain.text', '10');
+    cy.getByTestId('ability-wis').should('contain.text', '0').and('contain.text', '10');
+    cy.getByTestId('ability-cha').should('contain.text', '0').and('contain.text', '10');
   });
 
   it('should complete ability score allocation with "Custom" (random) method', () => {

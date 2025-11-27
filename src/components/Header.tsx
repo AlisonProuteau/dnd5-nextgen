@@ -51,14 +51,14 @@ export function Header() {
         title: 'Database Editor',
         id: 'database',
         link: '/database',
-        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
+        hidden: user?.uid !== import.meta.env.FIREBASE_ADMIN_UID
       },
       {
         icon: <Star />,
         title: 'Character Generator',
         id: 'character-generator',
         link: '/character-generator',
-        hidden: user?.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2'
+        hidden: user?.uid !== import.meta.env.FIREBASE_ADMIN_UID
       }
     ],
     [user?.uid]

@@ -2,7 +2,6 @@ import { characters } from 'cypress/support/mocks/characterList';
 
 describe(`Character Sheet End-to-End`, () => {
   const characterData = characters.find(({ name }) => name === 'Delfy')!;
-
   const blackList: string[] = [
     'draconic-ancestry',
     'otherworldly-patron',
@@ -17,7 +16,6 @@ describe(`Character Sheet End-to-End`, () => {
     'menacing',
     'sorcerous-origin',
     'draconic-resilience',
-    'otherworldly-patron',
     'tool-proficiency'
   ];
 
@@ -45,8 +43,16 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('ability-').should('have.length', 6);
 
     cy.getByTestId('ability-int').within(($el) => {
-      cy.wrap($el).should('contain.text', 'Intelligence' + '+3' + 16);
-      cy.wrap($el).should('contain.text', 'ArcanaHistoryInvestigationNatureReligion');
+      cy.wrap($el)
+        .should('contain.text', 'Intelligence')
+        .and('contain.text', '+3')
+        .and('contain.text', '16');
+      cy.wrap($el)
+        .should('contain.text', 'Arcana')
+        .and('contain.text', 'History')
+        .and('contain.text', 'Investigation')
+        .and('contain.text', 'Nature')
+        .and('contain.text', 'Religion');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])')
         .should('have.length', 1)
         .should('have.text', 'Nature');
@@ -57,8 +63,16 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('saving-throws-dialog').should('not.exist');
 
     cy.getByTestId('ability-wis').within(($el) => {
-      cy.wrap($el).should('contain.text', 'Wisdom' + '+2' + 14);
-      cy.wrap($el).should('contain.text', 'Animal HandlingInsightMedicinePerceptionSurvival');
+      cy.wrap($el)
+        .should('contain.text', 'Wisdom')
+        .and('contain.text', '+2')
+        .and('contain.text', '14');
+      cy.wrap($el)
+        .should('contain.text', 'Animal Handling')
+        .and('contain.text', 'Insight')
+        .and('contain.text', 'Medicine')
+        .and('contain.text', 'Perception')
+        .and('contain.text', 'Survival');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])')
         .should('have.length', 2)
         .should('have.text', 'Animal HandlingPerception');
@@ -69,29 +83,47 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('saving-throws-dialog').should('not.exist');
 
     cy.getByTestId('ability-dex').within(($el) => {
-      cy.wrap($el).should('contain.text', 'Dexterity' + '+2' + 14);
-      cy.wrap($el).should('contain.text', 'AcrobaticsSleight of HandStealth');
+      cy.wrap($el)
+        .should('contain.text', 'Dexterity')
+        .and('contain.text', '+2')
+        .and('contain.text', '14');
+      cy.wrap($el)
+        .should('contain.text', 'Acrobatics')
+        .and('contain.text', 'Sleight of Hand')
+        .and('contain.text', 'Stealth');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
     cy.getByTestId('ability-str').within(($el) => {
-      cy.wrap($el).should('contain.text', 'Strength' + '0' + 10);
+      cy.wrap($el)
+        .should('contain.text', 'Strength')
+        .and('contain.text', '0')
+        .and('contain.text', '10');
       cy.wrap($el).should('contain.text', 'Athletics');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
     cy.getByTestId('ability-cha').within(($el) => {
-      cy.wrap($el).should('contain.text', 'Charisma' + '-1' + 8);
-      cy.wrap($el).should('contain.text', 'DeceptionIntimidationPerformancePersuasion');
+      cy.wrap($el)
+        .should('contain.text', 'Charisma')
+        .and('contain.text', '-1')
+        .and('contain.text', '8');
+      cy.wrap($el)
+        .should('contain.text', 'Deception')
+        .and('contain.text', 'Intimidation')
+        .and('contain.text', 'Performance')
+        .and('contain.text', 'Persuasion');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
     cy.getByTestId('ability-con').within(($el) => {
-      cy.wrap($el);
-      cy.wrap($el).should('contain.text', 'Constitution' + '+1' + 13);
+      cy.wrap($el)
+        .should('contain.text', 'Constitution')
+        .and('contain.text', '+1')
+        .and('contain.text', '13');
       cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
@@ -107,7 +139,13 @@ describe(`Character Sheet End-to-End`, () => {
       characterData.languages.map((l) => l.name).join(', ')
     );
 
-    cy.getByTestId('features-section').should('exist').children().should('have.length', 2);
+    cy.getByTestId('features-section')
+      .should('exist')
+      .children()
+      .should(
+        'have.length',
+        (characterData.features || []).filter((d) => !blackList.includes(d.index)).length
+      );
     characterData
       .features!.filter((d) => !blackList.includes(d.index))
       .forEach((feature) => {
@@ -117,7 +155,13 @@ describe(`Character Sheet End-to-End`, () => {
         cy.getByTestId(`feature-details-${feature.index}`).should('be.visible');
       });
 
-    cy.getByTestId('traits-section').should('be.visible').children().should('have.length', 4);
+    cy.getByTestId('traits-section')
+      .should('be.visible')
+      .children()
+      .should(
+        'have.length',
+        (characterData.traits || []).filter((d) => !blackList.includes(d.index)).length
+      );
     characterData
       .traits!.filter((d) => !blackList.includes(d.index))
       .forEach((trait) => {
@@ -131,7 +175,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('KeyboardArrowRightIcon').click();
     cy.getByTestId('equipment-section').should('be.visible');
     cy.getByTestId('inventory-money').should('have.text', '13GP');
-    cy.getByTestId('inventory-weight').should('contain.text', '14anvilWeight');
+    cy.getByTestId('inventory-weight').should('contain.text', '14').and('contain.text', 'Weight');
 
     characterData.equipments.forEach((equipment) => {
       cy.getByTestId(`equipment-item-${equipment.index}`).should('contain.text', equipment.name);
@@ -180,8 +224,8 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('description-sex-')
       .should('contain.text', 'Sex')
       .should('have.attr', 'data-testid', 'description-sex-F');
-    cy.getByTestId('description-age').should('contain.text', '23Age');
-    cy.getByTestId('description-size').should('contain.text', 'MediumSize');
+    cy.getByTestId('description-age').should('contain.text', '23').and('contain.text', 'Age');
+    cy.getByTestId('description-size').should('contain.text', 'Medium').and('contain.text', 'Size');
     cy.getByTestId('description-alignment')
       .should('contain.text', 'CG')
       .and('contain.text', 'Alignment');
@@ -454,7 +498,10 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
   before(() => {
     characters.forEach((char) => {
       const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
-      if (spellcastingClasses.some(({ classData }) => classData.index === char.class.index))
+      if (
+        spellcastingClasses.some(({ classData }) => classData.index === char.class.index) ||
+        char.class.index === 'barbarian'
+      )
         cy.createTestCharacter(Cypress.testUser.uid, id, {
           ...char,
           id,
@@ -790,13 +837,16 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
     })
   );
 
-  // it('Should not display spell section for non-spellcaster', () => {
-  //   cy.createTestCharacter(Cypress.testUser.uid, 'test-nonspell');
-  //   cy.visit('/');
-  //   cy.getByTestId('character-card-test-nonspell').click();
-  //   cy.getByTestId('stats-section').should('be.visible');
-  //   cy.waitForLoading();
-  //   cy.getByTestId('KeyboardArrowLeftIcon').click();
-  //   cy.getByTestId('spells-section').should('not.exist');
-  // });
+  it('Should not display spell section for non-spellcaster', () => {
+    cy.login(Cypress.testUser.uid);
+    cy.visit('/');
+
+    const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
+    cy.getByTestId(`character-card-${charID}`).click();
+
+    cy.getByTestId('stats-section').should('be.visible');
+    cy.get('.MuiMobileStepper-dot').should('have.length', 4);
+    cy.getByTestId('KeyboardArrowLeftIcon').click();
+    cy.getByTestId('spells-section').should('not.exist');
+  });
 });

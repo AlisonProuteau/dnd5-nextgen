@@ -31,7 +31,7 @@ export function IconText({
       paddingBottom={label ? '0px' : '20px'}
       data-testid={testid}
     >
-      {value !== undefined ? (
+      {value !== undefined && value !== null ? (
         <Typography
           position="relative"
           top={top}

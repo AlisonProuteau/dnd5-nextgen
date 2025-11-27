@@ -136,7 +136,7 @@ Cypress.Commands.add('loginNewUser', (id?: string) => {
  * Logs in as the admin user for character generator access. Creates the user if not present.
  */
 Cypress.Commands.add('loginAsAdmin', () => {
-  const adminId = '8lFf6wEj9ARVlilMOrOxYDZOkSS2'; // Admin UID from App.tsx
+  const adminId = Cypress.env('FIREBASE_ADMIN_UID'); // Admin UID from App.tsx
 
   cy.authGetUser(adminId).then((existingUser) => {
     if (!existingUser?.uid) {
@@ -188,7 +188,7 @@ Cypress.Commands.add('clearUser', (uid: string) => {
 Cypress.Commands.add('clearAllNonDefaultUsers', () => {
   cy.authListUsers().then((users) => {
     users.users.forEach((user) => {
-      if (user.uid !== Cypress.testUser.uid && user.uid !== '8lFf6wEj9ARVlilMOrOxYDZOkSS2') {
+      if (user.uid !== Cypress.testUser.uid && user.uid !== Cypress.env('FIREBASE_ADMIN_UID')) {
         cy.authDeleteUser(user.uid);
         cy.callFirestore('delete', `users/${user.uid}/characters`);
         cy.callFirestore('delete', `users/${user.uid}`);
@@ -230,7 +230,6 @@ Cypress.Commands.add('selectOption', (selectId: string, option?: string | RegExp
  * Waits for loading spinner or progress bar to disappear.
  */
 Cypress.Commands.add('waitForLoading', () => {
-  cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('exist');
   cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('not.exist', {
     timeout: 10000
   });

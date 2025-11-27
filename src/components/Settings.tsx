@@ -56,12 +56,12 @@ export function Settings() {
       </div>
       <form onSubmit={handleSubmitVersion} data-testid="version-form">
         <FormControl fullWidth disabled={!user || isLoading}>
-          <InputLabel html-for="version-select">Version</InputLabel>
+          <InputLabel htmlFor="version-select">Version</InputLabel>
           <Select
             id="version-select"
             name="version"
             value={selectedVersion}
-            label="Age"
+            label="Version"
             data-testid="version-select"
             onChange={({ target }) => setSelectedVersion((target.value as Version) || null)}
           >
