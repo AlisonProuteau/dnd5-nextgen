@@ -70,6 +70,7 @@ jobs:
         run: (rm -rf ./cypress/reports || true) && (rm -rf ./cypress/screenshots || true)
 
       - name: Cypress run
+        id: cypress_run
         uses: cypress-io/github-action@v6
         continue-on-error: true
         with:
@@ -94,6 +95,12 @@ jobs:
       #   with:
       #     name: test-screenshots
       #     path: ./cypress/screenshots
+
+      - name: Save Cypress Dashboard URL
+        if: always()
+        run: |
+          mkdir -p ./cypress/reports
+          echo "${{ steps.cypress_run.outputs.dashboardUrl }}" > ./cypress/reports/cypress-url.txt
 
       - name: Generate Cypress report
         id: run_cypress_report
