@@ -160,7 +160,7 @@ MIT License - see [package.json](package.json) for details.
 
 ### Current TODO List
 
-- [ ] Test latest and merge
+- [ ] Replace custom useForm by react-hook-form?
 - [ ] Merge money feature update
 - [ ] Add cypress code coverage
 - [ ] Update Qodo Merge config
