@@ -38,16 +38,15 @@ export function AuthPage() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!isSaving) {
-      setIsSaving(true);
+    if (isSaving) return;
 
-      if (form.formData.email && form.formData.password && form.isValid) {
-        if (!isLogin)
-          await createUser(form.formData.email, form.formData.password, form.formData.name);
-        else await signIn(form.formData.email, form.formData.password);
-      }
-      setIsSaving(false);
+    setIsSaving(true);
+    if (form.formData.email && form.formData.password && form.isValid) {
+      if (!isLogin)
+        await createUser(form.formData.email, form.formData.password, form.formData.name);
+      else await signIn(form.formData.email, form.formData.password);
     }
+    setIsSaving(false);
   };
 
   return (

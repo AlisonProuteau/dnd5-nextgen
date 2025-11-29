@@ -161,7 +161,7 @@ export const formatPointsForDB = (
 
   const hitPoints =
     (classInfo?.hit_die || 6) +
-    formattedAbilities['con'].modifier +
+    (formattedAbilities['con']?.modifier || 0) +
     (character?.features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
 
   return {
@@ -173,8 +173,8 @@ export const formatPointsForDB = (
       character?.equipments,
       character?.features,
       character?.class.index === 'monk'
-        ? formattedAbilities['wis'].modifier
-        : formattedAbilities['con'].modifier
+        ? formattedAbilities['wis']?.modifier || 0
+        : formattedAbilities['con']?.modifier || 0
     ),
     abilityScores: formattedAbilities
   };
