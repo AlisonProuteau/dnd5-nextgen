@@ -1,4 +1,5 @@
-import { getUserCharacters } from '@api/users';
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { AddRounded } from '@mui/icons-material';
 import {
   Box,
@@ -12,9 +13,8 @@ import {
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
-import { useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { getUserCharacters } from '@api/users';
+import { button, fab, linkButton } from '@utils/ui';
 import { useAuth } from '../providers/AuthProvider';
 
 const RaceImages: Record<string, string> = {

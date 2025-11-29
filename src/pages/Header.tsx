@@ -1,4 +1,5 @@
-import { signOut } from '@api/users';
+import { type FormEvent, Fragment, useMemo, useState } from 'react';
+import { Link, Outlet } from 'react-router-dom';
 import { Add, Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -6,13 +7,13 @@ import { Box, Button, Menu, MenuItem, Typography } from '@mui/material';
 import AppBar from '@mui/material/AppBar';
 import IconButton from '@mui/material/IconButton';
 import Toolbar from '@mui/material/Toolbar';
-import type { Character } from '@representations/user.representation';
+import { updateProfile } from 'firebase/auth';
+import { signOut } from '@api/users';
 import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
-import { button, linkButton } from '@utils/style.utils';
-import { updateProfile } from 'firebase/auth';
-import { Fragment, useMemo, useState, type FormEvent } from 'react';
-import { Link, Outlet } from 'react-router-dom';
+import { button, linkButton } from '@utils/ui';
+import type { Character } from '@representations/user.representation';
+import { useForm, useToggle } from '../hooks';
 import { useAuth } from '../providers/AuthProvider';
 
 export interface DefaultProps {
@@ -21,15 +22,18 @@ export interface DefaultProps {
 
 export function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openUsername, setOpenUsername] = useState(true);
-  const [username, setUsername] = useState<string>();
+  const { isOn: openUsername, turnOff: closeUsername } = useToggle(true);
   const { user } = useAuth();
+  const usernameForm = useForm<{ displayName: string }>({
+    initialData: { displayName: undefined }
+  });
 
   const handleSubmitUsername = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setOpenUsername(false);
+    closeUsername();
 
-    if (user) await updateProfile(user, { displayName: username });
+    if (user && usernameForm.formData.displayName)
+      await updateProfile(user, { displayName: usernameForm.formData.displayName });
   };
 
   const MenuItems = useMemo(
@@ -148,11 +152,7 @@ export function Header() {
       <Outlet />
 
       {user && !user.displayName && (
-        <StyledModal
-          open={openUsername}
-          onClose={() => setOpenUsername(false)}
-          title="Update your display name"
-        >
+        <StyledModal open={openUsername} onClose={closeUsername} title="Update your display name">
           <form onSubmit={handleSubmitUsername}>
             <ControledInput
               fullWidth
@@ -160,7 +160,7 @@ export function Header() {
               id="name"
               type="name"
               label="Display name"
-              onChange={(name) => setUsername(name?.toString())}
+              onChange={(name) => usernameForm.setFormData({ displayName: name?.toString() || '' })}
             />
             <Button sx={{ marginTop: '1rem' }} fullWidth type="submit" variant="contained">
               Submit

@@ -1,4 +1,4 @@
-import { getProperty } from '@api/ressources';
+import { Fragment, useCallback } from 'react';
 import { CoinsIcon, WeightIcon } from '@assets';
 import { ExpandMore } from '@mui/icons-material';
 import {
@@ -11,11 +11,11 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
-import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
-import { EquipmentLine } from '@shared/EquipmentLine';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { Fragment, useCallback } from 'react';
+import { getProperty } from '@api/ressources';
+import { EquipmentLine } from '@shared/EquipmentLine';
+import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
 interface EquipmentCardProps {

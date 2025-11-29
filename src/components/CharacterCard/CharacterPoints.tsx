@@ -1,5 +1,5 @@
-import { getAllAbilities, getClassInfo } from '@api/ressources';
-import { getCharacter } from '@api/users';
+import { Fragment, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
   Box,
@@ -13,19 +13,18 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import type { Classes } from '@representations/character/class.representation';
+import { useQuery } from '@tanstack/react-query';
+import { omit } from 'lodash';
+import { getAllAbilities, getClassInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
-import { doc, updateDoc } from 'firebase/firestore';
-import { omit } from 'lodash';
-import { Fragment, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { database } from 'src/firebase';
+import { randomInteger } from '@utils/calculations';
+import { formatPointsForDB, getAbilityPoints } from '@utils/character';
+import { button, fab, linkButton } from '@utils/ui';
+import type { Classes } from '@representations/character/class.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { getAbilityPoints, getAbilityScoreModifier, getArmorClass, randomInteger } from './utils';
 
 type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 
@@ -34,9 +33,18 @@ export function CharacterPoints() {
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
   const { user, version } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
-  const queryClient = useQueryClient();
+
+  const firebaseCrud = useFirebaseCrud({
+    collectionPath: 'users/{userId}/characters',
+    invalidateQueryKey: ['fetchCharacter'],
+    successMessages: {
+      update: 'Character Points Updated'
+    },
+    redirect: {
+      update: { path: '/character', state: { characterId: '{id}' } }
+    }
+  });
 
   const { data: character } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -98,73 +106,13 @@ export function CharacterPoints() {
     abilities?.every((ability) => points[ability.index]) &&
     (abilityScoreMethod !== 'point_cost' || getAbilityPoints(points) <= 27);
 
-  const onSubmit = () => {
-    let formattedAbilities: Record<
-      string,
-      {
-        index: string;
-        name: string;
-        full_name: string;
-        score: number;
-        modifier: number;
-      }
-    > = character?.abilityScores || {};
-    if (!character?.abilityScores)
-      abilities?.forEach((ability) => {
-        const raceModifier = character?.abilities.find(
-          (bonusAbility) => bonusAbility.ability_score.index === ability.index
-        );
-        const finalScore = raceModifier
-          ? points[ability.index] + raceModifier.bonus
-          : points[ability.index];
-
-        formattedAbilities = {
-          ...formattedAbilities,
-          [ability.index]: {
-            index: ability.index,
-            name: ability.name,
-            full_name: ability.full_name,
-            score: finalScore,
-            modifier: getAbilityScoreModifier(finalScore)
-          }
-        };
-      });
-
-    const hitPoints =
-      (classInfo?.hit_die || 6) +
-      formattedAbilities['con'].modifier +
-      (character?.features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
-
-    const formattedPoints = {
-      hit_die: classInfo?.hit_die,
-      hit_points: hitPoints,
-      saving_throws: classInfo?.saving_throws,
-      armorClass: getArmorClass(
-        formattedAbilities['dex'].modifier,
-        character?.equipments,
-        character?.features,
-        character?.class.index === 'monk'
-          ? formattedAbilities['wis'].modifier
-          : formattedAbilities['con'].modifier
-      ),
-      abilityScores: formattedAbilities
-    };
+  const onSubmit = async () => {
+    if (!character) return;
 
     if (isValid && id && user?.uid) {
-      const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, id);
-      updateDoc(document, formattedPoints)
-        .then(async () => {
-          await queryClient.invalidateQueries({
-            queryKey: ['fetchCharacter', user.uid, id]
-          });
-          navigate(`/character`, { state: { characterId: id } });
-          toast.success('Character Points Updated');
-        })
-        .catch((error) =>
-          toast.error(`Something went wrong
-          ${(error as Error).message || 'Error'}`)
-        );
+      const formattedPoints = formatPointsForDB(character, points, abilities, classInfo);
+
+      await firebaseCrud.update(id, formattedPoints);
     }
   };
 

@@ -1,11 +1,11 @@
+import { type ForwardedRef, forwardRef } from 'react';
 import {
   Unstable_NumberInput as BaseNumberInput,
-  NumberInputProps
+  type NumberInputProps
 } from '@mui/base/Unstable_NumberInput';
 import { Add, Remove } from '@mui/icons-material';
 import { Box, InputLabel, type SxProps, type Theme } from '@mui/material';
 import { styled } from '@mui/system';
-import * as React from 'react';
 
 interface CustomNumberInputProps {
   id: string;
@@ -16,9 +16,9 @@ interface CustomNumberInputProps {
   removeDisabled?: boolean;
 }
 
-export const NumberInput = React.forwardRef(function CustomNumberInput(
+export const NumberInput = forwardRef(function CustomNumberInput(
   { id, label, addDisabled, removeDisabled, ...props }: CustomNumberInputProps & NumberInputProps,
-  ref: React.ForwardedRef<HTMLDivElement>
+  ref: ForwardedRef<HTMLDivElement>
 ) {
   return (
     <Box

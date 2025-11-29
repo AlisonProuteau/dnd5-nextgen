@@ -1,4 +1,4 @@
-import { Box, Modal, Typography, type ModalProps } from '@mui/material';
+import { Box, Modal, type ModalProps, Typography } from '@mui/material';
 
 export function StyledModal(props: ModalProps) {
   const style = {

@@ -1,9 +1,9 @@
+import { Fragment } from 'react';
 import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { IconText } from '@shared/IconText';
-import { Fragment } from 'react';
-import type { DefaultProps } from 'src/components/Header';
+import type { DefaultProps } from 'src/pages/Header';
 import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
 
 export function Description({ character }: DefaultProps) {

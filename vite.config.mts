@@ -29,6 +29,7 @@ const viteConfig = defineConfig({
       '@assets': path.resolve(__dirname, './src/assets'),
       '@api/*': path.resolve(__dirname, './src/api'),
       '@utils/*': path.resolve(__dirname, './src/utils'),
+      '@hooks/*': path.resolve(__dirname, './src/hooks'),
       '@representations/*': path.resolve(__dirname, './src/representations'),
       '@shared/*': path.resolve(__dirname, './src/components/shared')
     }

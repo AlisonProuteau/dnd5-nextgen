@@ -1,4 +1,6 @@
-import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { Fragment, useCallback, useEffect, useState } from 'react';
+import toast from 'react-hot-toast';
+import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import {
   Box,
   Button,
@@ -9,29 +11,29 @@ import {
   Select,
   Typography
 } from '@mui/material';
+import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
+import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
+import { IconText } from '@shared/IconText';
+import {
+  type ChoiceObjectType,
+  type ChoiceSelection,
+  mapDataForForm,
+  mapTraits
+} from '@utils/character';
+import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { RaceGuide } from '@representations/guide.representation';
+import type { RaceGuide } from '@representations/guide.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { IconText } from '@shared/IconText';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { uniqBy } from 'lodash';
-import { Fragment, useCallback, useEffect, useState } from 'react';
-import toast from 'react-hot-toast';
-import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { useAuth } from 'src/providers/AuthProvider';
-import { getAbilityIcon } from '../CharacterCard/Characteristics/utils';
 import { CardCarousel } from './CardCarousel';
 import { Choices } from './Choices';
 import { HowToPlaySection } from './HowToPlaySection';
 import { SelectionDetails } from './SelectionDetails';
-import {
-  mapDataForForm,
-  mapTraits,
-  type ChoiceObjectType,
-  type ChoiceSelection
-} from './characterCreation.utils';
+
+const flexRowGap50 = { display: 'flex', flexDirection: 'row', columnGap: '50px' };
 
 interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
@@ -300,7 +302,7 @@ export function CharacterRaceForm({
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>Choose proficiencies</Typography>
           </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+          <Box sx={flexRowGap50}>
             <Choices
               choices={[
                 {
@@ -324,7 +326,7 @@ export function CharacterRaceForm({
           <Divider component="div" role="presentation" sx={{ paddingTop: '15px' }} variant="middle">
             <Typography>Choose Languages</Typography>
           </Divider>
-          <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+          <Box sx={flexRowGap50}>
             <Choices
               choices={[
                 raceInfo?.language_options
@@ -367,7 +369,7 @@ export function CharacterRaceForm({
               >
                 <Typography>Choose Bonus Abilities</Typography>
               </Divider>
-              <Box sx={{ display: 'flex', flexDirection: 'row', columnGap: '50px' }}>
+              <Box sx={flexRowGap50}>
                 <Choices
                   choices={[
                     {

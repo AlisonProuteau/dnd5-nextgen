@@ -91,6 +91,7 @@ src/
 ├── representations/      # TypeScript type definitions
 ├── tests/               # Test utilities and mocks
 └── utils/               # Utility functions
+└── hooks/               # Custom hooks
 ```
 
 ## Key Components
@@ -159,7 +160,8 @@ MIT License - see [package.json](package.json) for details.
 
 ### Current TODO List
 
-- [ ] Merge the code updates
+- [ ] Replace custom useForm by react-hook-form?
+- [ ] Merge money feature update
 - [ ] Add cypress code coverage
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor

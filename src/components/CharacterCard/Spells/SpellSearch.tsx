@@ -1,11 +1,11 @@
-import { getMatchingSpells, getSpellsForClass } from '@api/ressources';
+import { Fragment, useMemo, useState } from 'react';
 import { AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
-import { Character } from '@representations/user.representation';
-import type { TypeFromArray } from '@representations/utils.representation';
-import { ControledInput } from '@shared/ControledInput';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, useMemo, useState } from 'react';
+import { getMatchingSpells, getSpellsForClass } from '@api/ressources';
+import { ControledInput } from '@shared/ControledInput';
+import type { Character } from '@representations/user.representation';
+import type { TypeFromArray } from '@representations/utils.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
 interface SpellSearchProps {

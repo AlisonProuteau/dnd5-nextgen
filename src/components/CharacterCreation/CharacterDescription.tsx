@@ -1,7 +1,7 @@
 import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { ControledInput } from '@shared/ControledInput';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
-import { ControledInput } from '@shared/ControledInput';
 
 interface CharacterDescriptionProps {
   setFormData: (data: Partial<CharacterFormData>) => void;

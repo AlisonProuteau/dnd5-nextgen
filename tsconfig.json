@@ -21,10 +21,11 @@
       "@assets": ["src/assets"],
       "@api/*": ["./src/api/*"],
       "@utils/*": ["./src/utils/*"],
+      "@hooks/*": ["./src/hooks/*"],
       "@representations/*": ["./src/representations/*"],
       "@shared/*": ["./src/components/shared/*"]
     }
   },
-  "include": ["src", "vite.config.mts", ".eslintrc.json"],
+  "include": ["src", "vite.config.mts", "eslint.config.js"],
   "exclude": ["cypress.config.ts", "cypress"]
 }

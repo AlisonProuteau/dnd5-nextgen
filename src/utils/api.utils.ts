@@ -1,13 +1,12 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   and,
   collection,
   doc,
+  type FieldPath,
   getDoc,
   getDocs,
   query,
   where,
-  type FieldPath,
   type WhereFilterOp
 } from 'firebase/firestore';
 import { database } from 'src/firebase';

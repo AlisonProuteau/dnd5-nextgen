@@ -1,14 +1,13 @@
 /** Component parially Vibe coded using Gemini and ChatGPT */
-
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
 import BatchOptions from './components/BatchOptions';
 import CharacterForm from './components/CharacterForm';
 import PortraitDisplay from './components/PortraitDisplay';
 import PromptDisplay from './components/PromptDisplay';
-import { CharacterDetails } from './utils/character';
+import type { CharacterDetails } from './utils/character';
 
 export default function CharacterGenerator() {
   const [character, setCharacter] = useState<CharacterDetails | null>(null);

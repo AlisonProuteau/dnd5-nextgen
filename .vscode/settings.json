@@ -1,0 +1,23 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.addMissingImports": "explicit",
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.preferences.preferTypeOnlyAutoImports": false,
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.addMissingImports": "explicit",
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.addMissingImports": "explicit",
+      "source.fixAll.eslint": "explicit"
+    }
+  }
+}

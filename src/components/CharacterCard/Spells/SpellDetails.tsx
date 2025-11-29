@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -8,10 +9,9 @@ import {
   DialogTitle,
   Typography
 } from '@mui/material';
-import type { Spell } from '@representations/abilities/magic.representation';
 import { EquipmentLine } from '@shared/EquipmentLine';
-import { Fragment } from 'react';
-import { getDamageMinMax, getSlotMinMax } from '../utils';
+import { getDamageMinMax, getSlotMinMax } from '@utils/character';
+import type { Spell } from '@representations/abilities/magic.representation';
 
 interface SpellDetailsProps {
   spell: Spell;

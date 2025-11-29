@@ -1,11 +1,9 @@
-import type { ActionDamage } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { max, uniq } from 'lodash';
 
-export const randomInteger = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1)) + min;
-
-export const getAbilityScoreModifier = (score: number) => {
+/**
+ * Calculate ability score modifier based on D&D 5e rules
+ */
+export const getAbilityScoreModifier = (score: number): number => {
   if (score === 1) return -5;
   else if (score <= 3) return -4;
   else if (score <= 5) return -3;
@@ -26,7 +24,10 @@ export const getAbilityScoreModifier = (score: number) => {
   return 0;
 };
 
-const getPointScoreCost = (score: number) => {
+/**
+ * Calculate point buy cost for an ability score
+ */
+const getPointScoreCost = (score: number): number => {
   switch (score) {
     case 9:
       return 1;
@@ -47,9 +48,15 @@ const getPointScoreCost = (score: number) => {
   }
 };
 
-export const getAbilityPoints = (scores: Record<string, number>) =>
+/**
+ * Calculate total point buy cost for all ability scores
+ */
+export const getAbilityPoints = (scores: Record<string, number>): number =>
   Object.values(scores).reduce((total, current) => total + getPointScoreCost(current), 0);
 
+/**
+ * Calculate armor class based on equipment, features, and modifiers
+ */
 export const getArmorClass = (
   dexModifier: number,
   equipment?: (DefaultRepresentation & { count?: number })[],
@@ -58,7 +65,7 @@ export const getArmorClass = (
     expertises?: DefaultRepresentation[];
   })[],
   additionnalModifier?: number
-) => {
+): number => {
   let ac = 10 + dexModifier;
 
   if (equipment?.length) {
@@ -97,53 +104,4 @@ export const getArmorClass = (
   }
 
   return ac;
-};
-
-export const getSlotMinMax = (slots?: Record<number, string>, levels: number[] = []) => {
-  if (!slots) return undefined;
-
-  let latestValue: string | undefined = undefined;
-  const allLevelSize = max(levels) ?? parseInt(max(Object.keys(slots)) ?? '') ?? 0;
-  const allLevels: Record<number, string> = Array.from(
-    { length: allLevelSize },
-    (_, i) => i + 1
-  ).reduce((acc, level) => {
-    if (slots[level]) {
-      latestValue = slots[level];
-      return { ...acc, [level]: slots[level] };
-    } else return { ...acc, [level]: latestValue };
-  }, {});
-
-  const formattedLevels = levels.filter((l) => l > 0);
-  if (formattedLevels.length === 1) return allLevels[formattedLevels[0]];
-
-  const slotValuesSortedByLevel = uniq(
-    formattedLevels.length
-      ? formattedLevels
-          .sort()
-          .map((level) => allLevels[level])
-          .filter((level) => !!level)
-      : Object.entries(slots)
-          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-          .flatMap((val) => val[1])
-  );
-  if (!slotValuesSortedByLevel.length) return undefined;
-
-  return slotValuesSortedByLevel.length > 1
-    ? `${slotValuesSortedByLevel.at(0)} -> ${slotValuesSortedByLevel.at(-1)}`
-    : slotValuesSortedByLevel.at(0);
-};
-
-export const getDamageMinMax = (
-  damage: ActionDamage,
-  charLevel?: number,
-  slotLevels?: number[]
-) => {
-  if (slotLevels?.length)
-    return getSlotMinMax(
-      damage.damage_at_slot_level || damage.damage_at_character_level,
-      slotLevels
-    );
-  if (charLevel) return getSlotMinMax(damage.damage_at_character_level, [charLevel]);
-  else return getSlotMinMax(damage.damage_at_slot_level || damage.damage_at_character_level);
 };

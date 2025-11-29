@@ -10,9 +10,11 @@ import {
   Paper,
   Typography
 } from '@mui/material';
+import { useToggle } from '@hooks/useToggle';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import { useState } from 'react';
+
+const verticalSubWithMargin = { verticalAlign: 'sub', marginX: '5px' };
 
 interface AbilityProps {
   ability: AbilityScore;
@@ -22,7 +24,6 @@ interface AbilityProps {
   modifier?: number;
 }
 
-const CIRCLE_SIZE = '80px';
 export function AbilityComponent({
   ability,
   skills,
@@ -30,14 +31,14 @@ export function AbilityComponent({
   score,
   modifier = 0
 }: AbilityProps) {
-  const [isDialogOpen, setIsDialogueOpen] = useState(false);
+  const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
 
   return (
     <Box display="flex" data-testid={`ability-${ability.index}`}>
       <Badge
         badgeContent={
           savingThrows?.find(({ index }) => index === ability.index) ? (
-            <IconButton onClick={() => setIsDialogueOpen(true)}>
+            <IconButton onClick={openDialog}>
               <Shield color="info" aria-label="Saving Throw" />
             </IconButton>
           ) : null
@@ -77,15 +78,9 @@ export function AbilityComponent({
           return (
             <Box key={skill.index}>
               {isProficient ? (
-                <RadioButtonChecked
-                  fontSize="small"
-                  sx={{ verticalAlign: 'sub', marginX: '5px' }}
-                />
+                <RadioButtonChecked fontSize="small" sx={verticalSubWithMargin} />
               ) : (
-                <RadioButtonUnchecked
-                  fontSize="small"
-                  sx={{ verticalAlign: 'sub', marginX: '5px' }}
-                />
+                <RadioButtonUnchecked fontSize="small" sx={verticalSubWithMargin} />
               )}
               {skill.name.replace('Skill: ', '')}
             </Box>
@@ -93,11 +88,7 @@ export function AbilityComponent({
         })}
       </Box>
 
-      <Dialog
-        open={isDialogOpen}
-        onClose={() => setIsDialogueOpen(false)}
-        data-testid="saving-throws-dialog"
-      >
+      <Dialog open={isDialogOpen} onClose={closeDialog} data-testid="saving-throws-dialog">
         <DialogTitle>Saving Throws</DialogTitle>
         <DialogContent>
           <DialogContentText>{savingThrows?.map(({ name }) => name).join(', ')}</DialogContentText>

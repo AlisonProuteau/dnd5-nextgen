@@ -1,13 +1,13 @@
-import { getFeature } from '@api/ressources';
+import { useCallback } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
-import { Feature } from '@representations/abilities/feature.representation';
-import { DefaultRepresentation } from '@representations/common.representation';
-import { Character } from '@representations/user.representation';
-import { useQueries, UseQueryResult } from '@tanstack/react-query';
+import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
-import { useCallback } from 'react';
-import { blackList } from './utils';
+import { getFeature } from '@api/ressources';
+import { blackList } from '@utils/character/characteristics.utils';
+import type { Feature } from '@representations/abilities/feature.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 
 interface FeaturesDisplayProps {
   character: Partial<Character>;

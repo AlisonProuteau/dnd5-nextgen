@@ -1,9 +1,9 @@
-import type { Character, CharacterNote, UserData } from '@representations/user.representation';
-import { get, getAll } from '@utils/api.utils';
-import { VERSIONS, type Version } from '@utils/versions.constants';
+import toast from 'react-hot-toast';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import toast from 'react-hot-toast';
+import { get, getAll } from '@utils/api.utils';
+import { type Version, VERSIONS } from '@utils/constants';
+import type { Character, CharacterNote, UserData } from '@representations/user.representation';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from 'src/firebase';
 
 export const createUser = (email: string, password: string, displayName?: string) =>

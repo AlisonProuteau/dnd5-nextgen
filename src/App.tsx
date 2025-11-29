@@ -1,22 +1,22 @@
-import { CircularProgress } from '@mui/material';
 import { Fragment } from 'react';
 import {
+  type ErrorResponse,
   Navigate,
   Route,
   Routes,
   useLocation,
-  useRouteError,
-  type ErrorResponse
+  useRouteError
 } from 'react-router-dom';
-import { AuthPage } from './components/AuthPage';
+import { CircularProgress } from '@mui/material';
 import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
 import CharacterGenerator from './components/CharacterGenerator/CharacterGenerator';
-import { ContactForm } from './components/ContactForm';
-import { Header } from './components/Header';
-import { Home } from './components/Home';
-import { Settings } from './components/Settings';
+import { AuthPage } from './pages/AuthPage';
+import { ContactForm } from './pages/ContactForm';
+import { Header } from './pages/Header';
+import { Home } from './pages/Home';
+import { Settings } from './pages/Settings';
 import { useAuth } from './providers/AuthProvider';
 import { DataBasePage } from './providers/DataBasePage';
 

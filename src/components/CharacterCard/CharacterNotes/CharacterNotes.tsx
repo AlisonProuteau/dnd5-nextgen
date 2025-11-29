@@ -1,29 +1,45 @@
-import { getCharacterNotes } from '@api/users';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { ArchiveOutlined, NoteAdd, NoteAlt } from '@mui/icons-material';
 import { Box, Button, CircularProgress, Drawer, IconButton, Typography } from '@mui/material';
-import type { Character, CharacterNote } from '@representations/user.representation';
-import { ControledInput } from '@shared/ControledInput';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
-import { database } from 'src/firebase';
+import { getCharacterNotes } from '@api/users';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { useToggle } from '@hooks/useToggle';
+import { ControledInput } from '@shared/ControledInput';
+import type { Character, CharacterNote } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterNotesList } from './CharacterNotesList';
 
 interface CharacterNotesProps {
   isNoteOpen: boolean;
-  setIsNoteOpen: (open: boolean) => void;
+  closeNote: () => void;
   character: Character;
 }
 
-export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: CharacterNotesProps) {
+export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNotesProps) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const [editMode, setEditMode] = useState(false);
-  const [archiveMode, setArchiveMode] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    isOn: editMode,
+    turnOn: enterEditMode,
+    turnOff: exitEditMode,
+    setIsOn: setEditMode
+  } = useToggle(false);
+  const {
+    isOn: archiveMode,
+    toggle: toggleArchiveMode,
+    turnOff: exitArchiveMode
+  } = useToggle(false);
   const [note, setNote] = useState<Partial<CharacterNote>>({});
+
+  const firebaseCrud = useFirebaseCrud<CharacterNote>({
+    collectionPath: `users/{userId}/characters/${character.id}/notes`,
+    successMessages: {
+      create: 'Note created successfully',
+      update: 'Note updated successfully',
+      delete: 'Note deleted successfully'
+    }
+  });
 
   const {
     data: characterNotes,
@@ -38,7 +54,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
 
   useEffect(() => {
     if (isNoteOpen && !editMode) refetchCharacterNotes();
-    if (!isNoteOpen) setArchiveMode(false);
+    if (!isNoteOpen) exitArchiveMode();
   }, [isNoteOpen]);
 
   const isValid = useMemo(() => {
@@ -63,37 +79,22 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
 
   const saveNote = async () => {
     if (isValid && character.id && user?.uid) {
-      setIsLoading(true);
-
       let formattedNote = {
         ...note,
         content: note.content?.trim() || ''
       };
 
-      const path = `users/${user.uid}/characters/${character.id}/notes`;
-      try {
-        if (!formattedNote?.id) {
-          const document = doc(collection(database, path));
-          formattedNote = {
-            ...formattedNote,
-            id: document.id,
-            createdAt: new Date()
-          };
-          await setDoc(document, formattedNote);
-        } else {
-          const document = doc(database, path, formattedNote.id);
-          formattedNote = { ...formattedNote, updatedAt: new Date() };
-          await updateDoc(document, formattedNote);
-        }
-
-        setEditMode(false);
-        optimisticUpdateNotes(formattedNote as CharacterNote);
-      } catch (error) {
-        toast.error(`Something went wrong
-          ${(error as Error).message || 'Error'}`);
-      } finally {
-        setIsLoading(false);
+      let noteID: string | null = '';
+      if (formattedNote.id) {
+        formattedNote = { ...formattedNote, updatedAt: new Date() };
+        await firebaseCrud.update(formattedNote.id || '', formattedNote);
+      } else {
+        formattedNote = { ...formattedNote, createdAt: new Date() };
+        noteID = await firebaseCrud.create(formattedNote);
       }
+
+      optimisticUpdateNotes({ id: noteID, ...formattedNote } as CharacterNote);
+      exitEditMode();
     }
   };
 
@@ -105,17 +106,10 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
     const currentNote = characterNotes?.flat().filter((note) => note?.id === id)?.[0];
 
     if (currentNote && !editMode && character.id && user?.uid) {
-      setIsLoading(true);
-      const path = `users/${user.uid}/characters/${character.id}/notes`;
+      if (del) await firebaseCrud.remove(id);
+      else await firebaseCrud.update(id, content);
 
-      const document = doc(database, path, id);
-      await (del ? deleteDoc(document) : updateDoc(document, content))
-        .then(() => optimisticUpdateNotes({ ...currentNote, ...content }, del))
-        .catch((error) =>
-          toast.error(`Something went wrong
-          ${(error as Error).message || 'Error'}`)
-        )
-        .finally(() => setIsLoading(false));
+      optimisticUpdateNotes({ ...currentNote, ...content }, del);
     }
   };
 
@@ -123,7 +117,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
     <Drawer
       anchor="bottom"
       open={isNoteOpen}
-      onClose={() => setIsNoteOpen(false)}
+      onClose={closeNote}
       variant="temporary"
       data-testid={`notes-drawer-${character.id}`}
     >
@@ -136,10 +130,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
           {!editMode && !isCharacterNotesLoading && (
             <Box>
               {characterNotes?.filter(({ archived }) => archived).length ? (
-                <IconButton
-                  onClick={() => setArchiveMode((mode) => !mode)}
-                  data-testid="archive-toggle"
-                >
+                <IconButton onClick={toggleArchiveMode} data-testid="archive-toggle">
                   {archiveMode ? (
                     <NoteAlt fontSize="medium" />
                   ) : (
@@ -151,7 +142,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
                 <IconButton
                   onClick={() => {
                     setNote({});
-                    setEditMode(true);
+                    enterEditMode();
                   }}
                   data-testid="add-note"
                 >
@@ -186,7 +177,7 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
                 updateNote={updateNote}
                 setNote={setNote}
                 setEditMode={setEditMode}
-                isLoading={isLoading}
+                isLoading={firebaseCrud.isLoading}
                 showArchived={archiveMode}
               />
             )}
@@ -195,15 +186,15 @@ export function CharacterNotes({ isNoteOpen, setIsNoteOpen, character }: Charact
 
         <Box alignSelf="flex-end">
           {editMode ? (
-            <Button onClick={saveNote} disabled={!isValid || isLoading}>
+            <Button onClick={saveNote} disabled={!isValid || firebaseCrud.isLoading}>
               Save
             </Button>
           ) : null}
           <Button
-            disabled={isLoading}
+            disabled={firebaseCrud.isLoading}
             onClick={() => {
               setNote({});
-              editMode ? setEditMode(false) : setIsNoteOpen(false);
+              editMode ? exitEditMode() : closeNote();
             }}
           >
             {editMode ? 'Cancel' : 'Close'}

@@ -1,3 +1,4 @@
+import { type FormEvent, useEffect } from 'react';
 import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
@@ -9,43 +10,36 @@ import {
   Typography
 } from '@mui/material';
 import { Container } from '@mui/system';
-import { useQueryClient } from '@tanstack/react-query';
-import { VERSIONS, type Version } from '@utils/versions.constants';
-import { doc, updateDoc } from 'firebase/firestore';
-import { useEffect, useState, type FormEvent } from 'react';
-import toast from 'react-hot-toast';
-import { useNavigate } from 'react-router-dom';
-import { database } from 'src/firebase';
-import { useAuth } from '../providers/AuthProvider';
+import { useFirebaseCrud, useForm } from '@hooks/index';
+import { type Version, VERSIONS } from '@utils/constants';
+import { useAuth } from 'src/providers/AuthProvider';
+
+interface SettingsFormData {
+  version: Version;
+}
 
 export function Settings() {
   const { user, version: currentUserVersion } = useAuth();
-  const [selectedVersion, setSelectedVersion] = useState<Version>('Legacy');
-  const [isLoading, setIsLoading] = useState(false);
-  const client = useQueryClient();
-  const navigate = useNavigate();
+  const form = useForm<SettingsFormData>({
+    initialData: { version: 'Legacy' }
+  });
+  const firebaseCrud = useFirebaseCrud<SettingsFormData>({
+    collectionPath: 'users',
+    invalidateQueryKey: ['fetchUserData'],
+    successMessages: { update: 'Game version updated' },
+    redirect: { update: { path: '/' } }
+  });
 
-  const handleSubmitVersion = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitVersion = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsLoading(true);
+    if (!user?.uid) return;
 
-    if (user) {
-      updateDoc(doc(database, 'users', user.uid), { version: selectedVersion })
-        .then(async () => {
-          await client.invalidateQueries({ queryKey: ['fetchUserData', user.uid] });
-          navigate(`/`);
-          toast.success('Game version updated');
-        })
-        .catch((error) =>
-          toast.error(`Something went wrong ${(error as Error).message || 'Error'}`)
-        )
-        .finally(() => setIsLoading(false));
-    } else setIsLoading(false);
+    await firebaseCrud.update(user.uid, { version: form.formData.version });
   };
 
   useEffect(() => {
-    if (currentUserVersion && currentUserVersion !== selectedVersion)
-      setSelectedVersion(currentUserVersion);
+    if (currentUserVersion && currentUserVersion !== form.formData.version)
+      form.setFormData({ version: currentUserVersion });
   }, [currentUserVersion]);
 
   return (
@@ -55,15 +49,16 @@ export function Settings() {
         <Typography>Email: {user?.email}</Typography>
       </div>
       <form onSubmit={handleSubmitVersion} data-testid="version-form">
-        <FormControl fullWidth disabled={!user || isLoading}>
+        <FormControl fullWidth disabled={!user || firebaseCrud.isLoading}>
           <InputLabel htmlFor="version-select">Version</InputLabel>
           <Select
             id="version-select"
-            name="version"
-            value={selectedVersion}
+            value={form.formData.version}
             label="Version"
+            onChange={({ target }) =>
+              form.setFormData({ version: (target.value as Version) || 'Legacy' })
+            }
             data-testid="version-select"
-            onChange={({ target }) => setSelectedVersion((target.value as Version) || null)}
           >
             {VERSIONS?.map((current) => (
               <MenuItem key={`version-${current}`} value={current} data-testid="version-option">
@@ -76,12 +71,12 @@ export function Settings() {
             sx={{ marginTop: '1rem' }}
             type="submit"
             variant="contained"
-            disabled={selectedVersion !== 'Legacy'}
+            disabled={form.formData.version !== 'Legacy'}
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Submit'}
+            {firebaseCrud.isLoading ? <CircularProgress size={24} /> : 'Submit'}
           </Button>
 
-          {selectedVersion !== 'Legacy' && (
+          {form.formData.version !== 'Legacy' && (
             <Typography
               color="warning"
               variant="overline"

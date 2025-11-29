@@ -1,5 +1,6 @@
-import { getClassInfo } from '@api/ressources';
-import { getCharacter } from '@api/users';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSwipeable } from 'react-swipeable';
 import { EditRounded, EventNote, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
@@ -11,13 +12,13 @@ import {
   MobileStepper,
   Typography
 } from '@mui/material';
-import type { Classes } from '@representations/character/class.representation';
 import { useQuery } from '@tanstack/react-query';
-import { button, fab, linkButton } from '@utils/style.utils';
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useSwipeable } from 'react-swipeable';
-import { useAuth } from '../../providers/AuthProvider';
+import { getClassInfo } from '@api/ressources';
+import { getCharacter } from '@api/users';
+import { useToggle } from '@hooks/useToggle';
+import { button, fab, linkButton } from '@utils/ui';
+import type { Classes } from '@representations/character/class.representation';
+import { useAuth } from 'src/providers/AuthProvider';
 import { Characteristics } from './Characteristics/CharacteristicsStep';
 import { CharacterNotes } from './CharacterNotes/CharacterNotes';
 import { Description } from './Description/DescriptionStep';
@@ -32,7 +33,7 @@ export function CharacterContainer() {
   const [id, setId] = useState<string>();
   const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
-  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const { isOn: isNoteOpen, turnOn: openNote, turnOff: closeNote } = useToggle(false);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -172,18 +173,14 @@ export function CharacterContainer() {
       <Fab
         size="small"
         sx={{ ...button, ...fab, marginRight: 6 }}
-        onClick={() => setIsNoteOpen(true)}
+        onClick={openNote}
         disabled={!character?.id}
         data-testid={`notes-${character?.id}`}
       >
         <EventNote />
       </Fab>
       {character && (
-        <CharacterNotes
-          isNoteOpen={isNoteOpen}
-          setIsNoteOpen={setIsNoteOpen}
-          character={character}
-        />
+        <CharacterNotes isNoteOpen={isNoteOpen} closeNote={closeNote} character={character} />
       )}
     </Container>
   );

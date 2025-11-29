@@ -2,21 +2,26 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
 
-// TODO: move all the should be disabled before the blur
 describe(`Contact Form End-to-End`, () => {
+  const isMobile = Cypress.config('viewportWidth') === 375;
+  const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;
   const charName = 'My Test Character';
 
   beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, undefined, { name: charName });
+    cy.callFirestore('delete', 'tickets');
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
+
+    cy.createTestCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName });
     cy.login(Cypress.testUser.uid);
     cy.visit('/contact');
+    cy.waitForLoading();
   });
 
   it('should handle complete feedback contact workflow with validation, anonymous mode, and submission', () => {
     // Test: Setup & Navigation - Verify feedback form (default selection)
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('be.visible');
-    // cy.get('button[type="submit"]').should('be.disabled'); // TODO: remove when fixed
+    cy.get('button[type="submit"]').should('be.disabled');
 
     // Test: Validation Testing - Required field validation
     cy.get('#message').clear().blur();
@@ -24,12 +29,8 @@ describe(`Contact Form End-to-End`, () => {
     cy.getByTestId('message-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
 
-    // Test: anonymous mode functionality
+    // Test: Submit anonymous feedback
     cy.get('#anonymous').should('be.checked');
-    cy.get('#anonymous').uncheck();
-    cy.get('#anonymous').should('not.be.checked');
-
-    // Test: Complete anonymous form
     cy.get('#message').type('Anonymous feedback message');
     cy.get('button[type="submit"]').should('be.enabled');
 
@@ -46,25 +47,68 @@ describe(`Contact Form End-to-End`, () => {
     // cy.wait('@submitError');
     // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
-    // Test: Success Workflow - Switch back to non-anonymous and complete submission
-    cy.get('#anonymous').check();
-    cy.get('#anonymous').should('be.checked');
-    cy.get('#message').clear().type('This is comprehensive feedback');
-
-    // Test: loading state during submission
+    // Test: loading state during anonymous submission
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
       { delay: 1000 }
-    ).as('submit');
-    cy.get('button[type="submit"]').click();
+    ).as('submitAnonymous');
 
+    cy.get('button[type="submit"]').click();
     cy.get('button[type="submit"]').should('be.disabled');
     cy.get('[data-testid="loading"], [role="progressbar"]').should('be.visible');
-    cy.wait('@submit');
+    cy.wait('@submitAnonymous');
     cy.getByRole('status', 'Ticket created').should('be.visible');
     cy.waitForLoading();
 
-    // TODO: Check data persistence in database
+    // Test: Ticket should be saved and NOT include userEmail
+    cy.callFirestore('get', 'tickets', {
+      where: ['message', '==', 'Anonymous feedback message']
+    }).then((docs) => {
+      cy.wrap(docs.length).should('eq', 1);
+
+      const ticketData = docs[0];
+      cy.wrap(ticketData.userEmail).should('be.undefined');
+      cy.wrap(ticketData.status).should('eq', 'open');
+      cy.wrap(ticketData.type).should('eq', 'Feedback');
+      cy.wrap(ticketData.version).should('eq', 'Legacy');
+    });
+
+    // Test: Form should be cleared after submission
+    cy.get('#type').should('contain.text', 'Feedback');
+    cy.get('#message').should('have.value', '');
+
+    // Test: Submit non-anonymous feedback
+    cy.get('#anonymous').should('be.checked');
+    cy.get('#anonymous').uncheck();
+    cy.get('#anonymous').should('not.be.checked');
+    cy.get('#message').type('This is feedback is not anonymous');
+    cy.get('button[type="submit"]').should('be.enabled');
+
+    // Test: loading state during non-anonymous submission
+    cy.intercept(
+      { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+      { delay: 1000 }
+    ).as('submitWithEmail');
+
+    cy.get('button[type="submit"]').click();
+    cy.get('button[type="submit"]').should('be.disabled');
+    cy.get('[data-testid="loading"], [role="progressbar"]').should('be.visible');
+    cy.wait('@submitWithEmail');
+    cy.getByRole('status', 'Ticket created').should('be.visible');
+    cy.waitForLoading();
+
+    // Test: Ticket should be saved and include user id
+    cy.callFirestore('get', 'tickets', {
+      where: ['message', '==', 'This is feedback is not anonymous']
+    }).then((docs) => {
+      cy.wrap(docs.length).should('eq', 1);
+
+      const ticketData = docs[0];
+      cy.wrap(ticketData.userId).should('eq', Cypress.testUser.uid);
+      cy.wrap(ticketData.status).should('eq', 'open');
+      cy.wrap(ticketData.type).should('eq', 'Feedback');
+      cy.wrap(ticketData.version).should('eq', 'Legacy');
+    });
 
     // Test: Cleanup - Form should be cleared
     cy.get('#type').should('contain.text', 'Feedback');
@@ -78,7 +122,7 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#area').should('be.visible');
     cy.get('#message').should('be.visible');
     cy.get('#reproSteps').should('be.visible');
-    // cy.get('button[type="submit"]').should('be.disabled'); // TODO: remove when fixed
+    cy.get('button[type="submit"]').should('be.disabled');
 
     // Test: Validation Testing - Required field validation
     cy.get('#message').clear().blur();
@@ -151,7 +195,26 @@ describe(`Contact Form End-to-End`, () => {
     cy.getByRole('status', 'Ticket created').should('be.visible');
     cy.waitForLoading();
 
-    // TODO: Check data persistence in database
+    // Test: Ticket should be saved
+    cy.callFirestore('get', 'tickets', {
+      where: ['message', '==', 'Resolved bug summary']
+    }).then((docs) => {
+      cy.wrap(docs.length).should('eq', 1);
+
+      const ticketData = docs[0];
+      cy.wrap(ticketData.userId).should('eq', Cypress.testUser.uid);
+      cy.wrap(ticketData.type).should('eq', 'Bug');
+      cy.wrap(ticketData.severity).should('eq', 'Major');
+      cy.wrap(ticketData.area).should('eq', 'Custom Bug Area');
+      cy.wrap(ticketData.corrupted).should('eq', true);
+      cy.wrap(ticketData.character).should('eq', charId);
+      cy.wrap(ticketData.reproSteps).should(
+        'eq',
+        '1. Steps to reproduce after fix\n2. Additional step'
+      );
+      cy.wrap(ticketData.status).should('eq', 'open');
+      cy.wrap(ticketData.version).should('eq', 'Legacy');
+    });
 
     // Test: Cleanup - Form should be cleared
     cy.get('#type').should('contain.text', 'Feedback');
@@ -163,7 +226,7 @@ describe(`Contact Form End-to-End`, () => {
     cy.selectOption('#type', 'Request');
     cy.get('#requestArea').should('be.visible');
     cy.get('#message').should('be.visible');
-    // cy.get('button[type="submit"]').should('be.disabled'); // TODO: remove when fixed
+    cy.get('button[type="submit"]').should('be.disabled');
 
     // Test: Validation Testing - Required field validation
     cy.selectOption('#requestArea', 'Content');
@@ -179,7 +242,7 @@ describe(`Contact Form End-to-End`, () => {
 
     // Test: Complete required fields
     cy.get('#requestContent').type('Please add a dice roller feature');
-    // cy.get('button[type="submit"]').should('be.disabled'); // TODO: remove when fixed
+    cy.get('button[type="submit"]').should('be.disabled');
     cy.get('#message').type('This is additional details for the request');
     cy.get('button[type="submit"]').should('be.enabled');
 
@@ -196,6 +259,12 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('[data-value="Content"]').click();
     cy.get('#requestContent').clear().type("Please add more character backgrounds from Tasha's");
 
+    // Test: Submit request with contact permission
+    cy.get('#canContact').should('not.be.checked');
+    cy.get('#canContact').check();
+    cy.get('#canContact').should('be.checked');
+    cy.get('button[type="submit"]').should('be.enabled');
+
     // Test: Error Handling - submission error
     // TODO: fix to stop trying and actually fail
     // cy.intercept(
@@ -209,7 +278,7 @@ describe(`Contact Form End-to-End`, () => {
     // cy.wait('@submitError');
     // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
-    // Test: Success Workflow - Complete successful submission
+    // Test: Success Workflow - Submit with contact permission
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
       { delay: 1000 }
@@ -222,7 +291,63 @@ describe(`Contact Form End-to-End`, () => {
     cy.getByRole('status', 'Ticket created').should('be.visible');
     cy.waitForLoading();
 
-    // TODO: Check data persistence in database
+    // Test: Ticket should be saved with user email
+    cy.callFirestore('get', 'tickets', {
+      where: ['message', '==', 'This is additional details for the request']
+    }).then((docs) => {
+      cy.wrap(docs.length).should('eq', 1);
+
+      const ticketData = docs[0];
+      cy.wrap(ticketData.userEmail).should('eq', Cypress.testUser.email);
+      cy.wrap(ticketData.type).should('eq', 'Request');
+      cy.wrap(ticketData.requestArea).should('eq', 'Content');
+      cy.wrap(ticketData.requestContent).should(
+        'eq',
+        "Please add more character backgrounds from Tasha's"
+      );
+      cy.wrap(ticketData.canContact).should('eq', true);
+      cy.wrap(ticketData.status).should('eq', 'open');
+      cy.wrap(ticketData.version).should('eq', 'Legacy');
+    });
+
+    // Test: Form should be cleared after submission
+    cy.get('#type').should('contain.text', 'Feedback');
+    cy.get('#message').should('have.value', '');
+
+    // Test: Submit another request WITH contact permission
+    cy.selectOption('#type', 'Request');
+    cy.selectOption('#requestArea', 'Feature');
+    cy.get('#message').type('Feature request with contact permission');
+
+    // Test: Uncheck anonymous and check canContact
+    cy.get('#canContact').should('not.be.checked');
+
+    cy.intercept(
+      { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+      { delay: 1000 }
+    ).as('submit');
+    cy.get('button[type="submit"]').click();
+
+    cy.get('button[type="submit"]').should('be.disabled');
+    cy.get('[data-testid="loading"], [role="progressbar"]').should('be.visible');
+    cy.wait('@submit');
+    cy.getByRole('status', 'Ticket created').should('be.visible');
+    cy.waitForLoading();
+
+    // Test: Ticket should be saved without user Email
+    cy.callFirestore('get', 'tickets', {
+      where: ['message', '==', 'Feature request with contact permission']
+    }).then((docs) => {
+      cy.wrap(docs.length).should('eq', 1);
+
+      const ticketData = docs[0];
+      cy.wrap(ticketData.userEmail).should('be.undefined');
+      cy.wrap(ticketData.type).should('eq', 'Request');
+      cy.wrap(ticketData.requestArea).should('eq', 'Feature');
+      cy.wrap(ticketData.canContact).should('be.undefined');
+      cy.wrap(ticketData.status).should('eq', 'open');
+      cy.wrap(ticketData.version).should('eq', 'Legacy');
+    });
 
     // Test: Cleanup - Form should be cleared
     cy.get('#type').should('contain.text', 'Feedback');

@@ -1,17 +1,18 @@
-import { getEquipment } from '@api/ressources';
+import { Fragment, useCallback, useState } from 'react';
 import { MoneyIcon, WeightIcon } from '@assets';
 import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
-import { Equipment } from '@representations/campaign/equipment.representation';
-import { IconText } from '@shared/IconText';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
-import { Fragment, useCallback, useState } from 'react';
-import type { DefaultProps } from 'src/components/Header';
+import { getEquipment } from '@api/ressources';
+import { useToggle } from '@hooks/useToggle';
+import { IconText } from '@shared/IconText';
+import type { Equipment } from '@representations/campaign/equipment.representation';
+import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
 
 export function Equipments({ character }: DefaultProps) {
-  const [isDialogOpen, setIsDialogueOpen] = useState(false);
+  const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment>();
 
   const { data: equipmentList } = useQueries({
@@ -67,14 +68,14 @@ export function Equipments({ character }: DefaultProps) {
               equipmentList={category}
               onClick={(equipment) => {
                 setSelectedEquipment(equipment);
-                setIsDialogueOpen(true);
+                openDialog();
               }}
             />
           </CardContent>
         </Card>
       ))}
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogueOpen(false)} fullWidth>
+      <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth>
         {selectedEquipment && <EquipmentCard selectedEquipment={selectedEquipment} />}
       </Dialog>
     </Fragment>

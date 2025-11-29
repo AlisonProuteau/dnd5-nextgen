@@ -1,4 +1,4 @@
-import { DefaultRepresentation } from './common.representation';
+import type { DefaultRepresentation } from './common.representation';
 
 export interface GuideType {
   index: string;

@@ -2,5 +2,22 @@
   "singleQuote": true,
   "printWidth": 100,
   "htmlWhitespaceSensitivity": "strict",
-  "trailingComma": "none"
+  "trailingComma": "none",
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": [
+    "^react$",
+    "^react-.*",
+    "^(?!@(api|hooks|shared|utils|representations)/|src/|[./]).*",
+    "^@api/.*",
+    "^@hooks/.*",
+    "^@shared/.*",
+    "^@utils/.*",
+    "^@representations/.*",
+    "^src/.*",
+    "^[./]"
+  ],
+  "importOrderSeparation": false,
+  "importOrderSortSpecifiers": true,
+  "importOrderGroupNamespaceSpecifiers": true,
+  "importOrderCaseInsensitive": true
 }
