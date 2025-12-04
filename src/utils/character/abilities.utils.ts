@@ -113,18 +113,8 @@ export const getArmorClass = (
  * Consolidates a purse of mixed coins into the most efficient denomination breakdown.
  * Converts all coins to their copper value, then redistributes them using the fewest
  * possible coins (prioritizing gold over silver over copper).
- *
- * @example
- * // Convert 150 copper pieces to optimal denominations
- * consolidateCoins({ cp: 150 })
- * // Returns: { gp: 1, sp: 5, cp: 0 }
- *
- * @example
- * // Consolidate mixed coins
- * consolidateCoins({ gp: 2, sp: 15, cp: 25 })
- * // Returns: { gp: 3, sp: 7, cp: 5 }
  */
-export const consolidateCoins = (purse: Partial<Record<MoneyUnitType, number>>) => {
+const consolidateCoins = (purse: Partial<Record<MoneyUnitType, number>>) => {
   // Direct conversion using fixed rates (10 copper = 1 silver, 10 silver = 1 gold)
   const totalCopper = (purse.gp || 0) * 100 + (purse.sp || 0) * 10 + (purse.cp || 0);
 
@@ -139,18 +129,8 @@ export const consolidateCoins = (purse: Partial<Record<MoneyUnitType, number>>) 
  * Adds or removes money from a purse and returns the remaining consolidated coins.
  * Handles both positive (add) and negative (remove) amounts. When removing money,
  * it will automatically break down larger denominations if needed.
- *
- * @example
- * // Add money to purse
- * updatePurse({ gp: 5, sp: 3, cp: 7 }, { gp: 2, sp: 5 })
- * // Returns: { gp: 7, sp: 8, cp: 7 }
- *
- * @example
- * // Remove money from purse (using negative values)
- * updatePurse({ gp: 5, sp: 3, cp: 7 }, { gp: -1, sp: -8 })
- * // Returns: { gp: 3, sp: 5, cp: 7 }
  */
-export const updatePurse = (
+const updatePurse = (
   purse: Record<MoneyUnitType, number>,
   amount: Partial<Record<MoneyUnitType, number>>
 ): Record<MoneyUnitType, number> => {
@@ -165,22 +145,43 @@ export const updatePurse = (
 };
 
 /**
+ * Adds money to a purse.
+ * Automatically consolidates the purse after addition.
+ */
+export const addMoney = (
+  purse: Record<MoneyUnitType, number> = { cp: 0, sp: 0, gp: 0 },
+  amountToAdd: Partial<Record<MoneyUnitType, number>>
+): Record<MoneyUnitType, number> => {
+  return updatePurse(purse, amountToAdd);
+};
+
+/**
+ * Removes money from a purse.
+ * Automatically breaks down larger denominations if needed.
+ * Throws error if funds in purse is insufficient for this transaction.
+ */
+export const removeMoney = (
+  purse: Record<MoneyUnitType, number> = { cp: 0, sp: 0, gp: 0 },
+  itemCost: Partial<Record<MoneyUnitType, number>>
+): Record<MoneyUnitType, number> => {
+  // Use negative values to subtract the cost from the purse
+  const negativeAmount: Partial<Record<MoneyUnitType, number>> = {
+    gp: -(itemCost.gp || 0),
+    sp: -(itemCost.sp || 0),
+    cp: -(itemCost.cp || 0)
+  };
+
+  return updatePurse(purse, negativeAmount);
+};
+
+/**
  * Sells an item and adds the proceeds to a purse based on D&D 5e selling rules:
  * - Equipment sells for half its original cost
  * - Trade goods and valuables (gems, art objects) retain full value
  * - Magic items sell based on rarity pricing
- * @example
- * // Sell equipment (half value)
- * sellItem({ gp: 10 }, { gp: 50 }, 'equipment')
- * // Returns: { gp: 35, sp: 0, cp: 0 } (10 + 25)
- *
- * @example
- * // Sell trade goods (full value)
- * sellItem({ sp: 20 }, { gp: 2, sp: 5 }, 'trade-goods')
- * // Returns: { gp: 2, sp: 25, cp: 0 }
  */
 export const sellItem = (
-  purse: Record<MoneyUnitType, number>,
+  purse: Record<MoneyUnitType, number> = { cp: 0, sp: 0, gp: 0 },
   itemCost: Partial<Record<MoneyUnitType, number>>,
   itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-item'
 ): Record<MoneyUnitType, number> => {
@@ -201,37 +202,4 @@ export const sellItem = (
   }
 
   return updatePurse(purse, { cp: saleValueCopper }) || purse;
-};
-
-/**
- * Purchases an item by deducting its cost from a purse and returns the remaining coins.
- * Automatically breaks down larger denominations if needed to make the purchase.
- *
- * @example
- * // Buy a 15 gp sword
- * buyItem({ gp: 20, sp: 5, cp: 10 }, { gp: 15 })
- * // Returns: { gp: 5, sp: 5, cp: 10 }
- *
- * @example
- * // Buy expensive item requiring change-making
- * buyItem({ gp: 10 }, { gp: 3, sp: 7, cp: 5 })
- * // Returns: { gp: 6, sp: 2, cp: 5 }
- *
- * @example
- * // Insufficient funds throws error
- * buyItem({ gp: 1 }, { gp: 5 })
- * // Throws: Error('Insufficient funds in purse for this transaction.')
- */
-export const buyItem = (
-  purse: Record<MoneyUnitType, number>,
-  itemCost: Partial<Record<MoneyUnitType, number>>
-): Record<MoneyUnitType, number> => {
-  // Use negative values to subtract the cost from the purse
-  const negativeAmount: Partial<Record<MoneyUnitType, number>> = {
-    gp: -(itemCost.gp || 0),
-    sp: -(itemCost.sp || 0),
-    cp: -(itemCost.cp || 0)
-  };
-
-  return updatePurse(purse, negativeAmount);
 };
