@@ -27,9 +27,9 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
         {`${getCount(equipment.count, equipment.quantity)} ${equipment.name}`}
       </Typography>
       {(equipment.damage || equipment.two_handed_damage) && (
-        <Box display="flex" paddingLeft="50px" gap="5px">
+        <Box display="flex" paddingLeft="min(50px, 15%)" gap="5px" alignItems="center">
           <BladeIcon height="20px" width="20px" fill="white" />
-          <Typography>
+          <Typography width="100%">
             {equipment.damage?.damage_dice} {equipment.damage?.damage_type.name}
           </Typography>
         </Box>

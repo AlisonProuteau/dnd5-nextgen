@@ -1,9 +1,12 @@
 import { CoinsIcon } from '@assets';
 import { Box, type BoxProps, Typography } from '@mui/material';
 import { getCoinColor } from '@utils/ui';
-import { MoneyUnits } from '@representations/campaign/equipment.representation';
+import { MoneyUnits, type MoneyUnitType } from '@representations/campaign/equipment.representation';
 
-export function MoneyDisplay({ purse, ...props }: { purse?: Record<string, number> } & BoxProps) {
+export function MoneyDisplay({
+  purse,
+  ...props
+}: { purse?: Record<MoneyUnitType, number> } & BoxProps) {
   return (
     <Box {...props} sx={{ ...props.sx, '& > *': { my: '-5px' } }} data-testid="inventory-money">
       {MoneyUnits.map((coin) => (

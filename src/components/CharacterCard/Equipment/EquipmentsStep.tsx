@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useState } from 'react';
 import { WeightIcon } from '@assets';
-import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
 import { getEquipment } from '@api/ressources';
@@ -10,10 +10,12 @@ import type { Equipment } from '@representations/campaign/equipment.representati
 import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
+import { Market } from './Market';
 import { MoneyDisplay } from './MoneyDisplay';
 
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
+  const { isOn: isMarketOpen, turnOn: openMarket, turnOff: closeMarket } = useToggle(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment>();
 
   const { data: equipmentList } = useQueries({
@@ -55,12 +57,20 @@ export function Equipments({ character }: DefaultProps) {
         <MoneyDisplay justifySelf="center" purse={character.money} />
       </Box>
 
-      {Object.values(equipmentList).map((category) => (
-        <Card key={category[0]?.equipment_category.index}>
+      <Button
+        variant="outlined"
+        sx={{ alignSelf: 'center', marginBottom: '10px' }}
+        onClick={openMarket}
+      >
+        Market
+      </Button>
+
+      {Object.entries(equipmentList).map(([category, equipment]) => (
+        <Card key={category}>
           <CardContent>
-            <Typography variant="h5">{category[0]?.equipment_category.name || ''}</Typography>
+            <Typography variant="h5">{equipment[0].equipment_category.name || ''}</Typography>
             <EquipmentList
-              equipmentList={category}
+              equipmentList={equipment}
               onClick={(equipment) => {
                 setSelectedEquipment(equipment);
                 openDialog();
@@ -72,6 +82,13 @@ export function Equipments({ character }: DefaultProps) {
 
       <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth>
         {selectedEquipment && <EquipmentCard selectedEquipment={selectedEquipment} />}
+      </Dialog>
+
+      <Dialog open={isMarketOpen} onClose={closeMarket} fullWidth>
+        <Market
+          purse={character.money || { cp: 0, sp: 0, gp: 0 }}
+          ownedEquipment={Object.values(equipmentList).flat()}
+        />
       </Dialog>
     </Fragment>
   );
