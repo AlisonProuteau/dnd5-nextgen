@@ -12,9 +12,11 @@ type Content = {
   quantity: number;
 };
 
+export const MoneyUnits = ['gp', 'sp', 'cp'] as const;
+export type MoneyUnitType = (typeof MoneyUnits)[number];
 type Cost = {
   quantity: number;
-  unit: string;
+  unit: MoneyUnitType;
 };
 
 type Range = {

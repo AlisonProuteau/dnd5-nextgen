@@ -17,7 +17,7 @@ export { default as HealIcon } from './heal.svg?react';
 export { default as HeightIcon } from './height.svg?react';
 export { default as HitPointsIcon } from './hitpoints.svg?react';
 export { default as MaleIcon } from './male.svg?react';
-export { default as MoneyIcon } from './money.svg?react';
+export { default as CoinPurse } from './money.svg?react';
 export { default as SpellbookOpenIcon } from './open-spellbook.svg?react';
 export { default as OtherIcon } from './other.svg?react';
 export { default as PrepareIcon } from './prepare.svg?react';

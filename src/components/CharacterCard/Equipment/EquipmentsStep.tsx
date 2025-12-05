@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useState } from 'react';
-import { MoneyIcon, WeightIcon } from '@assets';
+import { WeightIcon } from '@assets';
 import { Box, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
@@ -10,6 +10,7 @@ import type { Equipment } from '@representations/campaign/equipment.representati
 import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentList } from './EquipmentList';
+import { MoneyDisplay } from './MoneyDisplay';
 
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
@@ -41,14 +42,6 @@ export function Equipments({ character }: DefaultProps) {
     <Fragment>
       <Box data-testid="equipment-section" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
-          label="GP"
-          value={character.armorClass}
-          Icon={MoneyIcon}
-          color="grey"
-          top="34px"
-          testid="inventory-money"
-        />
-        <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
             (total, equipment) => total + (equipment.weight || 0),
@@ -58,6 +51,8 @@ export function Equipments({ character }: DefaultProps) {
           color="grey"
           testid="inventory-weight"
         />
+
+        <MoneyDisplay justifySelf="center" purse={character.money} />
       </Box>
 
       {Object.values(equipmentList).map((category) => (

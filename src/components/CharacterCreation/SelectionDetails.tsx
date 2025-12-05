@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
 import { scrollOnOpen } from '@utils/ui';
+import { MoneyUnits } from '@representations/campaign/equipment.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
 import type { Race } from '@representations/character/race.representation';
@@ -185,7 +186,7 @@ export function SelectionDetails({
                       ...e.equipment,
                       quantity: e.quantity,
                       equipment_category: { index: 'e', name: 'Equipment' },
-                      cost: { quantity: 0, unit: 'gp' },
+                      cost: { quantity: 0, unit: MoneyUnits[0] },
                       desc: []
                     }))}
                   />

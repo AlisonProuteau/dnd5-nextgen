@@ -15,6 +15,7 @@ import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getProperty } from '@api/ressources';
 import { EquipmentLine } from '@shared/EquipmentLine';
+import { getCoinColor } from '@utils/ui';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -49,7 +50,11 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         </Box>
         <Box display="flex" flexDirection="column" alignItems="flex-end">
           <Box display="flex" gap="5px">
-            <CoinsIcon height="20px" width="20px" fill="goldenrod" />
+            <CoinsIcon
+              height="20px"
+              width="20px"
+              fill={getCoinColor(selectedEquipment.cost.unit)}
+            />
             <Typography>
               {selectedEquipment.cost.quantity}
               {selectedEquipment.cost.unit}

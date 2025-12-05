@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
+import { CoinPurse } from '@assets';
 import { EditRounded, EventNote, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
 import {
   Box,
@@ -23,6 +24,7 @@ import { Characteristics } from './Characteristics/CharacteristicsStep';
 import { CharacterNotes } from './CharacterNotes/CharacterNotes';
 import { Description } from './Description/DescriptionStep';
 import { Equipments } from './Equipment/EquipmentsStep';
+import { MoneyManager } from './Equipment/MoneyManager';
 import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
@@ -34,6 +36,11 @@ export function CharacterContainer() {
   const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
   const { isOn: isNoteOpen, turnOn: openNote, turnOff: closeNote } = useToggle(false);
+  const {
+    isOn: isMoneyDialogOpen,
+    turnOn: openMoneyDialog,
+    turnOff: closeMoneyDialog
+  } = useToggle(false);
 
   const { data: character, isFetching: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -53,7 +60,7 @@ export function CharacterContainer() {
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
 
   useEffect(() => {
-    if (id && !isCharacterLoading && character && !character?.abilityScores)
+    if (id && !isCharacterLoading && character && !character.abilityScores)
       navigate('points', { replace: true, state: { characterId: id } });
     else if (id && !isCharacterLoading && !character)
       navigate('/', { state: { characterId: undefined } });
@@ -99,9 +106,9 @@ export function CharacterContainer() {
     onSwipedRight: handleBack
   });
 
-  return (
+  return character ? (
     <Container sx={{ paddingBottom: '30px' }} data-testid="character-container">
-      {character?.id && character.abilityScores ? (
+      {character.abilityScores ? (
         <Fragment>
           <Box
             display="flex"
@@ -174,14 +181,26 @@ export function CharacterContainer() {
         size="small"
         sx={{ ...button, ...fab, marginRight: 6 }}
         onClick={openNote}
-        disabled={!character?.id}
-        data-testid={`notes-${character?.id}`}
+        data-testid={`notes-${character.id}`}
       >
         <EventNote />
       </Fab>
-      {character && (
-        <CharacterNotes isNoteOpen={isNoteOpen} closeNote={closeNote} character={character} />
-      )}
+      <CharacterNotes isNoteOpen={isNoteOpen} closeNote={closeNote} character={character} />
+
+      <Fab
+        size="small"
+        sx={{ ...button, ...fab, padding: 0.6, marginRight: 12 }}
+        onClick={openMoneyDialog}
+        data-testid={`coin-purse-${character.id}`}
+      >
+        <CoinPurse fill="currentColor" width="100%" height="100%" />
+      </Fab>
+      <MoneyManager
+        characterId={character.id}
+        isMoneyDialogOpen={isMoneyDialogOpen}
+        closeMoneyDialog={closeMoneyDialog}
+        currentAmount={character.money}
+      />
     </Container>
-  );
+  ) : null;
 }
