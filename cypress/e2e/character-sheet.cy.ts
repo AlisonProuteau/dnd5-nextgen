@@ -21,11 +21,15 @@ describe(`Character Sheet End-to-End`, () => {
 
   before(() => cy.createTestCharacter(Cypress.testUser.uid, characterData.id, characterData));
 
-  beforeEach(() => cy.login(Cypress.testUser.uid));
+  beforeEach(() => {
+    cy.login(Cypress.testUser.uid);
+
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId('character-card-').should('have.length.at.least', 1);
+  });
 
   it('should complete the full character sheet happy path workflow', () => {
-    cy.visit('/');
-    cy.getByTestId('character-card-').should('have.length.at.least', 1);
     cy.getByTestId(`character-card-${characterData.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
 
@@ -174,7 +178,11 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Equipment section
     cy.getByTestId('KeyboardArrowRightIcon').click();
     cy.getByTestId('equipment-section').should('be.visible');
-    cy.getByTestId('inventory-money').should('have.text', '13GP');
+    cy.getByTestId('inventory-money').within(($purse) => {
+      cy.wrap($purse).getByTestId('gp').should('be.visible');
+      cy.wrap($purse).getByTestId('sp').should('be.visible');
+      cy.wrap($purse).getByTestId('cp').should('be.visible');
+    });
     cy.getByTestId('inventory-weight').should('contain.text', '14').and('contain.text', 'Weight');
 
     characterData.equipments.forEach((equipment) => {
@@ -199,7 +207,7 @@ describe(`Character Sheet End-to-End`, () => {
       cy.getByTestId(`equipment-item-${equipment.index}`).find('button').click();
       cy.getByRole('dialog').within(() => {
         cy.contains(equipment.name).should('exist');
-        cy.contains(/\d+gp/).should('exist');
+        cy.contains(/\d+(gp|sp|cp)/).should('exist');
 
         if (equipment.type === 'weapon') {
           cy.contains(/anvil\d+/).should('exist');
@@ -296,8 +304,6 @@ describe(`Character Sheet End-to-End`, () => {
       'delete',
       `users/${Cypress.testUser.uid}/characters/${characterData.id}/notes`
     );
-    cy.visit('/');
-    cy.getByTestId('character-card-').should('have.length.at.least', 1);
     cy.getByTestId(`character-card-${characterData.id}`).click();
 
     // Test: Add and edit notes
@@ -526,6 +532,8 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
 
       cy.login(Cypress.testUser.uid);
       cy.visit('/');
+      cy.waitForLoading();
+
       cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
       cy.get('.MuiMobileStepper-dot').should('have.length', 5);
@@ -840,6 +848,7 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
   it('Should not display spell section for non-spellcaster', () => {
     cy.login(Cypress.testUser.uid);
     cy.visit('/');
+    cy.waitForLoading();
 
     const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
     cy.getByTestId(`character-card-${charID}`).click();

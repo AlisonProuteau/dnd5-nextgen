@@ -185,9 +185,7 @@ export function CharacterContainer() {
       >
         <EventNote />
       </Fab>
-      {character && (
-        <CharacterNotes isNoteOpen={isNoteOpen} closeNote={closeNote} character={character} />
-      )}
+      <CharacterNotes isNoteOpen={isNoteOpen} closeNote={closeNote} character={character} />
 
       <Fab
         size="small"
@@ -195,7 +193,7 @@ export function CharacterContainer() {
         onClick={openMoneyDialog}
         data-testid={`coin-purse-${character.id}`}
       >
-        <CoinPurse fill="currentColor" />
+        <CoinPurse fill="currentColor" width="100%" height="100%" />
       </Fab>
       <MoneyManager
         characterId={character.id}
