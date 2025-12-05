@@ -60,7 +60,7 @@ export function CharacterContainer() {
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
 
   useEffect(() => {
-    if (id && !isCharacterLoading && character && !character?.abilityScores)
+    if (id && !isCharacterLoading && character && !character.abilityScores)
       navigate('points', { replace: true, state: { characterId: id } });
     else if (id && !isCharacterLoading && !character)
       navigate('/', { state: { characterId: undefined } });
@@ -106,9 +106,9 @@ export function CharacterContainer() {
     onSwipedRight: handleBack
   });
 
-  return (
+  return character ? (
     <Container sx={{ paddingBottom: '30px' }} data-testid="character-container">
-      {character?.id && character.abilityScores ? (
+      {character.abilityScores ? (
         <Fragment>
           <Box
             display="flex"
@@ -181,8 +181,7 @@ export function CharacterContainer() {
         size="small"
         sx={{ ...button, ...fab, marginRight: 6 }}
         onClick={openNote}
-        disabled={!character?.id}
-        data-testid={`notes-${character?.id}`}
+        data-testid={`notes-${character.id}`}
       >
         <EventNote />
       </Fab>
@@ -194,16 +193,16 @@ export function CharacterContainer() {
         size="small"
         sx={{ ...button, ...fab, padding: 0.6, marginRight: 12 }}
         onClick={openMoneyDialog}
-        disabled={!character?.id}
-        data-testid={`coin-purse-${character?.id}`}
+        data-testid={`coin-purse-${character.id}`}
       >
         <CoinPurse fill="currentColor" />
       </Fab>
       <MoneyManager
+        characterId={character.id}
         isMoneyDialogOpen={isMoneyDialogOpen}
         closeMoneyDialog={closeMoneyDialog}
-        currentAmount={character?.money}
+        currentAmount={character.money}
       />
     </Container>
-  );
+  ) : null;
 }
