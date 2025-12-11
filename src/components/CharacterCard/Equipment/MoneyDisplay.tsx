@@ -5,16 +5,20 @@ import { MoneyUnits, type MoneyUnitType } from '@representations/campaign/equipm
 
 export function MoneyDisplay({
   purse,
+  showZero = true,
   ...props
-}: { purse?: Record<MoneyUnitType, number> } & BoxProps) {
+}: { purse?: Partial<Record<MoneyUnitType, number>>; showZero?: boolean } & BoxProps) {
   return (
     <Box {...props} sx={{ ...props.sx, '& > *': { my: '-5px' } }} data-testid="inventory-money">
-      {MoneyUnits.map((coin) => (
-        <Box key={coin} display="flex" columnGap="5px" alignItems="center" data-testid={coin}>
-          <Typography>{purse?.[coin] || 0}</Typography>
-          <CoinsIcon height="20px" width="20px" fill={getCoinColor(coin)} />
-        </Box>
-      ))}
+      {MoneyUnits.map(
+        (coin) =>
+          (showZero || (purse?.[coin] ?? 0) > 0) && (
+            <Box key={coin} display="flex" columnGap="5px" alignItems="center" data-testid={coin}>
+              <Typography>{purse?.[coin] || 0}</Typography>
+              <CoinsIcon height="20px" width="20px" fill={getCoinColor(coin)} />
+            </Box>
+          )
+      )}
     </Box>
   );
 }

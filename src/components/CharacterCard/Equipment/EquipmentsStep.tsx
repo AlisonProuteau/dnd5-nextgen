@@ -84,8 +84,9 @@ export function Equipments({ character }: DefaultProps) {
         {selectedEquipment && <EquipmentCard selectedEquipment={selectedEquipment} />}
       </Dialog>
 
-      <Dialog open={isMarketOpen} onClose={closeMarket} fullWidth>
+      <Dialog open={isMarketOpen} onClose={closeMarket} fullWidth maxWidth="md">
         <Market
+          character={character}
           purse={character.money || { cp: 0, sp: 0, gp: 0 }}
           ownedEquipment={Object.values(equipmentList).flat()}
         />

@@ -4,7 +4,7 @@ import {
   remainingMoneyInCopper,
   sellItem,
   updatePurse
-} from '@utils/character/abilities.utils';
+} from '@utils/character/character.utils';
 
 describe('Coin Management Functions', () => {
   describe('remainingMoneyInCopper', () => {

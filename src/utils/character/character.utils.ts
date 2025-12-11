@@ -152,6 +152,26 @@ export const remainingMoneyInCopper = (
   return currentCopper + amountCopper;
 };
 
+export const getSellingPrice = (
+  itemCost: Partial<Record<MoneyUnitType, number>>,
+  itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-item'
+): Record<MoneyUnitType, number> => {
+  const itemCostCopper = (itemCost.gp || 0) * 100 + (itemCost.sp || 0) * 10 + (itemCost.cp || 0);
+
+  // TODO: update this with actual types and magic item rarity pricing
+  // console.log('itemType', itemType);
+  switch (itemType) {
+    case 'trade-goods':
+    case 'gem':
+    case 'art-object':
+    case 'magic-item':
+      return consolidateCoins({ cp: itemCostCopper });
+    case 'equipment':
+    default:
+      return consolidateCoins({ cp: Math.floor(itemCostCopper / 2) });
+  }
+};
+
 /**
  * Sells an item and adds the proceeds to a purse based on D&D 5e selling rules:
  * - Equipment sells for half its original cost
@@ -163,23 +183,7 @@ export const sellItem = (
   itemCost: Partial<Record<MoneyUnitType, number>>,
   itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-item'
 ): Record<MoneyUnitType, number> => {
-  const itemCostCopper = (itemCost.gp || 0) * 100 + (itemCost.sp || 0) * 10 + (itemCost.cp || 0);
-
-  let saleValueCopper: number;
-  // TODO: update this with actual type and magic item rarity pricing
-  switch (itemType) {
-    case 'trade-goods':
-    case 'gem':
-    case 'art-object':
-    case 'magic-item':
-      saleValueCopper = itemCostCopper;
-      break;
-    case 'equipment':
-    default:
-      saleValueCopper = Math.floor(itemCostCopper / 2);
-  }
-
-  return updatePurse(purse, { cp: saleValueCopper });
+  return updatePurse(purse, getSellingPrice(itemCost, itemType));
 };
 
 /**
