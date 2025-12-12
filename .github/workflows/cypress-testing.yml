@@ -24,6 +24,10 @@ jobs:
           cache: 'yarn'
       - run: yarn install --frozen-lockfile
       - run: yarn global add firebase-tools
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin' # You can also use 'zulu' or 'microsoft'
 
       - name: Write Cypress env to file
         run: echo "$CYPRESS_ENV" > cypress.env.json
