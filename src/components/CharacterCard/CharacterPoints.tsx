@@ -219,7 +219,7 @@ export function CharacterPoints() {
                         onChange={(_, value) => setScore(ability.index, value ?? undefined)}
                       />
                       <IconButton
-                        data-testid={`randomize-${ability.index}`}
+                        data-testid={`reroll-${ability.index}`}
                         sx={{ paddingTop: '29px' }}
                         onClick={() => setScore(ability.index)}
                       >
@@ -236,7 +236,13 @@ export function CharacterPoints() {
           <Typography>Points already calculated</Typography>
         )}
 
-        <Fab size="small" sx={{ ...button, ...fab }} disabled={!isValid} onClick={onSubmit}>
+        <Fab
+          size="small"
+          sx={{ ...button, ...fab }}
+          disabled={!isValid}
+          onClick={onSubmit}
+          data-testid="save-scores"
+        >
           <SaveAltRounded sx={linkButton} />
         </Fab>
       </Box>

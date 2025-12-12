@@ -21,8 +21,8 @@ describe('Character Money Management End-to-End', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
-    cy.getByTestId('KeyboardArrowRightIcon').click();
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
 
     // Test: Verify initial money display in equipment section
@@ -249,8 +249,8 @@ describe('Character Money Management End-to-End', () => {
 
     cy.getByTestId(`character-card-${characterWithMoney.id}`).should('be.visible');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
-    cy.getByTestId('KeyboardArrowRightIcon').click();
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('next-step').click();
 
     cy.getByTestId('inventory-money')
       .should('be.visible')

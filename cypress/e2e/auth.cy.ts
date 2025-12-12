@@ -169,16 +169,10 @@ describe(`Authentication End-to-End`, () => {
 
       // Test: password visibility toggle
       cy.get('#password').should('have.attr', 'type', 'password');
-      cy.get('#password')
-        .parent()
-        .find('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]')
-        .click();
+      cy.get('#password').parent().getByTestId('password-visibility').click();
       cy.get('#password').should('have.attr', 'type', 'text');
       cy.get('#password').should('have.value', 'weak');
-      cy.get('#password')
-        .parent()
-        .find('[data-testid="VisibilityIcon"], [data-testid="VisibilityOffIcon"]')
-        .click();
+      cy.get('#password').parent().getByTestId('password-visibility').click();
       cy.get('#password').should('have.attr', 'type', 'password');
 
       cy.get('#password').clear().type('P@ssWord123');

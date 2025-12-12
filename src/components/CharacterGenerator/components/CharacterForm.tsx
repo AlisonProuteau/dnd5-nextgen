@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import {
   Button,
   FormControl,
-  Grid2,
+  Grid,
   InputLabel,
   MenuItem,
   Paper,
@@ -84,7 +84,7 @@ export default function CharacterForm({
       <Typography variant="h6" sx={{ fontWeight: 600 }} gutterBottom>
         Character Settings
       </Typography>
-      <Grid2 container spacing={3} sx={{ mt: 2 }} data-testid="form-container">
+      <Grid container spacing={3} sx={{ mt: 2 }} data-testid="form-container">
         {(
           [
             ['race', races],
@@ -95,7 +95,7 @@ export default function CharacterForm({
             ['imageRatio', imageRatios]
           ] as [keyof CharacterDetails, string[]][]
         ).map(([field, options]) => (
-          <Grid2 size={{ xs: 12, sm: 6, md: 4 }} key={field}>
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={field}>
             <FormControl fullWidth>
               <InputLabel htmlFor={fieldNames[field]}>{fieldNames[field]}</InputLabel>
               <Select
@@ -112,9 +112,9 @@ export default function CharacterForm({
                 ))}
               </Select>
             </FormControl>
-          </Grid2>
+          </Grid>
         ))}
-        <Grid2 size={{ xs: 12 }}>
+        <Grid size={{ xs: 12 }}>
           <TextField
             label="Refinement"
             id="Refinement"
@@ -124,8 +124,8 @@ export default function CharacterForm({
             value={form.formData.refinement || ''}
             onChange={(e) => form.setFormData({ refinement: e.target.value })}
           />
-        </Grid2>
-        <Grid2 size={{ xs: 12 }}>
+        </Grid>
+        <Grid size={{ xs: 12 }}>
           <Button
             variant="contained"
             sx={{ borderRadius: 2, boxShadow: 2 }}
@@ -135,8 +135,8 @@ export default function CharacterForm({
           >
             Generate Portrait
           </Button>
-        </Grid2>
-      </Grid2>
+        </Grid>
+      </Grid>
     </Paper>
   );
 }

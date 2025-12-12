@@ -57,7 +57,7 @@ describe(`Character Sheet End-to-End`, () => {
         .and('contain.text', 'Investigation')
         .and('contain.text', 'Nature')
         .and('contain.text', 'Religion');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])')
+      cy.get(':has(>[data-testid="skill-selected"])')
         .should('have.length', 1)
         .should('have.text', 'Nature');
       cy.get(' button').should('exist').click();
@@ -77,7 +77,7 @@ describe(`Character Sheet End-to-End`, () => {
         .and('contain.text', 'Medicine')
         .and('contain.text', 'Perception')
         .and('contain.text', 'Survival');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])')
+      cy.get(':has(>[data-testid="skill-selected"])')
         .should('have.length', 2)
         .should('have.text', 'Animal HandlingPerception');
       cy.wrap($el).get(' button').should('exist').click();
@@ -95,7 +95,7 @@ describe(`Character Sheet End-to-End`, () => {
         .should('contain.text', 'Acrobatics')
         .and('contain.text', 'Sleight of Hand')
         .and('contain.text', 'Stealth');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
+      cy.get(':has(>[data-testid="skill-selected"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
@@ -105,7 +105,7 @@ describe(`Character Sheet End-to-End`, () => {
         .and('contain.text', '0')
         .and('contain.text', '10');
       cy.wrap($el).should('contain.text', 'Athletics');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
+      cy.get(':has(>[data-testid="skill-selected"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
@@ -119,7 +119,7 @@ describe(`Character Sheet End-to-End`, () => {
         .and('contain.text', 'Intimidation')
         .and('contain.text', 'Performance')
         .and('contain.text', 'Persuasion');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
+      cy.get(':has(>[data-testid="skill-selected"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
@@ -128,12 +128,12 @@ describe(`Character Sheet End-to-End`, () => {
         .should('contain.text', 'Constitution')
         .and('contain.text', '+1')
         .and('contain.text', '13');
-      cy.get(':has(>[data-testid="RadioButtonCheckedIcon"])').should('have.length', 0);
+      cy.get(':has(>[data-testid="skill-selected"])').should('have.length', 0);
       cy.wrap($el).get(' button').should('not.exist');
     });
 
     // Test: Traits & Features section
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('proficiencies-section').should(
       'contain.text',
       characterData.proficiencies.map((p) => p.name).join(', ')
@@ -176,7 +176,7 @@ describe(`Character Sheet End-to-End`, () => {
       });
 
     // Test: Equipment section
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
     cy.getByTestId('inventory-money').within(($purse) => {
       cy.wrap($purse).getByTestId('gp').should('be.visible');
@@ -228,7 +228,7 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Description section
     // TODO: Improve seeded data
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('description-sex-')
       .should('contain.text', 'Sex')
       .should('have.attr', 'data-testid', 'description-sex-F');
@@ -246,11 +246,11 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('description-personality').should('have.text', 'Personality: ');
 
     // Test: Spell section
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('spells-section').should('be.visible');
 
     // Test: Next goes back to beginning
-    cy.getByTestId('KeyboardArrowRightIcon').click();
+    cy.getByTestId('next-step').click();
     cy.getByTestId('stats-section').should('be.visible');
 
     // Test: Security, error, and recovery flows
@@ -311,7 +311,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`notes-drawer-${characterData.id}`).within(($el) => {
       cy.wrap($el).should('contain.text', 'No notes yet');
 
-      cy.wrap($el).getByTestId('NoteAddIcon').click();
+      cy.wrap($el).getByTestId('add-note').click();
       cy.wrap($el).getButton('Save').should('be.disabled');
       cy.get('#content').clear().blur();
       cy.wrap($el).getButton('Save').should('be.disabled');
@@ -431,7 +431,7 @@ describe(`Character Sheet End-to-End`, () => {
     // TODO: Add tests after fixed so it doesn't retry infinitely
     // Test: Network error during note save
     // cy.getByTestId(`notes-${characterData.id}`).click();
-    // cy.getByTestId('NoteAddIcon').click();
+    // cy.getByTestId('add-note').click();
     // cy.get('#content').type('This note will fail to save');
     // cy.intercept(
     //   {
@@ -537,7 +537,7 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
       cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
       cy.get('.MuiMobileStepper-dot').should('have.length', 5);
-      cy.getByTestId('KeyboardArrowLeftIcon').click();
+      cy.getByTestId('previous-step').click();
       cy.getByTestId('spells-section').should('be.visible');
 
       if (learnNum > 0) {
@@ -855,7 +855,7 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
 
     cy.getByTestId('stats-section').should('be.visible');
     cy.get('.MuiMobileStepper-dot').should('have.length', 4);
-    cy.getByTestId('KeyboardArrowLeftIcon').click();
+    cy.getByTestId('previous-step').click();
     cy.getByTestId('spells-section').should('not.exist');
   });
 });

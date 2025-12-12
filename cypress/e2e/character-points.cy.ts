@@ -56,7 +56,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByRole('option', 'Charisma').click();
 
     // Test: Save button should be enabled
-    cy.getByTestId('SaveAltRoundedIcon').parent().should('be.enabled').click();
+    cy.getByTestId('save-scores').should('be.enabled').click();
 
     // Test: Success message
     cy.getByRole('status', 'Character Points Updated').should('be.visible');
@@ -120,7 +120,7 @@ describe(`Character Points End-to-End Flow`, () => {
       .should('have.css', 'color', 'rgb(255, 0, 0)'); // red color
 
     // Test: Save button should be disabled when over limit
-    cy.getByTestId('SaveAltRoundedIcon').parent().should('be.disabled');
+    cy.getByTestId('save-scores').should('be.disabled');
 
     // Test: Fix allocation to valid state
     // Allocate: STR=15(7pts), DEX=14(6pts), CON=14(6pts), INT=10(2pts), WIS=10(2pts), CHA=10(2pts) = 25 points
@@ -143,7 +143,7 @@ describe(`Character Points End-to-End Flow`, () => {
 
     // Test: Save button enabled when valid
     cy.get('#ability-dex').clear().type('14').blur();
-    cy.getByTestId('SaveAltRoundedIcon').parent().should('be.enabled').click();
+    cy.getByTestId('save-scores').should('be.enabled').click();
 
     // Test: Success message and redirect
     cy.getByRole('status', 'Character Points Updated').should('be.visible');
@@ -185,13 +185,13 @@ describe(`Character Points End-to-End Flow`, () => {
     });
 
     // Test: Dice icon is present for re-rolling
-    cy.getByTestId('CasinoOutlinedIcon').should('have.length', 6);
+    cy.getByTestId('reroll-').should('have.length', 6);
 
     // Test: Re-roll a specific ability
     cy.get('#ability-str')
       .invoke('val')
       .then((initialValue) => {
-        cy.getByTestId('randomize-str').click();
+        cy.getByTestId('reroll-str').click();
         cy.get('#ability-str').invoke('val').should('not.eq', initialValue);
       });
 
@@ -206,7 +206,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.get('#ability-cha').should('have.value', '16');
 
     // Test: Save and verify
-    cy.getByTestId('SaveAltRoundedIcon').parent().click();
+    cy.getByTestId('save-scores').click();
     cy.url().should('include', '/character');
 
     cy.getByTestId('ability-cha').should('contain.text', '16');
@@ -275,7 +275,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.get('div#ability-8').click();
     cy.getByRole('option', 'Charisma').click();
 
-    cy.getByTestId('SaveAltRoundedIcon').parent().click();
+    cy.getByTestId('save-scores').click();
 
     // Test: Verify redirect to character sheet
     cy.url().should('include', '/character');

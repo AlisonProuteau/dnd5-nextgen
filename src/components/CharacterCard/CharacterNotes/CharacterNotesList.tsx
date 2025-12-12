@@ -198,6 +198,7 @@ export function CharacterNotesList({
           setNote({});
           setEditMode(true);
         }}
+        data-testid="add-note"
       >
         <NoteAdd fontSize="large" />
       </IconButton>
