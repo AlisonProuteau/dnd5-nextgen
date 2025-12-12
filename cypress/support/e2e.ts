@@ -96,6 +96,14 @@ before(() => {
         .should('exist', 'User data should exist in Firestore')
         .should('have.property', 'identifier', Cypress.testUser.email)
     )
+    .then(() => {
+      cy.log('🔐 Initialize firebase...');
+      cy.login(Cypress.testUser.uid);
+      cy.visit('/');
+      cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('exist', {
+        timeout: 10000
+      });
+    })
     .then(() => cy.log('✨ Test environment ready'));
 });
 

@@ -84,7 +84,7 @@ jobs:
         continue-on-error: true
         with:
           start: yarn start:dist
-          wait-on: 'http://localhost:3000'
+          wait-on: 'http://127.0.0.1:3000'
           browser: chrome
           record: true
           parallel: true

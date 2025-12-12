@@ -15,7 +15,7 @@
     "firestore:import": "./import_firestore.sh",
     "firebase:emulate": "firebase emulators:start --only hosting,auth,firestore,storage --import=./database",
     "start:dist": "FIREBASE_AUTH_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.auth.port)\" FIRESTORE_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.firestore.port)\" FIREBASE_STORAGE_EMULATOR_HOST=\"127.0.0.1:$(cat firebase.json | jq .emulators.storage.port)\" yarn build && yarn firebase:emulate --log-verbosity SILENT",
-    "cy:base": "wait-on http://localhost:3000 && cypress",
+    "cy:base": "wait-on http://127.0.0.1:3000 && cypress",
     "cy:local": "SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" run-p -r start:dist 'cy:base run --browser chrome'",
     "cy": "SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" run-p -r start:dist 'cy:base open --e2e --browser chrome'",
     "merge:reports": "mochawesome-merge cypress/reports/*.json > cypress/reports/results.json && rm -rf cypress/reports/cypress-*.json",
