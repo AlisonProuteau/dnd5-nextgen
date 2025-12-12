@@ -167,17 +167,17 @@ describe(`Character Generator End-to-End`, () => {
       cy.wrap($el)
         .getByTestId('character-card-')
         .first()
-        .getByTestId('DownloadingIcon')
+        .getByTestId('downloading')
         .should('be.visible');
 
       cy.wrap($el)
         .getByTestId('character-card-')
         .first()
-        .getByTestId('DownloadDoneIcon')
+        .getByTestId('download-done')
         .should('be.visible');
 
       cy.getButton(/Download All/).click();
-      cy.wrap($el).getByTestId('DownloadDoneIcon').should('have.length', 4);
+      cy.wrap($el).getByTestId('download-done').should('have.length', 4);
     });
 
     // Test: Upload functionality
@@ -217,13 +217,13 @@ describe(`Character Generator End-to-End`, () => {
       cy.wrap($el)
         .getByTestId('character-card-')
         .first()
-        .getByTestId('CloudUploadIcon')
+        .getByTestId('uploading')
         .should('be.visible');
 
       cy.wrap($el)
         .getByTestId('character-card-')
         .first()
-        .getByTestId('CloudDoneIcon')
+        .getByTestId('upload-done')
         .should('be.visible');
 
       cy.getButton(/Upload All/).click();
@@ -231,7 +231,7 @@ describe(`Character Generator End-to-End`, () => {
         cy.wait('@uploadImage');
         cy.wait('@getUploadedImage');
       }
-      cy.wrap($el).getByTestId('CloudDoneIcon').should('have.length', 4);
+      cy.wrap($el).getByTestId('upload-done').should('have.length', 4);
       cy.get('button:contains("Upload")')
         .should('have.length', 5)
         .each(($element) => cy.wrap($element).should('be.disabled'));

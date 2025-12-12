@@ -98,6 +98,7 @@ export function AuthPage() {
                 <InputAdornment position="end">
                   <IconButton
                     onClick={() => form.setFormData({ showPassword: !form.formData.showPassword })}
+                    data-testid="password-visibility"
                   >
                     {form.formData.showPassword ? <VisibilityOff /> : <Visibility />}
                   </IconButton>

@@ -78,9 +78,17 @@ export function AbilityComponent({
           return (
             <Box key={skill.index}>
               {isProficient ? (
-                <RadioButtonChecked fontSize="small" sx={verticalSubWithMargin} />
+                <RadioButtonChecked
+                  fontSize="small"
+                  sx={verticalSubWithMargin}
+                  data-testid="skill-selected"
+                />
               ) : (
-                <RadioButtonUnchecked fontSize="small" sx={verticalSubWithMargin} />
+                <RadioButtonUnchecked
+                  fontSize="small"
+                  sx={verticalSubWithMargin}
+                  data-testid="skill-unselected"
+                />
               )}
               {skill.name.replace('Skill: ', '')}
             </Box>

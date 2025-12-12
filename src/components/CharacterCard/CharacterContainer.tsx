@@ -148,12 +148,12 @@ export function CharacterContainer() {
             activeStep={activeStep}
             sx={{ paddingTop: 0 }}
             nextButton={
-              <Button size="small" onClick={handleNext}>
+              <Button size="small" onClick={handleNext} data-testid="next-step">
                 <KeyboardArrowRight />
               </Button>
             }
             backButton={
-              <Button size="small" onClick={handleBack}>
+              <Button size="small" onClick={handleBack} data-testid="previous-step">
                 <KeyboardArrowLeft />
               </Button>
             }
