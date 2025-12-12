@@ -53,7 +53,7 @@ export default function ActionButton({
       onClick={onClick}
       disabled={isDisabled}
       startIcon={getIcon()}
-      data-testid={['done', 'failed', 'idle'].includes(state) ? `${actionType}-done` : state}
+      data-testid={['done', 'failed', 'idle'].includes(state) ? `${actionType}-${state}` : state}
       {...props}
     >
       {actionType === 'download' ? 'Download' : 'Upload'}
