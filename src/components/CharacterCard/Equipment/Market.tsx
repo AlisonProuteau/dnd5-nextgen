@@ -14,18 +14,28 @@ import {
 } from '@mui/material';
 import { useToggle } from '@hooks/useToggle';
 import { getSellingPrice, sellItem } from '@utils/character';
-import type { Equipment, MoneyUnitType } from '@representations/campaign/equipment.representation';
+import type {
+  AdditionalMoneyUnitType,
+  Equipment,
+  MoneyObjectType
+} from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketProps {
   character: Character;
-  purse: Record<MoneyUnitType, number>;
+  purse: MoneyObjectType;
   ownedEquipment: (Equipment & { count?: number })[];
+  additionalCurrencies?: AdditionalMoneyUnitType[];
 }
 
 // TODO: Buy/Sell equipment
-export function Market({ character, purse, ownedEquipment }: MarketProps) {
+export function Market({
+  character,
+  purse,
+  ownedEquipment,
+  additionalCurrencies = []
+}: MarketProps) {
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
   // const firebaseCrud = useFirebaseCrud({
@@ -42,7 +52,8 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
       : sellItem(
           purse,
           { [equipment.cost.unit]: equipment.cost.quantity },
-          equipment.equipment_category.index as any
+          equipment.equipment_category.index as any,
+          additionalCurrencies
         );
     const updatedEquipments = character.equipments
       ?.map((eq) => {
@@ -66,7 +77,12 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
           <Typography variant="h6">Market</Typography>
 
           <Box display="flex" flexDirection="column" minHeight="50px" justifyContent="space-evenly">
-            <MoneyDisplay display="flex" paddingTop={0.5} purse={purse} />
+            <MoneyDisplay
+              display="flex"
+              paddingTop={0.5}
+              purse={purse}
+              additionalCurrencies={additionalCurrencies}
+            />
             <FormControlLabel
               control={<Switch checked={isfreeMode} onChange={toggleFreeMode} size="small" />}
               sx={{ m: '0px' }}
@@ -117,13 +133,15 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
                             <MoneyDisplay
                               purse={getSellingPrice(
                                 { [item.cost.unit]: item.cost.quantity },
-                                item.equipment_category.index as any
+                                item.equipment_category.index as any,
+                                additionalCurrencies
                               )}
                               showZero={false}
                               display="inline-flex"
                               gap={0.5}
                               flexWrap="wrap"
                               justifyContent="flex-end"
+                              additionalCurrencies={additionalCurrencies}
                             />
                           </Box>
                         )}

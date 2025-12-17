@@ -12,8 +12,14 @@ type Content = {
   quantity: number;
 };
 
-export const MoneyUnits = ['gp', 'sp', 'cp'] as const;
-export type MoneyUnitType = (typeof MoneyUnits)[number];
+// TODO: Add settings to customize additional money units
+export const StandardMoneyUnits = ['gp', 'sp', 'cp'] as const;
+export const AdditionalMoneyUnits = ['pp', 'ep'] as const;
+export const MoneyUnits = ['pp', 'gp', 'ep', 'sp', 'cp'] as const;
+export type StandardMoneyUnitType = (typeof StandardMoneyUnits)[number];
+export type AdditionalMoneyUnitType = (typeof AdditionalMoneyUnits)[number];
+export type MoneyUnitType = StandardMoneyUnitType | AdditionalMoneyUnitType;
+export type MoneyObjectType = Partial<Record<MoneyUnitType, number>>;
 type Cost = {
   quantity: number;
   unit: MoneyUnitType;

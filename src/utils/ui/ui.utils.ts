@@ -12,12 +12,16 @@ export const scrollOnOpen = (
 
 export const getCoinColor = (type: MoneyUnitType) => {
   switch (type) {
+    case 'pp':
+      return '#D3D9DE'; // Platinum (bright silvery-blue)
     case 'gp':
-      return 'goldenrod';
+      return 'goldenrod'; //'#FFD700'; // Gold
+    case 'ep':
+      return '#B8A865'; // Electrum (pale gold-green)
     case 'sp':
-      return 'silver';
+      return '#91a1b2'; // Silver (medium gray)
     case 'cp':
-      return '#B87333';
+      return '#B87333'; // Copper
     default:
       return 'white';
   }
