@@ -377,6 +377,52 @@ describe('Coin Management Functions', () => {
         // = 1pp + 9gp + 3sp + 9cp (no room for ep since 39cp < 50cp)
         expect(result).toEqual({ pp: 1, gp: 9, ep: 0, sp: 3, cp: 9 });
       });
+
+      it('should consolidate with platinum only (not electrum)', () => {
+        const purse = { pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 };
+        const result = updatePurse(purse, {}, ['pp']);
+
+        // 2000 + 500 + 150 + 40 + 7 = 2697 copper
+        // With PP only: 2pp + 697cp = 2pp + 6gp + 97cp = 2pp + 6gp + 9sp + 7cp
+        expect(result).toEqual({ pp: 2, gp: 6, sp: 9, cp: 7 });
+      });
+
+      it('should consolidate with electrum only (not platinum)', () => {
+        const purse = { pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 };
+        const result = updatePurse(purse, {}, ['ep']);
+
+        // 2000 + 500 + 150 + 40 + 7 = 2697 copper
+        // With EP only: 26gp + 97cp = 26gp + 1ep + 47cp = 26gp + 1ep + 4sp + 7cp
+        expect(result).toEqual({ gp: 26, ep: 1, sp: 4, cp: 7 });
+      });
+
+      it('should not create electrum when remainder after gold is less than 50cp', () => {
+        const purse = { pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 };
+        const amount = { cp: 50 };
+        const result = updatePurse(purse, amount, ['ep']);
+
+        // 2697 + 50 = 2747 copper
+        // With EP only: 27gp + 47cp (cannot make EP from 47cp) = 27gp + 0ep + 4sp + 7cp
+        expect(result).toEqual({ gp: 27, ep: 0, sp: 4, cp: 7 });
+      });
+
+      it('should handle adding platinum directly then consolidating with copper', () => {
+        const purse = { pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 };
+        const amount = { pp: 3, cp: 2303 };
+        const result = updatePurse(purse, amount, ['pp', 'ep']);
+
+        // 2697 + 3000 + 2303 = 8000 copper = 8pp
+        expect(result).toEqual({ pp: 8, gp: 0, ep: 0, sp: 0, cp: 0 });
+      });
+
+      it('should handle mixed all 5 currencies consolidation', () => {
+        const purse = { pp: 8, gp: 0, ep: 0, sp: 0, cp: 0 };
+        const amount = { pp: 10, gp: 50, ep: 20, sp: 30, cp: 100 };
+        const result = updatePurse(purse, amount, ['pp', 'ep']);
+
+        // 8000 + 10000 + 5000 + 1000 + 300 + 100 = 24400 copper = 24pp + 4gp
+        expect(result).toEqual({ pp: 24, gp: 4, ep: 0, sp: 0, cp: 0 });
+      });
     });
 
     describe('sellItem with additional currencies', () => {

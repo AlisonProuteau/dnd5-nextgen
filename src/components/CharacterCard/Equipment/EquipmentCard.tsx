@@ -1,5 +1,5 @@
 import { Fragment, useCallback } from 'react';
-import { CoinsIcon, WeightIcon } from '@assets';
+import { WeightIcon } from '@assets';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -15,9 +15,9 @@ import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getProperty } from '@api/ressources';
 import { EquipmentLine } from '@shared/EquipmentLine';
-import { getCoinColor } from '@utils/ui';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
+import { MoneyDisplay } from './MoneyDisplay';
 
 interface EquipmentCardProps {
   selectedEquipment: Equipment;
@@ -50,15 +50,14 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         </Box>
         <Box display="flex" flexDirection="column" alignItems="flex-end">
           <Box display="flex" gap="5px">
-            <CoinsIcon
-              height="20px"
-              width="20px"
-              fill={getCoinColor(selectedEquipment.cost.unit)}
+            <MoneyDisplay
+              purse={{ [selectedEquipment.cost.unit]: selectedEquipment.cost.quantity }}
+              showZero={false}
+              display="inline-flex"
+              gap={0.5}
+              flexWrap="wrap"
+              justifyContent="flex-end"
             />
-            <Typography>
-              {selectedEquipment.cost.quantity}
-              {selectedEquipment.cost.unit}
-            </Typography>
           </Box>
           {selectedEquipment.weight ? (
             <Box display="flex" paddingLeft="50px" gap="5px">

@@ -200,7 +200,6 @@ export function CharacterContainer() {
         isMoneyDialogOpen={isMoneyDialogOpen}
         closeMoneyDialog={closeMoneyDialog}
         currentAmount={character.money}
-        additionalCurrencies={[]} // TODO: AdditionalMoneyUnits setup 'pp', 'ep'
       />
     </Container>
   ) : null;

@@ -178,7 +178,7 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Equipment section
     cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
-    cy.getByTestId('inventory-money').within(($purse) => {
+    cy.getByTestId('money-display').within(($purse) => {
       cy.wrap($purse).getByTestId('gp').should('be.visible');
       cy.wrap($purse).getByTestId('sp').should('be.visible');
       cy.wrap($purse).getByTestId('cp').should('be.visible');

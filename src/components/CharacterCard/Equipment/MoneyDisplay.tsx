@@ -1,5 +1,7 @@
+import { useMemo } from 'react';
 import { CoinsIcon } from '@assets';
 import { Box, type BoxProps, Typography } from '@mui/material';
+import { updatePurse } from '@utils/character';
 import { getCoinColor } from '@utils/ui';
 import {
   type AdditionalMoneyUnitType,
@@ -8,21 +10,23 @@ import {
   type MoneyUnitType,
   StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
+import { useAuth } from 'src/providers/AuthProvider';
 
 interface MonayDisplayProps {
   purse?: MoneyObjectType;
   showZero?: boolean;
-  additionalCurrencies?: AdditionalMoneyUnitType[];
 }
 
-export function MoneyDisplay({
-  purse,
-  showZero = true,
-  additionalCurrencies = [],
-  ...props
-}: MonayDisplayProps & BoxProps) {
+export function MoneyDisplay({ purse, showZero = true, ...props }: MonayDisplayProps & BoxProps) {
+  const { additionalCurrencies = [] } = useAuth();
+
+  const consolidatedPurse: MoneyObjectType = useMemo(
+    () => updatePurse(purse, {}, additionalCurrencies),
+    [purse, additionalCurrencies]
+  );
+
   const shouldShowCoin = (coin: MoneyUnitType) => {
-    const hasValue = (purse?.[coin] ?? 0) > 0;
+    const hasValue = (consolidatedPurse?.[coin] ?? 0) > 0;
 
     return StandardMoneyUnits.includes(coin as any) ||
       additionalCurrencies.includes(coin as AdditionalMoneyUnitType)
@@ -31,12 +35,12 @@ export function MoneyDisplay({
   };
 
   return (
-    <Box {...props} sx={{ ...props.sx, '& > *': { my: '-5px' } }} data-testid="inventory-money">
+    <Box {...props} sx={{ ...props.sx, '& > *': { my: '-5px' } }} data-testid="money-display">
       {MoneyUnits.map(
         (coin) =>
           shouldShowCoin(coin) && (
             <Box key={coin} display="flex" columnGap="5px" alignItems="center" data-testid={coin}>
-              <Typography>{purse?.[coin] || 0}</Typography>
+              <Typography>{consolidatedPurse?.[coin] || 0}</Typography>
               <CoinsIcon height="20px" width="20px" fill={getCoinColor(coin)} />
             </Box>
           )

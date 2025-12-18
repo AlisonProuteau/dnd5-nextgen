@@ -14,6 +14,7 @@ import {
   type MoneyUnitType,
   StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
+import { useAuth } from 'src/providers/AuthProvider';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MoneyManagerProps {
@@ -21,16 +22,15 @@ interface MoneyManagerProps {
   isMoneyDialogOpen: boolean;
   closeMoneyDialog: () => void;
   currentAmount?: MoneyObjectType;
-  additionalCurrencies?: AdditionalMoneyUnitType[];
 }
 
 export function MoneyManager({
   characterId,
   isMoneyDialogOpen,
   closeMoneyDialog,
-  currentAmount = { gp: 0, sp: 0, cp: 0 },
-  additionalCurrencies = []
+  currentAmount = { gp: 0, sp: 0, cp: 0 }
 }: MoneyManagerProps) {
+  const { additionalCurrencies = [] } = useAuth();
   const form = useForm<MoneyObjectType>({ initialData: { gp: 0, sp: 0, cp: 0 } });
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
@@ -93,7 +93,6 @@ export function MoneyManager({
             justifyContent="center"
             sx={{ float: 'right' }}
             purse={updatePurse(currentAmount, form.formData, additionalCurrencies)}
-            additionalCurrencies={additionalCurrencies}
           />
         </Box>
 

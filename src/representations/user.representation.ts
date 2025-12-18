@@ -1,6 +1,6 @@
 import type { ChoiceSelection } from '@utils/character';
 import type { Version } from '@utils/constants';
-import type { MoneyObjectType } from './campaign/equipment.representation';
+import type { AdditionalMoneyUnitType, MoneyObjectType } from './campaign/equipment.representation';
 import type { Alignment } from './character/background.representation';
 import type { RaceAbilityBonus } from './character/race.representation';
 import type { DefaultRepresentation, Sizes } from './common.representation';
@@ -75,4 +75,5 @@ export type UserData = {
   identifier: string;
   admin?: boolean;
   version?: Version;
+  additionalCurrencies?: AdditionalMoneyUnitType[];
 };

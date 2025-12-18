@@ -53,11 +53,7 @@ export function Equipments({ character }: DefaultProps) {
           color="grey"
           testid="inventory-weight"
         />
-        <MoneyDisplay
-          justifySelf="center"
-          purse={character.money}
-          additionalCurrencies={[]} // TODO: AdditionalMoneyUnits setup 'pp', 'ep'
-        />
+        <MoneyDisplay justifySelf="center" purse={character.money} />
       </Box>
 
       <Button
@@ -92,7 +88,6 @@ export function Equipments({ character }: DefaultProps) {
           character={character}
           purse={character.money || { cp: 0, sp: 0, gp: 0 }}
           ownedEquipment={Object.values(equipmentList).flat()}
-          additionalCurrencies={[]} // TODO: AdditionalMoneyUnits setup 'pp', 'ep'
         />
       </Dialog>
     </Fragment>

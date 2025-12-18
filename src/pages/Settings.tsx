@@ -2,31 +2,52 @@ import { type FormEvent, useEffect } from 'react';
 import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
+  Checkbox,
   CircularProgress,
   FormControl,
+  FormControlLabel,
+  FormGroup,
+  FormLabel,
   InputLabel,
   MenuItem,
   Select,
   Typography
 } from '@mui/material';
-import { Container } from '@mui/system';
+import { Box, Container } from '@mui/system';
 import { useFirebaseCrud, useForm } from '@hooks/index';
 import { type Version, VERSIONS } from '@utils/constants';
+import {
+  AdditionalMoneyUnits,
+  type AdditionalMoneyUnitType
+} from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
 interface SettingsFormData {
   version: Version;
+  additionalCurrencies: AdditionalMoneyUnitType[];
+}
+
+enum CurrencyLabels {
+  ep = 'Electrum Pieces (ep)',
+  pp = 'Platinum Pieces (pp)'
 }
 
 export function Settings() {
-  const { user, version: currentUserVersion } = useAuth();
+  const {
+    user,
+    version: currentUserVersion,
+    additionalCurrencies: currentAdditionalCurrencies
+  } = useAuth();
   const form = useForm<SettingsFormData>({
-    initialData: { version: 'Legacy' }
+    initialData: {
+      version: currentUserVersion,
+      additionalCurrencies: currentAdditionalCurrencies || []
+    }
   });
   const firebaseCrud = useFirebaseCrud<SettingsFormData>({
     collectionPath: 'users',
     invalidateQueryKey: ['fetchUserData'],
-    successMessages: { update: 'Game version updated' },
+    successMessages: { update: 'Settings updated' },
     redirect: { update: { path: '/' } }
   });
 
@@ -34,41 +55,81 @@ export function Settings() {
     event.preventDefault();
     if (!user?.uid) return;
 
-    await firebaseCrud.update(user.uid, { version: form.formData.version });
+    await firebaseCrud.update(user.uid, {
+      version: form.formData.version,
+      additionalCurrencies: form.formData.additionalCurrencies
+    });
+  };
+
+  const handleCurrencyToggle = (currency: AdditionalMoneyUnitType) => {
+    const current = form.formData.additionalCurrencies || [];
+    const updated = current.includes(currency)
+      ? current.filter((c) => c !== currency)
+      : [...current, currency];
+    form.setFormData({ ...form.formData, additionalCurrencies: updated });
   };
 
   useEffect(() => {
-    if (currentUserVersion && currentUserVersion !== form.formData.version)
-      form.setFormData({ version: currentUserVersion });
-  }, [currentUserVersion]);
+    const updates: Partial<SettingsFormData> = {};
+    if (currentUserVersion && currentUserVersion !== form.formData.version) {
+      updates.version = currentUserVersion;
+    }
+    if (
+      JSON.stringify(currentAdditionalCurrencies) !==
+      JSON.stringify(form.formData.additionalCurrencies)
+    ) {
+      updates.additionalCurrencies = currentAdditionalCurrencies || [];
+    }
+
+    if (Object.keys(updates).length > 0) form.setFormData({ ...updates });
+  }, [currentUserVersion, currentAdditionalCurrencies]);
 
   return (
     <Container>
-      <div data-testid="user-info">
+      <Box data-testid="user-info" marginBottom={2}>
         <Typography>User: {user?.displayName}</Typography>
         <Typography>Email: {user?.email}</Typography>
-      </div>
+      </Box>
       <form onSubmit={handleSubmitVersion} data-testid="version-form">
         <FormControl fullWidth disabled={!user || firebaseCrud.isLoading}>
-          <InputLabel htmlFor="version-select">Version</InputLabel>
-          <Select
-            id="version-select"
-            value={form.formData.version}
-            label="Version"
-            onChange={({ target }) =>
-              form.setFormData({ version: (target.value as Version) || 'Legacy' })
-            }
-            data-testid="version-select"
-          >
-            {VERSIONS?.map((current) => (
-              <MenuItem key={`version-${current}`} value={current} data-testid="version-option">
-                {current}
-              </MenuItem>
+          <FormGroup data-testid="version-select">
+            <InputLabel htmlFor="version-select">Version</InputLabel>
+            <Select
+              id="version-select"
+              value={form.formData.version}
+              label="Version"
+              onChange={({ target }) =>
+                form.setFormData({ version: (target.value as Version) || 'Legacy' })
+              }
+            >
+              {VERSIONS?.map((current) => (
+                <MenuItem key={`version-${current}`} value={current} data-testid="version-option">
+                  {current}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormGroup>
+
+          <FormGroup data-testid="additional-currencies" sx={{ marginTop: 1 }}>
+            <FormLabel component="legend">Additional Currencies</FormLabel>
+            {AdditionalMoneyUnits.map((currency) => (
+              <FormControlLabel
+                key={currency}
+                control={
+                  <Checkbox
+                    checked={(form.formData.additionalCurrencies || []).includes(currency)}
+                    onChange={() => handleCurrencyToggle(currency)}
+                    data-testid={`currency-${currency}`}
+                    sx={{ paddingY: 0.5 }}
+                  />
+                }
+                label={CurrencyLabels[currency]}
+              />
             ))}
-          </Select>
+          </FormGroup>
 
           <Button
-            sx={{ marginTop: '1rem' }}
+            sx={{ marginTop: 2 }}
             type="submit"
             variant="contained"
             disabled={form.formData.version !== 'Legacy'}

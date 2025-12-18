@@ -12,7 +12,6 @@ type Content = {
   quantity: number;
 };
 
-// TODO: Add settings to customize additional money units
 export const StandardMoneyUnits = ['gp', 'sp', 'cp'] as const;
 export const AdditionalMoneyUnits = ['pp', 'ep'] as const;
 export const MoneyUnits = ['pp', 'gp', 'ep', 'sp', 'cp'] as const;

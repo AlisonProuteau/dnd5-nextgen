@@ -15,27 +15,22 @@ import {
 import { useToggle } from '@hooks/useToggle';
 import { getSellingPrice, sellItem } from '@utils/character';
 import type {
-  AdditionalMoneyUnitType,
   Equipment,
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
+import { useAuth } from 'src/providers/AuthProvider';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketProps {
   character: Character;
   purse: MoneyObjectType;
   ownedEquipment: (Equipment & { count?: number })[];
-  additionalCurrencies?: AdditionalMoneyUnitType[];
 }
 
 // TODO: Buy/Sell equipment
-export function Market({
-  character,
-  purse,
-  ownedEquipment,
-  additionalCurrencies = []
-}: MarketProps) {
+export function Market({ character, purse, ownedEquipment }: MarketProps) {
+  const { additionalCurrencies = [] } = useAuth();
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
   // const firebaseCrud = useFirebaseCrud({
@@ -77,12 +72,7 @@ export function Market({
           <Typography variant="h6">Market</Typography>
 
           <Box display="flex" flexDirection="column" minHeight="50px" justifyContent="space-evenly">
-            <MoneyDisplay
-              display="flex"
-              paddingTop={0.5}
-              purse={purse}
-              additionalCurrencies={additionalCurrencies}
-            />
+            <MoneyDisplay display="flex" paddingTop={0.5} purse={purse} />
             <FormControlLabel
               control={<Switch checked={isfreeMode} onChange={toggleFreeMode} size="small" />}
               sx={{ m: '0px' }}
@@ -141,7 +131,6 @@ export function Market({
                               gap={0.5}
                               flexWrap="wrap"
                               justifyContent="flex-end"
-                              additionalCurrencies={additionalCurrencies}
                             />
                           </Box>
                         )}
