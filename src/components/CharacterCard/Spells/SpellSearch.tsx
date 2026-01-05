@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import { Separator } from '@base-ui-components/react';
 import { AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -89,21 +90,41 @@ export function SpellSearch({
         justifySelf="center"
       >
         {selectedSpells.map((spell) => (
-          <Box key={spell.index} data-testid={`search-spell-item-${spell.index}-selected`}>
-            <IconButton onClick={() => onSelect(spell, true)}>
+          <Fragment>
+            <IconButton
+              onClick={() => onSelect(spell, true)}
+              key={spell.index}
+              data-testid={`search-spell-item-${spell.index}-selected`}
+            >
               <RemoveCircleOutline color="info" fontSize="small" />
             </IconButton>
             <Typography>{spell.name}</Typography>
-          </Box>
+          </Fragment>
         ))}
 
+        {selectedSpells.length && spells.length ? (
+          <Separator
+            orientation="horizontal"
+            css={{
+              gridColumn: '1 / span 2',
+              height: '1px',
+              width: '110%',
+              backgroundColor: '#343434'
+            }}
+          />
+        ) : null}
+
         {spells.map((spell) => (
-          <Box key={spell.index} data-testid={`search-spell-item-${spell.index}`}>
-            <IconButton onClick={() => onSelect(spell)}>
+          <Fragment>
+            <IconButton
+              onClick={() => onSelect(spell)}
+              key={spell.index}
+              data-testid={`search-spell-item-${spell.index}`}
+            >
               <AddCircleOutline color="info" fontSize="small" />
             </IconButton>
             <Typography>{spell.name}</Typography>
-          </Box>
+          </Fragment>
         ))}
       </Box>
     </Fragment>

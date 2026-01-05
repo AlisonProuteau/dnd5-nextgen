@@ -5,7 +5,10 @@ import {
   type FieldPath,
   getDoc,
   getDocs,
+  or,
+  orderBy,
   query,
+  type QueryFilterConstraint,
   where,
   type WhereFilterOp
 } from 'firebase/firestore';
@@ -26,36 +29,43 @@ export interface QueryObject {
 export async function getAll(
   name: string,
   path: string,
-  queryParms?: QueryObject[]
+  queryParms?: QueryObject[],
+  isOr = false,
+  orderByField?: string,
+  orderDirection?: 'asc' | 'desc'
 ): Promise<{ results: any[]; count: number }> {
   const ref = collection(database, path);
-  let res;
+  let conditions: QueryFilterConstraint | undefined;
+  let q;
 
   if (queryParms?.length && queryParms.length > 1) {
-    const q = query(
-      ref,
-      and(
-        ...queryParms.map((queryParm) =>
-          where(queryParm.fieldPath, queryParm.opStr, queryParm.value)
-        )
-      )
+    conditions = (isOr ? or : and)(
+      ...queryParms.map((queryParm) => where(queryParm.fieldPath, queryParm.opStr, queryParm.value))
     );
-    res = await getDocs(q).catch((e) => {
-      console.error(e);
-      return { docs: [] };
-    });
   } else if (queryParms?.length === 1) {
-    const q = query(ref, where(queryParms[0].fieldPath, queryParms[0].opStr, queryParms[0].value));
-    res = await getDocs(q).catch((e) => {
-      console.error(e);
-      return { docs: [] };
-    });
-  } else {
-    res = await getDocs(ref).catch((e) => {
-      console.error(e);
-      return { docs: [] };
-    });
+    conditions = where(queryParms[0].fieldPath, queryParms[0].opStr, queryParms[0].value);
   }
+
+  const order = orderByField ? orderBy(orderByField, orderDirection ?? 'asc') : undefined;
+  // if (limitRes && order) {
+  //   //TODO: Offset doesn't work that way with Firestore, need to use cursors
+  //   const limitMax = limit(limitRes);
+  //   const offset = startAfter(((page || 1) - 1) * limitRes);
+
+  //   q = conditions
+  //     ? query(ref, conditions as any, order, limitMax, offset)
+  //     : query(ref, order, limitMax, offset);
+  // } else
+  if (order) {
+    q = conditions ? query(ref, conditions as any, order) : query(ref, order);
+  } else {
+    q = conditions ? query(ref, conditions as any) : query(ref);
+  }
+
+  const res = await getDocs(q).catch((e) => {
+    console.error(`Failed to get docs for ${name}: `, e);
+    return { docs: [] };
+  });
 
   return 'results' in res.docs
     ? (res.docs as any)

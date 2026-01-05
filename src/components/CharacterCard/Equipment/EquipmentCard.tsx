@@ -82,7 +82,7 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
           />
         )}
         {selectedEquipment.category_range && (
-          <EquipmentLine label="Range Category" data={selectedEquipment.category_range} />
+          <EquipmentLine label="Range Category" data={selectedEquipment.category_range.name} />
         )}
         {selectedEquipment.range && (
           <EquipmentLine

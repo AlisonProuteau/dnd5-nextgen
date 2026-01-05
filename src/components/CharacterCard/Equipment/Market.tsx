@@ -1,9 +1,6 @@
 import { useState } from 'react';
 import {
   Box,
-  Button,
-  Card,
-  CardContent,
   DialogContent,
   DialogTitle,
   FormControlLabel,
@@ -12,14 +9,18 @@ import {
   Tabs,
   Typography
 } from '@mui/material';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { getSellingPrice, sellItem } from '@utils/character';
+import { buyItem, getSellingPrice, sellItem } from '@utils/character';
+import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
+import { EquipmentListItem } from './EquipmentListItem';
+import { EquipmentSearch } from './EquipmentSearch';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketProps {
@@ -28,41 +29,70 @@ interface MarketProps {
   ownedEquipment: (Equipment & { count?: number })[];
 }
 
-// TODO: Buy/Sell equipment
+// TODO: Magic items buying/selling price
+// TODO: Add Cypress + maybe pagination on the search
 export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { additionalCurrencies = [] } = useAuth();
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
-  // const firebaseCrud = useFirebaseCrud({
-  //   collectionPath: 'users/{userId}/characters',
-  //   invalidateQueryKey: ['fetchCharacter'],
-  //   successMessages: {
-  //     update: 'Money Updated'
-  //   }
-  // });
+  const firebaseCrud = useFirebaseCrud({
+    collectionPath: 'users/{userId}/characters',
+    invalidateQueryKey: ['fetchCharacter'],
+    successMessages: {
+      update: 'Transaction successful'
+    }
+  });
 
-  const onSell = async (equipment: Equipment) => {
+  const onSell = async (item: Equipment | MagicItem, quantity: number = 1) => {
+    const totalCost = 'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {};
     const updatedPurse = isfreeMode
       ? character.money || { cp: 0, sp: 0, gp: 0 }
-      : sellItem(
-          purse,
-          { [equipment.cost.unit]: equipment.cost.quantity },
-          equipment.equipment_category.index as any,
-          additionalCurrencies
-        );
+      : sellItem(purse, totalCost, item.equipment_category.index as any, additionalCurrencies);
+    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
     const updatedEquipments = character.equipments
       ?.map((eq) => {
-        if (eq.index === equipment.index) {
-          const newCount = (eq.count || 1) - 1;
-          return newCount > 0 ? { ...eq, count: newCount } : null;
-        }
+        if (eq.index === item.index)
+          return (eq.count || 1) - totalQuantity > 0
+            ? { ...eq, count: (eq.count || 1) - totalQuantity }
+            : null;
+
         return eq;
       })
       .filter((eq) => eq !== null && eq.count !== 0);
 
-    // TODO: Test after adding buy functionality
-    // await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
-    console.log({ updatedEquipments, updatedPurse });
+    await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
+  };
+
+  const onBuy = async (item: Equipment | MagicItem, quantity: number = 1) => {
+    const totalCost = 'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {};
+    const updatedPurse = isfreeMode
+      ? character.money || { cp: 0, sp: 0, gp: 0 }
+      : buyItem(purse, totalCost, additionalCurrencies);
+    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
+
+    const updatedEquipments = character.equipments.find((eq) => eq.index === item.index)
+      ? character.equipments?.map((eq) => {
+          if (eq.index === item.index) return { ...eq, count: (eq.count || 1) + totalQuantity };
+          return eq;
+        })
+      : [...character.equipments, { index: item.index, name: item.name, count: totalQuantity }];
+
+    await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
+  };
+
+  const canBuy = (item: Equipment | MagicItem, quantity: number = 1) => {
+    try {
+      buyItem(
+        purse,
+        'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {},
+        additionalCurrencies
+      );
+
+      return true;
+    } catch (e) {
+      if (e instanceof Error && e.message === 'Insufficient funds') return false;
+      else throw e;
+    }
   };
 
   return (
@@ -104,50 +134,24 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             ) : (
               <Box display="flex" flexDirection="column" gap={1}>
                 {ownedEquipment.map((item) => (
-                  <Card key={`sell-${item.index}`} variant="outlined">
-                    <CardContent sx={{ display: 'flex' }}>
-                      <Box flex={1}>
-                        <Typography variant="body1" fontWeight={500}>
-                          {item.name}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Quantity: {item.count || 1}
-                        </Typography>
-                      </Box>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        {!isfreeMode && (
-                          <Box textAlign="right">
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              Sell for
-                            </Typography>
-                            <MoneyDisplay
-                              purse={getSellingPrice(
-                                { [item.cost.unit]: item.cost.quantity },
-                                item.equipment_category.index as any,
-                                additionalCurrencies
-                              )}
-                              showZero={false}
-                              display="inline-flex"
-                              gap={0.5}
-                              flexWrap="wrap"
-                              justifyContent="flex-end"
-                            />
-                          </Box>
-                        )}
-                        <Button variant="outlined" size="small" onClick={() => onSell(item)}>
-                          {isfreeMode ? 'Remove' : 'Sell'}
-                        </Button>
-                      </Box>
-                    </CardContent>
-                  </Card>
+                  <EquipmentListItem
+                    key={`sell-${item.index}`}
+                    item={item}
+                    mode="sell"
+                    isFreeMode={isfreeMode}
+                    priceDisplay={getSellingPrice(
+                      { [item.cost.unit]: item.cost.quantity },
+                      item.equipment_category.index as any,
+                      additionalCurrencies
+                    )}
+                    onAction={onSell}
+                  />
                 ))}
               </Box>
             )}
           </Box>
         ) : (
-          <Typography color="text.secondary" textAlign="center" py={4}>
-            Coming soon: Browse and buy equipment
-          </Typography>
+          <EquipmentSearch isFreeMode={isfreeMode} canBuy={canBuy} onBuy={onBuy} />
         )}
       </DialogContent>
     </Box>

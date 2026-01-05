@@ -50,10 +50,10 @@ export type Equipment = {
   desc: string[];
   cost: Cost;
   equipment_category: DefaultRepresentation;
-  armor_category?: string;
+  armor_category?: DefaultRepresentation;
   armor_class?: ArmorClass;
   capacity?: number;
-  category_range?: string;
+  category_range?: DefaultRepresentation;
   contents?: Content[];
   damage?: Damage;
   gear_category?: DefaultRepresentation;
@@ -65,11 +65,11 @@ export type Equipment = {
   stealth_disadvantage?: boolean;
   str_minimum?: number;
   throw_range?: ThrowRange;
-  tool_category?: string;
+  tool_category?: DefaultRepresentation;
   two_handed_damage?: TwoHandedDamage;
-  vehicle_category?: string;
-  weapon_category?: string;
-  weapon_range?: string;
+  vehicle_category?: DefaultRepresentation;
+  weapon_category?: DefaultRepresentation;
+  weapon_range?: DefaultRepresentation;
   weight?: number;
 };
 
@@ -80,7 +80,7 @@ export type WeaponProperty = {
 };
 
 export type EquipmentCategory = {
-  equipment: DefaultRepresentation[];
   index: string;
   name: string;
+  subcategories: DefaultRepresentation[];
 };

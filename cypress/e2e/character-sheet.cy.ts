@@ -602,12 +602,13 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
             cy.wrap($el)
               .getByTestId('search-spell-item-')
               .first()
+              .next()
               .should('not.contain.text', 'Faerie Fire');
-            cy.wrap($el).getByTestId('search-spell-item-faerie-fire').should('be.visible');
-            cy.wrap($el).getByTestId('search-spell-item-faerie-fire').find('button').click();
+            cy.wrap($el).getByTestId('search-spell-item-faerie-fire').should('be.visible').click();
             cy.wrap($el)
               .getByTestId('search-spell-item-')
               .first()
+              .next()
               .should('contain.text', 'Faerie Fire');
 
             cy.wrap($el)

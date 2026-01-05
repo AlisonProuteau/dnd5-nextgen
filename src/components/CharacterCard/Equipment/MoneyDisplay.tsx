@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { CoinsIcon } from '@assets';
 import { Box, type BoxProps, Typography } from '@mui/material';
-import { updatePurse } from '@utils/character';
+import { remainingMoneyInCopper, updatePurse } from '@utils/character';
 import { getCoinColor } from '@utils/ui';
 import {
   type AdditionalMoneyUnitType,
@@ -26,6 +26,7 @@ export function MoneyDisplay({ purse, showZero = true, ...props }: MonayDisplayP
   );
 
   const shouldShowCoin = (coin: MoneyUnitType) => {
+    if (remainingMoneyInCopper(purse, {}) === 0 && coin === 'cp') return true;
     const hasValue = (consolidatedPurse?.[coin] ?? 0) > 0;
 
     return StandardMoneyUnits.includes(coin as any) ||

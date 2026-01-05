@@ -1,10 +1,14 @@
 import { get, getAll, type QueryObject } from '@utils/api.utils';
 import type { Version } from '@utils/constants';
 import type { Feature } from '@representations/abilities/feature.representation';
-import type { Spell } from '@representations/abilities/magic.representation';
+import type { MagicItem, Spell } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { AbilityScore, Proficiency } from '@representations/campaign/adventure.representation';
-import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
+import type {
+  Equipment,
+  EquipmentCategory,
+  WeaponProperty
+} from '@representations/campaign/equipment.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Alignment, Background } from '@representations/character/background.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
@@ -246,16 +250,49 @@ export async function getResourceList(
 
   if (!(pathArray.length % 2)) {
     const index = pathArray.pop() || '';
-    const { equipment } = await get(
+    const equipment = await getAll(
       `Resource list ${path}`,
       formatPath(pathArray.join('/'), version),
-      index
+      [
+        {
+          fieldPath: 'equipment_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'armor_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'gear_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'tool_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'vehicle_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'weapon_category.index',
+          opStr: '==',
+          value: index
+        },
+        {
+          fieldPath: 'category_range.index',
+          opStr: '==',
+          value: index
+        }
+      ],
+      true
     );
-
-    data = {
-      count: equipment.length,
-      results: equipment
-    };
+    data = equipment;
   } else {
     data = await getAll(`Resource list ${path}`, formatPath(path, version));
   }
@@ -271,6 +308,80 @@ export async function getResourceList(
 
 export async function getEquipment(version: Version, index: string): Promise<Equipment | null> {
   return get('Equipment', formatPath('equipment', version), index);
+}
+
+export async function getAllEquipment(
+  version: Version,
+  equipmentCategoryIndex?: string,
+  equipmentSubCategoryIndex?: string
+): Promise<{ count: number; results: Equipment[] }> {
+  const selector: QueryObject[] = [];
+
+  if (equipmentCategoryIndex) {
+    selector.push({
+      fieldPath: 'equipment_category.index',
+      opStr: '==',
+      value: equipmentCategoryIndex
+    });
+  }
+
+  if (equipmentSubCategoryIndex) {
+    let equipmentSubCategoryKey = '';
+    switch (equipmentCategoryIndex) {
+      case 'armor':
+        equipmentSubCategoryKey = 'armor_category.index';
+        break;
+      case 'weapon':
+        equipmentSubCategoryKey = equipmentSubCategoryIndex.match(/^.+-.+-.+$/)?.length
+          ? 'category_range.index'
+          : `weapon_${equipmentSubCategoryIndex.includes('melee') || equipmentSubCategoryIndex.includes('ranged') ? 'range' : 'category'}.index`;
+        break;
+      case 'tools':
+        equipmentSubCategoryKey = 'tool_category.index';
+        break;
+      case 'mounts-and-vehicles':
+        equipmentSubCategoryKey = 'vehicle_category.index';
+        break;
+      case 'adventuring-gear':
+        equipmentSubCategoryKey = 'gear_category.index';
+        break;
+      default:
+        console.error(
+          'getAllEquipment: Unknown equipment category for sub-category filtering:',
+          equipmentCategoryIndex
+        );
+        equipmentSubCategoryKey = 'equipment_category.index';
+    }
+    selector.push({
+      fieldPath: equipmentSubCategoryKey,
+      opStr: '==',
+      value: equipmentSubCategoryIndex
+    });
+  }
+  return getAll('Equipment', formatPath('equipment', version), selector, false, 'name');
+}
+
+export async function getAllMagicItems(
+  version: Version,
+  equipmentCategoryIndex?: string
+): Promise<{ count: number; results: MagicItem[] }> {
+  const selector: QueryObject[] = [];
+
+  if (equipmentCategoryIndex) {
+    selector.push({
+      fieldPath: 'equipment_category.index',
+      opStr: '==',
+      value: equipmentCategoryIndex
+    });
+  }
+
+  return getAll('Magic Items', formatPath('magic-items', version), selector, false, 'name');
+}
+
+export async function getEquipmentCategories(
+  version: Version
+): Promise<{ count: number; results: EquipmentCategory[] }> {
+  return getAll('Equipment Categories', formatPath('equipment-categories', version));
 }
 
 export async function getProperty(version: Version, index: string): Promise<WeaponProperty | null> {

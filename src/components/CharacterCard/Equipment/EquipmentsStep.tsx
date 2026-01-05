@@ -25,19 +25,22 @@ export function Equipments({ character }: DefaultProps) {
         queryFn: async () => await getEquipment(character.version, index),
         enabled: !!index
       })) || [],
-    combine: useCallback((results: UseQueryResult<Equipment | null, Error>[]) => {
-      const equipment: (Equipment & { count?: number })[] = (
-        results.map(({ data }) => data).filter((data) => data) as Equipment[]
-      ).map((eq) => {
-        const count = character.equipments?.find(({ index }) => index === eq.index)?.count;
-        return count ? { ...eq, count } : eq;
-      });
+    combine: useCallback(
+      (results: UseQueryResult<Equipment | null, Error>[]) => {
+        const equipment: (Equipment & { count?: number })[] = (
+          results.map(({ data }) => data).filter((data) => data) as Equipment[]
+        ).map((eq) => {
+          const count = character.equipments?.find(({ index }) => index === eq.index)?.count;
+          return count ? { ...eq, count } : eq;
+        });
 
-      return {
-        data: groupBy(equipment, 'equipment_category.index'),
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+        return {
+          data: groupBy(equipment, 'equipment_category.index'),
+          isFetching: results.some((result) => result.isFetching)
+        };
+      },
+      [character.equipments]
+    )
   });
 
   return (
@@ -69,7 +72,7 @@ export function Equipments({ character }: DefaultProps) {
           <CardContent>
             <Typography variant="h5">{equipment[0].equipment_category.name || ''}</Typography>
             <EquipmentList
-              equipmentList={equipment}
+              equipmentList={[...equipment]}
               onClick={(equipment) => {
                 setSelectedEquipment(equipment);
                 openDialog();
