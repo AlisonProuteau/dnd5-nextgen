@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { CoinsIcon } from '@assets';
 import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { omit } from 'lodash';
 import { NumberInput } from '@shared/NumberInput';
+import { remainingMoneyInCopper } from '@utils/character';
+import { getCoinColor } from '@utils/ui';
 import type { MagicItem } from '@representations/abilities/magic.representation';
-import type {
-  Equipment,
-  MoneyObjectType
+import {
+  type Equipment,
+  type MoneyObjectType,
+  StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
 import { MoneyDisplay } from './MoneyDisplay';
 
@@ -25,7 +30,10 @@ export function EquipmentListItem({
   onAction,
   canBuy = () => false
 }: EquipmentListItemProps) {
-  const [quantity, setQuantity] = useState(1);
+  const [quantity, setQuantity] = useState<number>(1);
+  const [customPrice, setCustomPrice] = useState<MoneyObjectType>({});
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const maxQuantity = useMemo(
     () =>
       mode === 'sell'
@@ -40,9 +48,10 @@ export function EquipmentListItem({
     isFreeMode ? (mode === 'sell' ? 'Remove' : 'Add') : mode === 'sell' ? 'Sell' : 'Buy';
 
   const getTotalPrice = () => {
-    if (!priceDisplay) return null;
+    if (!priceDisplay && remainingMoneyInCopper({}, customPrice) === 0) return null;
+
     const total: MoneyObjectType = {};
-    Object.entries(priceDisplay).forEach(([unit, amount]) => {
+    Object.entries(priceDisplay || customPrice).forEach(([unit, amount]) => {
       if (amount) total[unit as keyof MoneyObjectType] = amount * quantity;
     });
     return total;
@@ -73,6 +82,7 @@ export function EquipmentListItem({
           ) : null}
         </Box>
 
+        {/* // TODO: work on the workaround */}
         {maxQuantity > 1 && (
           <Box display="flex" sx={{ minWidth: '20%' }}>
             <NumberInput
@@ -81,9 +91,19 @@ export function EquipmentListItem({
               max={maxQuantity}
               value={quantity * ('quantity' in item ? item.quantity || 1 : 1)}
               step={'quantity' in item ? item.quantity || 1 : 1}
-              onChange={(_, value) =>
-                value && setQuantity(value / ('quantity' in item ? item.quantity || 1 : 1))
-              }
+              onInputChange={(e) => {
+                setIsUpdating(true);
+                const parsed = parseInt(e.target.value);
+                if (parsed && !isNaN(parsed)) {
+                  const adjusted = parsed / ('quantity' in item ? item.quantity || 1 : 1);
+                  setQuantity(adjusted);
+                }
+              }}
+              onChange={(_, value) => {
+                setQuantity(value ? value / ('quantity' in item ? item.quantity || 1 : 1) : 1);
+                setIsUpdating(false);
+              }}
+              onBlur={() => setIsUpdating(false)}
               compact
             />
           </Box>
@@ -108,12 +128,65 @@ export function EquipmentListItem({
               paddingTop={0.25}
             />
           )}
+
+          {!isFreeMode && !priceDisplay ? (
+            <Box display="flex" alignItems="center">
+              {StandardMoneyUnits.map((unit) => (
+                <Box
+                  key={`money-units-${unit}`}
+                  display="flex"
+                  alignItems="center"
+                  flexDirection="column"
+                >
+                  <CoinsIcon height="20px" width="20px" fill={getCoinColor(unit)} />
+                  <NumberInput
+                    id={`money-units-${unit}`}
+                    compact
+                    slotProps={
+                      {
+                        incrementButton: { sx: { display: 'none' } },
+                        decrementButton: { sx: { display: 'none' } }
+                      } as any
+                    }
+                    min={0}
+                    value={customPrice[unit] ?? null}
+                    onInputChange={(e) => {
+                      setIsUpdating(true);
+                      const parsed = parseInt(e.target.value);
+                      if (parsed && !isNaN(parsed))
+                        setCustomPrice((prev) => ({ ...prev, [unit]: parsed }));
+                      else setCustomPrice((prev) => omit(prev, [unit]));
+                    }}
+                    onChange={(_, value) => {
+                      setIsUpdating(false);
+                      setCustomPrice((prev) => ({ ...prev, [unit]: value ?? null }));
+                    }}
+                    onBlur={() => setIsUpdating(false)}
+                  />
+                </Box>
+              ))}
+            </Box>
+          ) : null}
+
           <Button
             variant="outlined"
             size="small"
-            disabled={mode === 'buy' && !isFreeMode && !canBuy(item, quantity)}
+            disabled={
+              isUpdating ||
+              (mode === 'buy' && !isFreeMode && remainingMoneyInCopper({}, customPrice) === 0) ||
+              !canBuy(
+                {
+                  ...item,
+                  cost:
+                    'cost' in item
+                      ? item.cost
+                      : { unit: 'cp', quantity: remainingMoneyInCopper({}, customPrice) || 0 }
+                },
+                quantity ?? 1
+              )
+            }
             onClick={() => {
-              onAction(item, quantity);
+              onAction(item, quantity ?? 1);
               setQuantity(1);
             }}
           >

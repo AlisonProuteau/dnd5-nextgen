@@ -175,7 +175,7 @@ export function EquipmentSearch({
                   item={item}
                   mode="buy"
                   isFreeMode={isFreeMode}
-                  priceDisplay={{}} //TODO: Magic items don't have a price
+                  canBuy={canBuy}
                   onAction={onBuy}
                 />
               )

@@ -41,11 +41,13 @@ export const NumberInput = forwardRef(function CustomNumberInput(
       </InputLabel>
       <BaseNumberInput
         id={id}
+        {...props}
         slots={{
           root: StyledInputRoot,
           input: compact ? StyledInputCompact : StyledInput,
           incrementButton: compact ? StyledButtonCompact : StyledButton,
-          decrementButton: compact ? StyledButtonCompact : StyledButton
+          decrementButton: compact ? StyledButtonCompact : StyledButton,
+          ...props.slots
         }}
         slotProps={{
           input: { id, 'aria-label': props['aria-label'] || label },
@@ -57,9 +59,9 @@ export const NumberInput = forwardRef(function CustomNumberInput(
           decrementButton: {
             children: <Remove fontSize="small" />,
             disabled: removeDisabled
-          }
+          },
+          ...props.slotProps
         }}
-        {...props}
         ref={ref}
       />
     </Box>

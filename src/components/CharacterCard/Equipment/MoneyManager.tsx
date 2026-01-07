@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { CoinsIcon } from '@assets';
 import { Box, Button, CircularProgress, Dialog, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
@@ -32,6 +32,7 @@ export function MoneyManager({
 }: MoneyManagerProps) {
   const { additionalCurrencies = [] } = useAuth();
   const form = useForm<MoneyObjectType>({ initialData: { gp: 0, sp: 0, cp: 0 } });
+  const [isUpdating, setIsUpdating] = useState(false);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter'],
@@ -78,9 +79,16 @@ export function MoneyManager({
                       id={`money-units-${unit}`}
                       value={form.formData[unit] || 0}
                       onClick={(e) => e.preventDefault()}
+                      onInputChange={(e) => {
+                        setIsUpdating(true);
+                        const parsed = parseInt(e.target.value) || 0;
+                        if (parsed && !isNaN(parsed)) form.setFormData({ [unit]: parsed });
+                      }}
                       onChange={(_, v) => {
                         form.setFormData({ [unit]: v });
+                        setIsUpdating(false);
                       }}
+                      onBlur={() => setIsUpdating(false)}
                     />
                   </Box>
                 )
@@ -101,6 +109,7 @@ export function MoneyManager({
             key="update-money"
             id="update-money"
             disabled={
+              isUpdating ||
               remainingMoneyInCopper(currentAmount, form.formData) < 0 ||
               isEqual(
                 currentAmount,
