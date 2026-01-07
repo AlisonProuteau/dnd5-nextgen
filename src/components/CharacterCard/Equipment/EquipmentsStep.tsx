@@ -3,9 +3,10 @@ import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
-import { getEquipment } from '@api/ressources';
+import { getEquipment, getMagicItem } from '@api/ressources';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
+import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
@@ -17,18 +18,25 @@ import { MoneyDisplay } from './MoneyDisplay';
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
   const { isOn: isMarketOpen, turnOn: openMarket, turnOff: closeMarket } = useToggle(false);
-  const [selectedEquipment, setSelectedEquipment] = useState<Equipment>();
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | MagicItem>();
 
   const { data: equipmentList } = useQueries({
     queries:
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character.version, index],
-        queryFn: async () => await getEquipment(character.version, index),
+        queryFn: async () => {
+          let item: Equipment | MagicItem | null = await getEquipment(character.version, index);
+          if (!item) {
+            item = await getMagicItem(character.version, index);
+          }
+
+          return item;
+        },
         enabled: !!index
       })) || [],
     combine: useCallback(
-      (results: UseQueryResult<Equipment | null, Error>[]) => {
-        const equipment: (Equipment & { count?: number })[] = (
+      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => {
+        const equipment: ((Equipment | MagicItem) & { count?: number })[] = (
           results.map(({ data }) => data).filter((data) => data) as Equipment[]
         ).map((eq) => {
           const count = character.equipments?.find(({ index }) => index === eq.index)?.count;
@@ -50,7 +58,7 @@ export function Equipments({ character }: DefaultProps) {
         <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
-            (total, equipment) => total + (equipment.weight || 0),
+            (total, equipment) => ('weight' in equipment ? total + (equipment.weight || 0) : total),
             0
           )}
           Icon={WeightIcon}

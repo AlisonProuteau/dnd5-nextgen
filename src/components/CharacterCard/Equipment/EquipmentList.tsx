@@ -1,11 +1,12 @@
 import { BladeIcon, ShieldIcon } from '@assets';
 import { InfoOutlined } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
+import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 
 interface EquipmentListProps {
-  equipmentList: (Equipment & { count?: number })[];
-  onClick?: (equipment: Equipment) => void;
+  equipmentList: ((Equipment | MagicItem) & { count?: number })[];
+  onClick?: (equipment: Equipment | MagicItem) => void;
 }
 
 export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
@@ -24,9 +25,9 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
         </IconButton>
       )}
       <Typography display="contents">
-        {`${getCount(equipment.count, equipment.quantity)} ${equipment.name}`}
+        {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
       </Typography>
-      {(equipment.damage || equipment.two_handed_damage) && (
+      {'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (
         <Box display="flex" paddingLeft="min(50px, 15%)" gap="5px" alignItems="center">
           <BladeIcon height="20px" width="20px" fill="white" />
           <Typography width="100%">
@@ -34,7 +35,7 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
           </Typography>
         </Box>
       )}
-      {equipment.armor_class && (
+      {'armor_class' in equipment && equipment.armor_class && (
         <Box display="flex" paddingLeft="50px" gap="5px">
           <ShieldIcon height="20px" width="20px" fill="white" />
           <Typography>

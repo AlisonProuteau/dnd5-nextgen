@@ -201,8 +201,9 @@ export const remainingMoneyInCopper = (
 
 export const getSellingPrice = (
   itemCost: MoneyObjectType,
-  itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-item',
-  additionalCurrencies: AdditionalMoneyUnitType[] = []
+  itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-items',
+  additionalCurrencies: AdditionalMoneyUnitType[] = [],
+  sellAtFullPrice: boolean = false
 ): MoneyObjectType => {
   const itemCostCopper =
     (itemCost.pp || 0) * 1000 +
@@ -211,13 +212,14 @@ export const getSellingPrice = (
     (itemCost.sp || 0) * 10 +
     (itemCost.cp || 0);
 
+  if (sellAtFullPrice) return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
+
   // TODO: update this with actual types and magic item rarity pricing
-  // console.log('itemType', itemType);
   switch (itemType) {
     case 'trade-goods':
     case 'gem':
     case 'art-object':
-    case 'magic-item':
+    case 'magic-items':
       return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
     case 'equipment':
     default:
@@ -234,12 +236,13 @@ export const getSellingPrice = (
 export const sellItem = (
   purse: MoneyObjectType = { cp: 0, sp: 0, gp: 0 },
   itemCost: MoneyObjectType,
-  itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-item',
-  additionalCurrencies: AdditionalMoneyUnitType[] = []
+  itemType: 'equipment' | 'trade-goods' | 'gem' | 'art-object' | 'magic-items',
+  additionalCurrencies: AdditionalMoneyUnitType[] = [],
+  sellAtFullPrice: boolean = false
 ): MoneyObjectType => {
   return updatePurse(
     purse,
-    getSellingPrice(itemCost, itemType, additionalCurrencies),
+    getSellingPrice(itemCost, itemType, additionalCurrencies, sellAtFullPrice),
     additionalCurrencies
   );
 };

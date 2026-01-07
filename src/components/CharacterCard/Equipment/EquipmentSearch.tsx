@@ -12,14 +12,21 @@ import { useQuery } from '@tanstack/react-query';
 import { getAllEquipment, getAllMagicItems, getEquipmentCategories } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
 import type { MagicItem } from '@representations/abilities/magic.representation';
-import type { Equipment } from '@representations/campaign/equipment.representation';
+import type {
+  Equipment,
+  MoneyObjectType
+} from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { EquipmentListItem } from './EquipmentListItem';
 
 interface EquipmentSearchProps {
   isFreeMode?: boolean;
-  canBuy?: (item: Equipment | MagicItem, quantity?: number) => boolean;
-  onBuy?: (item: Equipment | MagicItem, quantity?: number) => void;
+  canBuy?: (
+    item: Equipment | MagicItem,
+    quantity?: number,
+    customPrice?: MoneyObjectType
+  ) => boolean;
+  onBuy?: (item: Equipment | MagicItem, quantity?: number, customPrice?: MoneyObjectType) => void;
 }
 
 export function EquipmentSearch({

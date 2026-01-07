@@ -18,10 +18,15 @@ interface EquipmentListItemProps {
   mode: 'sell' | 'buy';
   isFreeMode: boolean;
   priceDisplay?: MoneyObjectType;
-  canBuy?: (item: Equipment | MagicItem, quantity?: number) => boolean;
-  onAction: (item: Equipment | MagicItem, quantity: number) => void;
+  canBuy?: (
+    item: Equipment | MagicItem,
+    quantity?: number,
+    customPrice?: MoneyObjectType
+  ) => boolean;
+  onAction: (item: Equipment | MagicItem, quantity?: number, customPrice?: MoneyObjectType) => void;
 }
 
+//TODO: Custom money not updating on sell/buy
 export function EquipmentListItem({
   item,
   mode,
@@ -57,7 +62,10 @@ export function EquipmentListItem({
     return total;
   };
 
-  useEffect(() => setQuantity(1), [mode]);
+  useEffect(() => {
+    setQuantity(1);
+    setCustomPrice({});
+  }, [mode]);
 
   return (
     <Card key={`${mode}-${item.index}`} variant="outlined">
@@ -173,20 +181,14 @@ export function EquipmentListItem({
             size="small"
             disabled={
               isUpdating ||
-              (mode === 'buy' && !isFreeMode && remainingMoneyInCopper({}, customPrice) === 0) ||
-              !canBuy(
-                {
-                  ...item,
-                  cost:
-                    'cost' in item
-                      ? item.cost
-                      : { unit: 'cp', quantity: remainingMoneyInCopper({}, customPrice) || 0 }
-                },
-                quantity ?? 1
-              )
+              (mode === 'buy' &&
+                !isFreeMode &&
+                ((!priceDisplay && remainingMoneyInCopper({}, customPrice) === 0) ||
+                  !canBuy(item, quantity, customPrice)))
             }
             onClick={() => {
-              onAction(item, quantity ?? 1);
+              setCustomPrice({});
+              onAction(item, quantity, customPrice);
               setQuantity(1);
             }}
           >

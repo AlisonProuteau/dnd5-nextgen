@@ -26,10 +26,9 @@ import { MoneyDisplay } from './MoneyDisplay';
 interface MarketProps {
   character: Character;
   purse: MoneyObjectType;
-  ownedEquipment: (Equipment & { count?: number })[];
+  ownedEquipment: ((Equipment | MagicItem) & { count?: number })[];
 }
 
-// TODO: Magic items buying/selling price
 // TODO: Add Cypress + maybe pagination on the search
 export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { additionalCurrencies = [] } = useAuth();
@@ -43,11 +42,23 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
     }
   });
 
-  const onSell = async (item: Equipment | MagicItem, quantity: number = 1) => {
-    const totalCost = 'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {};
+  const onSell = async (
+    item: Equipment | MagicItem,
+    quantity: number = 1,
+    customPrice?: MoneyObjectType
+  ) => {
+    const totalCost =
+      'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : (customPrice ?? {});
     const updatedPurse = isfreeMode
       ? character.money || { cp: 0, sp: 0, gp: 0 }
-      : sellItem(purse, totalCost, item.equipment_category.index as any, additionalCurrencies);
+      : sellItem(
+          purse,
+          totalCost,
+          item.equipment_category.index as any,
+          additionalCurrencies,
+          Object.keys(customPrice ?? {}).length !== 0
+        );
+
     const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
     const updatedEquipments = character.equipments
       ?.map((eq) => {
@@ -63,13 +74,18 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
     await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
   };
 
-  const onBuy = async (item: Equipment | MagicItem, quantity: number = 1) => {
-    const totalCost = 'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {};
+  const onBuy = async (
+    item: Equipment | MagicItem,
+    quantity: number = 1,
+    customPrice?: MoneyObjectType
+  ) => {
+    const totalCost =
+      'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : (customPrice ?? {});
     const updatedPurse = isfreeMode
       ? character.money || { cp: 0, sp: 0, gp: 0 }
       : buyItem(purse, totalCost, additionalCurrencies);
-    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
 
+    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
     const updatedEquipments = character.equipments.find((eq) => eq.index === item.index)
       ? character.equipments?.map((eq) => {
           if (eq.index === item.index) return { ...eq, count: (eq.count || 1) + totalQuantity };
@@ -80,11 +96,15 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
     await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
   };
 
-  const canBuy = (item: Equipment | MagicItem, quantity: number = 1) => {
+  const canBuy = (
+    item: Equipment | MagicItem,
+    quantity: number = 1,
+    customPrice?: MoneyObjectType
+  ) => {
     try {
       buyItem(
         purse,
-        'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : {},
+        'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : (customPrice ?? {}),
         additionalCurrencies
       );
 
@@ -139,11 +159,15 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
                     item={item}
                     mode="sell"
                     isFreeMode={isfreeMode}
-                    priceDisplay={getSellingPrice(
-                      { [item.cost.unit]: item.cost.quantity },
-                      item.equipment_category.index as any,
-                      additionalCurrencies
-                    )}
+                    priceDisplay={
+                      'cost' in item
+                        ? getSellingPrice(
+                            { [item.cost.unit]: item.cost.quantity },
+                            item.equipment_category.index as any,
+                            additionalCurrencies
+                          )
+                        : undefined
+                    }
                     onAction={onSell}
                   />
                 ))}

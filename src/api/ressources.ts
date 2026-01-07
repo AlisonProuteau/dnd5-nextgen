@@ -310,6 +310,10 @@ export async function getEquipment(version: Version, index: string): Promise<Equ
   return get('Equipment', formatPath('equipment', version), index);
 }
 
+export async function getMagicItem(version: Version, index: string): Promise<MagicItem | null> {
+  return get('Magic Item', formatPath('magic-items', version), index);
+}
+
 export async function getAllEquipment(
   version: Version,
   equipmentCategoryIndex?: string,
