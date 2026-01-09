@@ -13,7 +13,7 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import {
   buyItem,
-  EquipmentCategoryType,
+  type EquipmentCategoryType,
   getSellingPrice,
   remainingMoneyInCopper,
   sellItem

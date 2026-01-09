@@ -10,7 +10,7 @@ import {
   where
 } from 'firebase/firestore';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { get, getAll } from './api.utils';
+import { get, getAll } from '@utils/api.utils';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),

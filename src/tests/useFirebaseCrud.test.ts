@@ -5,8 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { deleteDoc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useAuth } from '../providers/AuthProvider';
-import { useFirebaseCrud } from './useFirebaseCrud';
 
 // Mock dependencies
 vi.mock('react-router-dom', () => ({

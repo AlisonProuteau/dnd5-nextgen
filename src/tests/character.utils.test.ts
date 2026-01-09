@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buyItem,
+  EquipmentCategoryType,
   getSellingPrice,
   remainingMoneyInCopper,
   sellItem,
@@ -148,7 +149,7 @@ describe('Coin Management Functions', () => {
     it('should sell equipment at half cost', () => {
       const purse = { gp: 10, sp: 0, cp: 0 };
       const itemCost = { gp: 50, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'equipment');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 35, sp: 0, cp: 0 }); // 10 + (50 / 2)
     });
@@ -156,7 +157,7 @@ describe('Coin Management Functions', () => {
     it('should sell trade goods at full value', () => {
       const purse = { gp: 5, sp: 0, cp: 0 };
       const itemCost = { gp: 10, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'trade-goods');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.TradeGoods);
 
       expect(result).toEqual({ gp: 15, sp: 0, cp: 0 });
     });
@@ -164,7 +165,7 @@ describe('Coin Management Functions', () => {
     it('should sell gems at full value', () => {
       const purse = { gp: 20, sp: 0, cp: 0 };
       const itemCost = { gp: 100, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'gem');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Gem);
 
       expect(result).toEqual({ gp: 120, sp: 0, cp: 0 });
     });
@@ -172,7 +173,7 @@ describe('Coin Management Functions', () => {
     it('should sell art objects at full value', () => {
       const purse = { gp: 50, sp: 0, cp: 0 };
       const itemCost = { gp: 25, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'art-object');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.ArtObject);
 
       expect(result).toEqual({ gp: 75, sp: 0, cp: 0 });
     });
@@ -180,7 +181,7 @@ describe('Coin Management Functions', () => {
     it('should sell magic items at full value', () => {
       const purse = { gp: 100, sp: 0, cp: 0 };
       const itemCost = { gp: 500, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'magic-items');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.MagicItems);
 
       expect(result).toEqual({ gp: 600, sp: 0, cp: 0 });
     });
@@ -188,7 +189,7 @@ describe('Coin Management Functions', () => {
     it('should handle equipment with odd copper values (round down)', () => {
       const purse = { gp: 0, sp: 0, cp: 0 };
       const itemCost = { sp: 0, cp: 15 };
-      const result = sellItem(purse, itemCost, 'equipment');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 0, sp: 0, cp: 7 }); // 15 / 2 = 7.5, floored to 7
     });
@@ -196,14 +197,14 @@ describe('Coin Management Functions', () => {
     it('should consolidate proceeds into optimal denominations', () => {
       const purse = { gp: 1, sp: 0, cp: 50 };
       const itemCost = { sp: 10, cp: 0 };
-      const result = sellItem(purse, itemCost, 'equipment');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 2, sp: 0, cp: 0 }); // 150 + 50 = 200 copper
     });
 
     it('should handle empty purse with default values', () => {
       const itemCost = { gp: 10, sp: 0, cp: 0 };
-      const result = sellItem(undefined, itemCost, 'equipment');
+      const result = sellItem(undefined, itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 5, sp: 0, cp: 0 });
     });
@@ -211,7 +212,7 @@ describe('Coin Management Functions', () => {
     it('should handle mixed denomination item costs for equipment', () => {
       const purse = { gp: 5, sp: 5, cp: 5 };
       const itemCost = { gp: 2, sp: 3, cp: 7 };
-      const result = sellItem(purse, itemCost, 'equipment');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment);
 
       // Item: 237 copper, half = 118 copper
       // Purse: 555 copper
@@ -222,7 +223,7 @@ describe('Coin Management Functions', () => {
     it('should handle mixed denomination item costs for trade goods', () => {
       const purse = { gp: 1, sp: 2, cp: 3 };
       const itemCost = { gp: 0, sp: 5, cp: 7 };
-      const result = sellItem(purse, itemCost, 'trade-goods');
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.TradeGoods);
 
       // Item: 57 copper (full value)
       // Purse: 123 copper
@@ -233,7 +234,7 @@ describe('Coin Management Functions', () => {
     it('should sell equipment at full price when sellAtFullPrice is true', () => {
       const purse = { gp: 10, sp: 0, cp: 0 };
       const itemCost = { gp: 50, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'equipment', [], true);
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment, [], true);
 
       expect(result).toEqual({ gp: 60, sp: 0, cp: 0 }); // 10 + 50 (no halving)
     });
@@ -241,7 +242,7 @@ describe('Coin Management Functions', () => {
     it('should sell equipment at half price when sellAtFullPrice is false', () => {
       const purse = { gp: 10, sp: 0, cp: 0 };
       const itemCost = { gp: 50, sp: 0, cp: 0 };
-      const result = sellItem(purse, itemCost, 'equipment', [], false);
+      const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment, [], false);
 
       expect(result).toEqual({ gp: 35, sp: 0, cp: 0 }); // 10 + (50 / 2)
     });
@@ -250,56 +251,56 @@ describe('Coin Management Functions', () => {
   describe('getSellingPrice', () => {
     it('should return half price for equipment', () => {
       const itemCost = { gp: 50, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'equipment');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 25, sp: 0, cp: 0 });
     });
 
     it('should return full price for trade goods', () => {
       const itemCost = { gp: 10, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'trade-goods');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.TradeGoods);
 
       expect(result).toEqual({ gp: 10, sp: 0, cp: 0 });
     });
 
     it('should return full price for gems', () => {
       const itemCost = { gp: 100, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'gem');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Gem);
 
       expect(result).toEqual({ gp: 100, sp: 0, cp: 0 });
     });
 
     it('should return full price for art objects', () => {
       const itemCost = { gp: 25, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'art-object');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.ArtObject);
 
       expect(result).toEqual({ gp: 25, sp: 0, cp: 0 });
     });
 
     it('should return full price for magic items', () => {
       const itemCost = { gp: 500, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'magic-items');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.MagicItems);
 
       expect(result).toEqual({ gp: 500, sp: 0, cp: 0 });
     });
 
     it('should return full price for equipment when sellAtFullPrice is true', () => {
       const itemCost = { gp: 50, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'equipment', [], true);
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Equipment, [], true);
 
       expect(result).toEqual({ gp: 50, sp: 0, cp: 0 });
     });
 
     it('should handle odd copper values when selling equipment (round down)', () => {
       const itemCost = { sp: 0, cp: 15 };
-      const result = getSellingPrice(itemCost, 'equipment');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Equipment);
 
       expect(result).toEqual({ gp: 0, sp: 0, cp: 7 }); // 15 / 2 = 7.5, floored to 7
     });
 
     it('should consolidate to platinum when additionalCurrencies includes pp', () => {
       const itemCost = { gp: 2500, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'equipment', ['pp']);
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Equipment, ['pp']);
 
       // 2500gp / 2 = 1250gp = 125000cp = 125pp
       expect(result).toEqual({ pp: 125, gp: 0, sp: 0, cp: 0 });
@@ -307,7 +308,7 @@ describe('Coin Management Functions', () => {
 
     it('should consolidate to electrum when additionalCurrencies includes ep', () => {
       const itemCost = { gp: 2, sp: 5, cp: 0 };
-      const result = getSellingPrice(itemCost, 'trade-goods', ['ep']);
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.TradeGoods, ['ep']);
 
       // 250 copper = 2gp + 1ep
       expect(result).toEqual({ gp: 2, ep: 1, sp: 0, cp: 0 });
@@ -315,7 +316,7 @@ describe('Coin Management Functions', () => {
 
     it('should use both pp and ep when both are in additionalCurrencies', () => {
       const itemCost = { gp: 1575, sp: 0, cp: 0 };
-      const result = getSellingPrice(itemCost, 'gem', ['pp', 'ep']);
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Gem, ['pp', 'ep']);
 
       // 157500 copper = 157pp + 500cp = 157pp + 5gp (no ep since 0 < 50)
       expect(result).toEqual({ pp: 157, gp: 5, ep: 0, sp: 0, cp: 0 });
@@ -323,7 +324,7 @@ describe('Coin Management Functions', () => {
 
     it('should handle mixed denominations', () => {
       const itemCost = { gp: 2, sp: 3, cp: 7 };
-      const result = getSellingPrice(itemCost, 'equipment');
+      const result = getSellingPrice(itemCost, EquipmentCategoryType.Equipment);
 
       // Item: 237 copper, half = 118 copper = 1gp 1sp 8cp
       expect(result).toEqual({ gp: 1, sp: 1, cp: 8 });
@@ -332,11 +333,16 @@ describe('Coin Management Functions', () => {
     it('should return full price for all item types when sellAtFullPrice is true', () => {
       const itemCost = { gp: 10, sp: 5, cp: 3 };
 
-      const equipmentResult = getSellingPrice(itemCost, 'equipment', [], true);
-      const tradeGoodsResult = getSellingPrice(itemCost, 'trade-goods', [], true);
-      const gemResult = getSellingPrice(itemCost, 'gem', [], true);
-      const artResult = getSellingPrice(itemCost, 'art-object', [], true);
-      const magicResult = getSellingPrice(itemCost, 'magic-items', [], true);
+      const equipmentResult = getSellingPrice(itemCost, EquipmentCategoryType.Equipment, [], true);
+      const tradeGoodsResult = getSellingPrice(
+        itemCost,
+        EquipmentCategoryType.TradeGoods,
+        [],
+        true
+      );
+      const gemResult = getSellingPrice(itemCost, EquipmentCategoryType.Gem, [], true);
+      const artResult = getSellingPrice(itemCost, EquipmentCategoryType.ArtObject, [], true);
+      const magicResult = getSellingPrice(itemCost, EquipmentCategoryType.MagicItems, [], true);
 
       expect(equipmentResult).toEqual({ gp: 10, sp: 5, cp: 3 });
       expect(tradeGoodsResult).toEqual({ gp: 10, sp: 5, cp: 3 });
@@ -545,7 +551,7 @@ describe('Coin Management Functions', () => {
       it('should return platinum when selling expensive equipment', () => {
         const purse = { gp: 0, sp: 0, cp: 0 };
         const itemCost = { gp: 2500, sp: 0, cp: 0 };
-        const result = sellItem(purse, itemCost, 'equipment', ['pp']);
+        const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment, ['pp']);
 
         // 2500gp / 2 = 1250gp = 125000cp = 125pp
         expect(result).toEqual({ pp: 125, gp: 0, sp: 0, cp: 0 });
@@ -554,7 +560,7 @@ describe('Coin Management Functions', () => {
       it('should use electrum for trade goods', () => {
         const purse = { gp: 0, sp: 0, cp: 0 };
         const itemCost = { gp: 2, sp: 5, cp: 0 };
-        const result = sellItem(purse, itemCost, 'trade-goods', ['ep']);
+        const result = sellItem(purse, itemCost, EquipmentCategoryType.TradeGoods, ['ep']);
 
         // 250 copper = 2gp + 1ep
         expect(result).toEqual({ gp: 2, ep: 1, sp: 0, cp: 0 });
@@ -563,7 +569,7 @@ describe('Coin Management Functions', () => {
       it('should use both pp and ep when selling gems', () => {
         const purse = { gp: 0, sp: 0, cp: 0 };
         const itemCost = { gp: 1575, sp: 0, cp: 0 };
-        const result = sellItem(purse, itemCost, 'gem', ['pp', 'ep']);
+        const result = sellItem(purse, itemCost, EquipmentCategoryType.Gem, ['pp', 'ep']);
 
         // 157500 copper = 157pp + 500cp = 157pp + 5gp (no ep since 0 < 50)
         expect(result).toEqual({ pp: 157, gp: 5, ep: 0, sp: 0, cp: 0 });
@@ -572,7 +578,7 @@ describe('Coin Management Functions', () => {
       it('should not use additional currencies when not specified', () => {
         const purse = { gp: 0, sp: 0, cp: 0 };
         const itemCost = { pp: 5, ep: 3, gp: 2, sp: 0, cp: 0 };
-        const result = sellItem(purse, itemCost, 'equipment', []);
+        const result = sellItem(purse, itemCost, EquipmentCategoryType.Equipment, []);
 
         // (5000 + 150 + 200) / 2 = 2675 copper = 26gp 7sp 5cp
         expect(result).toEqual({ gp: 26, sp: 7, cp: 5 });

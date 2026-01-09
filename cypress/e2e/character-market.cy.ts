@@ -53,6 +53,9 @@ describe('Character Equipment Market & Management End-to-End', () => {
           cy.wrap($item).getByTestId('sp').should('contain.text', '5');
           cy.wrap($item).getButton('Sell').click();
         });
+      cy.getButton('Sell', ':not([role="tab"])').each(($item) =>
+        cy.wrap($item).should('be.disabled')
+      );
     });
 
     // Test: Verify successful sell transaction
@@ -133,6 +136,9 @@ describe('Character Equipment Market & Management End-to-End', () => {
         cy.wrap($item).getByTestId('gp').should('contain.text', '25');
         cy.wrap($item).getButton('Buy').click();
       });
+      cy.getButton('Buy', ':not([role="tab"])').each(($item) =>
+        cy.wrap($item).should('be.disabled')
+      );
       cy.get('#search').clear();
 
       cy.contains('Select a category or search to see items').should('not.exist');
@@ -183,9 +189,9 @@ describe('Character Equipment Market & Management End-to-End', () => {
         });
 
       // Test: Search for padded armor
-      cy.get('#search').type('Padded');
-      cy.getByTestId('market-buy-').should('have.length', 1);
-      cy.wrap($dialog).getButton('Add').click();
+      cy.get('#search').type('Pad');
+      cy.getByTestId('market-buy-padded-armor').getButton('Add').click();
+      cy.getButton('Add').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
     // Test: Verify Add transaction and money unchanged
@@ -236,6 +242,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
       cy.contains('Free Mode').parent().find('input[type="checkbox"]').click();
       cy.contains('Free Mode').parent().find('input[type="checkbox"]').should('be.checked');
       cy.wrap($dialog).getByTestId(`market-sell-padded-armor`).getButton('Remove').click();
+      cy.getButton('Remove').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
     // Test: Verify Remove transaction and money still unchanged
@@ -400,8 +407,10 @@ describe('Character Equipment Market & Management End-to-End', () => {
 
           cy.wrap($item).get('#quantity-crossbow-bolt').clear().type('40').blur();
           cy.wrap($item).getButton('Buy').click();
+          cy.wrap($item).getButton('Buy').should('be.disabled');
 
           // Test: Buy third pack of crossbow bolts
+          cy.wrap($item).getButton('Buy').should('be.enabled');
           cy.wrap($item).get('#quantity-crossbow-bolt').should('contain.value', '20');
           cy.wrap($item).getButton('Buy').click();
         });
