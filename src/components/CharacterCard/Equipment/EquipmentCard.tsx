@@ -69,7 +69,7 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
             />
           </Box>
           {'weight' in selectedEquipment && selectedEquipment.weight ? (
-            <Box display="flex" paddingLeft="50px" gap="5px">
+            <Box display="flex" paddingLeft="50px" gap="5px" data-testid="weight">
               <WeightIcon height="20px" width="20px" fill="slategrey" />
               <Typography sx={{ float: 'right' }}>{selectedEquipment.weight}</Typography>
             </Box>
@@ -81,6 +81,7 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         {'armor_class' in selectedEquipment && selectedEquipment.armor_class && (
           <EquipmentLine
             label="Armor Class"
+            testid="armor-class"
             data={`${selectedEquipment.armor_class.base}
             ${selectedEquipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
             ${
@@ -91,11 +92,16 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
           />
         )}
         {'category_range' in selectedEquipment && selectedEquipment.category_range && (
-          <EquipmentLine label="Range Category" data={selectedEquipment.category_range.name} />
+          <EquipmentLine
+            label="Range Category"
+            testid="range-category"
+            data={selectedEquipment.category_range.name}
+          />
         )}
         {'range' in selectedEquipment && selectedEquipment.range && (
           <EquipmentLine
             label="Range"
+            testid="range"
             data={`${selectedEquipment.range.normal}ft
             ${selectedEquipment.range.long ? ` - ${selectedEquipment.range.long}ft` : ''}`}
           />
@@ -103,6 +109,7 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         {'throw_range' in selectedEquipment && selectedEquipment.throw_range && (
           <EquipmentLine
             label="Throw Range"
+            testid="throw-range"
             data={`
             ${selectedEquipment.throw_range.normal}ft
             ${
@@ -113,43 +120,54 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         {'damage' in selectedEquipment && selectedEquipment.damage && (
           <EquipmentLine
             label="Damage"
+            testid="damage"
             data={`${selectedEquipment.damage.damage_dice} ${selectedEquipment.damage.damage_type.name}`}
           />
         )}
         {'two_handed_damage' in selectedEquipment && selectedEquipment.two_handed_damage && (
           <EquipmentLine
             label="Two-Handed Damage"
+            testid="two-handed-damage"
             data={`${selectedEquipment.two_handed_damage.damage_dice} ${selectedEquipment.two_handed_damage.damage_type.name}`}
           />
         )}
         {'capacity' in selectedEquipment && selectedEquipment.capacity ? (
-          <EquipmentLine label="Capacity" data={selectedEquipment.capacity.toString()} />
+          <EquipmentLine
+            label="Capacity"
+            testid="capacity"
+            data={selectedEquipment.capacity.toString()}
+          />
         ) : null}
         {'contents' in selectedEquipment &&
           selectedEquipment.contents?.map((content) => (
-            <Typography key={content.item.index}>
+            <Typography key={content.item.index} data-testid={`content-${content.item.index}`}>
               {content.quantity} {content.item.name}
             </Typography>
           ))}
         {'speed' in selectedEquipment && selectedEquipment.speed && (
           <EquipmentLine
             label="Speed"
+            testid="speed"
             data={`${selectedEquipment.speed?.quantity} ${selectedEquipment.speed?.unit}`}
           />
         )}
         {'str_minimum' in selectedEquipment && selectedEquipment.str_minimum ? (
-          <EquipmentLine label="Minimum Strength" data={selectedEquipment.str_minimum.toString()} />
+          <EquipmentLine
+            label="Minimum Strength"
+            testid="str-minimum"
+            data={selectedEquipment.str_minimum.toString()}
+          />
         ) : null}
         {'stealth_disadvantage' in selectedEquipment && selectedEquipment.stealth_disadvantage ? (
-          <Typography>Stealth Disadvantage</Typography>
+          <Typography data-testid="stealth-disadvantage">Stealth Disadvantage</Typography>
         ) : null}
         {'special' in selectedEquipment && selectedEquipment.special && (
-          <EquipmentLine label="Special" data={selectedEquipment.special} />
+          <EquipmentLine label="Special" testid="special" data={selectedEquipment.special} />
         )}
         {'properties' in selectedEquipment && selectedEquipment.properties && (
-          <Box paddingTop="15px">
+          <Box paddingTop="15px" data-testid="properties">
             {properties.map((property) => (
-              <Accordion key={property.index}>
+              <Accordion key={property.index} data-testid={`property-${property.index}`}>
                 <AccordionSummary expandIcon={<ExpandMore />}>{property.name}</AccordionSummary>
                 <AccordionDetails sx={{ textAlign: 'justify' }}>{property.desc}</AccordionDetails>
               </Accordion>

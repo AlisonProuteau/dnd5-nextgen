@@ -8,16 +8,14 @@ describe('Character Money Management End-to-End', () => {
     money: { gp: 10, sp: 5, cp: 3 }
   };
 
-  beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
-    cy.login(Cypress.testUser.uid);
-  });
-
   afterEach(() =>
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`)
   );
 
   it('should complete full money management workflow with validation and error handling', () => {
+    cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
+    cy.login(Cypress.testUser.uid);
+
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
@@ -46,16 +44,16 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '5');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '3');
 
-      cy.getButton('Save').should('be.disabled');
-      cy.getButton('Cancel').should('be.enabled');
+      cy.wrap($dialog).getButton('Save').should('be.disabled');
+      cy.wrap($dialog).getButton('Cancel').should('be.enabled');
 
       cy.get('#money-units-gp').clear().type('5').blur();
       cy.wrap($dialog).getByTestId('gp').should('contain.text', '15');
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '5');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '3');
 
-      cy.getButton('Save').should('be.enabled');
-      cy.getButton('Cancel').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled');
+      cy.wrap($dialog).getButton('Cancel').click();
     });
     cy.getByRole('dialog').should('not.exist');
 
@@ -93,7 +91,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '3');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -123,7 +121,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '3');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -145,7 +143,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '-9');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '-7');
 
-      cy.getButton('Save').should('be.disabled');
+      cy.wrap($dialog).getButton('Save').should('be.disabled');
 
       cy.get('#money-units-gp').clear().type('-7').blur();
 
@@ -153,7 +151,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '3');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -183,7 +181,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '7');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '0');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -212,7 +210,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '2');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '5');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -267,13 +265,13 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '5');
 
       // Test: No changes means save is disabled
-      cy.getButton('Save').should('be.disabled');
+      cy.wrap($dialog).getButton('Save').should('be.disabled');
       cy.get('#money-units-gp').clear().type('5').blur();
-      cy.getButton('Save').should('be.enabled');
+      cy.wrap($dialog).getButton('Save').should('be.enabled');
       cy.get('#money-units-gp').clear().type('0').blur();
-      cy.getButton('Save').should('be.disabled');
+      cy.wrap($dialog).getButton('Save').should('be.disabled');
 
-      cy.getButton('Cancel').click();
+      cy.wrap($dialog).getButton('Cancel').click();
     });
     cy.getByRole('dialog').should('not.exist');
 
@@ -295,12 +293,6 @@ describe('Character Money Management End-to-End', () => {
   });
 
   it('should handle additional currencies workflow with settings configuration and consolidation', () => {
-    const characterWithAdditionalCurrency = {
-      ...characterData,
-      id: 'money-additional-test-char',
-      money: { pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 }
-    };
-
     const updateAdditionalCurrenciesAndReload = (currencies: string[]) => {
       cy.callFirestore('update', `users/${Cypress.testUser.uid}`, {
         additionalCurrencies: currencies
@@ -314,18 +306,23 @@ describe('Character Money Management End-to-End', () => {
     };
 
     // Test: Setup & Navigation - Enable both additional currencies in user settings
-    cy.createTestCharacter(
-      Cypress.testUser.uid,
-      characterWithAdditionalCurrency.id,
-      characterWithAdditionalCurrency
-    );
+    cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, {
+      ...characterWithMoney,
+      money: {
+        pp: 2,
+        gp: 5,
+        ep: 3,
+        sp: 4,
+        cp: 7
+      }
+    });
     cy.login(Cypress.testUser.uid);
-    cy.getByTestId(`character-card-${characterWithAdditionalCurrency.id}`).click();
+    cy.visit('/');
+
+    cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
     updateAdditionalCurrenciesAndReload(['pp', 'ep']);
 
     // Test: Verify initial display with both currencies enabled
-    // Character data: pp: 2, gp: 5, ep: 3, sp: 4, cp: 7 = 2697 copper
-    // Consolidated with PP and EP enabled: 2pp 6gp 1ep 4sp 7cp
     cy.getByTestId('money-display')
       .should('be.visible')
       .within(($purse) => {
@@ -343,7 +340,7 @@ describe('Character Money Management End-to-End', () => {
     });
 
     // Test: Verify PP and EP input fields are present in dialog when both are enabled
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       cy.get('#money-units-pp').should('be.visible');
       cy.get('#money-units-ep').should('be.visible');
@@ -358,7 +355,6 @@ describe('Character Money Management End-to-End', () => {
     updateAdditionalCurrenciesAndReload([]);
 
     // Test: PP and EP should not be visible when disabled in settings (even though they have values)
-    // Money should be consolidated without PP/EP: 2697 copper = 26gp 9sp 7cp
     cy.getByTestId('money-display')
       .should('be.visible')
       .within(($purse) => {
@@ -373,7 +369,6 @@ describe('Character Money Management End-to-End', () => {
     updateAdditionalCurrenciesAndReload(['pp']);
 
     // Test: Only PP should be visible, EP should be hidden
-    // Money should be consolidated with PP but not EP: 2697 copper = 2pp 6gp 9sp 7cp
     cy.getByTestId('money-display')
       .should('be.visible')
       .within(($purse) => {
@@ -385,12 +380,12 @@ describe('Character Money Management End-to-End', () => {
       });
 
     // Test: Verify only PP input field is present in dialog
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       cy.get('#money-units-pp').should('be.visible');
       cy.get('#money-units-ep').should('not.exist');
       cy.get('#money-units-gp').should('be.visible');
-      cy.getButton('Cancel').click();
+      cy.wrap($dialog).getButton('Cancel').click();
     });
     cy.getByRole('dialog').should('not.exist');
 
@@ -410,7 +405,7 @@ describe('Character Money Management End-to-End', () => {
       });
 
     // Test: Verify only EP input field is present and test electrum-specific consolidation
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       cy.get('#money-units-pp').should('not.exist');
       cy.get('#money-units-ep').should('be.visible');
@@ -443,7 +438,7 @@ describe('Character Money Management End-to-End', () => {
       });
 
     // Test: Platinum Consolidation - Add platinum directly then consolidate with copper
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       // Verify current display in dialog
       cy.wrap($dialog).getByTestId('pp').should('contain.text', '2');
@@ -468,7 +463,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '0');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -484,7 +479,7 @@ describe('Character Money Management End-to-End', () => {
       });
 
     // Test: Mixed Denomination Consolidation - Add multiple currencies with complex consolidation
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       // Current: 8pp + 0gp + 0ep + 0sp + 0cp = 8000 copper
       // Add: 10pp + 50gp + 20ep + 30sp + 100cp = 10000 + 5000 + 1000 + 300 + 100 = 16400
@@ -501,7 +496,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '0');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -517,7 +512,7 @@ describe('Character Money Management End-to-End', () => {
       });
 
     // Test: Negative Values - Remove platinum with consolidation
-    cy.getByTestId(`coin-purse-${characterWithAdditionalCurrency.id}`).click();
+    cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
     cy.getByRole('dialog').within(($dialog) => {
       // Current (after previous save): 24pp + 4gp + 0ep + 0sp + 0cp = 24400 copper
       // Remove 1pp: 24400 - 1000 = 23400 copper = 23pp + 4gp + 0ep + 0sp + 0cp
@@ -529,7 +524,7 @@ describe('Character Money Management End-to-End', () => {
       cy.wrap($dialog).getByTestId('sp').should('contain.text', '0');
       cy.wrap($dialog).getByTestId('cp').should('contain.text', '0');
 
-      cy.getButton('Save').should('be.enabled').click();
+      cy.wrap($dialog).getButton('Save').should('be.enabled').click();
     });
     cy.getByRole('status', 'Money Updated').should('be.visible');
     cy.getByRole('dialog').should('not.exist');
@@ -541,11 +536,5 @@ describe('Character Money Management End-to-End', () => {
         cy.wrap($purse).getByTestId('gp').should('contain.text', '4');
         cy.wrap($purse).getByTestId('ep').should('contain.text', '0');
       });
-
-    // Test: Cleanup - Remove test character
-    cy.callFirestore(
-      'delete',
-      `users/${Cypress.testUser.uid}/characters/${characterWithAdditionalCurrency.id}`
-    );
   });
 });

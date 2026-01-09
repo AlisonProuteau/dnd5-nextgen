@@ -26,7 +26,6 @@ interface EquipmentListItemProps {
   onAction: (item: Equipment | MagicItem, quantity?: number, customPrice?: MoneyObjectType) => void;
 }
 
-//TODO: Custom money not updating on sell/buy
 export function EquipmentListItem({
   item,
   mode,
@@ -48,6 +47,7 @@ export function EquipmentListItem({
           : 99,
     [item, mode]
   );
+  const minQuantity = useMemo(() => ('quantity' in item ? item.quantity || 1 : 1), [item]);
 
   const getButtonLabel = () =>
     isFreeMode ? (mode === 'sell' ? 'Remove' : 'Add') : mode === 'sell' ? 'Sell' : 'Buy';
@@ -68,7 +68,11 @@ export function EquipmentListItem({
   }, [mode]);
 
   return (
-    <Card key={`${mode}-${item.index}`} variant="outlined">
+    <Card
+      key={`market-${mode}-${item.index}`}
+      data-testid={`market-${mode}-${item.index}`}
+      variant="outlined"
+    >
       <CardContent
         style={{ padding: '16px' }}
         sx={{
@@ -90,25 +94,21 @@ export function EquipmentListItem({
           ) : null}
         </Box>
 
-        {/* // TODO: work on the workaround */}
         {maxQuantity > 1 && (
           <Box display="flex" sx={{ minWidth: '20%' }}>
             <NumberInput
               id={`quantity-${item.index}`}
-              min={1 * ('quantity' in item ? item.quantity || 1 : 1)}
+              min={minQuantity}
               max={maxQuantity}
-              value={quantity * ('quantity' in item ? item.quantity || 1 : 1)}
-              step={'quantity' in item ? item.quantity || 1 : 1}
+              value={quantity * minQuantity}
+              step={minQuantity}
               onInputChange={(e) => {
                 setIsUpdating(true);
                 const parsed = parseInt(e.target.value);
-                if (parsed && !isNaN(parsed)) {
-                  const adjusted = parsed / ('quantity' in item ? item.quantity || 1 : 1);
-                  setQuantity(adjusted);
-                }
+                if (parsed !== null && !isNaN(parsed)) setQuantity(parsed / minQuantity);
               }}
               onChange={(_, value) => {
-                setQuantity(value ? value / ('quantity' in item ? item.quantity || 1 : 1) : 1);
+                setQuantity(value ? value / minQuantity : 1);
                 setIsUpdating(false);
               }}
               onBlur={() => setIsUpdating(false)}

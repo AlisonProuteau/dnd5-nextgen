@@ -54,7 +54,7 @@ export function Equipments({ character }: DefaultProps) {
 
   return (
     <Fragment>
-      <Box data-testid="equipment-section" display="grid" gridTemplateColumns="1fr 1fr">
+      <Box data-testid="equipment-section-header" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
@@ -76,20 +76,22 @@ export function Equipments({ character }: DefaultProps) {
         Market
       </Button>
 
-      {Object.entries(equipmentList).map(([category, equipment]) => (
-        <Card key={category}>
-          <CardContent>
-            <Typography variant="h5">{equipment[0].equipment_category.name || ''}</Typography>
-            <EquipmentList
-              equipmentList={[...equipment]}
-              onClick={(equipment) => {
-                setSelectedEquipment(equipment);
-                openDialog();
-              }}
-            />
-          </CardContent>
-        </Card>
-      ))}
+      <Box data-testid="equipment-section-content">
+        {Object.entries(equipmentList).map(([category, equipment]) => (
+          <Card key={category}>
+            <CardContent>
+              <Typography variant="h5">{equipment[0].equipment_category.name || ''}</Typography>
+              <EquipmentList
+                equipmentList={[...equipment]}
+                onClick={(equipment) => {
+                  setSelectedEquipment(equipment);
+                  openDialog();
+                }}
+              />
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
 
       <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth>
         {selectedEquipment && <EquipmentCard selectedEquipment={selectedEquipment} />}

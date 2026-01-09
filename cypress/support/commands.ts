@@ -101,6 +101,12 @@ declare global {
         testId: string,
         { selector, type }?: { selector?: string; type?: 'exact' | 'starts' | 'contains' }
       ): Chainable<JQuery<HTMLElement>>;
+
+      /**
+       * Asserts that an element with aria-selected is selected.
+       * @returns Chainable<JQuery<HTMLElement>>
+       */
+      shouldBeSelected(): Chainable<JQuery<HTMLElement>>;
     }
   }
 }
@@ -222,7 +228,7 @@ Cypress.Commands.add(
  */
 Cypress.Commands.add('selectOption', (selectId: string, option?: string | RegExp) => {
   cy.get(selectId).click();
-  option && cy.get(`[role="option"]`).contains(option).click();
+  option && cy.get(`[role="option"]`, { withinSubject: null }).contains(option).click();
 });
 
 /**
@@ -280,7 +286,9 @@ Cypress.Commands.addQuery(
         res.length === 0 &&
         !(nextCommand.get('name') === 'should' && nextCommand.get('args')[0] === 'not.exist')
       )
-        throw new Error(`No element found for testId: ${testId} with selector: ${selector}`);
+        throw new Error(
+          `No element found for testId: ${testId} with selector: ${selector} and type: ${type}`
+        );
       return res;
     };
   }
@@ -308,4 +316,13 @@ Cypress.Commands.addQuery('getButton', function (text: string | RegExp, selector
       throw new Error(`No button found with text: ${text} and selector: ${selector}`);
     return res;
   };
+});
+
+/**
+ * Cypress command: shouldBeSelected
+ * Asserts that an element has aria-selected="true".
+ */
+Cypress.Commands.add('shouldBeSelected', { prevSubject: true }, (subject) => {
+  cy.wrap(subject).should('have.attr', 'aria-selected', 'true');
+  return cy.wrap(subject);
 });

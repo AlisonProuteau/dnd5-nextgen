@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { buyItem, getSellingPrice, sellItem } from '@utils/character';
+import { buyItem, getSellingPrice, remainingMoneyInCopper, sellItem } from '@utils/character';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -29,7 +29,7 @@ interface MarketProps {
   ownedEquipment: ((Equipment | MagicItem) & { count?: number })[];
 }
 
-// TODO: Add Cypress + maybe pagination on the search
+// TODO: Fix race condition when buying and selling very fast
 export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { additionalCurrencies = [] } = useAuth();
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
@@ -48,7 +48,9 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
     customPrice?: MoneyObjectType
   ) => {
     const totalCost =
-      'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : (customPrice ?? {});
+      'cost' in item
+        ? { [item.cost.unit]: item.cost.quantity * quantity }
+        : { cp: remainingMoneyInCopper({}, customPrice ?? {}) * quantity };
     const updatedPurse = isfreeMode
       ? character.money || { cp: 0, sp: 0, gp: 0 }
       : sellItem(
@@ -71,7 +73,10 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
       })
       .filter((eq) => eq !== null && eq.count !== 0);
 
-    await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
+    await firebaseCrud.update(character.id, {
+      equipments: updatedEquipments,
+      money: updatedPurse
+    });
   };
 
   const onBuy = async (
@@ -80,7 +85,9 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
     customPrice?: MoneyObjectType
   ) => {
     const totalCost =
-      'cost' in item ? { [item.cost.unit]: item.cost.quantity * quantity } : (customPrice ?? {});
+      'cost' in item
+        ? { [item.cost.unit]: item.cost.quantity * quantity }
+        : { cp: remainingMoneyInCopper({}, customPrice ?? {}) * quantity };
     const updatedPurse = isfreeMode
       ? character.money || { cp: 0, sp: 0, gp: 0 }
       : buyItem(purse, totalCost, additionalCurrencies);
@@ -93,7 +100,10 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
         })
       : [...character.equipments, { index: item.index, name: item.name, count: totalQuantity }];
 
-    await firebaseCrud.update(character.id, { equipments: updatedEquipments, money: updatedPurse });
+    await firebaseCrud.update(character.id, {
+      equipments: updatedEquipments,
+      money: updatedPurse
+    });
   };
 
   const canBuy = (

@@ -40,7 +40,7 @@ export function Settings() {
   } = useAuth();
   const form = useForm<SettingsFormData>({
     initialData: {
-      version: currentUserVersion,
+      version: currentUserVersion || 'Legacy',
       additionalCurrencies: currentAdditionalCurrencies || []
     }
   });
@@ -98,9 +98,7 @@ export function Settings() {
               id="version-select"
               value={form.formData.version}
               label="Version"
-              onChange={({ target }) =>
-                form.setFormData({ version: (target.value as Version) || 'Legacy' })
-              }
+              onChange={({ target }) => form.setFormData({ version: target.value })}
             >
               {VERSIONS?.map((current) => (
                 <MenuItem key={`version-${current}`} value={current} data-testid="version-option">

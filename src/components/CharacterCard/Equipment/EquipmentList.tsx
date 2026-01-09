@@ -20,7 +20,11 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
   return equipmentList.map((equipment) => (
     <Box key={equipment.index} data-testid={`equipment-item-${equipment.index}`}>
       {onClick && (
-        <IconButton sx={{ verticalAlign: 'center' }} onClick={() => onClick(equipment)}>
+        <IconButton
+          sx={{ verticalAlign: 'center' }}
+          onClick={() => onClick(equipment)}
+          data-testid={`equipment-item-${equipment.index}-info`}
+        >
           <InfoOutlined color="info" fontSize="small" />
         </IconButton>
       )}
@@ -28,7 +32,13 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
         {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
       </Typography>
       {'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (
-        <Box display="flex" paddingLeft="min(50px, 15%)" gap="5px" alignItems="center">
+        <Box
+          display="flex"
+          paddingLeft="min(50px, 15%)"
+          gap="5px"
+          alignItems="center"
+          data-testid="damage-info"
+        >
           <BladeIcon height="20px" width="20px" fill="white" />
           <Typography width="100%">
             {equipment.damage?.damage_dice} {equipment.damage?.damage_type.name}
@@ -36,7 +46,7 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
         </Box>
       )}
       {'armor_class' in equipment && equipment.armor_class && (
-        <Box display="flex" paddingLeft="50px" gap="5px">
+        <Box display="flex" paddingLeft="50px" gap="5px" data-testid="armor-class-info">
           <ShieldIcon height="20px" width="20px" fill="white" />
           <Typography>
             {equipment.armor_class.base} AC

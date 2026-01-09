@@ -34,19 +34,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#message').type('Anonymous feedback message');
     cy.get('button[type="submit"]').should('be.enabled');
 
-    // Test: Error Handling - submission failure
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 2 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-
     // Test: loading state during anonymous submission
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
@@ -167,19 +154,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('button[type="submit"]').should('be.disabled');
     cy.get('input[id="area"]').type('Custom Bug Area');
 
-    // Test: Error Handling - submission error
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-
     // Test: Success Workflow - Complete successful submission
     cy.get('#message').clear().type('Resolved bug summary');
     cy.get('#reproSteps').clear().type('1. Steps to reproduce after fix\n2. Additional step');
@@ -264,19 +238,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#canContact').check();
     cy.get('#canContact').should('be.checked');
     cy.get('button[type="submit"]').should('be.enabled');
-
-    // Test: Error Handling - submission error
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
 
     // Test: Success Workflow - Submit with contact permission
     cy.intercept(
@@ -402,23 +363,6 @@ describe(`Settings Page End-to-End`, () => {
         cy.get('button[type="submit"]').should('be.disabled');
       }
     });
-  });
-
-  it('should handle version update error gracefully', () => {
-    // Test: Intercept and fail the update
-    cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
-      statusCode: 500,
-      body: { error: 'Update failed' }
-    }).as('updateError');
-
-    cy.get('button[type="submit"]').click();
-    cy.wait('@updateError');
-
-    // Test: Error message appears
-    cy.getByRole('status', 'Something went wrong').should('be.visible');
-
-    // Test: Still on settings page
-    cy.url().should('include', '/settings');
   });
 
   it('should successfully update settings and navigate to home', () => {

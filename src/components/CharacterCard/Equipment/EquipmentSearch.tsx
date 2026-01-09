@@ -97,10 +97,9 @@ export function EquipmentSearch({
         {!isEquipmentCategoriesLoading && equipmentCategories?.length ? (
           <Fragment>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel htmlFor="equipmentCategory">Category</InputLabel>
               <Select
-                id="equipment-category-select"
-                data-testid="equipment-category-select"
+                id="equipmentCategory"
                 value={selectedCategory ?? 'all'}
                 label="Category"
                 onChange={(event) => {
@@ -109,7 +108,7 @@ export function EquipmentSearch({
                 }}
               >
                 {equipmentCategories.map((cat) => (
-                  <MenuItem key={cat.index} value={cat.index}>
+                  <MenuItem key={cat.index} id={cat.index} value={cat.index}>
                     {cat.name}
                   </MenuItem>
                 ))}
@@ -119,10 +118,9 @@ export function EquipmentSearch({
             {equipmentCategories.find(({ index }) => index === selectedCategory)?.subcategories
               ?.length ? (
               <FormControl fullWidth sx={{ marginTop: 2 }}>
-                <InputLabel>Sub-Category</InputLabel>
+                <InputLabel htmlFor="equipmentSubcategory">Sub-Category</InputLabel>
                 <Select
-                  id="equipment-subcategory-select"
-                  data-testid="equipment-subcategory-select"
+                  id="equipmentSubcategory"
                   value={selectedSubCategory ?? 'all'}
                   label="Sub-Category"
                   onChange={(event) => setSelectedSubCategory(event.target.value)}
@@ -132,7 +130,7 @@ export function EquipmentSearch({
                     ...equipmentCategories.find(({ index }) => index === selectedCategory)!
                       .subcategories
                   ].map((cat) => (
-                    <MenuItem key={cat.index} value={cat.index}>
+                    <MenuItem key={cat.index} id={cat.index} value={cat.index}>
                       {cat.name}
                     </MenuItem>
                   ))}

@@ -22,8 +22,8 @@ export interface UseFirebaseCrudOptions {
 export interface UseFirebaseCrudReturn<T> {
   isLoading: boolean;
   create: (data: Partial<T> & any, customPath?: string) => Promise<string | null>;
-  update: (id: string, data: Partial<T>, customPath?: string) => Promise<void>;
-  remove: (id: string, customPath?: string) => Promise<void>;
+  update: (id: string, data: Partial<T>, customPath?: string) => Promise<boolean>;
+  remove: (id: string, customPath?: string) => Promise<boolean>;
   getById: (id: string, customPath?: string) => Promise<T | null>;
 }
 
@@ -90,10 +90,10 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     }
   };
 
-  const update = async (id: string, data: Partial<T>, customPath?: string): Promise<void> => {
+  const update = async (id: string, data: Partial<T>, customPath?: string): Promise<boolean> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
-      return;
+      return false;
     }
 
     setIsLoading(true);
@@ -111,15 +111,18 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
       toast.error(`Error updating: ${(error as Error).message}`);
-    } finally {
       setIsLoading(false);
+      return false;
     }
+
+    setIsLoading(false);
+    return true;
   };
 
-  const remove = async (id: string, customPath?: string): Promise<void> => {
+  const remove = async (id: string, customPath?: string): Promise<boolean> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
-      return;
+      return false;
     }
 
     setIsLoading(true);
@@ -136,9 +139,12 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       toast.success(successMessages.delete || 'Deleted successfully');
     } catch (error) {
       toast.error(`Error deleting: ${(error as Error).message}`);
-    } finally {
       setIsLoading(false);
+      return false;
     }
+
+    setIsLoading(false);
+    return true;
   };
 
   const getById = async (id: string, customPath?: string): Promise<T | null> => {

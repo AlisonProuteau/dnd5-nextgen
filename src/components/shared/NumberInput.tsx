@@ -54,11 +54,14 @@ export const NumberInput = forwardRef(function CustomNumberInput(
           incrementButton: {
             children: <Add fontSize="small" />,
             className: 'increment',
-            disabled: addDisabled
+            disabled: addDisabled,
+            id: `${id}-increment`
           },
           decrementButton: {
             children: <Remove fontSize="small" />,
-            disabled: removeDisabled
+            className: 'decrement',
+            disabled: removeDisabled,
+            id: `${id}-decrement`
           },
           ...props.slotProps
         }}
