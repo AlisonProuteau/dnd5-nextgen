@@ -11,7 +11,13 @@ import {
 } from '@mui/material';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { buyItem, getSellingPrice, remainingMoneyInCopper, sellItem } from '@utils/character';
+import {
+  buyItem,
+  EquipmentCategoryType,
+  getSellingPrice,
+  remainingMoneyInCopper,
+  sellItem
+} from '@utils/character';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -55,7 +61,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
       : sellItem(
           purse,
           totalCost,
-          item.equipment_category.index as any,
+          item.equipment_category.index as EquipmentCategoryType,
           additionalCurrencies,
           Object.keys(customPrice ?? {}).length !== 0
         );
