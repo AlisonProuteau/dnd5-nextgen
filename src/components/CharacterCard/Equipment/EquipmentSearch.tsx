@@ -26,13 +26,19 @@ interface EquipmentSearchProps {
     quantity?: number,
     customPrice?: MoneyObjectType
   ) => boolean;
-  onBuy?: (item: Equipment | MagicItem, quantity?: number, customPrice?: MoneyObjectType) => void;
+  onBuy?: (
+    item: Equipment | MagicItem,
+    quantity?: number,
+    customPrice?: MoneyObjectType
+  ) => Promise<void>;
+  disableAction?: boolean;
 }
 
 export function EquipmentSearch({
   isFreeMode = false,
   canBuy = () => false,
-  onBuy = () => {}
+  onBuy = async () => {},
+  disableAction = false
 }: EquipmentSearchProps = {}) {
   const { version } = useAuth();
   const [search, setSearch] = useState('');
@@ -173,6 +179,7 @@ export function EquipmentSearch({
                   priceDisplay={{ [item.cost.unit]: item.cost.quantity }}
                   canBuy={canBuy}
                   onAction={onBuy}
+                  disableAction={disableAction}
                 />
               ) : (
                 <EquipmentListItem
@@ -182,6 +189,7 @@ export function EquipmentSearch({
                   isFreeMode={isFreeMode}
                   canBuy={canBuy}
                   onAction={onBuy}
+                  disableAction={disableAction}
                 />
               )
             )}

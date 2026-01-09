@@ -29,7 +29,6 @@ interface MarketProps {
   ownedEquipment: ((Equipment | MagicItem) & { count?: number })[];
 }
 
-// TODO: Fix race condition when buying and selling very fast
 export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { additionalCurrencies = [] } = useAuth();
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
@@ -179,13 +178,19 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
                         : undefined
                     }
                     onAction={onSell}
+                    disableAction={firebaseCrud.isLoading}
                   />
                 ))}
               </Box>
             )}
           </Box>
         ) : (
-          <EquipmentSearch isFreeMode={isfreeMode} canBuy={canBuy} onBuy={onBuy} />
+          <EquipmentSearch
+            isFreeMode={isfreeMode}
+            canBuy={canBuy}
+            onBuy={onBuy}
+            disableAction={firebaseCrud.isLoading}
+          />
         )}
       </DialogContent>
     </Box>

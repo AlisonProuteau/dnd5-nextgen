@@ -23,7 +23,12 @@ interface EquipmentListItemProps {
     quantity?: number,
     customPrice?: MoneyObjectType
   ) => boolean;
-  onAction: (item: Equipment | MagicItem, quantity?: number, customPrice?: MoneyObjectType) => void;
+  onAction: (
+    item: Equipment | MagicItem,
+    quantity?: number,
+    customPrice?: MoneyObjectType
+  ) => Promise<void>;
+  disableAction?: boolean;
 }
 
 export function EquipmentListItem({
@@ -32,7 +37,8 @@ export function EquipmentListItem({
   isFreeMode,
   priceDisplay,
   onAction,
-  canBuy = () => false
+  canBuy = () => false,
+  disableAction = false
 }: EquipmentListItemProps) {
   const [quantity, setQuantity] = useState<number>(1);
   const [customPrice, setCustomPrice] = useState<MoneyObjectType>({});
@@ -48,6 +54,20 @@ export function EquipmentListItem({
     [item, mode]
   );
   const minQuantity = useMemo(() => ('quantity' in item ? item.quantity || 1 : 1), [item]);
+  const isDisabled = useMemo(
+    () =>
+      isUpdating ||
+      (mode === 'buy' &&
+        !isFreeMode &&
+        ((!priceDisplay && remainingMoneyInCopper({}, customPrice) === 0) ||
+          !canBuy(item, quantity, customPrice))),
+    [isUpdating, mode, isFreeMode, priceDisplay, customPrice, item, quantity, canBuy]
+  );
+
+  useEffect(() => {
+    setQuantity(1);
+    setCustomPrice({});
+  }, [mode]);
 
   const getButtonLabel = () =>
     isFreeMode ? (mode === 'sell' ? 'Remove' : 'Add') : mode === 'sell' ? 'Sell' : 'Buy';
@@ -62,10 +82,13 @@ export function EquipmentListItem({
     return total;
   };
 
-  useEffect(() => {
-    setQuantity(1);
+  const onSubmit = async () => {
+    setIsUpdating(true);
     setCustomPrice({});
-  }, [mode]);
+    await onAction(item, quantity, customPrice);
+    setQuantity(1);
+    setIsUpdating(false);
+  };
 
   return (
     <Card
@@ -179,18 +202,8 @@ export function EquipmentListItem({
           <Button
             variant="outlined"
             size="small"
-            disabled={
-              isUpdating ||
-              (mode === 'buy' &&
-                !isFreeMode &&
-                ((!priceDisplay && remainingMoneyInCopper({}, customPrice) === 0) ||
-                  !canBuy(item, quantity, customPrice)))
-            }
-            onClick={() => {
-              setCustomPrice({});
-              onAction(item, quantity, customPrice);
-              setQuantity(1);
-            }}
+            disabled={isDisabled || disableAction}
+            onClick={onSubmit}
           >
             {getButtonLabel()}
           </Button>

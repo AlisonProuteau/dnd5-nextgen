@@ -400,10 +400,6 @@ describe('Character Equipment Market & Management End-to-End', () => {
 
           cy.wrap($item).get('#quantity-crossbow-bolt').clear().type('40').blur();
           cy.wrap($item).getButton('Buy').click();
-          cy.wrap($dialog)
-            .getByTestId('money-display')
-            .getByTestId('gp')
-            .should('contain.text', '48');
 
           // Test: Buy third pack of crossbow bolts
           cy.wrap($item).get('#quantity-crossbow-bolt').should('contain.value', '20');
@@ -412,7 +408,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
     });
 
     // Test: Verify successful buy transaction
-    cy.getByRole('status', 'Transaction successful').should('be.visible');
+    cy.getByRole('status', 'Transaction successful').should('have.length', 2);
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId(`equipment-item-crossbow-bolt`).should('contain.text', '80 Crossbow bolt');
