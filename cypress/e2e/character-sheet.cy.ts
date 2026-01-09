@@ -177,54 +177,96 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Equipment section
     cy.getByTestId('next-step').click();
-    cy.getByTestId('equipment-section').should('be.visible');
+    cy.getByTestId('equipment-section-header').should('be.visible');
     cy.getByTestId('money-display').within(($purse) => {
       cy.wrap($purse).getByTestId('gp').should('be.visible');
       cy.wrap($purse).getByTestId('sp').should('be.visible');
       cy.wrap($purse).getByTestId('cp').should('be.visible');
     });
     cy.getByTestId('inventory-weight').should('contain.text', '14').and('contain.text', 'Weight');
-
     characterData.equipments.forEach((equipment) => {
       cy.getByTestId(`equipment-item-${equipment.index}`).should('contain.text', equipment.name);
-
-      // Check for damage details if present
-      cy.getByTestId(`equipment-item-${equipment.index}`).then(($el) => {
-        if ($el.text().match(/d\d+/)) {
-          expect($el.text()).to.match(/d\d+/); // e.g. 1d6, 2d8, etc.
-        }
-        if ($el.text().includes('AC')) {
-          expect($el.text()).to.match(/\d+ AC/);
-        }
-        if ($el.text().includes('Dexterity bonus')) {
-          expect($el.text()).to.include('Dexterity bonus');
-        }
-        if ($el.text().includes('Max:')) {
-          expect($el.text()).to.match(/Max: \d+/);
-        }
-      });
-
-      cy.getByTestId(`equipment-item-${equipment.index}`).find('button').click();
-      cy.getByRole('dialog').within(() => {
-        cy.contains(equipment.name).should('exist');
-        cy.contains(/\d+(gp|sp|cp)/).should('exist');
-
-        if (equipment.type === 'weapon') {
-          cy.contains(/anvil\d+/).should('exist');
-          cy.contains(/Range/).should('exist');
-          cy.contains(/Range Category/).should('exist');
-          cy.contains(/Throw Range/).should('exist');
-          cy.contains(/Damage|d\d+/).should('exist');
-        }
-        if (equipment.type === 'armor') {
-          cy.contains(/anvil\d+/).should('exist');
-          cy.contains(/Armor Class|AC/).should('exist');
-        }
-        // TODO: Add more checks specific for this character
-      });
-      cy.press('Escape');
-      cy.getByRole('dialog').should('not.exist');
     });
+
+    // Test: Equipment details
+    cy.getByTestId('equipment-section-content')
+      .children()
+      .each(($section) => {
+        const sectionName = $section.find('h5').text().trim();
+        cy.wrap($section)
+          .getByTestId(`equipment-item-`, { selector: ':not([data-testid$="-info"])' })
+          .each(($item) => {
+            const name = $item.find('p').first().text().trim();
+            if (sectionName === 'Weapon') {
+              cy.wrap($item)
+                .getByTestId('damage-info')
+                .invoke('text')
+                .should('match', /\d+d\d+ .*/);
+            } else if (sectionName === 'Armor') {
+              cy.wrap($item)
+                .getByTestId('armor-class-info')
+                .invoke('text')
+                .should('match', /\d+ AC( - Dexterity bonus)?( \(Max: \d+\))?/);
+            }
+
+            cy.wrap($item).getByTestId('-info', { type: 'contains' }).first().click();
+            cy.getByRole('dialog', name).within(($dialog) => {
+              cy.wrap($dialog)
+                .getByTestId('money-display')
+                .get('[data-testid="gp"],[data-testid="sp"],[data-testid="cp"]')
+                .each(($coin) =>
+                  cy
+                    .wrap($coin)
+                    .invoke('text')
+                    .should('match', /[1-9]+/)
+                );
+              if (sectionName === 'Weapon') {
+                cy.wrap($dialog)
+                  .getByTestId('weight')
+                  .invoke('text')
+                  .should('match', /[1-9]+/);
+
+                cy.wrap($dialog)
+                  .getByTestId('range-category')
+                  .invoke('text')
+                  .should('match', /Range Category:.+/);
+                cy.wrap($dialog)
+                  .getByTestId('range')
+                  .invoke('text')
+                  .should('match', /Range:\d+ft/);
+
+                cy.wrap($dialog)
+                  .invoke('text')
+                  .then((dialogText) => {
+                    if (dialogText.includes('Throw Range')) {
+                      cy.wrap($dialog)
+                        .getByTestId('throw-range')
+                        .invoke('text')
+                        .should('match', /Throw Range:\s*\d+ft[\s\S]*-\s*60ft/);
+                    }
+                  });
+                cy.wrap($dialog)
+                  .getByTestId('damage')
+                  .invoke('text')
+                  .should('match', /Damage:\d+d\d+/);
+              }
+              if (sectionName === 'Armor') {
+                cy.wrap($dialog)
+                  .getByTestId('weight')
+                  .invoke('text')
+                  .should('match', /[1-9]+/);
+                cy.wrap($dialog)
+                  .getByTestId('armor-class')
+                  .invoke('text')
+                  .should('match', /Armor Class|AC: \d+( - Dexterity bonus)?$/);
+              }
+              // TODO: Add more tests for adventuring gear and additional equipment types
+              // TODO: Add more checks specific for this character
+            });
+            cy.press('Escape');
+            cy.getByRole('dialog').should('not.exist');
+          });
+      });
 
     // Test: Description section
     // TODO: Improve seeded data
@@ -259,24 +301,6 @@ describe(`Character Sheet End-to-End`, () => {
     cy.url().should('not.include', '/character');
 
     // TODO: Add tests for character not found and permission issues (how to state)
-    // Test: Network error handling during character fetch
-    // cy.visit('/');
-    // cy.intercept(
-    //   {
-    //     method: 'POST',
-    //     url: '**/google.firestore.v1.Firestore/BatchGetDocuments**',
-    //     times: 1
-    //   },
-    //   {
-    //     forceNetworkError: true
-    //   }
-    // ).as('networkFailure');
-
-    // cy.getByTestId(`character-card-${characterData.id}`).click();
-    // cy.wait('@networkFailure');
-
-    // // After retry, should eventually load
-    // cy.getByTestId('character-container').should('be.visible', { timeout: 10000 });
 
     // Test: Incomplete character should not be displayed
     cy.callFirestore('set', `users/${Cypress.testUser.uid}/characters/test-character-1`, {
@@ -427,29 +451,6 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Close notes drawer
     cy.press('Escape');
     cy.getByTestId(`notes-drawer-${characterData.id}`).should('not.exist');
-
-    // TODO: Add tests after fixed so it doesn't retry infinitely
-    // Test: Network error during note save
-    // cy.getByTestId(`notes-${characterData.id}`).click();
-    // cy.getByTestId('add-note').click();
-    // cy.get('#content').type('This note will fail to save');
-    // cy.intercept(
-    //   {
-    //     method: 'POST',
-    //     url: '**/google.firestore.v1.Firestore/**',
-    //     times: 1
-    //   },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Internal Server Error' }
-    //   }
-    // ).as('saveError');
-    // cy.getButton('Save').click();
-    // cy.wait('@saveError');
-
-    // Test: Error toast should appear
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-    // cy.getByTestId('note-card-').should('not.contain.text', 'This note will fail to save');
   });
 });
 
