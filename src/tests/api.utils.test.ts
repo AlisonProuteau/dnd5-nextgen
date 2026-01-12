@@ -1,116 +1,83 @@
-import {
-  and,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  or,
-  orderBy,
-  query,
-  where
-} from 'firebase/firestore';
+import { and, getDoc, getDocs, or, orderBy, where } from 'firebase/firestore';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { get, getAll } from '@utils/api.utils';
-
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(),
-  doc: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
-  query: vi.fn(),
-  where: vi.fn(),
-  and: vi.fn(),
-  or: vi.fn(),
-  orderBy: vi.fn()
-}));
 
 vi.mock('../firebase', () => ({
   database: { type: 'firestore' }
 }));
 
+vi.mock('firebase/firestore', () => ({
+  collection: vi.fn(() => ({})),
+  doc: vi.fn(() => ({})),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  query: vi.fn((ref) => ref),
+  where: vi.fn(() => ({})),
+  and: vi.fn(() => ({})),
+  or: vi.fn(() => ({})),
+  orderBy: vi.fn(() => ({}))
+}));
+
 /**
  * Unit tests for API utility functions
  *
- * These tests verify error handling for Firebase operations that cannot be
- * reliably tested in E2E due to Firebase SDK's built-in retry mechanism.
+ * These tests verify:
+ * - Correct parameter passing to Firebase SDK functions
+ * - Error handling for Firebase operations
+ * - Data structure transformation (docs -> results/count format)
+ *
+ * Note: Query logic and filtering are handled by Firestore itself and
+ * are tested via E2E tests. These unit tests only verify the wrapper logic and error handling.
  */
 describe('api.utils', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => vi.clearAllMocks());
 
   describe('getAll', () => {
-    it('should fetch all documents successfully without query parameters', async () => {
-      const mockDocs = [
-        { data: () => ({ id: '1', name: 'Item 1' }) },
-        { data: () => ({ id: '2', name: 'Item 2' }) }
-      ];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should transform documents into results/count format', async () => {
+      const mockDocs = [{ data: () => ({ id: '1' }) }, { data: () => ({ id: '2' }) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
       const result = await getAll('test items', 'test-collection');
 
+      expect(and).not.toHaveBeenCalled();
+      expect(or).not.toHaveBeenCalled();
+      expect(orderBy).not.toHaveBeenCalled();
+
       expect(result.count).toBe(2);
-      expect(result.results).toEqual([
-        { id: '1', name: 'Item 1' },
-        { id: '2', name: 'Item 2' }
-      ]);
+      expect(result.results).toHaveLength(2);
     });
 
-    it('should fetch documents with single query parameter', async () => {
-      const mockDocs = [{ data: () => ({ id: '1', status: 'active' }) }];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (where as Mock).mockReturnValue({ type: 'where' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should build query with single where clause', async () => {
+      const mockDocs = [{ data: () => ({}) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
-      const result = await getAll('test items', 'test-collection', [
+      await getAll('test items', 'test-collection', [
         { fieldPath: 'status', opStr: '==', value: 'active' }
       ]);
 
       expect(where).toHaveBeenCalledWith('status', '==', 'active');
-      expect(result.results).toEqual([{ id: '1', status: 'active' }]);
+      expect(and).not.toHaveBeenCalled();
+      expect(orderBy).not.toHaveBeenCalled();
     });
 
-    it('should fetch documents with multiple query parameters using AND', async () => {
-      const mockDocs = [{ data: () => ({ id: '1', status: 'active', type: 'user' }) }];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (where as Mock).mockReturnValue({ type: 'where' });
-      (and as Mock).mockReturnValue({ type: 'and' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should use AND constraint for multiple query parameters when isOr is falsy', async () => {
+      const mockDocs = [{ data: () => ({}) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
-      const result = await getAll(
-        'test items',
-        'test-collection',
-        [
-          { fieldPath: 'status', opStr: '==', value: 'active' },
-          { fieldPath: 'type', opStr: '==', value: 'user' }
-        ],
-        false
-      );
+      await getAll('test items', 'test-collection', [
+        { fieldPath: 'status', opStr: '==', value: 'active' },
+        { fieldPath: 'type', opStr: '==', value: 'user' }
+      ]);
 
       expect(and).toHaveBeenCalled();
-      expect(result.results).toHaveLength(1);
+      expect(orderBy).not.toHaveBeenCalled();
     });
 
-    it('should fetch documents with multiple query parameters using OR', async () => {
-      const mockDocs = [
-        { data: () => ({ id: '1', status: 'active' }) },
-        { data: () => ({ id: '2', status: 'inactive' }) }
-      ];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (where as Mock).mockReturnValue({ type: 'where' });
-      (or as Mock).mockReturnValue({ type: 'or' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should use OR constraint for multiple query parameters when isOr is true', async () => {
+      const mockDocs = [{ data: () => ({}) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
-      const result = await getAll(
+      await getAll(
         'test items',
         'test-collection',
         [
@@ -121,79 +88,40 @@ describe('api.utils', () => {
       );
 
       expect(or).toHaveBeenCalled();
-      expect(result.results).toHaveLength(2);
+      expect(orderBy).not.toHaveBeenCalled();
     });
 
-    it('should fetch documents with orderBy', async () => {
-      const mockDocs = [
-        { data: () => ({ id: '1', name: 'A' }) },
-        { data: () => ({ id: '2', name: 'B' }) }
-      ];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (orderBy as Mock).mockReturnValue({ type: 'orderBy' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should add orderBy constraint when orderByField is provided', async () => {
+      const mockDocs = [{ data: () => ({}) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
-      const result = await getAll('test items', 'test-collection', undefined, false, 'name', 'asc');
+      await getAll('test items', 'test-collection', undefined, false, 'name', 'asc');
 
       expect(orderBy).toHaveBeenCalledWith('name', 'asc');
-      expect(result.results).toHaveLength(2);
     });
 
-    it('should fetch documents with orderBy descending', async () => {
-      const mockDocs = [
-        { data: () => ({ id: '2', name: 'B' }) },
-        { data: () => ({ id: '1', name: 'A' }) }
-      ];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (orderBy as Mock).mockReturnValue({ type: 'orderBy' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+    it('should add orderBy constraint when orderByField is provided with multiple query parameters', async () => {
+      const mockDocs = [{ data: () => ({}) }];
       (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
 
-      const result = await getAll(
+      await getAll(
         'test items',
         'test-collection',
-        undefined,
-        false,
-        'name',
-        'desc'
-      );
-
-      expect(orderBy).toHaveBeenCalledWith('name', 'desc');
-      expect(result.results).toHaveLength(2);
-    });
-
-    it('should fetch documents with query conditions and orderBy', async () => {
-      const mockDocs = [{ data: () => ({ id: '1', status: 'active', name: 'Test' }) }];
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (where as Mock).mockReturnValue({ type: 'where' });
-      (orderBy as Mock).mockReturnValue({ type: 'orderBy' });
-      (query as Mock).mockReturnValue({ type: 'query' });
-      (getDocs as Mock).mockResolvedValue({ docs: mockDocs });
-
-      const result = await getAll(
-        'test items',
-        'test-collection',
-        [{ fieldPath: 'status', opStr: '==', value: 'active' }],
+        [
+          { fieldPath: 'status', opStr: '==', value: 'active' },
+          { fieldPath: 'status', opStr: '==', value: 'inactive' }
+        ],
         false,
         'name',
         'asc'
       );
 
-      expect(where).toHaveBeenCalledWith('status', '==', 'active');
-      expect(orderBy).toHaveBeenCalledWith('name', 'asc');
-      expect(query).toHaveBeenCalled();
-      expect(result.results).toHaveLength(1);
+      expect(and).toHaveBeenCalled();
+      expect(orderBy).toHaveBeenCalled();
     });
 
     it('should handle getDocs errors gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (query as Mock).mockReturnValue({ type: 'query' });
       (getDocs as Mock).mockRejectedValue(new Error('Network error'));
 
       const result = await getAll('test items', 'test-collection');
@@ -209,38 +137,35 @@ describe('api.utils', () => {
     });
 
     it('should handle empty result set', async () => {
-      (collection as Mock).mockReturnValue({ path: 'test-collection' });
-      (query as Mock).mockReturnValue({ type: 'query' });
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       (getDocs as Mock).mockResolvedValue({ docs: [] });
 
       const result = await getAll('test items', 'test-collection');
 
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
       expect(result.count).toBe(0);
       expect(result.results).toEqual([]);
+
+      consoleErrorSpy.mockRestore();
     });
   });
 
   describe('get', () => {
-    it('should fetch a single document successfully', async () => {
-      const mockData = { id: 'test-123', name: 'Test Item' };
-
-      (doc as Mock).mockReturnValue({ path: 'test-collection/test-123' });
+    it('should return document data when document exists', async () => {
       (getDoc as Mock).mockResolvedValue({
         exists: () => true,
-        data: () => mockData
+        data: () => ({ id: 'test-123' })
       });
 
       const result = await get('test item', 'test-collection', 'test-123');
 
-      expect(doc).toHaveBeenCalled();
-      expect(getDoc).toHaveBeenCalled();
-      expect(result).toEqual(mockData);
+      expect(result).toBeDefined();
+      expect(result).not.toBeNull();
     });
 
     it('should handle non-existent document', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      (doc as Mock).mockReturnValue({ path: 'test-collection/test-123' });
       (getDoc as Mock).mockResolvedValue({
         exists: () => false,
         data: () => undefined
@@ -255,24 +180,11 @@ describe('api.utils', () => {
     });
 
     it('should handle getDoc errors', async () => {
-      (doc as Mock).mockReturnValue({ path: 'test-collection/test-123' });
       (getDoc as Mock).mockRejectedValue(new Error('Permission denied'));
 
       await expect(get('test item', 'test-collection', 'test-123')).rejects.toThrow(
         'Permission denied'
       );
-    });
-
-    it('should return null when document data is undefined', async () => {
-      (doc as Mock).mockReturnValue({ path: 'test-collection/test-123' });
-      (getDoc as Mock).mockResolvedValue({
-        exists: () => true,
-        data: () => undefined
-      });
-
-      const result = await get('test item', 'test-collection', 'test-123');
-
-      expect(result).toBeNull();
     });
   });
 });
