@@ -72,7 +72,11 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
       if (!isEqual(validPreparedSpells, preparedSpells)) {
         setPreparedSpells(validPreparedSpells);
-        await updateSpellsIfChanged(preparedSpells, validPreparedSpells, 'preparedSpells');
+        await updateSpellsIfChanged(
+          character.preparedSpells ?? [],
+          validPreparedSpells,
+          'preparedSpells'
+        );
       }
     }
   };

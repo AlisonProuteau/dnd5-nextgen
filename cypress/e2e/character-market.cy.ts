@@ -11,17 +11,17 @@ describe('Character Equipment Market & Management End-to-End', () => {
   beforeEach(() => {
     cy.createTestCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
     cy.login(Cypress.testUser.uid);
-    cy.visit('/');
+  });
 
+  it('should complete equipment buying and selling workflow with validation and free mode', () => {
+    cy.visit('/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
     cy.getByTestId('next-step').click();
     cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
-  });
 
-  it('should complete equipment buying and selling workflow with validation and free mode', () => {
     // Test: Verify initial equipment display and money
     cy.getByTestId('money-display').within(($money) => {
       cy.wrap($money).getByTestId('gp').should('contain.text', '50');
@@ -190,7 +190,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
 
       // Test: Search for padded armor
       cy.get('#search').type('Pad');
-      cy.getByTestId('market-buy-padded-armor').getButton('Add').click();
+      cy.wrap($dialog).getByTestId('market-buy-padded-armor').getButton('Add').click();
       cy.getButton('Add').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
@@ -261,6 +261,14 @@ describe('Character Equipment Market & Management End-to-End', () => {
   });
 
   it('should handle custom pricing for items without cost', () => {
+    cy.visit('/');
+    cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
+    cy.waitForLoading();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('equipment-section').should('be.visible');
+
     // Test: Open market and buy potion
     cy.getButton('Market').click();
 
@@ -367,6 +375,14 @@ describe('Character Equipment Market & Management End-to-End', () => {
   });
 
   it('should handle equipment with quantity multipliers', () => {
+    cy.visit('/');
+    cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
+    cy.waitForLoading();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('equipment-section').should('be.visible');
+
     // Test: Open market and buy first pack of crossbow bolts
     cy.getByTestId(`equipment-item-crossbow-bolt`).should('contain.text', '20 Crossbow bolt');
     cy.getButton('Market').click();

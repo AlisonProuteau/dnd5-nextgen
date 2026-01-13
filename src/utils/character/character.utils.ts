@@ -1,3 +1,4 @@
+import { omit } from 'lodash';
 import type {
   AdditionalMoneyUnitType,
   MoneyObjectType
@@ -131,33 +132,29 @@ const consolidateCoins = (
   const usePP = additionalCurrencies.includes('pp');
   const useEP = additionalCurrencies.includes('ep');
 
-  if (usePP || useEP) {
-    let remaining = totalCopper;
-    const result: MoneyObjectType = {};
+  let remaining = totalCopper;
+  let result: MoneyObjectType = {};
 
-    if (usePP) {
-      result.pp = round(remaining / 1000) || 0;
-      remaining = remaining % 1000;
-    }
-
-    result.gp = round(remaining / 100) || 0;
-    remaining = remaining % 100;
-
-    if (useEP) {
-      result.ep = round(remaining / 50) || 0;
-      remaining = remaining % 50;
-    }
-
-    result.sp = round(remaining / 10) || 0;
-    result.cp = remaining % 10 || 0;
-
-    return result;
-  } else {
-    const gp = round(totalCopper / 100) || 0;
-    const sp = round((totalCopper % 100) / 10) || 0;
-    const cp = totalCopper % 10 || 0;
-    return { gp, sp, cp };
+  if (usePP) {
+    result.pp = round(remaining / 1000) || 0;
+    remaining = remaining % 1000;
   }
+
+  result.gp = round(remaining / 100) || 0;
+  remaining = remaining % 100;
+
+  if (useEP) {
+    result.ep = round(remaining / 50) || 0;
+    remaining = remaining % 50;
+  }
+
+  result.sp = round(remaining / 10) || 0;
+  result.cp = remaining % 10 || 0;
+
+  if (!usePP) result = omit(result, 'pp');
+  if (!useEP) result = omit(result, 'ep');
+
+  return result;
 };
 
 /**
@@ -229,7 +226,7 @@ export const getSellingPrice = (
     case EquipmentCategoryType.ArtObject:
     case EquipmentCategoryType.MagicItems:
       return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
-    case 'equipment':
+    case EquipmentCategoryType.Equipment:
     default:
       return consolidateCoins({ cp: Math.floor(itemCostCopper / 2) }, additionalCurrencies);
   }
