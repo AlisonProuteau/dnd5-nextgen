@@ -1,5 +1,21 @@
 import { max, uniq } from 'lodash';
 import type { ActionDamage } from '@representations/campaign/adventure.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
+
+/**
+ * Filter prepared spells to only include valid ones (still in known spells list)
+ * Cantrips (level 0) are always valid, higher level spells must be in knownSpells
+ */
+export const filterValidPreparedSpells = (
+  preparedSpells: (DefaultRepresentation & { level: number })[],
+  knownSpells: (DefaultRepresentation & { level: number })[]
+): (DefaultRepresentation & { level: number })[] => {
+  return preparedSpells.filter((spell) =>
+    spell.level > 0
+      ? knownSpells.some(({ index, level }) => index === spell.index && level === spell.level)
+      : true
+  );
+};
 
 /**
  * Get min-max values for spell slots based on level

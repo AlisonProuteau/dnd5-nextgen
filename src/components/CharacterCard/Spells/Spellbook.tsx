@@ -1,5 +1,4 @@
 import { Fragment, useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
 import { PrepareIcon, SpellbookIcon } from '@assets';
 import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
@@ -16,13 +15,11 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
-import { useQueryClient } from '@tanstack/react-query';
-import { doc, updateDoc } from 'firebase/firestore';
 import { isEqual, max } from 'lodash';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
+import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Character } from '@representations/user.representation';
-import { database } from 'src/firebase';
-import { useAuth } from 'src/providers/AuthProvider';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
 
@@ -37,65 +34,49 @@ interface SpellbookProps {
 }
 
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
-  const queryClient = useQueryClient();
-  const { user } = useAuth();
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
-  const [isSaving, setIsSaving] = useState(false);
 
-  const saveSpells = async (learn: boolean = false) => {
-    if (learn) isAddOpen ? closeAdd() : closeLearn();
-    else closePrepare();
+  const firebaseCrud = useFirebaseCrud({
+    collectionPath: 'users/{userId}/characters',
+    successMessages: {
+      update: 'Spells saved successfully'
+    },
+    invalidateQueryKey: ['fetchCharacter']
+  });
 
+  const updateKnownSpellsWithCascade = async () => {
+    if (!slotInfo.learn) return;
+
+    if (character.id && !isEqual(character.knownSpells, knownSpells)) {
+      const updatedSpells: {
+        knownSpells: typeof knownSpells;
+        preparedSpells?: typeof preparedSpells;
+      } = { knownSpells };
+      const validPreparedSpells = filterValidPreparedSpells(preparedSpells, knownSpells);
+
+      if (!isEqual(validPreparedSpells, preparedSpells)) {
+        setPreparedSpells(validPreparedSpells);
+        updatedSpells.preparedSpells = validPreparedSpells;
+      }
+
+      firebaseCrud.update(character.id, updatedSpells);
+    }
+  };
+
+  const savePreparedSpells = async () => {
+    closePrepare();
     if (
       !character.id ||
-      (learn
-        ? !slotInfo.learn || isEqual(character.knownSpells ?? [], knownSpells)
-        : (!slotInfo.prepare && !slotInfo.cantrips) ||
-          isEqual(character.preparedSpells ?? [], preparedSpells))
+      (!slotInfo.prepare && !slotInfo.cantrips) ||
+      isEqual(character.preparedSpells, preparedSpells)
     )
       return;
 
-    setIsSaving(true);
-    if (user?.uid) {
-      const path = `users/${user.uid}/characters`;
-      const document = doc(database, path, character.id);
-
-      try {
-        await updateDoc(
-          document,
-          learn ? { knownSpells: knownSpells } : { preparedSpells: preparedSpells }
-        );
-
-        const newPreparedSpells = learn
-          ? preparedSpells.filter((spell) =>
-              spell.level > 0
-                ? knownSpells.find(
-                    ({ index, level }) => index === spell.index && level === spell.level
-                  )
-                : true
-            )
-          : undefined;
-
-        if (newPreparedSpells !== undefined && !isEqual(newPreparedSpells, preparedSpells)) {
-          setPreparedSpells(newPreparedSpells);
-          await saveSpells();
-        } else {
-          await queryClient.refetchQueries({
-            queryKey: ['fetchCharacter', user.uid, character.id]
-          });
-        }
-      } catch (error: any) {
-        console.error(error.stack);
-        toast.error(`Something went wrong
-           ${error.code || 'Error'}`);
-      }
-    }
-
-    setIsSaving(false);
+    await firebaseCrud.update(character.id, { preparedSpells });
   };
 
   const shouldLearn = useMemo(
@@ -175,7 +156,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               alignItems: 'center'
             }}
             onClick={openLearn}
-            disabled={isSaving}
+            disabled={firebaseCrud.isLoading}
           >
             <SpellbookIcon
               height="75px"
@@ -200,7 +181,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               alignItems: 'center'
             }}
             onClick={openPrepare}
-            disabled={shouldLearn || isSaving}
+            disabled={shouldLearn || firebaseCrud.isLoading}
           >
             <PrepareIcon
               height="80px"
@@ -219,7 +200,14 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         fullWidth
         maxWidth="lg"
         open={isLearnOpen || isPrepareOpen}
-        onClose={() => saveSpells(isLearnOpen)}
+        onClose={
+          isLearnOpen
+            ? async () => {
+                closeLearn();
+                await updateKnownSpellsWithCascade();
+              }
+            : savePreparedSpells
+        }
         PaperProps={{ elevation: 0 }}
         slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
       >
@@ -249,7 +237,18 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           {isLearnOpen && character.class.index === 'wizard' && (
             <Button onClick={openAdd}>More spells</Button>
           )}
-          <Button onClick={() => saveSpells(isLearnOpen)}>Close</Button>
+          <Button
+            onClick={
+              isLearnOpen
+                ? async () => {
+                    closeLearn();
+                    await updateKnownSpellsWithCascade();
+                  }
+                : savePreparedSpells
+            }
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -257,7 +256,10 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         fullWidth
         maxWidth="lg"
         open={isAddOpen}
-        onClose={() => saveSpells(true)}
+        onClose={() => {
+          closeAdd();
+          updateKnownSpellsWithCascade();
+        }}
         PaperProps={{ elevation: 0 }}
         slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
       >
@@ -319,7 +321,14 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => saveSpells(true)}>Close</Button>
+          <Button
+            onClick={() => {
+              closeAdd();
+              updateKnownSpellsWithCascade();
+            }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </Fragment>

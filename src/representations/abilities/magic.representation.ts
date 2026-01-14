@@ -38,7 +38,6 @@ export type MagicItem = {
   rarity: {
     name: string;
   };
-
   variants: DefaultRepresentation[];
   variant: boolean;
 };

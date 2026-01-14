@@ -323,7 +323,7 @@ export function Choices({
 
       if (id && isResourceLoading[id] === undefined) {
         fetchResourceList(
-          choice.from.option_set_type === 'equipment_category' ? `/equipment-categories/${id}` : id
+          choice.from.option_set_type === 'equipment_category' ? `/equipment/${id}` : id
         ).then((res) => setIsResourceLoading({ ...isResourceLoading, [id]: res }));
       }
     }

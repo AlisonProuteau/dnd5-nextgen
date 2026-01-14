@@ -4,7 +4,7 @@ import type { AbilityScore } from '@representations/campaign/adventure.represent
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
-import { getAbilityScoreModifier, getArmorClass } from './abilities.utils';
+import { getAbilityScoreModifier, getArmorClass } from './character.utils';
 
 export type ChoiceSelection = DefaultRepresentation & {
   type: 'class' | 'race' | 'background';

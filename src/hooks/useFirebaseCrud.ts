@@ -2,7 +2,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { collection, deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -24,7 +24,6 @@ export interface UseFirebaseCrudReturn<T> {
   create: (data: Partial<T> & any, customPath?: string) => Promise<string | null>;
   update: (id: string, data: Partial<T>, customPath?: string) => Promise<void>;
   remove: (id: string, customPath?: string) => Promise<void>;
-  getById: (id: string, customPath?: string) => Promise<T | null>;
 }
 
 export const useFirebaseCrud = <T extends Record<string, any>>(
@@ -141,27 +140,10 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     }
   };
 
-  const getById = async (id: string, customPath?: string): Promise<T | null> => {
-    if (!user?.uid) return null;
-
-    try {
-      const path = buildPath(customPath);
-      const docRef = doc(database, path, id);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) return docSnap.data() as T;
-    } catch (error) {
-      toast.error(`Error fetching document: ${(error as Error).message}`);
-    }
-
-    return null;
-  };
-
   return {
     isLoading,
     create,
     update,
-    remove,
-    getById
+    remove
   };
 };

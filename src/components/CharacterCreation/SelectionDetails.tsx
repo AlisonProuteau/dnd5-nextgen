@@ -227,13 +227,20 @@ export function SelectionDetails({
                 >
                   {info.spellcasting.info
                     .sort((a, b) => b.desc.join('').length - a.desc.join('').length)
-                    .map((i) => (
-                      <Box key={`spellcasting-info-${selected.index}-${i.name}`} marginBottom={2}>
+                    .map((spellcastingInfo) => (
+                      <Box
+                        key={`spellcasting-info-${selected.index}-${spellcastingInfo.name}`}
+                        marginBottom={2}
+                      >
                         <Typography variant="overline" color="secondary">
-                          {i.name}
+                          {spellcastingInfo.name}
                         </Typography>
-                        {i.desc.map((d) => (
-                          <Typography variant="body2" paddingBottom={1}>
+                        {spellcastingInfo.desc.map((d, i) => (
+                          <Typography
+                            key={`${spellcastingInfo.name}-desc-${i}`}
+                            variant="body2"
+                            paddingBottom={1}
+                          >
                             {d}
                           </Typography>
                         ))}

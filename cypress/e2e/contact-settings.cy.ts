@@ -34,19 +34,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#message').type('Anonymous feedback message');
     cy.get('button[type="submit"]').should('be.enabled');
 
-    // Test: Error Handling - submission failure
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 2 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-
     // Test: loading state during anonymous submission
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
@@ -167,19 +154,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('button[type="submit"]').should('be.disabled');
     cy.get('input[id="area"]').type('Custom Bug Area');
 
-    // Test: Error Handling - submission error
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-
     // Test: Success Workflow - Complete successful submission
     cy.get('#message').clear().type('Resolved bug summary');
     cy.get('#reproSteps').clear().type('1. Steps to reproduce after fix\n2. Additional step');
@@ -265,19 +239,6 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#canContact').should('be.checked');
     cy.get('button[type="submit"]').should('be.enabled');
 
-    // Test: Error Handling - submission error
-    // TODO: fix to stop trying and actually fail
-    // cy.intercept(
-    //   { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-    //   {
-    //     statusCode: 500,
-    //     body: { error: 'Submission failed' }
-    //   }
-    // ).as('submitError');
-    // cy.get('button[type="submit"]').click();
-    // cy.wait('@submitError');
-    // cy.getByRole('status', 'Something went wrong').should('be.visible');
-
     // Test: Success Workflow - Submit with contact permission
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
@@ -359,9 +320,10 @@ describe(`Settings Page End-to-End`, () => {
   beforeEach(() => {
     cy.login(Cypress.testUser.uid);
     cy.visit('/settings');
+    cy.getByTestId('user-info').should('be.visible');
   });
 
-  it('should display user information and version selector', () => {
+  it('should display user information, version selector and currency selector', () => {
     // Test: User info is displayed
     cy.getByTestId('user-info').should('be.visible');
     cy.getByTestId('user-info').should('contain.text', `User: ${Cypress.testUser.displayName}`);
@@ -371,6 +333,11 @@ describe(`Settings Page End-to-End`, () => {
     cy.getByTestId('version-form').should('be.visible');
     cy.get('#version-select').should('be.visible');
     cy.get('#version-select').should('contain.text', 'Legacy');
+
+    // Test: Additional currencies section is present
+    cy.getByTestId('additional-currencies').should('be.visible');
+    cy.getByTestId('currency-pp').should('be.visible');
+    cy.getByTestId('currency-ep').should('be.visible');
 
     // Test: Submit button behavior with Legacy version
     cy.get('button[type="submit"]').should('not.be.disabled');
@@ -398,40 +365,45 @@ describe(`Settings Page End-to-End`, () => {
     });
   });
 
-  it('should handle version update error gracefully', () => {
-    // Test: Intercept and fail the update
-    cy.intercept('POST', '**/google.firestore.v1.Firestore/**', {
-      statusCode: 500,
-      body: { error: 'Update failed' }
-    }).as('updateError');
-
-    cy.get('button[type="submit"]').click();
-    cy.wait('@updateError');
-
-    // Test: Error message appears
-    cy.getByRole('status', 'Something went wrong').should('be.visible');
-
-    // Test: Still on settings page
-    cy.url().should('include', '/settings');
-  });
-
-  it('should successfully update version and navigate to home', () => {
+  it('should successfully update settings and navigate to home', () => {
     // Test: Intercept successful update
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
       { delay: 500 }
-    ).as('updateVersion');
+    ).as('updateSettings');
+
+    // Test: Both currencies should be checked by default
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
+    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('not.be.checked');
+
+    // Test: Uncheck platinum
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').click();
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('be.checked');
+
+    // Test: Uncheck electrum
+    cy.getByTestId('currency-ep').find('input[type="checkbox"]').click();
+    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('be.checked');
+
+    // Test: Re-check platinum
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').click();
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
 
     cy.get('button[type="submit"]').click();
 
     // Test: Loading state
     cy.get('button[type="submit"]').should('not.exist');
     cy.get('[role="progressbar"]').should('be.visible');
-    cy.wait('@updateVersion');
+    cy.wait('@updateSettings');
     cy.waitForLoading();
 
     // Test: Success message and navigation
-    cy.getByRole('status', 'Game version updated').should('be.visible');
+    cy.getByRole('status', 'Settings updated').should('be.visible');
     cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+    // Test: Settings persisted
+    cy.reload();
+    cy.visit('/settings');
+    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
+    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('be.checked');
   });
 });

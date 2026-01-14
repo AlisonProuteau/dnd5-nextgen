@@ -10,6 +10,7 @@ const FIREBASE_STORAGE_EMULATOR_HOST = `${emulators.storage.host}:${emulators.st
 
 export default defineConfig({
   projectId: env.CYPRESS_PROJECT_ID,
+  numTestsKeptInMemory: 5,
   e2e: {
     env: {
       FIREBASE_AUTH_EMULATOR_HOST,

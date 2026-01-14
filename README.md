@@ -161,6 +161,8 @@ MIT License - see [package.json](package.json) for details.
 ### Current TODO List
 
 - [ ] Replace custom useForm by react-hook-form?
+- [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
+- [ ] Add pagination for getAll and implement for buy equipment and add spell
 - [ ] Add cypress code coverage
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor
