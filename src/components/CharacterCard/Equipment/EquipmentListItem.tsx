@@ -88,7 +88,7 @@ export function EquipmentListItem({
     const submitCustomPrice = customPrice;
     setCustomPrice({});
     try {
-      await onAction(item, quantity, customPrice);
+      await onAction(item, quantity, submitCustomPrice);
       setQuantity(1);
     } catch {
       setCustomPrice(submitCustomPrice);

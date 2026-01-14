@@ -70,12 +70,13 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const savePreparedSpells = async () => {
     closePrepare();
     if (
+      !character.id ||
       (!slotInfo.prepare && !slotInfo.cantrips) ||
       isEqual(character.preparedSpells, preparedSpells)
     )
       return;
 
-    firebaseCrud.update(character.id, { preparedSpells });
+    await firebaseCrud.update(character.id, { preparedSpells });
   };
 
   const shouldLearn = useMemo(
