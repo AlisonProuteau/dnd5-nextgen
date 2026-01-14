@@ -21,15 +21,13 @@ describe(`Character Sheet End-to-End`, () => {
 
   before(() => cy.createTestCharacter(Cypress.testUser.uid, characterData.id, characterData));
 
-  beforeEach(() => {
-    cy.login(Cypress.testUser.uid);
+  beforeEach(() => cy.login(Cypress.testUser.uid));
 
+  it('should complete the full character sheet happy path workflow', () => {
     cy.visit('/');
     cy.waitForLoading();
     cy.getByTestId('character-card-').should('have.length.at.least', 1);
-  });
 
-  it('should complete the full character sheet happy path workflow', () => {
     cy.getByTestId(`character-card-${characterData.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
 
@@ -324,6 +322,10 @@ describe(`Character Sheet End-to-End`, () => {
   });
 
   it('should handle notes workflow (complex)', () => {
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId('character-card-').should('have.length.at.least', 1);
+
     cy.callFirestore(
       'delete',
       `users/${Cypress.testUser.uid}/characters/${characterData.id}/notes`
@@ -843,7 +845,63 @@ describe(`Character Sheet Spellcasting`, { defaultCommandTimeout: 8000 }, () => 
         .filter((_i, el) => el.dataset.testid !== 'spell-list-0')
         .first()
         .getByTestId('view-spell-item-')
+        .then(($spellItems) => {
+          cy.wrap($spellItems[0])
+            .find(' p')
+            .first()
+            .invoke('text')
+            .as('firstSpellName', { type: 'static' });
+          return cy.wrap($spellItems);
+        })
         .should('have.length', prepareSNum === 0 ? learnNum : prepareSNum);
+
+      // Test: Verify prepared spells update when learned spells change (only for classes that can learn)
+      if (learnNum > 0 && prepareSNum > 0) {
+        // Test: Change learned spells (remove first spell, add a different one)
+        cy.getButton(/Learn spells/).click();
+        cy.getByRole('dialog', 'Learn').within(($el) => {
+          cy.get('@firstSpellName').then((removedSpellName: unknown) =>
+            cy
+              .wrap($el)
+              .getByTestId('edit-spell-item-', {
+                selector: `:has( p:contains(${removedSpellName as string}))`
+              })
+              .getButton(/^Remove$/)
+              .click()
+          );
+          cy.contains(`${learnNum - 1}/${learnNum} spells selected`)
+            .scrollIntoView()
+            .should('be.visible');
+          cy.wrap($el).getByTestId('edit-spell-item-').last().getButton(/^Add$/).click();
+          cy.contains(`${learnNum}/${learnNum} spells selected`)
+            .scrollIntoView()
+            .should('be.visible');
+          cy.wrap($el).getButton('Close').click();
+        });
+
+        // Test: Verify prepared spell count updated (removed spell no longer prepared)
+        cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
+
+        cy.getButton(/Prepare your spells/)
+          .should('be.enabled')
+          .click();
+        cy.getByRole('dialog', 'Prepare').within(($el) => {
+          cy.wrap($el)
+            .contains(`${prepareSNum - 1}/${prepareSNum} spells selected`)
+            .scrollIntoView()
+            .should('be.visible');
+          cy.get('@firstSpellName').then((removedSpellName: unknown) =>
+            cy
+              .wrap($el)
+              .getByTestId('spell-list-')
+              .filter((_i, el) => el.dataset.testid !== 'spell-list-0')
+              .getByTestId('edit-spell-item-', {
+                selector: `:has( p:contains(${removedSpellName as string}))`
+              })
+              .should('not.exist')
+          );
+        });
+      }
     })
   );
 
