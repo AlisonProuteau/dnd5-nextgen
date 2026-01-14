@@ -84,11 +84,15 @@ export function EquipmentListItem({
 
   const onSubmit = async () => {
     setIsUpdating(true);
+
+    const submitCustomPrice = customPrice;
+    setCustomPrice({});
     try {
-      setCustomPrice({});
       await onAction(item, quantity, customPrice);
-    } finally {
       setQuantity(1);
+    } catch {
+      setCustomPrice(submitCustomPrice);
+    } finally {
       setIsUpdating(false);
     }
   };

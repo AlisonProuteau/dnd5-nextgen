@@ -48,43 +48,34 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     invalidateQueryKey: ['fetchCharacter']
   });
 
-  const updateSpellsIfChanged = async <T,>(
-    currentValue: T,
-    newValue: T,
-    field: 'knownSpells' | 'preparedSpells'
-  ) => {
-    if (!character.id || isEqual(currentValue, newValue)) return false;
-    await firebaseCrud.update(character.id, { [field]: newValue });
-    return true;
-  };
-
   const updateKnownSpellsWithCascade = async () => {
     if (!slotInfo.learn) return;
 
-    const updated = await updateSpellsIfChanged(
-      character.knownSpells ?? [],
-      knownSpells,
-      'knownSpells'
-    );
-
-    if (updated) {
+    if (character.id && !isEqual(character.knownSpells, knownSpells)) {
+      const updatedSpells: {
+        knownSpells: typeof knownSpells;
+        preparedSpells?: typeof preparedSpells;
+      } = { knownSpells };
       const validPreparedSpells = filterValidPreparedSpells(preparedSpells, knownSpells);
 
       if (!isEqual(validPreparedSpells, preparedSpells)) {
         setPreparedSpells(validPreparedSpells);
-        await updateSpellsIfChanged(
-          character.preparedSpells ?? [],
-          validPreparedSpells,
-          'preparedSpells'
-        );
+        updatedSpells.preparedSpells = validPreparedSpells;
       }
+
+      firebaseCrud.update(character.id, updatedSpells);
     }
   };
 
   const savePreparedSpells = async () => {
     closePrepare();
-    if (!slotInfo.prepare && !slotInfo.cantrips) return;
-    await updateSpellsIfChanged(character.preparedSpells ?? [], preparedSpells, 'preparedSpells');
+    if (
+      (!slotInfo.prepare && !slotInfo.cantrips) ||
+      isEqual(character.preparedSpells, preparedSpells)
+    )
+      return;
+
+    firebaseCrud.update(character.id, { preparedSpells });
   };
 
   const shouldLearn = useMemo(
