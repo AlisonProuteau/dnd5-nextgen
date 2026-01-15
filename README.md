@@ -7,27 +7,67 @@ A modern web application for creating and managing D&D 5e characters, built with
 ### Character Creation & Management
 
 - **Interactive Character Creation**: Step-by-step wizard for creating D&D 5e characters
-- **Race & Class Selection**: Choose from all official D&D 5e races, subraces, classes, and subclasses
+  - Race & Subrace selection with trait previews
+  - Class & Subclass selection with feature details
+  - Background selection with personality traits, ideals, bonds, and flaws
+  - Character customization (name, age, gender, appearance, personality)
 - **Ability Score Generation**: Multiple methods including point buy, standard array, and custom scores
-- **Equipment & Spells**: Automatic equipment assignment and spell management
-- **Character Sheet**: Complete digital character sheet with all stats, traits, and abilities
+  - Real-time modifier calculations
+  - Racial ability bonuses automatically applied
+- **Automatic Equipment & Starting Gear**: Equipment selection based on class choices
+- **Character Sheet**: Complete multi-page digital character sheet
+  - **Characteristics & Abilities**: Stats, proficiencies, skills, saving throws
+  - **Traits & Features**: Racial traits, class features, and special abilities
+  - **Equipment & Inventory**: Full equipment management with item details
+  - **Character Description**: Personality, appearance, and background information
+  - **Spells** (for spellcasters): Complete spell management
 
-### Advanced Features
+### Equipment & Economy
+
+- **Equipment Market**: Buy and sell equipment with D&D 5e pricing rules
+  - Search and filter by category
+  - Quantity management for stackable items
+  - Automatic price calculation (items sell at half price)
+  - Free mode for equipment management without gold restrictions
+- **Money Management**: Track character wealth across all currency types (GP, SP, CP)
+  - Add/remove currency with validation
+  - Automatic currency conversion
+- **Custom Pricing**: Set custom prices for items without standard costs (magic items, trade goods)
+
+### Spell Management (Spellcasters)
+
+- **Complete Spellbook**: View all available spells for your class
+- **Spell Learning**: Select known spells based on class and level
+- **Spell Preparation**: Prepare spells for classes that require it
+- **Spell Slots**: Automatic spell slot calculation based on level
+- **Detailed Spell Information**: Components, casting time, range, damage, and full descriptions
+- **How-to Guide**: In-app explanation of spell mechanics
+
+### Character Notes
+
+- **Personal Notes**: Create, edit, and manage notes for each character
+- **Note Organization**: Keep track of campaign events, NPCs, and character thoughts
+
+### Additional Features
 
 - **Character Generator**: AI-powered character portrait generator (admin only)
-- **Spell Management**: Complete spellbook with spell slots and preparation tracking
-- **Character Notes**: Add and manage personal notes for each character
+  - Batch generation for multiple characters
+  - Download and upload to Firebase Storage
+  - Customizable race, class, and gender options
 - **Multiple Versions**: Support for different D&D editions (Legacy, 2024 when available)
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
+- **Responsive Design**: Full mobile and desktop support with touch gestures
+- **Contact Form**: In-app feedback, bug reports, and feature requests
+- **Settings**: Configure D&D version and user preferences
 
 ### Data Management
 
 - **Firebase Integration**: Real-time data synchronization and user authentication
 - **Database Editor**: Admin tools for managing game data (admin only)
+- **Data Import/Export**: Firestore backup and restore capabilities
 
 ## Tech Stack
 
-- **Frontend**: React 20, TypeScript, Material-UI
+- **Frontend**: React 19, TypeScript, Material-UI
 - **Backend**: Firebase (Firestore, Authentication, Storage)
 - **Build Tool**: Vite
 - **Testing**: Vitest, Cypress
@@ -107,6 +147,8 @@ src/
 
 - **Character Sheet** ([`CharacterContainer`](src/components/CharacterCard/CharacterContainer.tsx))
 - **Ability Scores** ([`CharacterPoints`](src/components/CharacterCard/CharacterPoints.tsx))
+- **Equipment & Market** ([`EquipmentsStep`](src/components/CharacterCard/Equipment/EquipmentsStep.tsx), [`Market`](src/components/CharacterCard/Equipment/Market.tsx))
+- **Money Management** ([`MoneyManager`](src/components/CharacterCard/Equipment/MoneyManager.tsx))
 - **Spells** ([`SpellsStep`](src/components/CharacterCard/Spells/SpellsStep.tsx))
 - **Character Notes** ([`CharacterNotes`](src/components/CharacterCard/CharacterNotes.tsx))
 
@@ -144,13 +186,30 @@ The application includes scripts for backing up and restoring Firestore data. Se
 
 ## Available Scripts
 
-- `yarn start` - Start development server
-- `yarn build` - Build for production
-- `yarn test` - Run unit tests
+### Development
+
+- `yarn start` - Start development server with Vite
+- `yarn build` - Build for production (TypeScript compilation + Vite build)
+- `yarn format` - Format code with Prettier
+
+### Testing
+
+- `yarn test` - Run unit tests with Vitest
 - `yarn test:watch` - Run tests in watch mode
 - `yarn test:coverage` - Run tests with coverage report
-- `yarn firestore:import` - Import Firestore data
-- `yarn cy:open` - Open Cypress test runner with emulators
+- `yarn cy` - Open Cypress test runner with emulators (interactive)
+- `yarn cy:local` - Run Cypress tests in headless mode
+
+### Firebase & Database
+
+- `yarn firebase:emulate` - Start Firebase emulators (Auth, Firestore, Storage)
+- `yarn firestore:import` - Import Firestore data from backup
+- `yarn start:dist` - Build and serve with Firebase emulators
+
+### Test Reports
+
+- `yarn merge:reports` - Merge Cypress test reports into single JSON
+- `yarn generate:reports` - Generate HTML and text reports from merged results
 
 ## License
 
@@ -163,6 +222,10 @@ MIT License - see [package.json](package.json) for details.
 - [ ] Replace custom useForm by react-hook-form?
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
 - [ ] Add pagination for getAll and implement for buy equipment and add spell
+- [ ] Used/Unused equipment selector + weight/AC calculations
+- [ ] Add filter for spell prerequisites (maybe just subclass?)
+- [ ] Improve trait/spell selection clarity (ex: dragon ancestry, elf spells)
+- [ ] Update magic item rarity pricing system
 - [ ] Add cypress code coverage
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor

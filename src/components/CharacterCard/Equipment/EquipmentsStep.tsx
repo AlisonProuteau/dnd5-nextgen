@@ -15,6 +15,7 @@ import { Market } from './Market';
 import { MoneyDisplay } from './MoneyDisplay';
 
 // TODO: Used/Unused equipment selector + weight/AC calculations
+// TODO: Add prerequiste warnings for equipping items
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
   const { isOn: isMarketOpen, turnOn: openMarket, turnOff: closeMarket } = useToggle(false);
