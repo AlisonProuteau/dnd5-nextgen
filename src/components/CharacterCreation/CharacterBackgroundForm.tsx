@@ -29,6 +29,7 @@ interface CharacterBackgroundFormProps {
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
   equipment?: ChoiceSelection[];
+  isActive?: boolean;
 }
 
 export function CharacterBackgroundForm({
@@ -36,7 +37,8 @@ export function CharacterBackgroundForm({
   onPrev,
   proficiencies = [],
   languages = [],
-  equipment = []
+  equipment = [],
+  isActive = false
 }: CharacterBackgroundFormProps) {
   const { version } = useAuth();
   const [selectedBackground, setSelectedBackground] = useState<Background>();
@@ -72,13 +74,13 @@ export function CharacterBackgroundForm({
     queryKey: ['fetchBackgrounds', version],
     queryFn: async () => (version ? (await getAllBackgrounds(version)).results : []),
     select: (data) => [...data, customBackground],
-    enabled: !!version
+    enabled: !!version && isActive
   });
 
   const { data: alignments } = useQuery({
     queryKey: ['fetchAlignments'],
     queryFn: async () => (version ? (await getAllAligmenents(version)).results : []),
-    enabled: !!version
+    enabled: !!version && isActive
   });
 
   const isValid = () => {

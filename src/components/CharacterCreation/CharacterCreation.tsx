@@ -125,6 +125,7 @@ export function CharacterCreation() {
                 form.nextStep();
               }}
               proficiencies={form.formData.proficiencies}
+              isActive={form.steps[form.activeStep].id === 'race'}
             />
           </Box>
 
@@ -139,6 +140,7 @@ export function CharacterCreation() {
                 form.prevStep();
               }}
               proficiencies={form.formData.proficiencies}
+              isActive={form.steps[form.activeStep].id === 'class'}
             />
           </Box>
 
@@ -155,6 +157,7 @@ export function CharacterCreation() {
               proficiencies={form.formData.proficiencies}
               languages={form.formData.languages}
               equipment={form.formData.equipments}
+              isActive={form.steps[form.activeStep].id === 'background'}
             />
           </Box>
 
