@@ -22,12 +22,9 @@ export function useChoiceSelection(
     current: ChoiceObjectType | RaceAbilityBonus,
     toSearch: DefaultRepresentation | RaceAbilityBonus
   ) => {
-    if ('index' in current && 'index' in toSearch) {
-      return current.index === toSearch.index;
-    }
-    if ('ability_score' in current && 'ability_score' in toSearch) {
+    if ('index' in current && 'index' in toSearch) return current.index === toSearch.index;
+    if ('ability_score' in current && 'ability_score' in toSearch)
       return current.ability_score.index === toSearch.ability_score.index;
-    }
     return false;
   };
 
@@ -37,12 +34,9 @@ export function useChoiceSelection(
     count?: number
   ): boolean => {
     return selection.some((current) => {
-      if ('index' in current) {
+      if ('index' in current)
         return current.index === item.index && (current.count || 0) === (count || 0);
-      }
-      if ('ability_score' in current) {
-        return current.ability_score.index === item.index;
-      }
+      if ('ability_score' in current) return current.ability_score.index === item.index;
       return false;
     });
   };
@@ -55,18 +49,15 @@ export function useChoiceSelection(
     isMultiple?: boolean,
     options?: string[]
   ): boolean => {
-    // If already inherited, disable it
     if (isChecked(item, inherited, count)) return true;
 
-    // Filter selections for this specific choice
+    // Filter selections for this specific choice type
     let filteredSelection = selected.filter((selection) =>
       'type' in selection ? selection.type === choiceIndex : true
     );
 
     // If checked in another choice type, disable it
-    if (!isChecked(item, filteredSelection, count) && isChecked(item, selected, count)) {
-      return true;
-    }
+    if (!isChecked(item, filteredSelection, count) && isChecked(item, selected, count)) return true;
 
     // No selections yet, not disabled
     if (!filteredSelection.length) return false;
@@ -83,22 +74,17 @@ export function useChoiceSelection(
     );
 
     // If this is a bundle item and non-bundle items are selected, disable it
-    if (isMultiple && hasNonBundleSelections) {
-      return true;
-    }
+    if (isMultiple && hasNonBundleSelections) return true;
 
     // If this is a non-bundle item and bundle items are selected, disable it
-    if (!isMultiple && hasBundleSelections) {
-      return true;
-    }
+    if (!isMultiple && hasBundleSelections) return true;
 
     // Filter by options if provided (for limit checking within option sets)
-    let selectionForLimitCheck = filteredSelection;
-    if (options) {
-      selectionForLimitCheck = filteredSelection.filter((selection) =>
-        options.includes('index' in selection ? selection.index : selection.ability_score.index)
-      );
-    }
+    const selectionForLimitCheck = options
+      ? filteredSelection.filter((selection) =>
+          options.includes('index' in selection ? selection.index : selection.ability_score.index)
+        )
+      : filteredSelection;
 
     // Check if we've reached the selection limit
     const totalSelected = selectionForLimitCheck.reduce(
@@ -128,11 +114,8 @@ export function useChoiceSelection(
         return isMultiple ? { ...newData, isMultiple } : newData;
       };
 
-      if (Array.isArray(item)) {
-        setSelected([...selected, ...item.map((i) => mapData(i, i.count))]);
-      } else {
-        setSelected([...selected, mapData(item, count)]);
-      }
+      if (Array.isArray(item)) setSelected([...selected, ...item.map((i) => mapData(i, i.count))]);
+      else setSelected([...selected, mapData(item, count)]);
     } else if (selected.length) {
       if (Array.isArray(item)) {
         let newArray = [...selected];
@@ -153,22 +136,18 @@ export function useChoiceSelection(
                 )
             );
           }
-        } else {
-          // Regular array deselection - remove each item individually
+        } else
           item.forEach((i) => {
             const selectedIndex = newArray.findIndex((current) => isItemMatch(current, i));
             if (selectedIndex !== -1) {
               newArray = newArray.toSpliced(selectedIndex, 1);
             }
           });
-        }
 
         setSelected(newArray);
       } else {
         const selectedIndex = selected.findIndex((current) => isItemMatch(current, item));
-        if (selectedIndex !== -1) {
-          setSelected(selected.toSpliced(selectedIndex, 1));
-        }
+        if (selectedIndex !== -1) setSelected(selected.toSpliced(selectedIndex, 1));
       }
     }
   };

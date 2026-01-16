@@ -67,13 +67,13 @@ export function formatOption(
     '';
 
   // Data for special formatting (ideals with alignments)
-  let labelData: { alignments: string; desc: string } | undefined;
-  if ('alignments' in option && option.alignments) {
-    labelData = {
-      alignments: option.alignments.map(({ name }) => name).join(' / '),
-      desc: option.desc || ''
-    };
-  }
+  let labelData =
+    'alignments' in option && option.alignments
+      ? {
+          alignments: option.alignments.map(({ name }) => name).join(' / '),
+          desc: option.desc || ''
+        }
+      : undefined;
 
   const prerequisites =
     'prerequisites' in option && option.prerequisites

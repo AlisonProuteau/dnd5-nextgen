@@ -138,10 +138,12 @@ export function CharacterRaceForm({
       setSelectedProficiencies([]);
       setSelectedLanguages([]);
       setSelectedAbilities([]);
+      setSelectedTraits([]);
+      setSelectedSpells([]);
       setselectedSubrace(undefined);
       setselectedRace(races.find((e) => e.index === races[activeStep].index));
     }
-  }, [races, activeStep]);
+  }, [races, activeStep, selectedRace?.index]);
 
   const raceCardActions: Partial<SwipeableCallbacks> = {
     onSwipedLeft: () =>

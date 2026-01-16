@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -82,6 +82,21 @@ export function CharacterBackgroundForm({
     queryFn: async () => (version ? (await getAllAligmenents(version)).results : []),
     enabled: !!version && isActive
   });
+
+  useEffect(() => {
+    if (backgrounds) {
+      setSelectedBonds([]);
+      setSelectedPersonality([]);
+      setSelectedIdeals([]);
+      setSelectedFlaws([]);
+      setSelectedLanguages([]);
+      setSelectedEquipments([]);
+      setSelectedAlignment(undefined);
+      setSelectedBackground(
+        backgrounds.find((e) => e.index === selectedBackground?.index) || backgrounds[0]
+      );
+    }
+  }, [backgrounds, selectedBackground?.index]);
 
   const isValid = () => {
     return (

@@ -4,7 +4,11 @@ import { useQuery } from '@tanstack/react-query';
 import { getResourceList } from '@api/ressources';
 import type { Alignment } from '@representations/character/background.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
-import type { Choice, DefaultRepresentation } from '@representations/common.representation';
+import type {
+  AbilityBonusOption,
+  Choice,
+  DefaultRepresentation
+} from '@representations/common.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import {
   formatOption,
@@ -18,7 +22,7 @@ interface ChoiceGroupProps {
   choiceIndex: number;
   depth?: number;
   isMultiple?: boolean;
-  bundleSiblings?: (DefaultRepresentation & { count?: number })[]; // Direct checkboxes to auto-select
+  bundleSiblings?: (AbilityBonusOption | (DefaultRepresentation & { count?: number }))[];
   alignment?: Alignment;
   proficiencies: DefaultRepresentation[];
   isChecked: (item: DefaultRepresentation, count?: number) => boolean;
@@ -77,22 +81,20 @@ export function ChoiceGroup({
   });
 
   // Recursive rendering function
-  const renderChoice = (nestedChoice: Choice, nestedIsMultiple?: boolean): ReactElement => {
-    return (
-      <ChoiceGroup
-        choice={nestedChoice}
-        choiceIndex={choiceIndex}
-        depth={depth + 1}
-        isMultiple={nestedIsMultiple}
-        bundleSiblings={bundleSiblings}
-        alignment={alignment}
-        proficiencies={proficiencies}
-        isChecked={isChecked}
-        isDisabled={isDisabled}
-        onSelect={onSelect}
-      />
-    );
-  };
+  const renderChoice = (nestedChoice: Choice, nestedIsMultiple?: boolean): ReactElement => (
+    <ChoiceGroup
+      choice={nestedChoice}
+      choiceIndex={choiceIndex}
+      depth={depth + 1}
+      isMultiple={nestedIsMultiple}
+      bundleSiblings={bundleSiblings}
+      alignment={alignment}
+      proficiencies={proficiencies}
+      isChecked={isChecked}
+      isDisabled={isDisabled}
+      onSelect={onSelect}
+    />
+  );
 
   return isLoading ? (
     <CircularProgress size={24} />
@@ -119,27 +121,16 @@ export function ChoiceGroup({
             choice.type,
             index
           );
+          if (!prerequisites || !hasRequiredProficiencies(option, proficiencies)) return null;
 
-          // Check prerequisites
-          if (!prerequisites || !hasRequiredProficiencies(option, proficiencies)) {
-            return null;
-          }
-
-          // Check alignment requirements for ideals
           const alignmentMismatch =
             alignment && 'alignments' in option && option.alignments
               ? !option.alignments.find(({ index: idx }) => idx === alignment.index)
               : false;
-
           if (alignmentMismatch) return null;
 
           // Format related options for disable check
-          const limitedOptions = isMultiple
-            ? choice.from.options ||
-              resourceOptions ||
-              ([].filter((o) => typeof o === typeof option) as (typeof option)[])
-            : undefined;
-
+          const limitedOptions = isMultiple ? choice.from.options || resourceOptions : undefined;
           const formatOptions = limitedOptions?.map(
             (o) =>
               o.item?.index ||
@@ -160,8 +151,6 @@ export function ChoiceGroup({
           );
 
           const checkboxId = `choice-${choiceIndex}-${item.index}${item.count ? '-' + item.count : ''}`;
-
-          // Format label with special handling for ideals
           const formattedLabel = labelData ? (
             <Box paddingY="5px">
               <Typography variant="caption" display="block">
@@ -173,7 +162,7 @@ export function ChoiceGroup({
             label
           );
 
-          return (
+          return disabled ? null : (
             <FormControlLabel
               key={`option-${choiceIndex}-${index}-${choice.type}`}
               control={
@@ -194,7 +183,6 @@ export function ChoiceGroup({
                 />
               }
               label={formattedLabel}
-              sx={{ display: disabled ? 'none' : 'flex' }}
             />
           );
         }
@@ -221,8 +209,7 @@ export function ChoiceGroup({
             .filter((opt) => isCheckboxOption(opt))
             .map((opt, idx) => {
               const formatted = formatOption(opt, choice.type, idx);
-              const bundleItem = opt.ability_score ? opt : formatted.item;
-              return bundleItem as DefaultRepresentation & { count?: number };
+              return opt.ability_score ? opt : formatted.item;
             });
 
           return (

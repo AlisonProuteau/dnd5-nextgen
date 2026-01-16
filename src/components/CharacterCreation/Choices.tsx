@@ -18,7 +18,6 @@ interface ChoicesProps {
 
 // TODO: Choosing a trait/spell is sometimes confusing (ex: reference - dragon ancestry / elf spells)
 // TODO: Hide section when options are supposed to be hiden (even if same idx)
-// TODO: cleanup code
 export function Choices({
   choices,
   setSelected,
@@ -27,14 +26,12 @@ export function Choices({
   inherited = [],
   proficiencies = []
 }: ChoicesProps) {
-  // Use custom hook for selection logic
   const { isChecked, isDisabled, handleSelect } = useChoiceSelection(
     selected,
     inherited,
     setSelected
   );
 
-  // Filter out undefined choices
   const validChoices = useMemo(
     () => choices.filter((choice): choice is Choice => choice !== undefined),
     [choices]
