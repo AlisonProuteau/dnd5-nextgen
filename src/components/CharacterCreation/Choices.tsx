@@ -17,7 +17,6 @@ interface ChoicesProps {
 }
 
 // TODO: Choosing a trait/spell is sometimes confusing (ex: reference - dragon ancestry / elf spells)
-// TODO: Hide section when options are supposed to be hiden (even if same idx)
 export function Choices({
   choices,
   setSelected,
@@ -59,8 +58,9 @@ export function Choices({
             depth={0}
             alignment={alignment}
             proficiencies={proficiencies}
-            isChecked={(item, count) =>
-              isChecked(item, selected, count) || isChecked(item, inherited, count)
+            isChecked={(item, count, isMultiple) =>
+              isChecked(item, selected, count, isMultiple) ||
+              isChecked(item, inherited, count, isMultiple)
             }
             isDisabled={(item, choose, choiceIndex, count, isMultiple, options) =>
               isDisabled(item, choose, choiceIndex, count, isMultiple, options)

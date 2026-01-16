@@ -31,12 +31,18 @@ export function useChoiceSelection(
   const isChecked = (
     item: DefaultRepresentation,
     selection: (SelectionItem | RaceAbilityBonus)[],
-    count?: number
+    count?: number,
+    isMultiple?: boolean
   ): boolean => {
     return selection.some((current) => {
       if ('index' in current)
-        return current.index === item.index && (current.count || 0) === (count || 0);
+        return (
+          current.index === item.index &&
+          (current.count || 0) === (count || 0) &&
+          current.isMultiple === isMultiple
+        );
       if ('ability_score' in current) return current.ability_score.index === item.index;
+
       return false;
     });
   };
@@ -49,7 +55,18 @@ export function useChoiceSelection(
     isMultiple?: boolean,
     options?: string[]
   ): boolean => {
-    if (isChecked(item, inherited, count)) return true;
+    if (item.index.includes('battle'))
+      console.log('isDisabled check for item:', item.name, {
+        item,
+        choose,
+        choiceIndex,
+        count,
+        isMultiple,
+        options,
+        selected
+      });
+
+    if (isChecked(item, inherited, count, isMultiple)) return true;
 
     // Filter selections for this specific choice type
     let filteredSelection = selected.filter((selection) =>
@@ -57,13 +74,17 @@ export function useChoiceSelection(
     );
 
     // If checked in another choice type, disable it
-    if (!isChecked(item, filteredSelection, count) && isChecked(item, selected, count)) return true;
+    if (
+      !isChecked(item, filteredSelection, count, isMultiple) &&
+      isChecked(item, selected, count, isMultiple)
+    )
+      return true;
 
     // No selections yet, not disabled
     if (!filteredSelection.length) return false;
 
     // If this item is already checked, it's not disabled
-    if (isChecked(item, filteredSelection, count)) return false;
+    if (isChecked(item, filteredSelection, count, isMultiple)) return false;
 
     // Prevent mixing bundle and non-bundle selections
     const hasBundleSelections = filteredSelection.some(

@@ -25,7 +25,7 @@ interface ChoiceGroupProps {
   bundleSiblings?: (AbilityBonusOption | (DefaultRepresentation & { count?: number }))[];
   alignment?: Alignment;
   proficiencies: DefaultRepresentation[];
-  isChecked: (item: DefaultRepresentation, count?: number) => boolean;
+  isChecked: (item: DefaultRepresentation, count?: number, isMultiple?: boolean) => boolean;
   isDisabled: (
     item: DefaultRepresentation,
     choose: number,
@@ -140,7 +140,7 @@ export function ChoiceGroup({
               `${choice.type}-${index}`
           );
 
-          const checked = isChecked(item, item.count);
+          const checked = isChecked(item, item.count, isMultiple);
           const disabled = isDisabled(
             item,
             choice.choose,
