@@ -20,10 +20,11 @@ describe(`Authentication End-to-End`, () => {
 
     it('should handle complete sign-in workflow with loading states, responsive design, and first-time user flow', () => {
       // Test: email validation
-      // TODO: Add check for validation message once implemented
-
-      // Test: password validation
-      // TODO: Add check for validation message once implemented
+      cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
+      cy.get('#email').should('have.attr', 'aria-invalid', 'true');
+      cy.getByTestId('email-form').should('contain.text', 'Email invalid');
+      cy.get('#email').clear();
+      cy.getByTestId('email-form').should('not.contain.text', 'Email invalid');
 
       // Test: complete first-time sign-in flow
       cy.get('#email').type(signInUser.email);
@@ -144,11 +145,16 @@ describe(`Authentication End-to-End`, () => {
       // Test: switch to sign-up mode
       cy.get('button[type="reset"]').click();
       cy.get('button[type="submit"]').should('contain.text', 'Sign Up');
+      cy.get('button[type="submit"]').should('be.disabled');
 
       // Test: name field validation (minimum length)
+      cy.get('#name').click();
+      cy.press('Tab');
+      cy.get('#name').should('have.attr', 'aria-invalid', 'true');
+      cy.getByTestId('name-form').should('contain.text', 'Required');
       cy.get('#name').type('Jo').should('have.value', 'Jo').blur();
+      cy.getByTestId('name-form').should('not.contain.text', 'Required');
       cy.get('button[type="submit"]').should('be.disabled');
-      // TODO: Add check for validation message once implemented
 
       // Test: email validation
       cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
@@ -158,20 +164,26 @@ describe(`Authentication End-to-End`, () => {
       cy.get('#email').clear().type(Cypress.testUser.email);
 
       // Test: password complexity validation
-      cy.get('#password').type('weak').should('have.value', 'weak').blur();
+      cy.get('#password').type('>').should('have.value', '>').blur();
       cy.get('#password')
         .closest('form')
         .should(
           'contain.text',
-          'PasswordMust be at least 8 charactersMust contain at least 1 numberMust contain at least 1 uppercaseMust contain at least 1 special character in .,:;?!@$%&*^=+~_-'
+          [
+            'Must be at least 8 characters',
+            'Must contain at least 1 number',
+            'Must contain at least 1 lowercase',
+            'Must contain at least 1 uppercase',
+            'Must contain at least 1 special character in .,:;?!@$%&*^=+~_-',
+            'Contains invalid characters'
+          ].join('')
         );
       cy.get('button[type="submit"]').should('be.disabled');
 
       // Test: password visibility toggle
       cy.get('#password').should('have.attr', 'type', 'password');
       cy.get('#password').parent().getByTestId('password-visibility').click();
-      cy.get('#password').should('have.attr', 'type', 'text');
-      cy.get('#password').should('have.value', 'weak');
+      cy.get('#password').should('have.attr', 'type', 'text').and('have.value', '>');
       cy.get('#password').parent().getByTestId('password-visibility').click();
       cy.get('#password').should('have.attr', 'type', 'password');
 

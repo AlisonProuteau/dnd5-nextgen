@@ -192,8 +192,6 @@ describe(`Character Creation End-to-End`, () => {
       cy.get('label:visible:contains("Brewer\'s Supplies")').click();
       cy.get('label:visible').should('have.length', 1).should('contain.text', "Brewer's Supplies");
     });
-
-    //TODO: Check race step details
     cy.get('button:contains("Next"):visible').should('be.enabled').click();
 
     // Test: Back button
@@ -298,7 +296,6 @@ describe(`Character Creation End-to-End`, () => {
       cy.get('label:visible').should('have.length', 1);
     });
 
-    // TODO: Check class step details
     cy.get('button:contains("Next"):visible').should('be.enabled').click();
 
     // Test: Background Selection Step
@@ -306,15 +303,12 @@ describe(`Character Creation End-to-End`, () => {
     cy.selectOption('#background', 'Custom');
     cy.selectOption('#alignment', 'Lawful Good');
 
-    // TODO: Check background step details
     cy.get('button:contains("Next"):visible').should('be.enabled').click();
 
     // Test: Info Selection Step
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
     cy.get('input[name="name"], input[id="name"]').should('be.visible').type('Test Character');
     cy.get('input[name="age"], input[id="age"]').should('be.visible').type('25');
-
-    // TODO: Check background step details
     cy.getButton('Create').should('be.enabled');
 
     // Test: Backward Navigation - Navigate back through all steps and verify data persistence
