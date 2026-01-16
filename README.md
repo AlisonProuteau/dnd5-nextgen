@@ -219,21 +219,26 @@ MIT License - see [package.json](package.json) for details.
 
 ### Current TODO List
 
-- [ ] Replace custom useForm by react-hook-form?
-- [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
-- [ ] Add pagination for getAll and implement for buy equipment and add spell
+#### Features
+
 - [ ] Used/Unused equipment selector + weight/AC calculations
 - [ ] Add filter for spell prerequisites (maybe just subclass?)
 - [ ] Improve trait/spell selection clarity (ex: dragon ancestry, elf spells)
 - [ ] Update magic item rarity pricing system
 - [ ] Add cypress code coverage
-- [ ] Update Qodo Merge config
-- [ ] Complete code styling refactor
 - [ ] Add info page for app navigation and features
-- [ ] D&D 2024 edition support
 - [ ] Character deletion/archiving
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
 - [ ] Class archetype support?
+
+#### Dev
+
+- [ ] Replace custom useForm by react-hook-form?
+- [ ] Add pagination for getAll and implement for buy equipment and add spell
+- [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
+- [ ] Update Qodo Merge config
+- [ ] Complete code styling refactor
+- [ ] D&D 2024 edition support
 
 ## Support
 
