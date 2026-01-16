@@ -55,17 +55,6 @@ export function useChoiceSelection(
     isMultiple?: boolean,
     options?: string[]
   ): boolean => {
-    if (item.index.includes('battle'))
-      console.log('isDisabled check for item:', item.name, {
-        item,
-        choose,
-        choiceIndex,
-        count,
-        isMultiple,
-        options,
-        selected
-      });
-
     if (isChecked(item, inherited, count, isMultiple)) return true;
 
     // Filter selections for this specific choice type
