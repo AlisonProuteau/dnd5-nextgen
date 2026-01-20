@@ -11,7 +11,6 @@ describe(`Character Creation End-to-End`, () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${this.characterId}`);
   });
 
-  // TODO: Implement history persistency
   it('should handle browser back button during character creation workflow', function () {
     cy.getByTestId('create-character-fab').click();
     cy.url().should('include', '/create');
@@ -27,8 +26,7 @@ describe(`Character Creation End-to-End`, () => {
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
 
     // Test: Browser back button should navigate back to race step
-    // cy.go('back');
-    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.go('back');
     cy.url().should('include', '/create');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
@@ -64,8 +62,7 @@ describe(`Character Creation End-to-End`, () => {
 
     // Test: Browser back button from background to class
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
-    // cy.go('back');
-    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.go('back');
     cy.url().should('include', '/create');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
     cy.getByTestId('class-card-current').should('contain.text', 'Wizard');
@@ -89,8 +86,7 @@ describe(`Character Creation End-to-End`, () => {
       );
 
     // Test: Browser back button should work multiple times
-    // cy.go('back');
-    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
+    cy.go('back');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
@@ -102,8 +98,7 @@ describe(`Character Creation End-to-End`, () => {
       .should('contain.text', 'Black');
 
     // Test: Browser forward button should work
-    // cy.go('forward');
-    cy.get('button:contains("Next"):visible').should('be.enabled').click(); // Fix
+    cy.go('forward');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
     cy.getByTestId('class-card-current').should('contain.text', 'Wizard');
     cy.getByTestId('class-choices-')
@@ -125,12 +120,95 @@ describe(`Character Creation End-to-End`, () => {
           .and('contain.text', "1 Scholar's Pack")
       );
 
+    // Test: Fill character data
+    cy.go('forward');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.selectOption('#background', 'Custom');
+    cy.selectOption('#alignment', 'Lawful Good');
+    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
+    cy.get('input[name="name"], input[id="name"]')
+      .should('be.visible')
+      .type('Test Character Navigation');
+    cy.get('input[name="age"], input[id="age"]').should('be.visible').type('500');
+
+    // Test: Doesn't navigate away on submition error
+    cy.intercept(
+      { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+      { statusCode: 504, delay: 2000 }
+    ).as('createCharacterError');
+
+    cy.getButton('Create').click();
+    cy.wait('@createCharacterError');
+    cy.getByRole('status', 'Create failed').should(
+      'contain.text',
+      'Async call timeout limit reached'
+    );
+    cy.url().should('include', '/create');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
+    cy.get('input[name="name"], input[id="name"]').should(
+      'have.value',
+      'Test Character Navigation'
+    );
+    cy.get('input[name="age"], input[id="age"]').should('have.value', '500');
+
+    cy.intercept('POST', '**/google.firestore.v1.Firestore/**').as('createCharacterSuccess');
+    cy.wait('@createCharacterSuccess');
+
+    // Test: Character Creation Submission
+    cy.getButton('Create').click();
+    cy.get('button:contains("Create")').should('not.exist');
+    cy.getByRole('progressbar').should('be.visible');
+    cy.getByRole('status', 'Character created').should('be.visible');
+    cy.url().should('include', '/character/points');
+
+    // Test: Back navigation from character points goes to creation with no state
+    cy.go('back');
+    cy.url().should('include', '/create');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
+    cy.get('input[name="name"], input[id="name"]').should(
+      'not.have.value',
+      'Test Character Navigation'
+    );
+    cy.getButton('Next').should('be.disabled');
+    cy.go('back');
+
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.get('#alignment').should('not.contain.text', 'Lawful Good');
+    cy.getButton('Next').should('be.disabled');
+    cy.go('back');
+
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.getByTestId('class-card-current').should('not.contain.text', 'Wizard');
+    cy.getButton('Next').should('be.disabled');
+    cy.go('back');
+
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
+    cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
+    cy.getButton('Next').should('be.disabled');
+
     // Test: Browser back button from creation page should go to home
-    // cy.go('back');
-    cy.get('button:contains("Back"):visible').should('be.enabled').click(); // Fix
     cy.go('back');
     cy.url().should('eq', Cypress.config().baseUrl + '/');
     cy.getByTestId('create-character-fab').should('be.visible');
+
+    // Test: Browser forward button from home should go to creation page
+    cy.go('forward');
+    cy.url().should('contain', '/create');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
+
+    //Test: Forward navigation from creation page should go to points step
+    cy.go('forward');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.getButton('Next').should('be.disabled');
+    cy.go('forward');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.getButton('Next').should('be.disabled');
+    cy.go('forward');
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
+    cy.getButton('Create').should('be.disabled');
+    cy.go('forward');
+    cy.url().should('include', '/character/points');
   });
 
   it('should complete the full character sheet happy path workflow', function () {
@@ -363,6 +441,89 @@ describe(`Character Creation End-to-End`, () => {
     cy.getByRole('status', 'Character created').should('be.visible');
     cy.url().should('include', '/character');
 
-    // TODO: Verify created character details
+    // Test: Verify created character details
+    cy.url().should('include', '/character/points');
+    cy.contains('Race Modifiers:')
+      .siblings()
+      .invoke('text')
+      .then((abilityString: unknown) => {
+        const abilityArray = (abilityString as string)?.match(/([A-Z]{3}:\s\+\d)/g) || [];
+        return abilityArray.reduce((acc: Record<string, number>, curr) => {
+          const [ability, score] = curr.split(': +');
+          acc[`ability-${ability.toLowerCase()}`] = Number(score);
+          return acc;
+        }, {});
+      })
+      .as('raceModifiers', { type: 'static' });
+    cy.get('input[id^="ability-"]').first().should('not.have.value', 0);
+    cy.get('input[id^="ability-"]')
+      .then(($abilities) => {
+        const abilities = $abilities
+          .map((_, el: unknown) => {
+            const currentElement = el as HTMLInputElement;
+            return {
+              id: currentElement.id,
+              val: currentElement.value
+            };
+          })
+          .get();
+        return cy.wrap(abilities);
+      })
+      .as('abilityScores', { type: 'static' });
+
+    cy.getByTestId('save-scores').click();
+    cy.url().should('eq', Cypress.config().baseUrl + '/character');
+
+    // Test: Verify ability scores with racial modifiers applied
+    cy.get('@raceModifiers').then((modifiers: any) =>
+      cy.get('@abilityScores').each((ability: any) => {
+        const currentVal = Number(ability.val) + Number(modifiers[ability.id] || 0);
+        cy.getByTestId(ability.id).should('contain.text', currentVal.toString());
+      })
+    );
+
+    // Test: Verify selected character details on profile page
+    cy.getByTestId('character-card')
+      .should('contain.text', 'Test Character')
+      .and('contain.text', 'Hill Dwarf')
+      .and('contain.text', 'Sorcerer');
+
+    cy.get(':has(>[data-testid="skill-selected"])')
+      .should('have.length', 2)
+      .and('contain.text', 'Arcana')
+      .and('contain.text', 'Persuasion');
+
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('proficiencies-section').should(
+      'have.text',
+      "Proficiencies:Daggers, Darts, Slings, Quarterstaffs, Crossbows, light, Brewer's Supplies, Battleaxes, Handaxes, Light hammers, Warhammers"
+    );
+    cy.getByTestId('features-section')
+      .children()
+      .should('have.length', 2)
+      .getByTestId('feature-name-dragon-ancestor')
+      .click();
+    cy.getByTestId('feature-dragon-ancestor').should(
+      'contain.text',
+      'Dragon Ancestor: Copper - Acid Damage'
+    );
+    cy.getByTestId('traits-section')
+      .children()
+      .should('have.length', 4)
+      .and('contain.text', 'Darkvision')
+      .and('contain.text', 'Dwarven Resilience')
+      .and('contain.text', 'Stonecunning')
+      .and('contain.text', 'Dwarven Toughness');
+
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('equipment-section-content')
+      .should('contain.text', 'Quarterstaff')
+      .and('contain.text', 'Component pouch')
+      .and('contain.text', "Explorer's Pack");
+
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('description-age').should('contain.text', '25');
+    cy.getByTestId('description-alignment').should('contain.text', 'LG');
+    cy.getByTestId('description-background').should('contain.text', 'Custom');
   });
 });

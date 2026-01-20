@@ -6,6 +6,11 @@ import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestor
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
+const { FIRESTORE_EMULATOR_HOST, MODE } = import.meta.env;
+const DEV_MODE = MODE !== 'production' || FIRESTORE_EMULATOR_HOST;
+
+const TIMEOUT = 2000;
+
 export interface UseFirebaseCrudOptions {
   collectionPath: string;
   invalidateQueryKey?: string[];
@@ -53,6 +58,19 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
+  const asyncCallWithTimeout = (asyncPromise: Promise<any>, timeLimit: number) => {
+    // Create a promise that rejects if the time limit is reached
+    const timeoutPromise = new Promise((_, reject) => {
+      const timeoutHandle = setTimeout(
+        () => reject(new Error('Async call timeout limit reached')),
+        timeLimit
+      );
+      asyncPromise.finally(() => clearTimeout(timeoutHandle));
+    });
+
+    return DEV_MODE ? Promise.race([asyncPromise, timeoutPromise]) : asyncPromise;
+  };
+
   const create = async (data: Partial<T>, customPath?: string): Promise<string | null> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
@@ -68,8 +86,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         ...data,
         id: newDocRef.id
       } as unknown as T;
-
-      await setDoc(newDocRef, documentData);
+      await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
@@ -82,7 +99,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       toast.success(successMessages.create || 'Created successfully');
       return newDocRef.id;
     } catch (error) {
-      toast.error(`Error creating: ${(error as Error).message}`);
+      toast.error(`Create failed:
+        ${(error as Error).message}`);
       return null;
     } finally {
       setIsLoading(false);
@@ -100,7 +118,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await updateDoc(docRef, data as unknown as T);
+      await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
@@ -109,7 +127,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
       toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
-      toast.error(`Error updating: ${(error as Error).message}`);
+      toast.error(`Update failed: 
+        ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +145,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await deleteDoc(docRef);
+      await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
@@ -134,7 +153,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
       toast.success(successMessages.delete || 'Deleted successfully');
     } catch (error) {
-      toast.error(`Error deleting: ${(error as Error).message}`);
+      toast.error(`Delete failed:
+        ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }

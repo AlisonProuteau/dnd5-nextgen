@@ -170,7 +170,7 @@ export function CharacterClassForm({
       setselectedSubclass(undefined);
       setselectedClass(classes.find((e) => e.index === classes[activeStep].index));
     }
-  }, [classes, activeStep, selectedClass?.index]);
+  }, [classes, activeStep]);
 
   const isValid = () =>
     selectedClass?.index &&

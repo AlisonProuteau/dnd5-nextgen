@@ -143,7 +143,7 @@ export function CharacterRaceForm({
       setselectedSubrace(undefined);
       setselectedRace(races.find((e) => e.index === races[activeStep].index));
     }
-  }, [races, activeStep, selectedRace?.index]);
+  }, [races, activeStep]);
 
   const raceCardActions: Partial<SwipeableCallbacks> = {
     onSwipedLeft: () =>
