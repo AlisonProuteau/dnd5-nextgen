@@ -51,7 +51,6 @@ export function AuthPage() {
 
   return (
     <Container maxWidth="xs">
-      {/* {isSaving && ( */}
       <Backdrop sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1 })} open={isSaving}>
         <CircularProgress />
       </Backdrop>

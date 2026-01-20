@@ -1,6 +1,7 @@
+import * as admin from 'firebase-admin';
+import * as fs from 'fs';
 import { defineConfig } from 'cypress';
 import { plugin as cypressFirebasePlugin } from 'cypress-firebase';
-import * as admin from 'firebase-admin';
 import * as env from './cypress.env.json';
 import { emulators } from './firebase.json';
 
@@ -25,6 +26,26 @@ export default defineConfig({
         FIRESTORE_EMULATOR_HOST,
         FIREBASE_STORAGE_EMULATOR_HOST
       };
+
+      on('task', {
+        clearDownloadsFolder() {
+          const downloadsPath = config.downloadsFolder || 'cypress/downloads';
+          console.info('Clearing downloads folder:', downloadsPath);
+          fs.rmSync(downloadsPath, { recursive: true, force: true });
+          return null;
+        },
+        verifyFileExists(filePath: string) {
+          const fullPath = `${config.downloadsFolder}/${filePath}`;
+          console.info('Verifying file exists:', fullPath);
+          return fs.existsSync(fullPath);
+        },
+        getFileCount(filePath: string) {
+          const fullPath = `${config.downloadsFolder}/${filePath}`;
+          console.info('Getting file count for:', fullPath);
+          const files = fs.globSync(fullPath);
+          return files.length;
+        }
+      });
 
       return cypressFirebasePlugin(
         on,
