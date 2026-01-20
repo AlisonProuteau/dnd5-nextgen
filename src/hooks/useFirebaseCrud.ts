@@ -6,8 +6,7 @@ import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestor
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
-const { FIRESTORE_EMULATOR_HOST, MODE } = import.meta.env;
-const DEV_MODE = MODE !== 'production' || FIRESTORE_EMULATOR_HOST;
+const DEV_MODE = !!import.meta.env.FIRESTORE_EMULATOR_HOST;
 
 const TIMEOUT = 2000;
 
@@ -58,7 +57,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
-  const asyncCallWithTimeout = (asyncPromise: Promise<any>, timeLimit: number) => {
+  const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
     // Create a promise that rejects if the time limit is reached
     const timeoutPromise = new Promise((_, reject) => {
       const timeoutHandle = setTimeout(
@@ -68,7 +67,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       asyncPromise.finally(() => clearTimeout(timeoutHandle));
     });
 
-    return DEV_MODE ? Promise.race([asyncPromise, timeoutPromise]) : asyncPromise;
+    return Promise.race([asyncPromise, timeoutPromise]);
   };
 
   const create = async (data: Partial<T>, customPath?: string): Promise<string | null> => {
@@ -86,7 +85,9 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         ...data,
         id: newDocRef.id
       } as unknown as T;
-      await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT);
+      DEV_MODE
+        ? await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT)
+        : await setDoc(newDocRef, documentData);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
@@ -118,7 +119,9 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT);
+      DEV_MODE
+        ? await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT)
+        : await updateDoc(docRef, data as unknown as T);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
@@ -127,7 +130,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
       toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
-      toast.error(`Update failed: 
+      toast.error(`Update failed:
         ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
@@ -145,7 +148,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT);
+      DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
 
       if (invalidateQueryKey)
         await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
