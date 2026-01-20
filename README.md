@@ -225,7 +225,6 @@ MIT License - see [package.json](package.json) for details.
 - [ ] Add filter for spell prerequisites (maybe just subclass?)
 - [ ] Improve trait/spell selection clarity (ex: dragon ancestry, elf spells)
 - [ ] Update magic item rarity pricing system
-- [ ] Add cypress code coverage
 - [ ] Add info page for app navigation and features
 - [ ] Character deletion/archiving
 - [ ] Spell enhancements (Manually add more cantrips/slots)?

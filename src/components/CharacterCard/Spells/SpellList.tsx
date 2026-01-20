@@ -73,7 +73,7 @@ export function SpellList({
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
-  // TODO: Add filter for prerequisites (maybe just subclass?)
+  // TODO: Add filter for prerequisites (just subclass)
   const { data: spells = [], isFetching: spellsFetching } = useQuery({
     queryKey: [
       'fetchCharacterSpells',

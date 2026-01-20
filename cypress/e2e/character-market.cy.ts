@@ -189,8 +189,19 @@ describe('Character Equipment Market & Management End-to-End', () => {
         });
 
       // Test: Search for padded armor
-      cy.get('#search').type('Pad');
-      cy.wrap($dialog).getByTestId('market-buy-padded-armor').getButton('Add').click();
+      cy.get('#search').type('ar');
+      cy.getByTestId('market-buy-')
+        .should('have.length.above', 1)
+        .each(($item) => cy.wrap($item.text()).should('match', /ar/i));
+      cy.wrap($dialog)
+        .getByTestId('market-buy-padded-armor')
+        .then(($item) => {
+          cy.intercept(
+            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+            { delay: 1000 }
+          );
+          cy.wrap($item).getButton('Add').click();
+        });
       cy.getButton('Add').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
