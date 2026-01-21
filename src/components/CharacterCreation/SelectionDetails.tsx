@@ -9,6 +9,7 @@ import {
   Typography
 } from '@mui/material';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
+import { filterSpellsByPrerequisites } from '@utils/character';
 import { scrollOnOpen } from '@utils/ui';
 import { MoneyUnits } from '@representations/campaign/equipment.representation';
 import type { Level } from '@representations/campaign/level.representation';
@@ -46,7 +47,9 @@ export function SelectionDetails({
       version: version || 'Legacy',
       classIndex: selected.index,
       subclassIndex: subSelected?.index,
-      slotLevels: []
+      slotLevels: [],
+      features: features || [],
+      charLevel: 1
     }),
     [version, selected.index, subSelected?.index]
   );
@@ -257,7 +260,7 @@ export function SelectionDetails({
               maxWidth="lg"
               PaperProps={{ elevation: 0 }}
               slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
-              title={`${subSelected?.name} Spells (${info.spells.length})`}
+              title={`${subSelected?.name} Spells (${filterSpellsByPrerequisites(info.spells, characterInfo.charLevel, characterInfo.classIndex, characterInfo.features).length})`}
             >
               <SpellList
                 characterInfo={characterInfo}

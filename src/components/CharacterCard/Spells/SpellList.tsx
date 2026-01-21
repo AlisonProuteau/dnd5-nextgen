@@ -27,8 +27,9 @@ import {
   Typography
 } from '@mui/material';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
+import { groupBy, max, maxBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
+import { filterSpellsByPrerequisites } from '@utils/character';
 import type { Version } from '@utils/constants';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Subclass } from '@representations/character/class.representation';
@@ -46,6 +47,7 @@ interface SpellListProps {
     subclassIndex?: string;
     charLevel?: number;
     slotLevels: number[];
+    features?: DefaultRepresentation[];
   };
   additionalSpellList?: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[];
   slotLevel?: number;
@@ -54,6 +56,7 @@ interface SpellListProps {
   maxSelected?: [number, number];
   hideLevels?: boolean;
   showDesc?: boolean;
+  filterPrerequisites?: boolean;
 }
 
 export function SpellList({
@@ -65,7 +68,8 @@ export function SpellList({
   setSelectedSpells,
   maxSelected = [0, 0],
   hideLevels = false,
-  showDesc = false
+  showDesc = false,
+  filterPrerequisites = false
 }: SpellListProps & {
   setSelectedSpells?: Dispatch<SetStateAction<typeof selectedSpells>>;
 }) {
@@ -73,7 +77,6 @@ export function SpellList({
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
 
-  // TODO: Add filter for prerequisites (just subclass)
   const { data: spells = [], isFetching: spellsFetching } = useQuery({
     queryKey: [
       'fetchCharacterSpells',
@@ -95,9 +98,22 @@ export function SpellList({
     enabled: !!characterInfo.classIndex && !spellListOnly
   });
 
+  const filteredAdditionalSpellList = useMemo(
+    () =>
+      filterPrerequisites && additionalSpellList
+        ? filterSpellsByPrerequisites(
+            additionalSpellList,
+            characterInfo.charLevel || 1,
+            characterInfo.classIndex || '',
+            characterInfo.features || []
+          )
+        : additionalSpellList,
+    [additionalSpellList, characterInfo, filterPrerequisites]
+  );
+
   const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
     queries:
-      uniqBy(additionalSpellList, 'index')?.map(({ index }) => ({
+      filteredAdditionalSpellList?.map(({ index }) => ({
         queryKey: ['fetchSpell', version, index],
         queryFn: async () => (version ? await getSpell(version, index) : null),
         enabled: !!index && !!version
@@ -107,7 +123,9 @@ export function SpellList({
         data: results
           .map(({ data }) => {
             let formattedData = { ...data } as Spell;
-            const currentSpell = additionalSpellList?.find(({ index }) => index === data?.index);
+            const currentSpell = filteredAdditionalSpellList?.find(
+              ({ index }) => index === data?.index
+            );
 
             if (currentSpell?.prerequisites) {
               const preRequisiteLevel = parseInt(
@@ -258,7 +276,7 @@ export function SpellList({
                               {spell.ritual ? ' - Ritual' : ''}
                             </Typography>
                           )}
-                          {additionalSpellList
+                          {filteredAdditionalSpellList
                             ?.find(
                               ({ index, prerequisites }) =>
                                 index === spell.index &&

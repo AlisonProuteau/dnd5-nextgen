@@ -127,7 +127,9 @@ export function SpellStep({ character }: DefaultProps) {
             version: character.version,
             classIndex: character.class.index,
             subclassIndex: character.subclass?.index,
-            slotLevels: []
+            slotLevels: [],
+            features: character.features,
+            charLevel: character.level
           }}
           additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
         />
