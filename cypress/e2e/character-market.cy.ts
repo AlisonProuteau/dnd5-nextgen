@@ -43,6 +43,17 @@ describe('Character Equipment Market & Management End-to-End', () => {
       characterWithEquipment.equipments?.forEach(({ index, name }) => {
         cy.wrap($dialog).getByTestId(`market-sell-${index}`).scrollIntoView();
         cy.contains(name).should('be.visible');
+        cy.wrap($dialog)
+          .getByTestId(`market-sell-${index}`)
+          .getByTestId(`equipment-item-${index}-info`)
+          .click();
+        cy.getByRole('dialog')
+          .contains(new RegExp(`^${name}`))
+          .should('be.visible');
+        cy.press('Escape');
+        cy.getByRole('dialog')
+          .contains(new RegExp(`^${name}`))
+          .should('not.exist');
       });
 
       // Test: Verify selling price is displayed and sell an item
@@ -108,10 +119,38 @@ describe('Character Equipment Market & Management End-to-End', () => {
         .its('length')
         .as('weaponCount', { type: 'static' })
         .should('be.greaterThan', 0);
+      cy.getByTestId('market-buy-')
+        .getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' })
+        .first()
+        .within(($item) => {
+          const itemName = $item.text().trim();
+          cy.wrap($item).getByTestId(`-info`, { type: 'contains' }).click();
+          cy.getByRole('dialog')
+            .contains(new RegExp(`^${itemName}`))
+            .should('be.visible');
+          cy.press('Escape');
+          cy.getByRole('dialog')
+            .contains(new RegExp(`^${itemName}`))
+            .should('not.exist');
+        });
 
       // Test: Try to buy expensive item (should be disabled if insufficient funds)
       cy.selectOption('#equipmentCategory', 'Armor');
       cy.selectOption('#equipmentSubcategory', 'Heavy');
+      cy.getByTestId('market-buy-')
+        .getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' })
+        .first()
+        .within(($item) => {
+          const itemName = $item.text().trim();
+          cy.wrap($item).getByTestId(`-info`, { type: 'contains' }).click();
+          cy.getByRole('dialog')
+            .contains(new RegExp(`^${itemName}`))
+            .should('be.visible');
+          cy.press('Escape');
+          cy.getByRole('dialog')
+            .contains(new RegExp(`^${itemName}`))
+            .should('not.exist');
+        });
       cy.get('#search').type('Plate');
       cy.getByTestId('market-buy-plate').within(($item) => {
         cy.wrap($item).getByTestId('gp').should('contain.text', '1500');
