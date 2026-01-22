@@ -17,7 +17,7 @@ import type {
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { MarketItem } from './EquipmentListItem';
+import { MarketItem } from './MarketItem';
 
 interface MarketSearchProps {
   isFreeMode?: boolean;
@@ -32,13 +32,15 @@ interface MarketSearchProps {
     customPrice?: MoneyObjectType
   ) => Promise<void>;
   disableAction?: boolean;
+  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
 export function MarketSearch({
   isFreeMode = false,
   canBuy = () => false,
   onBuy = async () => {},
-  disableAction = false
+  disableAction = false,
+  hasRequiredStrength = () => true
 }: MarketSearchProps = {}) {
   const { version } = useAuth();
   const [search, setSearch] = useState('');
@@ -180,6 +182,7 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
+                  hasRequiredStrength={hasRequiredStrength}
                 />
               ) : (
                 <MarketItem
@@ -190,6 +193,7 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
+                  hasRequiredStrength={hasRequiredStrength}
                 />
               )
             )}

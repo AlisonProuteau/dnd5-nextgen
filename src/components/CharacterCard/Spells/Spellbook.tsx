@@ -45,7 +45,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     successMessages: {
       update: 'Spells saved successfully'
     },
-    invalidateQueryKey: ['fetchCharacter']
+    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
   });
 
   const updateKnownSpellsWithCascade = async () => {

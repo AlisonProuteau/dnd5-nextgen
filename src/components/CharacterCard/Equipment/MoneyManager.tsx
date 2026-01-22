@@ -35,7 +35,7 @@ export function MoneyManager({
   const [isUpdating, setIsUpdating] = useState(false);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
-    invalidateQueryKey: ['fetchCharacter'],
+    invalidateQueryKey: ['fetchCharacter', '{userId}', characterId],
     successMessages: {
       update: 'Money Updated'
     }

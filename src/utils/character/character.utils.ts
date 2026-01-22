@@ -1,6 +1,8 @@
 import { omit } from 'lodash';
+import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   AdditionalMoneyUnitType,
+  Equipment,
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -64,7 +66,7 @@ export const getAbilityPoints = (scores: Record<string, number>): number =>
  */
 export const getArmorClass = (
   dexModifier: number,
-  equipment?: (DefaultRepresentation & { count?: number })[],
+  equipment?: (DefaultRepresentation & { count?: number; equipped?: boolean })[],
   features?: (DefaultRepresentation & {
     subfeatures?: DefaultRepresentation[];
     expertises?: DefaultRepresentation[];
@@ -72,9 +74,11 @@ export const getArmorClass = (
   additionnalModifier?: number
 ): number => {
   let ac = 10 + dexModifier;
+  const filteredEquipment = equipment?.filter(({ equipped }) => equipped ?? true);
 
-  if (equipment?.length) {
-    const mappedEquipment = equipment.map((e) => e.index);
+  //TODO: use the equipement armor_class in representation?
+  if (filteredEquipment?.length) {
+    const mappedEquipment = filteredEquipment.map((e) => e.index);
     const reducedModifier = dexModifier > 2 ? 2 : dexModifier;
 
     if (mappedEquipment.includes('plate-armor')) ac = 18;
@@ -272,4 +276,10 @@ export const buyItem = (
   if (remainingMoneyInCopper(purse, { cp: itemCostCopper }) < 0)
     throw new Error('Insufficient funds');
   return updatePurse(purse, { cp: itemCostCopper }, additionalCurrencies);
+};
+
+export const hasRequiredStrength = (characterStr: number, equipment: Equipment | MagicItem) => {
+  return 'str_minimum' in equipment && equipment.str_minimum
+    ? characterStr >= equipment.str_minimum
+    : true;
 };

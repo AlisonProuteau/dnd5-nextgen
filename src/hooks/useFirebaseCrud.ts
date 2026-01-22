@@ -57,6 +57,12 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
+  const queryKeyWithUserId = (key: string[], uid: string): string[] => {
+    const queryKeyUserIdIndex = key.indexOf('{userId}');
+    if (queryKeyUserIdIndex !== -1) key[queryKeyUserIdIndex] = uid;
+    return queryKeyUserIdIndex !== -1 ? key : [...key, uid];
+  };
+
   const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
     // Create a promise that rejects if the time limit is reached
     const timeoutPromise = new Promise((_, reject) => {
@@ -90,7 +96,9 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         : await setDoc(newDocRef, documentData);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.create)
         navigate(
           redirect.create.path.replace('{id}', newDocRef.id),
@@ -124,7 +132,9 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         : await updateDoc(docRef, data as unknown as T);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.update)
         navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
@@ -151,7 +161,9 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.delete) navigate(redirect.delete.path, { state: redirect.delete.state });
 
       toast.success(successMessages.delete || 'Deleted successfully');

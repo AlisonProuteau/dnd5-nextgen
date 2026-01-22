@@ -37,7 +37,7 @@ export function CharacterPoints() {
 
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
-    invalidateQueryKey: ['fetchCharacter'],
+    invalidateQueryKey: ['fetchCharacter', '{userId}', id ?? ''],
     successMessages: {
       update: 'Character Points Updated'
     },

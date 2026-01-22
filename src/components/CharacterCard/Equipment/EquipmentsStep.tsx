@@ -4,22 +4,27 @@ import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/materia
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
 import { flatten, groupBy, uniqBy } from 'lodash';
 import { getEquipment, getMagicItem } from '@api/ressources';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
+import { getArmorClass, hasRequiredStrength } from '@utils/character';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
+import type { Character } from '@representations/user.representation';
 import type { DefaultProps } from 'src/pages/Header';
 import { EquipmentCard } from './EquipmentCard';
-import { EquipmentList } from './EquipmentList';
+import { EquipmentListItem } from './EquipmentListItem';
 import { Market } from './Market';
 import { MoneyDisplay } from './MoneyDisplay';
 
-// TODO: Used/Unused equipment selector + weight/AC calculations
-// TODO: Add prerequiste warnings for equipping items
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
   const { isOn: isMarketOpen, turnOn: openMarket, turnOff: closeMarket } = useToggle(false);
   const [selectedEquipment, setSelectedEquipment] = useState<Equipment | MagicItem>();
+  const firebaseCrud = useFirebaseCrud<Character>({
+    collectionPath: `users/{userId}/characters`,
+    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
+  });
 
   const { data: equipmentList } = useQueries({
     queries:
@@ -37,11 +42,15 @@ export function Equipments({ character }: DefaultProps) {
       })) || [],
     combine: useCallback(
       (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => {
-        const equipment: ((Equipment | MagicItem) & { count?: number })[] = (
-          results.map(({ data }) => data).filter((data) => data) as Equipment[]
-        ).map((eq) => {
-          const count = character.equipments?.find(({ index }) => index === eq.index)?.count;
-          return count ? { ...eq, count } : eq;
+        const equipment: ((Equipment | MagicItem) & {
+          count?: number;
+          equipped: boolean;
+        })[] = (results.map(({ data }) => data).filter((data) => data) as Equipment[]).map((eq) => {
+          const currentEquipment = character.equipments?.find(({ index }) => index === eq.index);
+          const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
+          const count = currentEquipment?.count;
+
+          return count ? { ...formattedEq, count } : formattedEq;
         });
 
         return {
@@ -53,13 +62,40 @@ export function Equipments({ character }: DefaultProps) {
     )
   });
 
+  const toggleEquip = async (equipment: Equipment | MagicItem) => {
+    const updatedEquipments = [...character.equipments];
+    const currentEquipmentIndex = updatedEquipments.findIndex(
+      ({ index }) => index === equipment.index
+    );
+    if (currentEquipmentIndex === -1) return;
+
+    updatedEquipments[currentEquipmentIndex] = {
+      ...updatedEquipments[currentEquipmentIndex],
+      equipped: !(updatedEquipments[currentEquipmentIndex!].equipped ?? true)
+    };
+    const newArmorClass = getArmorClass(
+      character.abilityScores['dex'].modifier,
+      updatedEquipments,
+      character?.features,
+      character?.class.index === 'monk'
+        ? character.abilityScores['wis']?.modifier || 0
+        : character.abilityScores['con']?.modifier || 0
+    );
+
+    await firebaseCrud.update(character.id, {
+      equipments: updatedEquipments,
+      armorClass: newArmorClass
+    });
+  };
+
   return (
     <Fragment>
       <Box data-testid="equipment-section-header" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
           label="Weight"
           value={flatten(Object.values(equipmentList)).reduce(
-            (total, equipment) => ('weight' in equipment ? total + (equipment.weight || 0) : total),
+            (total, equipment) =>
+              'weight' in equipment && equipment.equipped ? total + (equipment.weight || 0) : total,
             0
           )}
           Icon={WeightIcon}
@@ -77,18 +113,31 @@ export function Equipments({ character }: DefaultProps) {
         Market
       </Button>
 
-      <Box data-testid="equipment-section-content">
+      <Box
+        data-testid="equipment-section-content"
+        display="grid"
+        gridTemplateColumns="repeat(auto-fill, minmax(375px, 1fr))"
+        gap={1}
+      >
         {Object.entries(equipmentList).map(([category, equipment]) => (
           <Card key={category}>
             <CardContent>
               <Typography variant="h5">{equipment[0].equipment_category.name || ''}</Typography>
-              <EquipmentList
-                equipmentList={[...equipment]}
-                onClick={(equipment) => {
-                  setSelectedEquipment(equipment);
-                  openDialog();
-                }}
-              />
+              {[...equipment].map((e) => (
+                <EquipmentListItem
+                  key={e.index}
+                  equipment={e}
+                  onClick={(equipment) => {
+                    setSelectedEquipment(equipment);
+                    openDialog();
+                  }}
+                  onToggleEquip={toggleEquip}
+                  canEquip={!firebaseCrud.isLoading}
+                  hasRequiredStrength={(equipment) =>
+                    hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
+                  }
+                />
+              ))}
             </CardContent>
           </Card>
         ))}

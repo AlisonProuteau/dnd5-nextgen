@@ -28,7 +28,6 @@ export const filterSpellsByPrerequisites = (
   uniqBy(spellList, 'index').filter(({ prerequisites }) =>
     prerequisites
       ? prerequisites.every((prereq) => {
-          console.log('prereq', prereq, charLevel, classIndex, features);
           switch (prereq.type) {
             case 'feature':
               return features?.some(({ index }) => index === prereq.index);

@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { CoinsIcon } from '@assets';
-import { Box, Button, Card, CardContent, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { omit } from 'lodash';
+import { useToggle } from '@hooks/useToggle';
 import { NumberInput } from '@shared/NumberInput';
 import { remainingMoneyInCopper } from '@utils/character';
 import { getCoinColor } from '@utils/ui';
@@ -11,6 +12,8 @@ import {
   type MoneyObjectType,
   StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
+import { EquipmentCard } from './EquipmentCard';
+import { EquipmentListItem } from './EquipmentListItem';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketItemProps {
@@ -29,6 +32,7 @@ interface MarketItemProps {
     customPrice?: MoneyObjectType
   ) => Promise<void>;
   disableAction?: boolean;
+  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
 export function MarketItem({
@@ -38,11 +42,14 @@ export function MarketItem({
   priceDisplay,
   onAction,
   canBuy = () => false,
-  disableAction = false
+  disableAction = false,
+  hasRequiredStrength = () => true
 }: MarketItemProps) {
   const [quantity, setQuantity] = useState<number>(1);
   const [customPrice, setCustomPrice] = useState<MoneyObjectType>({});
   const [isUpdating, setIsUpdating] = useState(false);
+  const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
+  const [selectedEquipment, setSelectedEquipment] = useState<Equipment | MagicItem>();
 
   const maxQuantity = useMemo(
     () =>
@@ -98,124 +105,137 @@ export function MarketItem({
   };
 
   return (
-    <Card
-      key={`market-${mode}-${item.index}`}
-      data-testid={`market-${mode}-${item.index}`}
-      variant="outlined"
-    >
-      <CardContent
-        style={{ padding: '16px' }}
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          gap: 1
-        }}
+    <Fragment>
+      <Card
+        key={`market-${mode}-${item.index}`}
+        data-testid={`market-${mode}-${item.index}`}
+        variant="outlined"
       >
-        <Box flex={1}>
-          <Typography variant="body1" fontWeight={500}>
-            {item.name}
-          </Typography>
-          {mode === 'sell' ? (
-            <Typography variant="caption" color="text.secondary">
-              Quantity: {item.count || 1}
-            </Typography>
-          ) : null}
-        </Box>
-
-        {maxQuantity > 1 && (
-          <Box display="flex" sx={{ minWidth: '20%' }}>
-            <NumberInput
-              id={`quantity-${item.index}`}
-              min={minQuantity}
-              max={maxQuantity}
-              value={quantity * minQuantity}
-              step={minQuantity}
-              onInputChange={(e) => {
-                setIsUpdating(true);
-                const parsed = parseInt(e.target.value);
-                if (parsed !== null && !isNaN(parsed)) setQuantity(parsed / minQuantity);
-              }}
-              onChange={(_, value) => {
-                setQuantity(value ? value / minQuantity : 1);
-                setIsUpdating(false);
-              }}
-              onBlur={() => setIsUpdating(false)}
-              compact
-            />
-          </Box>
-        )}
-
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyItems="space-evenly"
-          gap={0.5}
-          flexDirection="column"
-          marginX="auto"
+        <CardContent
+          style={{ padding: '16px' }}
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            gap: 1
+          }}
         >
-          {!isFreeMode && priceDisplay && (
-            <MoneyDisplay
-              purse={getTotalPrice() || {}}
-              showZero={false}
-              display="inline-flex"
-              gap={0.5}
-              flexWrap="wrap"
-              justifyContent="flex-end"
-              paddingTop={0.25}
+          <Box flexGrow={1}>
+            <EquipmentListItem
+              equipment={{ ...item, equipped: false }}
+              onClick={(equipment) => {
+                setSelectedEquipment(equipment);
+                openDialog();
+              }}
+              hasRequiredStrength={hasRequiredStrength}
+              moreInfo={false}
             />
+
+            {mode === 'sell' ? (
+              <Typography variant="caption" color="text.secondary">
+                Quantity: {item.count || 1}
+              </Typography>
+            ) : null}
+          </Box>
+
+          {maxQuantity > 1 && (
+            <Box display="flex" sx={{ minWidth: '20%' }} marginX="auto">
+              <NumberInput
+                id={`quantity-${item.index}`}
+                min={minQuantity}
+                max={maxQuantity}
+                value={quantity * minQuantity}
+                step={minQuantity}
+                onInputChange={(e) => {
+                  setIsUpdating(true);
+                  const parsed = parseInt(e.target.value);
+                  if (parsed !== null && !isNaN(parsed)) setQuantity(parsed / minQuantity);
+                }}
+                onChange={(_, value) => {
+                  setQuantity(value ? value / minQuantity : 1);
+                  setIsUpdating(false);
+                }}
+                onBlur={() => setIsUpdating(false)}
+                compact
+              />
+            </Box>
           )}
 
-          {!isFreeMode && !priceDisplay ? (
-            <Box display="flex" alignItems="center">
-              {StandardMoneyUnits.map((unit) => (
-                <Box
-                  key={`money-units-${unit}`}
-                  display="flex"
-                  alignItems="center"
-                  flexDirection="column"
-                >
-                  <CoinsIcon height="20px" width="20px" fill={getCoinColor(unit)} />
-                  <NumberInput
-                    id={`money-units-${unit}`}
-                    compact
-                    slotProps={
-                      {
-                        incrementButton: { sx: { display: 'none' } },
-                        decrementButton: { sx: { display: 'none' } }
-                      } as any
-                    }
-                    min={0}
-                    value={customPrice[unit] ?? null}
-                    onInputChange={(e) => {
-                      setIsUpdating(true);
-                      const parsed = parseInt(e.target.value);
-                      if (parsed && !isNaN(parsed))
-                        setCustomPrice((prev) => ({ ...prev, [unit]: parsed }));
-                      else setCustomPrice((prev) => omit(prev, [unit]));
-                    }}
-                    onChange={(_, value) => {
-                      setIsUpdating(false);
-                      setCustomPrice((prev) => ({ ...prev, [unit]: value ?? null }));
-                    }}
-                    onBlur={() => setIsUpdating(false)}
-                  />
-                </Box>
-              ))}
-            </Box>
-          ) : null}
-
-          <Button
-            variant="outlined"
-            size="small"
-            disabled={isDisabled || disableAction}
-            onClick={onSubmit}
+          <Box
+            display="flex"
+            alignItems="center"
+            justifyItems="space-evenly"
+            gap={0.5}
+            flexDirection="column"
+            marginX="auto"
           >
-            {getButtonLabel()}
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+            {!isFreeMode && priceDisplay && (
+              <MoneyDisplay
+                purse={getTotalPrice() || {}}
+                showZero={false}
+                display="inline-flex"
+                gap={0.5}
+                flexWrap="wrap"
+                justifyContent="flex-end"
+                paddingTop={0.25}
+              />
+            )}
+
+            {!isFreeMode && !priceDisplay ? (
+              <Box display="flex" alignItems="center">
+                {StandardMoneyUnits.map((unit) => (
+                  <Box
+                    key={`money-units-${unit}`}
+                    display="flex"
+                    alignItems="center"
+                    flexDirection="column"
+                  >
+                    <CoinsIcon height="20px" width="20px" fill={getCoinColor(unit)} />
+                    <NumberInput
+                      id={`money-units-${unit}`}
+                      compact
+                      slotProps={
+                        {
+                          incrementButton: { sx: { display: 'none' } },
+                          decrementButton: { sx: { display: 'none' } }
+                        } as any
+                      }
+                      min={0}
+                      value={customPrice[unit] ?? null}
+                      onInputChange={(e) => {
+                        setIsUpdating(true);
+                        const parsed = parseInt(e.target.value);
+                        if (parsed && !isNaN(parsed))
+                          setCustomPrice((prev) => ({ ...prev, [unit]: parsed }));
+                        else setCustomPrice((prev) => omit(prev, [unit]));
+                      }}
+                      onChange={(_, value) => {
+                        setIsUpdating(false);
+                        setCustomPrice((prev) => ({ ...prev, [unit]: value ?? null }));
+                      }}
+                      onBlur={() => setIsUpdating(false)}
+                    />
+                  </Box>
+                ))}
+              </Box>
+            ) : null}
+
+            <Button
+              variant="outlined"
+              size="small"
+              disabled={isDisabled || disableAction}
+              onClick={onSubmit}
+            >
+              {getButtonLabel()}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth>
+        {selectedEquipment && <EquipmentCard selectedEquipment={selectedEquipment} />}
+      </Dialog>
+    </Fragment>
   );
 }

@@ -15,6 +15,7 @@ import {
   buyItem,
   type EquipmentCategoryType,
   getSellingPrice,
+  hasRequiredStrength,
   remainingMoneyInCopper,
   sellItem
 } from '@utils/character';
@@ -25,7 +26,7 @@ import type {
 } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { MarketItem } from './EquipmentListItem';
+import { MarketItem } from './MarketItem';
 import { MarketSearch } from './MarketSearch';
 import { MoneyDisplay } from './MoneyDisplay';
 
@@ -41,7 +42,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
-    invalidateQueryKey: ['fetchCharacter'],
+    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id],
     successMessages: {
       update: 'Transaction successful'
     }
@@ -196,6 +197,9 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             canBuy={canBuy}
             onBuy={onBuy}
             disableAction={firebaseCrud.isLoading}
+            hasRequiredStrength={(equipment) =>
+              hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
+            }
           />
         )}
       </DialogContent>

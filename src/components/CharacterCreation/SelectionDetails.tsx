@@ -20,7 +20,7 @@ import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
-import { EquipmentList } from '../CharacterCard/Equipment/EquipmentList';
+import { EquipmentListItem } from '../CharacterCard/Equipment/EquipmentListItem';
 import { SpellList } from '../CharacterCard/Spells/SpellList';
 
 interface SelectionDetailsProps {
@@ -184,15 +184,19 @@ export function SelectionDetails({
                   <Typography variant="overline" color="secondary">
                     Starting Equipment:
                   </Typography>
-                  <EquipmentList
-                    equipmentList={info.starting_equipment.map((e) => ({
-                      ...e.equipment,
-                      quantity: e.quantity,
-                      equipment_category: { index: 'e', name: 'Equipment' },
-                      cost: { quantity: 0, unit: MoneyUnits[0] },
-                      desc: []
-                    }))}
-                  />
+                  {info.starting_equipment.map((equipment) => (
+                    <EquipmentListItem
+                      key={equipment.equipment.index}
+                      equipment={{
+                        ...equipment.equipment,
+                        quantity: equipment.quantity,
+                        equipment_category: { index: 'e', name: 'Equipment' },
+                        cost: { quantity: 0, unit: MoneyUnits[0] },
+                        desc: [],
+                        equipped: true
+                      }}
+                    />
+                  ))}
                 </Fragment>
               ) : null}
             </AccordionDetails>

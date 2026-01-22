@@ -1,15 +1,26 @@
 import { BladeIcon, ShieldIcon } from '@assets';
-import { InfoOutlined } from '@mui/icons-material';
-import { Box, IconButton, Typography } from '@mui/material';
+import { CheckCircle, CircleOutlined, InfoOutlined, Warning } from '@mui/icons-material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 
-interface EquipmentListProps {
-  equipmentList: ((Equipment | MagicItem) & { count?: number })[];
+interface EquipmentListItemProps {
+  equipment: (Equipment | MagicItem) & { count?: number; equipped: boolean };
   onClick?: (equipment: Equipment | MagicItem) => void;
+  onToggleEquip?: (equipment: Equipment | MagicItem) => void;
+  canEquip?: boolean;
+  moreInfo?: boolean;
+  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
-export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
+export function EquipmentListItem({
+  equipment,
+  onClick,
+  onToggleEquip,
+  canEquip = true,
+  moreInfo = true,
+  hasRequiredStrength = () => true
+}: EquipmentListItemProps) {
   const getCount = (count?: number, quantity?: number): string => {
     if (count && count > 1) return count.toString();
     if (quantity && quantity > 1) return quantity.toString();
@@ -17,44 +28,89 @@ export function EquipmentList({ equipmentList, onClick }: EquipmentListProps) {
     return '';
   };
 
-  return equipmentList.map((equipment) => (
-    <Box key={equipment.index} data-testid={`equipment-item-${equipment.index}`}>
-      {onClick && (
+  return (
+    <Box
+      key={equipment.index}
+      data-testid={`equipment-item-${equipment.index}`}
+      display="grid"
+      gridTemplateColumns="1fr auto"
+      alignItems="center"
+    >
+      <Box display="flex" flexDirection="column">
+        <Box>
+          {onClick && (
+            <IconButton
+              onClick={() => onClick(equipment)}
+              data-testid={`equipment-item-${equipment.index}-info`}
+              sx={{ paddingLeft: 0 }}
+            >
+              <InfoOutlined color="info" fontSize="small" />
+            </IconButton>
+          )}
+          <Typography display="inline-block" sx={{ verticalAlign: 'middle' }}>
+            {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
+          </Typography>
+          {!hasRequiredStrength(equipment) && (
+            <Tooltip title="Minimum strength requirement not met" arrow>
+              <Warning
+                color="warning"
+                fontSize="small"
+                sx={{ verticalAlign: 'middle', marginX: 1 }}
+              />
+            </Tooltip>
+          )}
+        </Box>
+
+        {moreInfo && 'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (
+          <Box
+            display="flex"
+            paddingLeft={onClick ? 'min(25px, 10%)' : ''}
+            gap="5px"
+            alignItems="center"
+            data-testid="damage-info"
+          >
+            <BladeIcon height="20px" width="20px" fill="white" />
+            <Typography width="100%" variant="body2">
+              {equipment.damage?.damage_dice} {equipment.damage?.damage_type.name}
+            </Typography>
+          </Box>
+        )}
+
+        {moreInfo && 'armor_class' in equipment && equipment.armor_class && (
+          <Box
+            display="flex"
+            paddingLeft={onClick ? 'min(25px, 10%)' : ''}
+            gap="5px"
+            data-testid="armor-class-info"
+          >
+            <ShieldIcon height="20px" width="20px" fill="white" />
+            <Typography variant="body2">
+              {equipment.armor_class.base} AC
+              {equipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
+              {equipment.armor_class.max_bonus ? ` (Max: ${equipment.armor_class.max_bonus})` : ''}
+            </Typography>
+          </Box>
+        )}
+      </Box>
+
+      {equipment.equipment_category.index === 'armor' && onToggleEquip && (
         <IconButton
-          sx={{ verticalAlign: 'center' }}
-          onClick={() => onClick(equipment)}
-          data-testid={`equipment-item-${equipment.index}-info`}
+          onClick={() => onToggleEquip(equipment)}
+          data-testid={`equipment-item-${equipment.index}-equip`}
+          disabled={!canEquip}
+          sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+          color="secondary"
         >
-          <InfoOutlined color="info" fontSize="small" />
+          {equipment.equipped ? (
+            <CheckCircle fontSize="small" />
+          ) : (
+            <CircleOutlined fontSize="small" sx={{ opacity: 0.5 }} />
+          )}
+          <Typography variant="body2" color="textSecondary">
+            {equipment.equipped ? 'Equipped' : 'Unequipped'}
+          </Typography>
         </IconButton>
       )}
-      <Typography display="contents">
-        {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
-      </Typography>
-      {'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (
-        <Box
-          display="flex"
-          paddingLeft="min(50px, 15%)"
-          gap="5px"
-          alignItems="center"
-          data-testid="damage-info"
-        >
-          <BladeIcon height="20px" width="20px" fill="white" />
-          <Typography width="100%">
-            {equipment.damage?.damage_dice} {equipment.damage?.damage_type.name}
-          </Typography>
-        </Box>
-      )}
-      {'armor_class' in equipment && equipment.armor_class && (
-        <Box display="flex" paddingLeft="50px" gap="5px" data-testid="armor-class-info">
-          <ShieldIcon height="20px" width="20px" fill="white" />
-          <Typography>
-            {equipment.armor_class.base} AC
-            {equipment.armor_class.dex_bonus ? ' - Dexterity bonus' : ''}
-            {equipment.armor_class.max_bonus ? ` (Max: ${equipment.armor_class.max_bonus})` : ''}
-          </Typography>
-        </Box>
-      )}
     </Box>
-  ));
+  );
 }

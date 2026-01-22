@@ -29,7 +29,7 @@ export interface CharacterFormData {
   subclass?: DefaultRepresentation;
   proficiencies: ChoiceSelection[];
   skills?: ChoiceSelection[];
-  equipments: ChoiceSelection[];
+  equipments: (ChoiceSelection & { equipped?: boolean })[];
   languages: ChoiceSelection[];
   abilities: RaceAbilityBonus[];
   features?: (DefaultRepresentation & {

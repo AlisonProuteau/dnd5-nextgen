@@ -221,8 +221,6 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
-- [ ] Used/Unused equipment selector + weight/AC calculations
-- [ ] Add filter for spell prerequisites (maybe just subclass?)
 - [ ] Improve trait/spell selection clarity (ex: dragon ancestry, elf spells)
 - [ ] Update magic item rarity pricing system
 - [ ] Add info page for app navigation and features
