@@ -192,7 +192,9 @@ describe(`Character Sheet End-to-End`, () => {
       .each(($section) => {
         const sectionName = $section.find('h5').text().trim();
         cy.wrap($section)
-          .getByTestId(`equipment-item-`, { selector: ':not([data-testid$="-info"])' })
+          .getByTestId(`equipment-item-`, {
+            selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+          })
           .each(($item) => {
             const name = $item.find('p').first().text().trim();
             if (sectionName === 'Weapon') {

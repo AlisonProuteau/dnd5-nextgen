@@ -74,10 +74,9 @@ describe('Character Equipment Market & Management End-to-End', () => {
     // Test: Verify equipment updated in character sheet
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
-    cy.getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' }).should(
-      'have.length',
-      characterWithEquipment.equipments!.length - 1
-    );
+    cy.getByTestId('equipment-item-', {
+      selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+    }).should('have.length', characterWithEquipment.equipments!.length - 1);
     cy.getByTestId('equipment-section-content').within(($section) => {
       cy.wrap($section).getByTestId('equipment-item-cross-light').should('not.exist');
     });
@@ -226,10 +225,9 @@ describe('Character Equipment Market & Management End-to-End', () => {
     // Test: Verify equipment updated in character sheet
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
-    cy.getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' }).should(
-      'have.length',
-      characterWithEquipment.equipments!.length + 1
-    );
+    cy.getByTestId('equipment-item-', {
+      selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+    }).should('have.length', characterWithEquipment.equipments!.length + 1);
     cy.getByTestId('equipment-section-content').within(($section) =>
       cy.wrap($section).getByTestId('equipment-item-padded-armor').should('be.visible')
     );
