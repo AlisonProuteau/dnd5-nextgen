@@ -58,7 +58,7 @@ export function FeaturesDisplay({
   });
   return (
     features && (
-      <Box paddingTop="15px" data-testid="features-section">
+      <Box paddingTop="15px" data-testid="features-section-content">
         {features.map((feature) => (
           <Accordion
             key={feature.index}

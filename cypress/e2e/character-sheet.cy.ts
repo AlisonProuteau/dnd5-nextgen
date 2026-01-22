@@ -1,7 +1,8 @@
 import { characters } from 'cypress/support/mocks/characterList';
 
 describe(`Character Sheet End-to-End`, () => {
-  const characterData = characters.find(({ name }) => name === 'Delfy')!;
+  const delfyData = characters.find(({ name }) => name === 'Delfy')!;
+  const devyData = characters.find(({ name }) => name === 'Devy')!;
   const blackList: string[] = [
     'draconic-ancestry',
     'otherworldly-patron',
@@ -19,16 +20,21 @@ describe(`Character Sheet End-to-End`, () => {
     'tool-proficiency'
   ];
 
-  before(() => cy.createTestCharacter(Cypress.testUser.uid, characterData.id, characterData));
+  before(() => {
+    cy.createTestCharacter(Cypress.testUser.uid, delfyData.id, delfyData);
+    cy.createTestCharacter(Cypress.testUser.uid, devyData.id, devyData);
+  });
 
   beforeEach(() => cy.login(Cypress.testUser.uid));
+
+  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   it('should complete the full character sheet happy path workflow', () => {
     cy.visit('/');
     cy.waitForLoading();
     cy.getByTestId('character-card-').should('have.length.at.least', 1);
 
-    cy.getByTestId(`character-card-${characterData.id}`).click();
+    cy.getByTestId(`character-card-${delfyData.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
 
     // Test: Stats section
@@ -131,14 +137,14 @@ describe(`Character Sheet End-to-End`, () => {
     });
 
     // Test: Traits & Features section
-    cy.getByTestId('next-step').click();
+    clickUntilStep('characteristics');
     cy.getByTestId('proficiencies-section').should(
       'contain.text',
-      characterData.proficiencies.map((p) => p.name).join(', ')
+      delfyData.proficiencies.map((p) => p.name).join(', ')
     );
     cy.getByTestId('language-section').should(
       'contain.text',
-      characterData.languages.map((l) => l.name).join(', ')
+      delfyData.languages.map((l) => l.name).join(', ')
     );
 
     cy.getByTestId('features-section')
@@ -146,9 +152,9 @@ describe(`Character Sheet End-to-End`, () => {
       .children()
       .should(
         'have.length',
-        (characterData.features || []).filter((d) => !blackList.includes(d.index)).length
+        (delfyData.features || []).filter((d) => !blackList.includes(d.index)).length
       );
-    characterData
+    delfyData
       .features!.filter((d) => !blackList.includes(d.index))
       .forEach((feature) => {
         cy.getByTestId(`feature-name-${feature.index}`).should('contain.text', feature.name);
@@ -162,9 +168,9 @@ describe(`Character Sheet End-to-End`, () => {
       .children()
       .should(
         'have.length',
-        (characterData.traits || []).filter((d) => !blackList.includes(d.index)).length
+        (delfyData.traits || []).filter((d) => !blackList.includes(d.index)).length
       );
-    characterData
+    delfyData
       .traits!.filter((d) => !blackList.includes(d.index))
       .forEach((trait) => {
         cy.getByTestId(`trait-name-${trait.index}`).should('contain.text', trait.name);
@@ -174,7 +180,7 @@ describe(`Character Sheet End-to-End`, () => {
       });
 
     // Test: Equipment section
-    cy.getByTestId('next-step').click();
+    clickUntilStep('equipment');
     cy.getByTestId('equipment-section-header').should('be.visible');
     cy.getByTestId('money-display').within(($purse) => {
       cy.wrap($purse).getByTestId('gp').should('be.visible');
@@ -182,7 +188,7 @@ describe(`Character Sheet End-to-End`, () => {
       cy.wrap($purse).getByTestId('cp').should('be.visible');
     });
     cy.getByTestId('inventory-weight').should('contain.text', '14').and('contain.text', 'Weight');
-    characterData.equipments.forEach((equipment) => {
+    delfyData.equipments.forEach((equipment) => {
       cy.getByTestId(`equipment-item-${equipment.index}`).should('contain.text', equipment.name);
     });
 
@@ -270,7 +276,7 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Description section
     // TODO: Improve seeded data
-    cy.getByTestId('next-step').click();
+    clickUntilStep('description');
     cy.getByTestId('description-sex-')
       .should('contain.text', 'Sex')
       .should('have.attr', 'data-testid', 'description-sex-F');
@@ -288,8 +294,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('description-personality').should('have.text', 'Personality: ');
 
     // Test: Spell section
-    cy.getByTestId('next-step').click();
-    cy.getByTestId('spells-section').should('be.visible');
+    clickUntilStep('spells');
 
     // Test: Next goes back to beginning
     cy.getByTestId('next-step').click();
@@ -328,15 +333,12 @@ describe(`Character Sheet End-to-End`, () => {
     cy.waitForLoading();
     cy.getByTestId('character-card-').should('have.length.at.least', 1);
 
-    cy.callFirestore(
-      'delete',
-      `users/${Cypress.testUser.uid}/characters/${characterData.id}/notes`
-    );
-    cy.getByTestId(`character-card-${characterData.id}`).click();
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${delfyData.id}/notes`);
+    cy.getByTestId(`character-card-${delfyData.id}`).click();
 
     // Test: Add and edit notes
-    cy.getByTestId(`notes-${characterData.id}`).click();
-    cy.getByTestId(`notes-drawer-${characterData.id}`).within(($el) => {
+    cy.getByTestId(`notes-${delfyData.id}`).click();
+    cy.getByTestId(`notes-drawer-${delfyData.id}`).within(($el) => {
       cy.wrap($el).should('contain.text', 'No notes yet');
 
       cy.wrap($el).getByTestId('add-note').click();
@@ -353,8 +355,8 @@ describe(`Character Sheet End-to-End`, () => {
     });
     cy.reload();
 
-    cy.getByTestId(`notes-${characterData.id}`).click();
-    cy.getByTestId(`notes-drawer-${characterData.id}`).within(($el) => {
+    cy.getByTestId(`notes-${delfyData.id}`).click();
+    cy.getByTestId(`notes-drawer-${delfyData.id}`).within(($el) => {
       cy.wrap($el).should('not.contain.text', 'No notes yet');
       cy.wrap($el)
         .getByTestId('note-card-')
@@ -454,8 +456,100 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Close notes drawer
     cy.press('Escape');
-    cy.getByTestId(`notes-drawer-${characterData.id}`).should('not.exist');
+    cy.getByTestId(`notes-drawer-${delfyData.id}`).should('not.exist');
   });
+
+  it('should handle equipment equip/unequip with AC updates, weight tracking, and strength warnings', () => {
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${delfyData.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Initial state with armor equipped by default
+    cy.getByTestId('armor-class').should('contain.text', 13);
+    clickUntilStep('equipment');
+    cy.getByTestId('inventory-weight').should('contain.text', 14);
+    cy.getByTestId('-equip', { type: 'contains' }).should('have.length', 1);
+    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+
+    // Test: Unequip armor - AC & weight should update
+    cy.getByTestId('equipment-item-leather-armor-equip').click();
+    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Unequipped');
+    clickUntilStep('stats', 'previous');
+    cy.getByTestId('armor-class').should('contain.text', 12);
+    clickUntilStep('equipment');
+    cy.getByTestId('inventory-weight').should('contain.text', 4);
+
+    // Test: Re-equip armor - AC & weight should update back
+    cy.getByTestId('equipment-item-leather-armor-equip').click();
+    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+    clickUntilStep('stats', 'previous');
+    cy.getByTestId('armor-class').should('contain.text', 13);
+    clickUntilStep('equipment');
+    cy.getByTestId('inventory-weight').should('contain.text', 14);
+
+    // Test: Equipment state persists across page refresh
+    cy.reload();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('armor-class').should('contain.text', 13);
+    clickUntilStep('equipment');
+    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+
+    // Test: Strength requirement warnings
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${devyData.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('armor-class').should('contain.text', 18);
+    clickUntilStep('equipment');
+
+    // Test: Should show weight warning for Chain mail
+    cy.getByTestId('equipment-item-chain-mail', { type: 'exact' }).within(($el) => {
+      cy.wrap($el)
+        .getByTestId('strength-requirement-warning')
+        .should('be.visible')
+        .trigger('mouseover');
+    });
+    cy.contains('Minimum strength requirement not met').should('be.visible');
+
+    // Test: Shield can be equipped/unequipped independently
+    cy.getByTestId('equipment-item-shield-equip').click();
+    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Unequipped');
+    clickUntilStep('stats', 'previous');
+    cy.getByTestId('armor-class').should('contain.text', 16);
+
+    clickUntilStep('equipment');
+    cy.getByTestId('equipment-item-shield-equip').click();
+    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Equipped');
+    clickUntilStep('stats', 'previous');
+    cy.getByTestId('armor-class').should('contain.text', 18);
+
+    // Test: Unequip chain mail - still shows warning when unequipped
+    clickUntilStep('equipment');
+    cy.getByTestId('equipment-item-chain-mail-equip').click();
+    cy.getByTestId('equipment-item-chain-mail-equip').should('contain.text', 'Unequipped');
+    cy.getByTestId('equipment-item-chain-mail', { type: 'exact' })
+      .getByTestId('strength-requirement-warning')
+      .should('be.visible');
+    clickUntilStep('stats', 'previous');
+    cy.getByTestId('armor-class').should('contain.text', 14);
+  });
+
+  const clickUntilStep = (
+    step: string,
+    type: 'previous' | 'next' = 'next',
+    i = 1
+  ): Cypress.Chainable<JQuery<HTMLElement>> => {
+    cy.getByTestId(`${type}-step`).click();
+    return cy.getByTestId('-section', { type: 'contains' }).then((el) => {
+      const currentLabel = el.attr('data-testId')?.replace('-section', '') || '';
+      const maxReached = i >= 6;
+
+      if (maxReached && currentLabel !== step)
+        expect(currentLabel).contains(step, 'Step not found in 10 clicks');
+      return currentLabel === step || maxReached ? cy.wrap(el) : clickUntilStep(step, type, i + 1);
+    });
+  };
 });
 
 // TODO: Add leveling when implemented

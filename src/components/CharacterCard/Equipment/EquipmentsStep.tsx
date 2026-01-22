@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
@@ -89,7 +89,7 @@ export function Equipments({ character }: DefaultProps) {
   };
 
   return (
-    <Fragment>
+    <Box data-testid="equipment-section" display="flex" gap="15px" flexDirection="column">
       <Box data-testid="equipment-section-header" display="grid" gridTemplateColumns="1fr 1fr">
         <IconText
           label="Weight"
@@ -154,6 +154,6 @@ export function Equipments({ character }: DefaultProps) {
           ownedEquipment={Object.values(equipmentList).flat()}
         />
       </Dialog>
-    </Fragment>
+    </Box>
   );
 }

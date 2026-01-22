@@ -59,7 +59,7 @@ export function TraitsDisplay({
   });
   return (
     traits && (
-      <Box paddingTop="15px" data-testid="traits-section">
+      <Box paddingTop="15px" data-testid="traits-section-content">
         {traits.map((trait) => (
           <Accordion
             key={trait.index}

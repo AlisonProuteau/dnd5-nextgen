@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SpeedIcon } from '@assets';
 import { CircularProgress } from '@mui/material';
 import { Box } from '@mui/system';
@@ -37,9 +36,9 @@ export function Stats({ character }: DefaultProps) {
   };
 
   return (
-    <Fragment>
+    <Box data-testid="stats-section" display="flex" gap="15px" flexDirection="column">
       <Box
-        data-testid="stats-section"
+        data-testid="stats-section-header"
         display="grid"
         gridTemplateColumns="1fr 1fr 1fr 1fr"
         paddingTop="15px"
@@ -95,6 +94,6 @@ export function Stats({ character }: DefaultProps) {
       ) : (
         <CircularProgress size={24} />
       )}
-    </Fragment>
+    </Box>
   );
 }

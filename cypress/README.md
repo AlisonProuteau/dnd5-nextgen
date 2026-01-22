@@ -127,6 +127,8 @@ const characterData = characters.find(({ name }) => name === 'Delfy')!;
 
 ## Running Tests
 
+Never use "sleep" command to wait for the tests to end
+
 ### Prerequisites
 
 ```bash

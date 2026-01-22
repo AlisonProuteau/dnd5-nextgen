@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
@@ -19,7 +18,7 @@ export function Description({ character }: DefaultProps) {
   };
 
   return (
-    <Fragment>
+    <Box data-testid="description-section" display="flex" gap="15px" flexDirection="column">
       <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" alignItems="end">
         <IconText
           label="Sex"
@@ -66,6 +65,6 @@ export function Description({ character }: DefaultProps) {
           Personality: {character.personality}
         </Typography>
       </Box>
-    </Fragment>
+    </Box>
   );
 }

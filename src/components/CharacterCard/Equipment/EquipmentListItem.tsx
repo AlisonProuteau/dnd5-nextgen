@@ -56,6 +56,7 @@ export function EquipmentListItem({
                 color="warning"
                 fontSize="small"
                 sx={{ verticalAlign: 'middle', marginX: 1 }}
+                data-testid="strength-requirement-warning"
               />
             </Tooltip>
           )}
