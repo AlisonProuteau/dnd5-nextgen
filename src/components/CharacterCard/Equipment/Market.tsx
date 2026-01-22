@@ -25,8 +25,8 @@ import type {
 } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { EquipmentListItem } from './EquipmentListItem';
-import { EquipmentSearch } from './EquipmentSearch';
+import { MarketItem } from './EquipmentListItem';
+import { MarketSearch } from './MarketSearch';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketProps {
@@ -169,7 +169,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             ) : (
               <Box display="flex" flexDirection="column" gap={1}>
                 {ownedEquipment.map((item) => (
-                  <EquipmentListItem
+                  <MarketItem
                     key={`sell-${item.index}`}
                     item={item}
                     mode="sell"
@@ -191,7 +191,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             )}
           </Box>
         ) : (
-          <EquipmentSearch
+          <MarketSearch
             isFreeMode={isfreeMode}
             canBuy={canBuy}
             onBuy={onBuy}

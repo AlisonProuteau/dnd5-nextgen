@@ -13,7 +13,7 @@ import {
 } from '@representations/campaign/equipment.representation';
 import { MoneyDisplay } from './MoneyDisplay';
 
-interface EquipmentListItemProps {
+interface MarketItemProps {
   item: (Equipment | MagicItem) & { count?: number };
   mode: 'sell' | 'buy';
   isFreeMode: boolean;
@@ -31,7 +31,7 @@ interface EquipmentListItemProps {
   disableAction?: boolean;
 }
 
-export function EquipmentListItem({
+export function MarketItem({
   item,
   mode,
   isFreeMode,
@@ -39,7 +39,7 @@ export function EquipmentListItem({
   onAction,
   canBuy = () => false,
   disableAction = false
-}: EquipmentListItemProps) {
+}: MarketItemProps) {
   const [quantity, setQuantity] = useState<number>(1);
   const [customPrice, setCustomPrice] = useState<MoneyObjectType>({});
   const [isUpdating, setIsUpdating] = useState(false);
