@@ -255,8 +255,7 @@ describe(`Character Sheet End-to-End`, () => {
                   .getByTestId('damage')
                   .invoke('text')
                   .should('match', /Damage:\d+d\d+/);
-              }
-              if (sectionName === 'Armor') {
+              } else if (sectionName === 'Armor') {
                 cy.wrap($dialog)
                   .getByTestId('weight')
                   .invoke('text')
@@ -265,9 +264,18 @@ describe(`Character Sheet End-to-End`, () => {
                   .getByTestId('armor-class')
                   .invoke('text')
                   .should('match', /Armor Class|AC: \d+( - Dexterity bonus)?$/);
+              } else {
+                cy.wrap($dialog)
+                  .find('.MuiDialogContent-root')
+                  .find('p')
+                  .then(($ps) =>
+                    $ps.length === 1
+                      ? $ps
+                      : $ps.filter((_, el) => el.dataset.testid?.includes('content-') || false)
+                  )
+                  .should('have.length.greaterThan', 0)
+                  .each(($p) => cy.wrap($p.text()).should('not.be.empty'));
               }
-              // TODO: Add more tests for adventuring gear and additional equipment types
-              // TODO: Add more checks specific for this character
             });
             cy.press('Escape');
             cy.getByRole('dialog').should('not.exist');
@@ -275,7 +283,6 @@ describe(`Character Sheet End-to-End`, () => {
       });
 
     // Test: Description section
-    // TODO: Improve seeded data
     clickUntilStep('description');
     cy.getByTestId('description-sex-')
       .should('contain.text', 'Sex')
@@ -286,12 +293,22 @@ describe(`Character Sheet End-to-End`, () => {
       .should('contain.text', 'CG')
       .and('contain.text', 'Alignment');
 
-    cy.getByTestId('description-appearance').should('have.text', 'Appearance: ');
+    cy.getByTestId('description-appearance')
+      .should('contain.text', 'Appearance: ')
+      .and('contain.text', delfyData.appearance!);
     cy.getByTestId('description-background').should('have.text', 'Background: Custom');
-    cy.getByTestId('description-bonds').should('have.text', 'Bonds: ');
-    cy.getByTestId('description-ideals').should('have.text', 'Ideals: ');
-    cy.getByTestId('description-flaws').should('have.text', 'Flaws: ');
-    cy.getByTestId('description-personality').should('have.text', 'Personality: ');
+    cy.getByTestId('description-bonds')
+      .should('contain.text', 'Bonds: ')
+      .and('contain.text', delfyData.bonds!.join(''));
+    cy.getByTestId('description-ideals')
+      .should('contain.text', 'Ideals: ')
+      .and('contain.text', delfyData.ideals!.join(''));
+    cy.getByTestId('description-flaws')
+      .should('contain.text', 'Flaws: ')
+      .and('contain.text', delfyData.flaws!.join(''));
+    cy.getByTestId('description-personality')
+      .should('contain.text', 'Personality: ')
+      .and('contain.text', delfyData.personality!.join(''));
 
     // Test: Spell section
     clickUntilStep('spells');
@@ -304,8 +321,6 @@ describe(`Character Sheet End-to-End`, () => {
     cy.visit('/');
     cy.visit('/character');
     cy.url().should('not.include', '/character');
-
-    // TODO: Add tests for character not found and permission issues (how to state)
 
     // Test: Incomplete character should not be displayed
     cy.callFirestore('set', `users/${Cypress.testUser.uid}/characters/test-character-1`, {

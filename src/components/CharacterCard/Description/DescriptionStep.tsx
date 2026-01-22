@@ -5,6 +5,7 @@ import { IconText } from '@shared/IconText';
 import type { DefaultProps } from 'src/pages/Header';
 import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
 
+// TODO: Improve display
 export function Description({ character }: DefaultProps) {
   const getGenderIcon = (genderIndex: GenderIndexes) => {
     switch (genderIndex) {
