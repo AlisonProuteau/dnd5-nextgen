@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
@@ -13,9 +13,9 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { omit } from 'lodash';
-import { getAllAbilities, getClassInfo } from '@api/ressources';
+import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { omit, uniqBy } from 'lodash';
+import { getAllAbilities, getClassInfo, getEquipment, getMagicItem } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { NumberInput } from '@shared/NumberInput';
@@ -23,6 +23,8 @@ import { SplitButton } from '@shared/SplitButton';
 import { randomInteger } from '@utils/calculations';
 import { formatPointsForDB, getAbilityPoints } from '@utils/character';
 import { button, fab, linkButton } from '@utils/ui';
+import type { MagicItem } from '@representations/abilities/magic.representation';
+import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Classes } from '@representations/character/class.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -65,6 +67,45 @@ export function CharacterPoints() {
     queryKey: ['fetchAbilities', version],
     queryFn: async () => (version ? (await getAllAbilities(version)).results : null),
     enabled: !!version
+  });
+
+  const { data: equipmentList } = useQueries({
+    queries:
+      uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchEquipment', character?.version, index],
+        queryFn: async () => {
+          let item: Equipment | MagicItem | null = await getEquipment(
+            character?.version || 'Legacy',
+            index
+          );
+          if (!item) {
+            item = await getMagicItem(character?.version || 'Legacy', index);
+          }
+
+          return item;
+        },
+        enabled: !!index && !!character
+      })) || [],
+    combine: useCallback(
+      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => {
+        const equipment: ((Equipment | MagicItem) & {
+          count?: number;
+          equipped: boolean;
+        })[] = (results.map(({ data }) => data).filter((data) => data) as Equipment[]).map((eq) => {
+          const currentEquipment = character?.equipments?.find(({ index }) => index === eq.index);
+          const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
+          const count = currentEquipment?.count;
+
+          return count ? { ...formattedEq, count } : formattedEq;
+        });
+
+        return {
+          data: equipment,
+          isFetching: results.some((result) => result.isFetching)
+        };
+      },
+      [character?.equipments]
+    )
   });
 
   useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
@@ -110,7 +151,13 @@ export function CharacterPoints() {
     if (!character) return;
 
     if (isValid && id && user?.uid) {
-      const formattedPoints = formatPointsForDB(character, points, abilities, classInfo);
+      const formattedPoints = formatPointsForDB(
+        character,
+        points,
+        abilities,
+        classInfo,
+        equipmentList || []
+      );
 
       await firebaseCrud.update(id, formattedPoints);
     }

@@ -16,8 +16,6 @@ interface ChoicesProps {
   setSelected: (data: any) => void;
 }
 
-// TODO: Choosing a trait/spell is sometimes confusing (ex: reference - dragon ancestry / elf spells)
-// TODO: Maybe add description or dialog ?
 export function Choices({
   choices,
   setSelected,

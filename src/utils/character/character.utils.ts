@@ -66,7 +66,7 @@ export const getAbilityPoints = (scores: Record<string, number>): number =>
  */
 export const getArmorClass = (
   dexModifier: number,
-  equipment?: (DefaultRepresentation & { count?: number; equipped?: boolean })[],
+  equipment?: ((Equipment | MagicItem) & { equipped?: boolean })[],
   features?: (DefaultRepresentation & {
     subfeatures?: DefaultRepresentation[];
     expertises?: DefaultRepresentation[];
@@ -74,42 +74,42 @@ export const getArmorClass = (
   additionnalModifier?: number
 ): number => {
   let ac = 10 + dexModifier;
-  const filteredEquipment = equipment?.filter(({ equipped }) => equipped ?? true);
+  const filteredEquipment = equipment
+    ?.filter(({ equipped }) => equipped ?? true)
+    ?.map((e) => ({
+      index: e.index,
+      armor_class: 'armor_class' in e ? e.armor_class : undefined,
+      equipped: e.equipped
+    }));
 
-  //TODO: use the equipement armor_class in representation?
-  if (filteredEquipment?.length) {
-    const mappedEquipment = filteredEquipment.map((e) => e.index);
-    const reducedModifier = dexModifier > 2 ? 2 : dexModifier;
+  if (filteredEquipment?.length && filteredEquipment.some((e) => e.armor_class)) {
+    filteredEquipment.forEach((e) => {
+      if (e.index.includes('shield')) return;
+      let newAC = 0;
 
-    if (mappedEquipment.includes('plate-armor')) ac = 18;
-    else if (mappedEquipment.includes('splint-armor')) ac = 17;
-    else if (mappedEquipment.includes('chain-mail')) ac = 16;
-    else if (mappedEquipment.includes('ring-mail')) ac = 14;
-    else if (mappedEquipment.includes('half-plate-armor')) ac = 15 + reducedModifier;
-    else if (mappedEquipment.includes('scale-mail') || mappedEquipment.includes('breastplate'))
-      ac = 14 + reducedModifier;
-    else if (mappedEquipment.includes('chain-shirt')) ac = 13 + reducedModifier;
-    else if (
-      mappedEquipment.includes('studded-leather-armor') ||
-      mappedEquipment.includes('hide-armor')
-    )
-      ac = 12 + dexModifier;
-    else if (mappedEquipment.includes('padded-armor') || mappedEquipment.includes('leather-armor'))
-      ac = 11 + dexModifier;
-    else if (
-      features
-        ?.flatMap((f) => [f.index, ...(f.subfeatures?.map(({ index }) => index) || [])])
-        ?.some((index) => index.includes('unarmored-defense'))
-    )
+      if (e.armor_class) {
+        const dexBonusAmount = e.armor_class.dex_bonus
+          ? dexModifier > (e.armor_class.max_bonus || dexModifier)
+            ? e.armor_class.max_bonus || dexModifier
+            : dexModifier
+          : 0;
+        newAC = e.armor_class.base + dexBonusAmount;
+      }
+      if (newAC > ac) ac = newAC;
+    });
+
+    const shield = filteredEquipment.find((e) => e.index.includes('shield'));
+    if (shield) ac = ac + (shield.armor_class?.base ?? 2);
+  } else {
+    const featureIndexes = features?.flatMap((f) => [
+      f.index,
+      ...(f.subfeatures?.map(({ index }) => index) || [])
+    ]);
+
+    if (featureIndexes?.some((index) => index.includes('unarmored-defense')))
       ac = ac + (additionnalModifier || 0);
-    else if (
-      features
-        ?.flatMap((f) => [f.index, ...(f.subfeatures?.map(({ index }) => index) || [])])
-        ?.some((index) => index.includes('draconic-resilience'))
-    )
+    else if (featureIndexes?.some((index) => index.includes('draconic-resilience')))
       ac = 13 + dexModifier;
-
-    if (mappedEquipment.includes('shield')) ac = ac + 2;
   }
 
   return ac;
@@ -223,7 +223,7 @@ export const getSellingPrice = (
 
   if (sellAtFullPrice) return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
 
-  // TODO: update this with actual types and magic item rarity pricing
+  // TODO: Currenly only have MagicItems, could add other categories later
   switch (equipmentCategoryType) {
     case EquipmentCategoryType.TradeGoods:
     case EquipmentCategoryType.Gem:
