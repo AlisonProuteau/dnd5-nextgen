@@ -2,6 +2,7 @@ import * as admin from 'firebase-admin';
 import * as fs from 'fs';
 import { defineConfig } from 'cypress';
 import { plugin as cypressFirebasePlugin } from 'cypress-firebase';
+import { globSync } from 'glob';
 import * as env from './cypress.env.json';
 import { emulators } from './firebase.json';
 
@@ -42,7 +43,7 @@ export default defineConfig({
         getFileCount(filePath: string) {
           const fullPath = `${config.downloadsFolder}/${filePath}`;
           console.info('Getting file count for:', fullPath);
-          const files = fs.globSync(fullPath);
+          const files = globSync(fullPath);
           return files.length;
         }
       });

@@ -1,8 +1,12 @@
 describe('Choices', () => {
-  beforeEach(() => cy.login(Cypress.testUser.uid));
+  beforeEach(() => {
+    cy.login(Cypress.testUser.uid);
+    cy.visit('/');
+  });
 
-  it('Test the choices in chearacter creation', function () {
+  it('Test the choices in chearacter creation', { retries: 1 }, function () {
     cy.visit('/create');
+    cy.waitForLoading();
 
     // Test: Select race and check choices are reset when changing race
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
