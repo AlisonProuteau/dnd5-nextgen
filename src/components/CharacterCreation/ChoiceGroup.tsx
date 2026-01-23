@@ -66,7 +66,11 @@ export function ChoiceGroup({
     const id = choice.from.equipment_category?.index || choice.from.resource_list_path;
 
     return choice.from.option_set_type === 'equipment_category' ? `/equipment/${id}` : id;
-  }, [(choice.from.equipment_category?.index, choice.from.resource_list_path)]);
+  }, [
+    choice.from.equipment_category?.index,
+    choice.from.resource_list_path,
+    choice.from.option_set_type
+  ]);
 
   // Use React Query to fetch resources
   const { data: resourceOptions, isLoading } = useQuery({
