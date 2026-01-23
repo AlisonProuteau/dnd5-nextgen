@@ -21,7 +21,7 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
 import { randomInteger } from '@utils/calculations';
-import { formatPointsForDB, getAbilityPoints } from '@utils/character';
+import { formatEquipmentForDisplay, formatPointsForDB, getAbilityPoints } from '@utils/character';
 import { button, fab, linkButton } from '@utils/ui';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
@@ -87,23 +87,13 @@ export function CharacterPoints() {
         enabled: !!index && !!character
       })) || [],
     combine: useCallback(
-      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => {
-        const equipment: ((Equipment | MagicItem) & {
-          count?: number;
-          equipped: boolean;
-        })[] = (results.map(({ data }) => data).filter((data) => data) as Equipment[]).map((eq) => {
-          const currentEquipment = character?.equipments?.find(({ index }) => index === eq.index);
-          const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
-          const count = currentEquipment?.count;
-
-          return count ? { ...formattedEq, count } : formattedEq;
-        });
-
-        return {
-          data: equipment,
-          isFetching: results.some((result) => result.isFetching)
-        };
-      },
+      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => ({
+        data: formatEquipmentForDisplay(
+          results.map(({ data }) => data).filter(Boolean) as (Equipment | MagicItem)[],
+          character?.equipments || []
+        ),
+        isFetching: results.some((result) => result.isFetching)
+      }),
       [character?.equipments]
     )
   });

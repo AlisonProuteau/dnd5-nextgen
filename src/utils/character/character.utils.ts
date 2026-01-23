@@ -6,6 +6,7 @@ import type {
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { Character } from '@representations/user.representation';
 
 /**
  * Calculate ability score modifier based on D&D 5e rules
@@ -73,33 +74,29 @@ export const getArmorClass = (
   })[],
   additionnalModifier?: number
 ): number => {
-  let ac = 10 + dexModifier;
-  const filteredEquipment = equipment
-    ?.filter(({ equipped }) => equipped ?? true)
-    ?.map((e) => ({
-      index: e.index,
-      armor_class: 'armor_class' in e ? e.armor_class : undefined,
-      equipped: e.equipped
-    }));
+  const equippedItems =
+    equipment
+      ?.filter(({ equipped }) => equipped ?? true)
+      .map((e) => ({
+        index: e.index,
+        armor_class: 'armor_class' in e ? e.armor_class : undefined
+      }))
+      .filter((e) => e.armor_class) || [];
+  const armors = equippedItems.filter((e) => !e.index.includes('shield'));
+  const shield = equippedItems.find((e) => e.index.includes('shield'));
 
-  if (filteredEquipment?.length && filteredEquipment.some((e) => e.armor_class)) {
-    filteredEquipment.forEach((e) => {
-      if (e.index.includes('shield')) return;
-      let newAC = 0;
+  let baseAc = 10 + dexModifier;
+  if (armors.length > 0) {
+    const armorAcs = armors.map((armor) => {
+      if (!armor.armor_class) return 0;
 
-      if (e.armor_class) {
-        const dexBonusAmount = e.armor_class.dex_bonus
-          ? dexModifier > (e.armor_class.max_bonus || dexModifier)
-            ? e.armor_class.max_bonus || dexModifier
-            : dexModifier
-          : 0;
-        newAC = e.armor_class.base + dexBonusAmount;
-      }
-      if (newAC > ac) ac = newAC;
+      const dexBonusAmount = armor.armor_class.dex_bonus
+        ? Math.min(dexModifier, armor.armor_class.max_bonus ?? dexModifier)
+        : 0;
+      return armor.armor_class.base + dexBonusAmount;
     });
 
-    const shield = filteredEquipment.find((e) => e.index.includes('shield'));
-    if (shield) ac = ac + (shield.armor_class?.base ?? 2);
+    baseAc = Math.max(baseAc, ...armorAcs);
   } else {
     const featureIndexes = features?.flatMap((f) => [
       f.index,
@@ -107,12 +104,14 @@ export const getArmorClass = (
     ]);
 
     if (featureIndexes?.some((index) => index.includes('unarmored-defense')))
-      ac = ac + (additionnalModifier || 0);
+      baseAc = 10 + dexModifier + (additionnalModifier || 0);
     else if (featureIndexes?.some((index) => index.includes('draconic-resilience')))
-      ac = 13 + dexModifier;
+      baseAc = 13 + dexModifier;
   }
 
-  return ac;
+  if (shield) baseAc += shield.armor_class?.base ?? 2;
+
+  return baseAc;
 };
 
 /**
@@ -282,4 +281,20 @@ export const hasRequiredStrength = (characterStr: number, equipment: Equipment |
   return 'str_minimum' in equipment && equipment.str_minimum
     ? characterStr >= equipment.str_minimum
     : true;
+};
+
+export const formatEquipmentForDisplay = (
+  equipment: (Equipment | MagicItem)[],
+  characterEquipment: Character['equipments']
+): ((Equipment | MagicItem) & {
+  count?: number;
+  equipped: boolean;
+})[] => {
+  return (equipment.filter((data) => data) as Equipment[]).map((eq) => {
+    const currentEquipment = characterEquipment.find(({ index }) => index === eq.index);
+    const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
+    const count = currentEquipment?.count;
+
+    return count ? { ...formattedEq, count } : formattedEq;
+  });
 };
