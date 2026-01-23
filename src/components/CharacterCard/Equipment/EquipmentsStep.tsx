@@ -56,33 +56,37 @@ export function Equipments({ character }: DefaultProps) {
   });
 
   const equipmentListString = useMemo(
-    () => JSON.stringify(Object.values(equipmentList).flat()),
-    [equipmentList]
+    () => JSON.stringify(Object.values(equipmentList ?? {}).flat()),
+    [equipmentList ?? {}]
   );
 
   useEffect(() => {
-    if (isEquipmentListFetching || !Object.values(equipmentList).flat().length) return;
+    let cancelled = false;
+    const run = async () => {
+      const flattenedEquipment = Object.values(equipmentList ?? {}).flat();
+      if (isEquipmentListFetching || !flattenedEquipment.length) return;
 
-    const updatedEquipments = Object.values(equipmentList)
-      .flat()
-      .map((eq) => ({
+      const updatedEquipments = flattenedEquipment.map((eq) => ({
         ...eq,
         equipped: character.equipments.find(({ index }) => index === eq?.index)?.equipped ?? true
       }));
-    const newArmorClass = getArmorClass(
-      character.abilityScores['dex'].modifier,
-      updatedEquipments || [],
-      character?.features,
-      character?.class.index === 'monk'
-        ? character.abilityScores['wis']?.modifier || 0
-        : character.abilityScores['con']?.modifier || 0
-    );
+      const newArmorClass = getArmorClass(
+        character.abilityScores['dex'].modifier,
+        updatedEquipments || [],
+        character?.features,
+        character?.class.index === 'monk'
+          ? character.abilityScores['wis']?.modifier || 0
+          : character.abilityScores['con']?.modifier || 0
+      );
 
-    if (newArmorClass !== character.armorClass) {
-      firebaseCrud.update(character.id, {
-        armorClass: newArmorClass
-      });
-    }
+      if (!cancelled && newArmorClass !== character.armorClass)
+        await firebaseCrud.update(character.id, { armorClass: newArmorClass });
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
   }, [equipmentListString, character.equipments, isEquipmentListFetching]);
 
   const toggleEquip = async (equipment: Equipment | MagicItem) => {
@@ -98,7 +102,7 @@ export function Equipments({ character }: DefaultProps) {
     };
     const fullUpdatedEquipments = updatedEquipments
       .map(({ index, equipped }) => ({
-        ...(Object.values(equipmentList)
+        ...(Object.values(equipmentList || {})
           .flat()
           .find((eq) => eq.index === index) || {}),
         equipped
