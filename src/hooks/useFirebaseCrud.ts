@@ -6,6 +6,10 @@ import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestor
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
+const DEV_MODE = !!import.meta.env.FIRESTORE_EMULATOR_HOST;
+
+const TIMEOUT = 2000;
+
 export interface UseFirebaseCrudOptions {
   collectionPath: string;
   invalidateQueryKey?: string[];
@@ -53,6 +57,25 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
+  const queryKeyWithUserId = (key: string[], uid: string): string[] => {
+    const queryKeyUserIdIndex = key.indexOf('{userId}');
+    if (queryKeyUserIdIndex !== -1) key[queryKeyUserIdIndex] = uid;
+    return queryKeyUserIdIndex !== -1 ? key : [...key, uid];
+  };
+
+  const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
+    // Create a promise that rejects if the time limit is reached
+    const timeoutPromise = new Promise((_, reject) => {
+      const timeoutHandle = setTimeout(
+        () => reject(new Error('Async call timeout limit reached')),
+        timeLimit
+      );
+      asyncPromise.finally(() => clearTimeout(timeoutHandle));
+    });
+
+    return Promise.race([asyncPromise, timeoutPromise]);
+  };
+
   const create = async (data: Partial<T>, customPath?: string): Promise<string | null> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
@@ -68,11 +91,14 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         ...data,
         id: newDocRef.id
       } as unknown as T;
-
-      await setDoc(newDocRef, documentData);
+      DEV_MODE
+        ? await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT)
+        : await setDoc(newDocRef, documentData);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.create)
         navigate(
           redirect.create.path.replace('{id}', newDocRef.id),
@@ -82,7 +108,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       toast.success(successMessages.create || 'Created successfully');
       return newDocRef.id;
     } catch (error) {
-      toast.error(`Error creating: ${(error as Error).message}`);
+      toast.error(`Create failed:
+        ${(error as Error).message}`);
       return null;
     } finally {
       setIsLoading(false);
@@ -100,16 +127,21 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await updateDoc(docRef, data as unknown as T);
+      DEV_MODE
+        ? await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT)
+        : await updateDoc(docRef, data as unknown as T);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.update)
         navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
       toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
-      toast.error(`Error updating: ${(error as Error).message}`);
+      toast.error(`Update failed:
+        ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }
@@ -126,15 +158,18 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
-      await deleteDoc(docRef);
+      DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
 
       if (invalidateQueryKey)
-        await queryClient.invalidateQueries({ queryKey: [...invalidateQueryKey, user.uid] });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
+        });
       if (redirect.delete) navigate(redirect.delete.path, { state: redirect.delete.state });
 
       toast.success(successMessages.delete || 'Deleted successfully');
     } catch (error) {
-      toast.error(`Error deleting: ${(error as Error).message}`);
+      toast.error(`Delete failed:
+        ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
     }

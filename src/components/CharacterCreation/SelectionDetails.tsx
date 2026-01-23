@@ -9,6 +9,7 @@ import {
   Typography
 } from '@mui/material';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
+import { filterSpellsByPrerequisites } from '@utils/character';
 import { scrollOnOpen } from '@utils/ui';
 import { MoneyUnits } from '@representations/campaign/equipment.representation';
 import type { Level } from '@representations/campaign/level.representation';
@@ -19,7 +20,7 @@ import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { FeaturesDisplay } from '../CharacterCard/Characteristics/FeaturesDisplay';
 import { TraitsDisplay } from '../CharacterCard/Characteristics/TraitsDisplay';
-import { EquipmentList } from '../CharacterCard/Equipment/EquipmentList';
+import { EquipmentListItem } from '../CharacterCard/Equipment/EquipmentListItem';
 import { SpellList } from '../CharacterCard/Spells/SpellList';
 
 interface SelectionDetailsProps {
@@ -46,7 +47,9 @@ export function SelectionDetails({
       version: version || 'Legacy',
       classIndex: selected.index,
       subclassIndex: subSelected?.index,
-      slotLevels: []
+      slotLevels: [],
+      features: features || [],
+      charLevel: 1
     }),
     [version, selected.index, subSelected?.index]
   );
@@ -181,15 +184,19 @@ export function SelectionDetails({
                   <Typography variant="overline" color="secondary">
                     Starting Equipment:
                   </Typography>
-                  <EquipmentList
-                    equipmentList={info.starting_equipment.map((e) => ({
-                      ...e.equipment,
-                      quantity: e.quantity,
-                      equipment_category: { index: 'e', name: 'Equipment' },
-                      cost: { quantity: 0, unit: MoneyUnits[0] },
-                      desc: []
-                    }))}
-                  />
+                  {info.starting_equipment.map((equipment) => (
+                    <EquipmentListItem
+                      key={equipment.equipment.index}
+                      equipment={{
+                        ...equipment.equipment,
+                        quantity: equipment.quantity,
+                        equipment_category: { index: 'e', name: 'Equipment' },
+                        cost: { quantity: 0, unit: MoneyUnits[0] },
+                        desc: [],
+                        equipped: true
+                      }}
+                    />
+                  ))}
                 </Fragment>
               ) : null}
             </AccordionDetails>
@@ -257,7 +264,7 @@ export function SelectionDetails({
               maxWidth="lg"
               PaperProps={{ elevation: 0 }}
               slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
-              title={`${subSelected?.name} Spells (${info.spells.length})`}
+              title={`${subSelected?.name} Spells (${filterSpellsByPrerequisites(info.spells, characterInfo.charLevel, characterInfo.classIndex, characterInfo.features).length})`}
             >
               <SpellList
                 characterInfo={characterInfo}

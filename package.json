@@ -63,6 +63,7 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-vitest": "^0.5.4",
     "firebase-admin": "^13.6.0",
+    "glob": "^10.3.3",
     "husky": "^9.1.7",
     "jsdom": "^27.3.0",
     "mochawesome": "^7.1.3",

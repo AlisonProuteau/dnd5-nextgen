@@ -5,7 +5,7 @@ import type { CharacterFormData } from '@representations/user.representation';
 
 interface CharacterDescriptionProps {
   setFormData: (data: Partial<CharacterFormData>) => void;
-  onPrev: () => void;
+  onPrev: (_: any) => void;
 }
 
 export enum GenderIndexes {

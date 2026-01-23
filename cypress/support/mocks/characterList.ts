@@ -262,6 +262,32 @@ export const characters: Character[] = [
       index: 'custom',
       name: 'Custom'
     },
+    appearance:
+      'Delfy has flowing silver hair adorned with small wildflowers and leaves that seem to grow naturally in her braids. Her emerald green eyes sparkle with curiosity and wisdom beyond her years. She stands tall and graceful, with intricate vine-like tattoos winding up her arms that glow faintly when she casts spells. She wears simple leather armor decorated with hand-carved wooden charms representing the seasons.',
+    personality: [
+      'I speak to plants and animals as if they were old friends, often having full conversations with trees.',
+      'I become deeply absorbed in studying the patterns of nature, sometimes forgetting about the people around me.',
+      'I prefer the company of wildlife to most civilized folk, finding their honesty refreshing.',
+      'I have an infectious enthusiasm when sharing knowledge about herbs, ecosystems, and natural phenomena.'
+    ],
+    ideals: [
+      'Balance. The natural world exists in harmony, and civilization must learn to do the same. (Neutral)',
+      'Freedom. Like the wind through the trees, all beings deserve to live without oppression. (Chaotic)',
+      'Knowledge. Understanding the secrets of nature is the key to preserving it for future generations. (Any)',
+      'Growth. Every creature, every plant, every person has the potential to flourish given the right conditions. (Good)'
+    ],
+    bonds: [
+      'The ancient forest grove where I received my druidic training is sacred to me, and I would do anything to protect it.',
+      'A wise old owl named Whisperwind guided me through my darkest moments and remains my closest companion.',
+      'I carry a pressed flower from my homeland between the pages of my spell component pouch, reminding me of what I fight to preserve.',
+      'The elven community that raised me taught me the old ways, and I seek to honor their wisdom by sharing it with the world.'
+    ],
+    flaws: [
+      'I can be judgmental of those who show disrespect to nature, sometimes forgetting that not everyone shares my upbringing.',
+      'My curiosity often gets the better of me, leading me to investigate strange plants or creatures without considering the danger.',
+      'I struggle to understand why anyone would choose stone walls over star-filled skies, making it hard to relate to city dwellers.',
+      'When I see nature being harmed, I sometimes act rashly without thinking through the consequences.'
+    ],
     skills: [
       {
         type: 'class',

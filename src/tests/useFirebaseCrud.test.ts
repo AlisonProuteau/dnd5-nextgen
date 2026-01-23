@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import toast from 'react-hot-toast';
 import { type NavigateFunction, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import type { User } from 'firebase/auth';
 import { deleteDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -88,10 +88,8 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.update('user-123', { name: 'New Name' }));
 
-      await waitFor(() =>
-        expect(toast.error).toHaveBeenCalledWith(
-          'Error updating: Permission denied: insufficient permissions'
-        )
+      expect(toast.error).toHaveBeenCalledWith(
+        'Update failed:\n        Permission denied: insufficient permissions'
       );
       expect(toast.success).not.toHaveBeenCalled();
     });
@@ -107,7 +105,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.update('user-123', { name: 'New Name' }));
 
-      await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Settings updated'));
+      expect(toast.success).toHaveBeenCalledWith('Settings updated');
       expect(toast.error).not.toHaveBeenCalled();
     });
 
@@ -122,7 +120,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.update('user-123', { name: 'New Name' }));
 
-      await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/', undefined));
+      expect(mockNavigate).toHaveBeenCalledWith('/', undefined);
       expect(toast.error).not.toHaveBeenCalled();
       expect(toast.success).toHaveBeenCalledWith('Updated successfully');
     });
@@ -142,9 +140,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.create({ message: 'Test ticket' }));
 
-      await waitFor(() =>
-        expect(toast.error).toHaveBeenCalledWith('Error creating: Network error')
-      );
+      expect(toast.error).toHaveBeenCalledWith('Create failed:\n        Network error');
     });
 
     it('should show success toast after successful create', async () => {
@@ -158,7 +154,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.create({ message: 'Test ticket' }));
 
-      await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Ticket created'));
+      expect(toast.success).toHaveBeenCalledWith('Ticket created');
     });
 
     it('should navigate with state replacement after create', async () => {
@@ -174,11 +170,9 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.create({ name: 'New Character' }));
 
-      await waitFor(() =>
-        expect(mockNavigate).toHaveBeenCalledWith('/character', {
-          state: { characterId: 'generated-id' }
-        })
-      );
+      expect(mockNavigate).toHaveBeenCalledWith('/character', {
+        state: { characterId: 'generated-id' }
+      });
     });
   });
 
@@ -196,9 +190,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.remove('char-123'));
 
-      await waitFor(() =>
-        expect(toast.error).toHaveBeenCalledWith('Error deleting: Document not found')
-      );
+      expect(toast.error).toHaveBeenCalledWith('Delete failed:\n        Document not found');
     });
 
     it('should show success toast after successful delete', async () => {
@@ -212,7 +204,7 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.remove('char-123'));
 
-      await waitFor(() => expect(toast.success).toHaveBeenCalledWith('Character deleted'));
+      expect(toast.success).toHaveBeenCalledWith('Character deleted');
     });
 
     it('should delete with query invalidation and redirect', async () => {
@@ -228,10 +220,8 @@ describe('useFirebaseCrud', () => {
       );
       await act(async () => await result.current.remove('char-123'));
 
-      await waitFor(() => {
-        expect(mockNavigate).toHaveBeenCalledWith('/', { state: undefined });
-        expect(toast.success).toHaveBeenCalledWith('Character deleted');
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/', { state: undefined });
+      expect(toast.success).toHaveBeenCalledWith('Character deleted');
     });
   });
 });

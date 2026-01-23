@@ -46,7 +46,7 @@ export type Classes = {
 type SpellPrerequisite = {
   index: string;
   name: string;
-  type: string;
+  type: 'level' | 'feature';
 };
 
 type Spell = {

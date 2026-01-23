@@ -15,6 +15,7 @@ import {
   buyItem,
   type EquipmentCategoryType,
   getSellingPrice,
+  hasRequiredStrength,
   remainingMoneyInCopper,
   sellItem
 } from '@utils/character';
@@ -25,8 +26,8 @@ import type {
 } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { EquipmentListItem } from './EquipmentListItem';
-import { EquipmentSearch } from './EquipmentSearch';
+import { MarketItem } from './MarketItem';
+import { MarketSearch } from './MarketSearch';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketProps {
@@ -41,7 +42,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
-    invalidateQueryKey: ['fetchCharacter'],
+    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id],
     successMessages: {
       update: 'Transaction successful'
     }
@@ -169,7 +170,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             ) : (
               <Box display="flex" flexDirection="column" gap={1}>
                 {ownedEquipment.map((item) => (
-                  <EquipmentListItem
+                  <MarketItem
                     key={`sell-${item.index}`}
                     item={item}
                     mode="sell"
@@ -191,11 +192,14 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
             )}
           </Box>
         ) : (
-          <EquipmentSearch
+          <MarketSearch
             isFreeMode={isfreeMode}
             canBuy={canBuy}
             onBuy={onBuy}
             disableAction={firebaseCrud.isLoading}
+            hasRequiredStrength={(equipment) =>
+              hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
+            }
           />
         )}
       </DialogContent>

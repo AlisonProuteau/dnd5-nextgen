@@ -17,9 +17,9 @@ import type {
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { EquipmentListItem } from './EquipmentListItem';
+import { MarketItem } from './MarketItem';
 
-interface EquipmentSearchProps {
+interface MarketSearchProps {
   isFreeMode?: boolean;
   canBuy?: (
     item: Equipment | MagicItem,
@@ -32,14 +32,16 @@ interface EquipmentSearchProps {
     customPrice?: MoneyObjectType
   ) => Promise<void>;
   disableAction?: boolean;
+  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
-export function EquipmentSearch({
+export function MarketSearch({
   isFreeMode = false,
   canBuy = () => false,
   onBuy = async () => {},
-  disableAction = false
-}: EquipmentSearchProps = {}) {
+  disableAction = false,
+  hasRequiredStrength = () => true
+}: MarketSearchProps = {}) {
   const { version } = useAuth();
   const [search, setSearch] = useState('');
   const [runningTimer, setRunningTimer] = useState<NodeJS.Timeout>();
@@ -171,7 +173,7 @@ export function EquipmentSearch({
           <Box display="flex" flexDirection="column" gap={1}>
             {equipment.map((item) =>
               'cost' in item ? (
-                <EquipmentListItem
+                <MarketItem
                   key={`buy-${item.index}`}
                   item={item}
                   mode="buy"
@@ -180,9 +182,10 @@ export function EquipmentSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
+                  hasRequiredStrength={hasRequiredStrength}
                 />
               ) : (
-                <EquipmentListItem
+                <MarketItem
                   key={`buy-${item.index}`}
                   item={item}
                   mode="buy"
@@ -190,6 +193,7 @@ export function EquipmentSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
+                  hasRequiredStrength={hasRequiredStrength}
                 />
               )
             )}

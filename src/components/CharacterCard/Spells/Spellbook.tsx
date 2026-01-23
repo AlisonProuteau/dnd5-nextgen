@@ -45,7 +45,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     successMessages: {
       update: 'Spells saved successfully'
     },
-    invalidateQueryKey: ['fetchCharacter']
+    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
   });
 
   const updateKnownSpellsWithCascade = async () => {
@@ -103,9 +103,17 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       classIndex: character.class.index,
       subclassIndex: character.subclass?.index,
       charLevel: character.level,
-      slotLevels
+      slotLevels,
+      features: character.features || []
     };
-  }, [character.class.index, character.subclass?.index, character.level, slotLevels]);
+  }, [
+    character.class.index,
+    character.subclass?.index,
+    character.level,
+    slotLevels,
+    character.features,
+    character.version
+  ]);
 
   return (
     <Fragment>
@@ -215,7 +223,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         <DialogContent>
           {isLearnOpen ? (
             <SpellList
-              characterInfo={{ ...characterInfo }}
+              characterInfo={characterInfo}
               selectedSpells={knownSpells.filter(({ added }) => !added)}
               setSelectedSpells={setKnownSpells}
               maxSelected={[0, slotInfo.learn || 0]}

@@ -159,7 +159,7 @@ export function CharacterContainer() {
             }
           />
 
-          <Box display="flex" gap="15px" flexDirection="column" {...swipeHandlers}>
+          <Box {...swipeHandlers}>
             {activeStep === 0 && <Stats character={character} />}
             {activeStep === 1 && <Characteristics character={character} />}
             {activeStep === 2 && <Equipments character={character} />}

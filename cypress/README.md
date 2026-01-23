@@ -7,6 +7,8 @@ Comprehensive end-to-end tests using a **consolidated full-flow approach** - eac
 - **`auth.cy.ts`** - Authentication workflows (sign in/up, validation, error handling, persistence, network failures)
 - **`character-creation.cy.ts`** - Character creation stepper (race/class/background selection, navigation, validation, edge cases)
 - **`character-generator.cy.ts`** - AI character portrait generation (admin-only, batch, error handling, download/upload)
+- **`character-market.cy.ts`** - Equipment market workflows (buying/selling items, free mode, custom pricing, validation, quantity management)
+- **`character-money.cy.ts`** - Money management workflows (adding/removing currency, validation, persistence, error handling)
 - **`character-points.cy.ts`** - Character point-buy and ability score allocation workflows
 - **`character-sheet.cy.ts`** - Character management (display, editing, notes, spell workflow, features, equipment, error recovery)
 - **`contact-settings.cy.ts`** - Contact form and settings workflows (feedback, bug report, feature request, validation, submission)
@@ -125,6 +127,8 @@ const characterData = characters.find(({ name }) => name === 'Delfy')!;
 
 ## Running Tests
 
+Never use "sleep" command to wait for the tests to end
+
 ### Prerequisites
 
 ```bash
@@ -145,11 +149,11 @@ yarn cy
 yarn cy:local
 
 # Run specific test file
-SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" yarn run-p -r start:dist 'cy:base run --browser chrome --spec "cypress/e2e/auth.cy.ts'"
+SERVICE_ACCOUNT=\"$(cat ./serviceAccount.json)\" yarn run-p -r start:dist 'cy:base run --browser chrome --spec "cypress/e2e/auth.cy.ts"'
 
 # Run tests for specific viewport
-CYPRESS_VIEWPORT_WIDTH=375 CYPRESS_VIEWPORT_HEIGHT=667 yarn cy:ci  # Mobile
-CYPRESS_VIEWPORT_WIDTH=1920 CYPRESS_VIEWPORT_HEIGHT=1080 yarn cy:ci  # Desktop
+CYPRESS_VIEWPORT_WIDTH=375 CYPRESS_VIEWPORT_HEIGHT=667 yarn cy:local  # Mobile
+CYPRESS_VIEWPORT_WIDTH=1920 CYPRESS_VIEWPORT_HEIGHT=1080 yarn cy:local  # Desktop
 ```
 
 ### CI/CD Integration

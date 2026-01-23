@@ -39,12 +39,14 @@ interface CharacterRaceFormProps {
   onNext: (raceInfo: Partial<CharacterFormData>) => void;
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
+  isActive?: boolean;
 }
 
 export function CharacterRaceForm({
   onNext,
   proficiencies = [],
-  languages = []
+  languages = [],
+  isActive = false
 }: CharacterRaceFormProps) {
   const { version } = useAuth();
   const [selectedRace, setselectedRace] = useState<DefaultRepresentation>();
@@ -59,14 +61,14 @@ export function CharacterRaceForm({
   const { data: races } = useQuery({
     queryKey: ['fetchRaces', version],
     queryFn: async () => (version ? (await getAllRaces(version)).results : []),
-    enabled: !!version
+    enabled: !!version && isActive
   });
 
   const { data: raceInfo } = useQuery({
     queryKey: ['fetchRaceInfo', version, selectedRace?.index],
     queryFn: async () =>
       selectedRace?.index && version ? await getRaceInfo(version, selectedRace.index) : null,
-    enabled: !!selectedRace?.index && !!version
+    enabled: !!selectedRace?.index && !!version && isActive
   });
 
   const { data: subraceInfo } = useQuery({
@@ -75,16 +77,16 @@ export function CharacterRaceForm({
       selectedRace?.index && selectedSubrace?.index && version
         ? await getSubraceInfo(version, selectedRace.index, selectedSubrace.index)
         : null,
-    enabled: !!selectedRace?.index && !!version
+    enabled: !!selectedRace?.index && !!version && isActive
   });
 
   const { data: raceGuide } = useQuery({
-    queryKey: ['fetchClassGuide', version, selectedRace?.index],
+    queryKey: ['fetchRaceGuide', version, selectedRace?.index],
     queryFn: async () =>
       !selectedRace?.index || !version
         ? null
         : ((await getRaceGuide(version, selectedRace.index)) as RaceGuide | null) || null,
-    enabled: !!selectedRace && !!version
+    enabled: !!selectedRace && !!version && isActive
   });
 
   const { data: raceTraits } = useQueries({
@@ -93,7 +95,7 @@ export function CharacterRaceForm({
         ({ index }) => ({
           queryKey: ['fetchTrait', version, index],
           queryFn: async () => (version ? await getTrait(version, index) : null),
-          enabled: !!index && !!version
+          enabled: !!index && !!version && isActive
         })
       ) || [],
     combine: useCallback(
@@ -136,6 +138,8 @@ export function CharacterRaceForm({
       setSelectedProficiencies([]);
       setSelectedLanguages([]);
       setSelectedAbilities([]);
+      setSelectedTraits([]);
+      setSelectedSpells([]);
       setselectedSubrace(undefined);
       setselectedRace(races.find((e) => e.index === races[activeStep].index));
     }

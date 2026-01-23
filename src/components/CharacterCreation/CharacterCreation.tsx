@@ -1,5 +1,15 @@
-import type { FormEvent } from 'react';
-import { Box, Button, CircularProgress, Container, Step, StepLabel, Stepper } from '@mui/material';
+import { type FormEvent, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import {
+  Backdrop,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Step,
+  StepLabel,
+  Stepper
+} from '@mui/material';
 import { pickBy, uniqBy } from 'lodash';
 import { useFirebaseCrud, useForm } from '@hooks/index';
 import type { ChoiceSelection } from '@utils/character';
@@ -19,6 +29,8 @@ const steps = [
 
 export function CharacterCreation() {
   const { version } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const form = useForm<CharacterFormData>({
     steps,
     initialData: {
@@ -38,6 +50,11 @@ export function CharacterCreation() {
     }
   });
 
+  useEffect(() => {
+    if (location.state?.step !== null && location.state?.step !== form.activeStep)
+      form.goToStep(location.state?.step || 0);
+  }, [location.state?.step]);
+
   const isFormValid = () =>
     form.formData.name &&
     form.formData.age &&
@@ -56,8 +73,8 @@ export function CharacterCreation() {
     return pickBy(
       {
         ...data,
-        class: { index: data.class?.name, name: data.class?.name },
-        race: { index: data.race?.name, name: data.race?.name },
+        class: { index: data.class?.index, name: data.class?.name },
+        race: { index: data.race?.index, name: data.race?.name },
         languages: uniqBy(data.languages, 'index'),
         proficiencies: uniqBy(formattedProficiencies, 'index'),
         skills: uniqBy(skills, 'index'),
@@ -81,7 +98,32 @@ export function CharacterCreation() {
     event.preventDefault();
     if (!isFormValid()) return;
 
-    await firebaseActions.create({ ...transformFormData(form.formData), version });
+    await firebaseActions.create({
+      ...transformFormData(form.formData),
+      version
+    });
+  };
+
+  const onNextStep = (input?: Partial<CharacterFormData>) => {
+    if (firebaseActions.isLoading) return;
+
+    if (input) form.setFormData(input);
+    navigate('/create', {
+      state: { step: form.activeStep + 1 },
+      viewTransition: false
+    });
+    form.nextStep();
+  };
+
+  const onPrevStep = (input?: Partial<CharacterFormData>) => {
+    if (firebaseActions.isLoading) return;
+
+    if (input) form.setFormData(input);
+    navigate('/create', {
+      state: { step: form.activeStep - 1 },
+      viewTransition: false
+    });
+    form.prevStep();
   };
 
   return (
@@ -107,75 +149,63 @@ export function CharacterCreation() {
         ))}
       </Stepper>
 
-      {!firebaseActions.isLoading ? (
-        <form
-          onSubmit={handleSubmit}
-          onFocus={({ target }) => form.clearFieldError(target.id as keyof CharacterFormData)}
-          onInvalid={({ target }) =>
-            form.setErrors({ [(target as HTMLFormElement).id]: ['Invalid'] })
-          }
-          onReset={() => {
-            form.resetForm();
-          }}
-        >
-          <Box display={form.steps[form.activeStep].id === 'race' ? 'revert' : 'none'}>
-            <CharacterRaceForm
-              onNext={(input) => {
-                form.setFormData(input);
-                form.nextStep();
-              }}
-              proficiencies={form.formData.proficiencies}
-            />
-          </Box>
+      <form
+        onReset={form.resetForm}
+        onSubmit={handleSubmit}
+        onFocus={({ target }) => form.clearFieldError(target.id as keyof CharacterFormData)}
+        onInvalid={({ target }) =>
+          form.setErrors({ [(target as HTMLFormElement).id]: ['Invalid'] })
+        }
+      >
+        <Box display={form.steps[form.activeStep].id === 'race' ? 'revert' : 'none'}>
+          <CharacterRaceForm
+            onNext={onNextStep}
+            proficiencies={form.formData.proficiencies}
+            isActive={form.steps[form.activeStep].id === 'race'}
+          />
+        </Box>
 
-          <Box display={form.steps[form.activeStep].id === 'class' ? 'revert' : 'none'}>
-            <CharacterClassForm
-              onNext={(input) => {
-                form.setFormData(input);
-                form.nextStep();
-              }}
-              onPrev={(input) => {
-                form.setFormData(input);
-                form.prevStep();
-              }}
-              proficiencies={form.formData.proficiencies}
-            />
-          </Box>
+        <Box display={form.steps[form.activeStep].id === 'class' ? 'revert' : 'none'}>
+          <CharacterClassForm
+            onNext={onNextStep}
+            onPrev={onPrevStep}
+            proficiencies={form.formData.proficiencies}
+            isActive={form.steps[form.activeStep].id === 'class'}
+          />
+        </Box>
 
-          <Box display={form.steps[form.activeStep].id === 'background' ? 'revert' : 'none'}>
-            <CharacterBackgroundForm
-              onNext={(input) => {
-                form.setFormData(input);
-                form.nextStep();
-              }}
-              onPrev={(input) => {
-                form.setFormData(input);
-                form.prevStep();
-              }}
-              proficiencies={form.formData.proficiencies}
-              languages={form.formData.languages}
-              equipment={form.formData.equipments}
-            />
-          </Box>
+        <Box display={form.steps[form.activeStep].id === 'background' ? 'revert' : 'none'}>
+          <CharacterBackgroundForm
+            onNext={onNextStep}
+            onPrev={onPrevStep}
+            proficiencies={form.formData.proficiencies}
+            languages={form.formData.languages}
+            equipment={form.formData.equipments}
+            isActive={form.steps[form.activeStep].id === 'background'}
+          />
+        </Box>
 
-          <Box display={form.steps[form.activeStep].id === 'info' ? 'revert' : 'none'}>
-            <CharacterDescription setFormData={form.setFormData} onPrev={() => form.prevStep()} />
-          </Box>
+        <Box display={form.steps[form.activeStep].id === 'info' ? 'revert' : 'none'}>
+          <CharacterDescription setFormData={form.setFormData} onPrev={() => onPrevStep()} />
+        </Box>
+        {form.isLastStep && (
+          <Button
+            sx={{ float: 'right' }}
+            variant="contained"
+            type="submit"
+            disabled={!form.isValid || !isFormValid() || firebaseActions.isLoading}
+          >
+            Create
+          </Button>
+        )}
+      </form>
 
-          {form.isLastStep && (
-            <Button
-              sx={{ float: 'right' }}
-              variant="contained"
-              type="submit"
-              disabled={!form.isValid || !isFormValid()}
-            >
-              Create
-            </Button>
-          )}
-        </form>
-      ) : (
-        <CircularProgress size={24} />
-      )}
+      <Backdrop
+        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1 })}
+        open={firebaseActions.isLoading}
+      >
+        <CircularProgress />
+      </Backdrop>
     </Container>
   );
 }

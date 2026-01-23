@@ -1,6 +1,8 @@
-import { max, uniq } from 'lodash';
+import { max, uniq, uniqBy } from 'lodash';
 import type { ActionDamage } from '@representations/campaign/adventure.representation';
+import type { Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
+import type { TypeFromArray } from '@representations/utils.representation';
 
 /**
  * Filter prepared spells to only include valid ones (still in known spells list)
@@ -16,6 +18,28 @@ export const filterValidPreparedSpells = (
       : true
   );
 };
+
+export const filterSpellsByPrerequisites = (
+  spellList: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[],
+  charLevel: number,
+  classIndex: string,
+  features: DefaultRepresentation[]
+) =>
+  uniqBy(spellList, 'index').filter(({ prerequisites }) =>
+    prerequisites
+      ? prerequisites.every((prereq) => {
+          switch (prereq.type) {
+            case 'feature':
+              return features?.some(({ index }) => index === prereq.index);
+            case 'level':
+              return (
+                (charLevel || 1) >=
+                parseInt(prereq.index.replace(new RegExp(`^${classIndex}-`), '') || '0')
+              );
+          }
+        })
+      : true
+  );
 
 /**
  * Get min-max values for spell slots based on level

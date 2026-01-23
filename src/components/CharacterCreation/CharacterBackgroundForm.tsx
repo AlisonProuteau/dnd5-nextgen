@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
@@ -29,6 +29,7 @@ interface CharacterBackgroundFormProps {
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
   equipment?: ChoiceSelection[];
+  isActive?: boolean;
 }
 
 export function CharacterBackgroundForm({
@@ -36,7 +37,8 @@ export function CharacterBackgroundForm({
   onPrev,
   proficiencies = [],
   languages = [],
-  equipment = []
+  equipment = [],
+  isActive = false
 }: CharacterBackgroundFormProps) {
   const { version } = useAuth();
   const [selectedBackground, setSelectedBackground] = useState<Background>();
@@ -72,14 +74,29 @@ export function CharacterBackgroundForm({
     queryKey: ['fetchBackgrounds', version],
     queryFn: async () => (version ? (await getAllBackgrounds(version)).results : []),
     select: (data) => [...data, customBackground],
-    enabled: !!version
+    enabled: !!version && isActive
   });
 
   const { data: alignments } = useQuery({
     queryKey: ['fetchAlignments'],
     queryFn: async () => (version ? (await getAllAligmenents(version)).results : []),
-    enabled: !!version
+    enabled: !!version && isActive
   });
+
+  useEffect(() => {
+    if (backgrounds) {
+      setSelectedBonds([]);
+      setSelectedPersonality([]);
+      setSelectedIdeals([]);
+      setSelectedFlaws([]);
+      setSelectedLanguages([]);
+      setSelectedEquipments([]);
+      setSelectedAlignment(undefined);
+      setSelectedBackground(
+        backgrounds.find((e) => e.index === selectedBackground?.index) || backgrounds[0]
+      );
+    }
+  }, [backgrounds, selectedBackground?.index]);
 
   const isValid = () => {
     return (

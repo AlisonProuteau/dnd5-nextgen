@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import type { DefaultProps } from 'src/pages/Header';
@@ -7,8 +6,8 @@ import { TraitsDisplay } from './TraitsDisplay';
 
 export function Characteristics({ character }: DefaultProps) {
   return (
-    <Fragment>
-      <Box data-testid="proficiencies-section">
+    <Box data-testid="characteristics-section" display="flex" gap="15px" flexDirection="column">
+      <Box data-testid="proficiencies-section-content">
         <Typography variant="body2" color="lightgrey" display="inline" paddingRight="5px">
           Proficiencies:
         </Typography>
@@ -16,7 +15,7 @@ export function Characteristics({ character }: DefaultProps) {
           {character.proficiencies.map((p) => p.name).join(', ')}
         </Typography>
       </Box>
-      <Box data-testid="language-section">
+      <Box data-testid="language-section-content">
         <Typography variant="body2" color="lightgrey" display="inline" paddingRight="5px">
           Languages:{' '}
         </Typography>
@@ -26,6 +25,6 @@ export function Characteristics({ character }: DefaultProps) {
       </Box>
       <FeaturesDisplay character={character} />
       <TraitsDisplay character={character} />
-    </Fragment>
+    </Box>
   );
 }

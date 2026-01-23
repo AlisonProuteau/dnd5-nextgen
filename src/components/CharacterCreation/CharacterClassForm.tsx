@@ -44,12 +44,14 @@ interface CharacterClassFormProps {
   onNext: (classInfo: Partial<CharacterFormData>) => void;
   onPrev: (classInfo: Partial<CharacterFormData>) => void;
   proficiencies?: ChoiceSelection[];
+  isActive?: boolean;
 }
 
 export function CharacterClassForm({
   onNext,
   onPrev,
-  proficiencies = []
+  proficiencies = [],
+  isActive = false
 }: CharacterClassFormProps) {
   const { version } = useAuth();
   const [selectedClass, setselectedClass] = useState<DefaultRepresentation>();
@@ -63,7 +65,7 @@ export function CharacterClassForm({
   const { data: classes } = useQuery({
     queryKey: ['fetchClasses', version],
     queryFn: async () => (version ? (await getAllClasses(version)).results : []),
-    enabled: !!version
+    enabled: !!version && isActive
   });
 
   const { data: classInfo } = useQuery({
@@ -72,7 +74,7 @@ export function CharacterClassForm({
       selectedClass?.index && version
         ? ((await getClassInfo(version, selectedClass.index)) as Classes | null)
         : null,
-    enabled: !!selectedClass?.index && !!version
+    enabled: !!selectedClass?.index && !!version && isActive
   });
 
   const { data: subclassInfo } = useQuery({
@@ -85,7 +87,7 @@ export function CharacterClassForm({
             selectedSubclass.index
           )) as Subclass | null)
         : null,
-    enabled: !!selectedClass?.index && !!version
+    enabled: !!selectedClass?.index && !!version && isActive
   });
 
   const { data: levelInfo } = useQuery({
@@ -115,7 +117,7 @@ export function CharacterClassForm({
 
       return levelRes ? levelRes : null;
     },
-    enabled: !!selectedClass && !!version
+    enabled: !!selectedClass && !!version && isActive
   });
 
   const { data: classGuide } = useQuery({
@@ -124,7 +126,7 @@ export function CharacterClassForm({
       !selectedClass?.index || !version
         ? null
         : ((await getClassGuide(version, selectedClass.index)) as ClassGuide | null) || null,
-    enabled: !!selectedClass && !!version
+    enabled: !!selectedClass && !!version && isActive
   });
 
   const { data: classFeatures } = useQueries({
@@ -132,7 +134,7 @@ export function CharacterClassForm({
       uniqBy(levelInfo?.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', version, index],
         queryFn: async () => (version ? await getFeature(version, index) : null),
-        enabled: !!index && !!version
+        enabled: !!index && !!version && isActive
       })) || [],
     combine: useCallback(
       (results: UseQueryResult<Feature | null, Error>[]) => ({

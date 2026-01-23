@@ -17,7 +17,9 @@ describe(`Character Generator End-to-End`, () => {
     metadata: {}
   };
 
-  it('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
+  beforeEach(() => cy.task('clearDownloadsFolder'));
+
+  it.only('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
     // Test: Admin route protection
     cy.visit('/character-generator');
     cy.url().should('not.include', '/character-generator');
@@ -151,7 +153,6 @@ describe(`Character Generator End-to-End`, () => {
     cy.getByTestId('character-card-').find('span').should('contain.text', 'done');
 
     // Test: Download functionality
-    // TODO: check it was downloaded
     cy.getByTestId('batch-options').within(($el) => {
       cy.wrap($el)
         .getByTestId('character-card-')
@@ -175,13 +176,15 @@ describe(`Character Generator End-to-End`, () => {
         .first()
         .getByTestId('download-done')
         .should('be.visible');
+      cy.task('verifyFileExists', 'Elf_Wizard_Gender-neutral.png').should('be.true');
+      cy.task('getFileCount', '*.png').should('eq', 1);
 
       cy.getButton(/Download All/).click();
       cy.wrap($el).getByTestId('download-done').should('have.length', 4);
+      cy.task('getFileCount', '*.png').should('eq', 4);
     });
 
     // Test: Upload functionality
-    // TODO: check it was uploaded?
     cy.intercept('POST', '**/dnd5-nextgen*/o?name=images*', (req) =>
       req.reply({
         delay: 500,
@@ -236,21 +239,5 @@ describe(`Character Generator End-to-End`, () => {
         .should('have.length', 5)
         .each(($element) => cy.wrap($element).should('be.disabled'));
     });
-
-    // TODO: Figure out the mocking situation
-    // Test: Generation error handling
-    // cy.intercept('POST', '**/api/generate**', {
-    //   statusCode: 500,
-    //   body: { error: 'Generation failed' }
-    // }).as('generateImageError');
-    // cy.window().then((win) => {
-    //   cy.stub(win, 'alert').as('windowAlert');
-    // });
-    // cy.getButton('Generate Portrait').click();
-    // cy.wait('@generateImageError');
-    // cy.get('@windowAlert').should(
-    //   'have.been.calledWith',
-    //   'Image generation failed: Generation failed'
-    // );
   });
 });
