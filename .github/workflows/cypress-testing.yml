@@ -115,11 +115,11 @@ jobs:
       - name: Generate Cypress report
         id: run_cypress_report
         run: yarn merge:reports && yarn generate:reports
-      - name: Upload test reports
+      - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: ./cypress/reports
+          name: screenshots-${{ matrix.device }}
+          path: ./cypress/screenshots
 
       - name: Send results to Pull Request
         uses: mshick/add-pr-comment@v2
