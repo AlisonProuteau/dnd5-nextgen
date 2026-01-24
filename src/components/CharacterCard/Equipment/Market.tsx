@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Close } from '@mui/icons-material';
 import {
   Box,
   DialogContent,
   DialogTitle,
   FormControlLabel,
+  IconButton,
   Switch,
   Tab,
   Tabs,
@@ -34,9 +36,10 @@ interface MarketProps {
   character: Character;
   purse: MoneyObjectType;
   ownedEquipment: ((Equipment | MagicItem) & { count?: number })[];
+  closeMarket: () => void;
 }
 
-export function Market({ character, purse, ownedEquipment }: MarketProps) {
+export function Market({ character, purse, ownedEquipment, closeMarket }: MarketProps) {
   const { additionalCurrencies = [] } = useAuth();
   const [mode, setMode] = useState<'sell' | 'buy'>('sell');
   const { isOn: isfreeMode, toggle: toggleFreeMode } = useToggle(false);
@@ -134,7 +137,22 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
   return (
     <Box height="80vh" maxHeight="80vh" display="flex" flexDirection="column">
       <DialogTitle>
-        <Box display="flex" alignItems="center" justifyContent="space-between">
+        {closeMarket ? (
+          <IconButton
+            data-testid="close-market"
+            aria-label="close"
+            onClick={closeMarket}
+            sx={{ position: 'absolute', right: 8, top: 8 }}
+          >
+            <Close />
+          </IconButton>
+        ) : null}
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          padding="16px 16px 0px"
+        >
           <Typography variant="h6">Market</Typography>
 
           <Box display="flex" flexDirection="column" minHeight="50px" justifyContent="space-evenly">
@@ -149,12 +167,7 @@ export function Market({ character, purse, ownedEquipment }: MarketProps) {
           </Box>
         </Box>
 
-        <Tabs
-          value={mode}
-          onChange={(_, newValue) => setMode(newValue)}
-          variant="fullWidth"
-          sx={{ mt: 1 }}
-        >
+        <Tabs value={mode} onChange={(_, newValue) => setMode(newValue)} variant="fullWidth">
           <Tab label="Sell" value="sell" />
           <Tab label="Buy" value="buy" />
         </Tabs>

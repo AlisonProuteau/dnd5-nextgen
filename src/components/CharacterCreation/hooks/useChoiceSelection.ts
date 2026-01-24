@@ -146,19 +146,10 @@ export function useChoiceSelection(
                 )
             );
           }
-        } else
-          item.forEach((i) => {
-            const selectedIndex = newArray.findIndex((current) => isItemMatch(current, i));
-            if (selectedIndex !== -1) {
-              newArray = newArray.toSpliced(selectedIndex, 1);
-            }
-          });
+        } else newArray = newArray.filter((current) => item.every((i) => !isItemMatch(current, i)));
 
         setSelected(newArray);
-      } else {
-        const selectedIndex = selected.findIndex((current) => isItemMatch(current, item));
-        if (selectedIndex !== -1) setSelected(selected.toSpliced(selectedIndex, 1));
-      }
+      } else setSelected(selected.filter((current) => !isItemMatch(current, item)));
     }
   };
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
@@ -7,7 +7,7 @@ import { getEquipment, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import { getArmorClass, hasRequiredStrength } from '@utils/character';
+import { formatEquipmentForDisplay, getArmorClass, hasRequiredStrength } from '@utils/character';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
@@ -26,7 +26,7 @@ export function Equipments({ character }: DefaultProps) {
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
   });
 
-  const { data: equipmentList } = useQueries({
+  const { data: equipmentList, isFetching: isEquipmentListFetching } = useQueries({
     queries:
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character.version, index],
@@ -41,26 +41,53 @@ export function Equipments({ character }: DefaultProps) {
         enabled: !!index
       })) || [],
     combine: useCallback(
-      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => {
-        const equipment: ((Equipment | MagicItem) & {
-          count?: number;
-          equipped: boolean;
-        })[] = (results.map(({ data }) => data).filter((data) => data) as Equipment[]).map((eq) => {
-          const currentEquipment = character.equipments?.find(({ index }) => index === eq.index);
-          const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
-          const count = currentEquipment?.count;
-
-          return count ? { ...formattedEq, count } : formattedEq;
-        });
-
-        return {
-          data: groupBy(equipment, 'equipment_category.index'),
-          isFetching: results.some((result) => result.isFetching)
-        };
-      },
+      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => ({
+        data: groupBy(
+          formatEquipmentForDisplay(
+            results.map(({ data }) => data).filter(Boolean) as (Equipment | MagicItem)[],
+            character.equipments
+          ),
+          'equipment_category.index'
+        ),
+        isFetching: results.some((result) => result.isFetching)
+      }),
       [character.equipments]
     )
   });
+
+  const equipmentListString = useMemo(
+    () => JSON.stringify(Object.values(equipmentList ?? {}).flat()),
+    [equipmentList ?? {}]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const flattenedEquipment = Object.values(equipmentList ?? {}).flat();
+      if (isEquipmentListFetching || !flattenedEquipment.length) return;
+
+      const updatedEquipments = flattenedEquipment.map((eq) => ({
+        ...eq,
+        equipped: character.equipments.find(({ index }) => index === eq?.index)?.equipped ?? true
+      }));
+      const newArmorClass = getArmorClass(
+        character.abilityScores['dex'].modifier,
+        updatedEquipments || [],
+        character?.features,
+        character?.class.index === 'monk'
+          ? character.abilityScores['wis']?.modifier || 0
+          : character.abilityScores['con']?.modifier || 0
+      );
+
+      if (!cancelled && newArmorClass !== character.armorClass)
+        await firebaseCrud.update(character.id, { armorClass: newArmorClass });
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [equipmentListString, character.equipments, isEquipmentListFetching]);
 
   const toggleEquip = async (equipment: Equipment | MagicItem) => {
     const updatedEquipments = [...character.equipments];
@@ -73,9 +100,17 @@ export function Equipments({ character }: DefaultProps) {
       ...updatedEquipments[currentEquipmentIndex],
       equipped: !(updatedEquipments[currentEquipmentIndex!].equipped ?? true)
     };
+    const fullUpdatedEquipments = updatedEquipments
+      .map(({ index, equipped }) => ({
+        ...(Object.values(equipmentList || {})
+          .flat()
+          .find((eq) => eq.index === index) || {}),
+        equipped
+      }))
+      .filter(Boolean) as (Equipment | MagicItem)[];
     const newArmorClass = getArmorClass(
       character.abilityScores['dex'].modifier,
-      updatedEquipments,
+      fullUpdatedEquipments,
       character?.features,
       character?.class.index === 'monk'
         ? character.abilityScores['wis']?.modifier || 0
@@ -152,6 +187,7 @@ export function Equipments({ character }: DefaultProps) {
           character={character}
           purse={character.money || { cp: 0, sp: 0, gp: 0 }}
           ownedEquipment={Object.values(equipmentList).flat()}
+          closeMarket={closeMarket}
         />
       </Dialog>
     </Box>

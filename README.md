@@ -221,8 +221,6 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
-- [ ] Improve trait/spell selection clarity (ex: dragon ancestry, elf spells)
-- [ ] Update magic item rarity pricing system
 - [ ] Add info page for app navigation and features
 - [ ] Character deletion/archiving
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
@@ -231,7 +229,6 @@ MIT License - see [package.json](package.json) for details.
 #### Dev
 
 - [ ] Replace custom useForm by react-hook-form?
-- [ ] Add pagination for getAll and implement for buy equipment and add spell
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor

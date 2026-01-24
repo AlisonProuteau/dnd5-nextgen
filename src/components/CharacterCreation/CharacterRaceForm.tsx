@@ -23,6 +23,7 @@ import {
 } from '@utils/character';
 import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
+import type { Subclass } from '@representations/character/class.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { RaceGuide } from '@representations/guide.representation';
@@ -294,7 +295,14 @@ export function CharacterRaceForm({
             speed: subraceInfo?.speed || raceInfo?.speed || 0,
             starting_proficiencies: (raceInfo?.starting_proficiencies || []).concat(
               subraceInfo?.starting_proficiencies || []
-            )
+            ),
+            spells: raceTraits
+              .flatMap(
+                ({ trait_specific }) =>
+                  (trait_specific?.spell_options?.from.options?.map(({ item }) => item) ||
+                    []) as Subclass['spells']
+              )
+              .filter(Boolean) as any
           }}
           traits={(raceInfo?.traits || []).concat(subraceInfo?.racial_traits || [])}
           detailsType="race"

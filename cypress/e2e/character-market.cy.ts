@@ -5,7 +5,11 @@ describe('Character Equipment Market & Management End-to-End', () => {
   let characterWithEquipment: (typeof characters)[0] = {
     ...baseChar,
     id: 'equipment-test-char',
-    money: { gp: 50, sp: 6, cp: 0 }
+    money: { gp: 50, sp: 6, cp: 0 },
+    abilityScores: {
+      ...baseChar.abilityScores,
+      dex: { ...baseChar.abilityScores.dex, score: 16, modifier: 3 }
+    }
   };
 
   beforeEach(() => {
@@ -18,6 +22,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('armor-class').should('contain.text', '14');
     cy.getByTestId('next-step').click();
     cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
@@ -220,19 +225,21 @@ describe('Character Equipment Market & Management End-to-End', () => {
         .should('be.greaterThan', 0)
         .then((categoryResults) => {
           cy.selectOption('#equipmentSubcategory', 'Light');
-          cy.getByTestId('market-buy-')
-            .its('length')
-            .should('be.greaterThan', 1)
-            .and('be.lessThan', categoryResults);
+          cy.getByTestId('market-buy-').and('have.length.below', categoryResults);
+
+          cy.selectOption('#equipmentSubcategory', 'All');
+          cy.getByTestId('market-buy-').should('have.length', categoryResults);
+
+          cy.get('#search').type('sh');
+          cy.getByTestId('market-buy-').should('have.length.below', categoryResults);
         });
 
-      // Test: Search for padded armor
-      cy.get('#search').type('ar');
+      // Test: Search for shield
       cy.getByTestId('market-buy-')
         .should('have.length.above', 1)
-        .each(($item) => cy.wrap($item.text()).should('match', /ar/i));
+        .each(($item) => cy.wrap($item.text()).should('match', /sh/i));
       cy.wrap($dialog)
-        .getByTestId('market-buy-padded-armor')
+        .getByTestId('market-buy-shield')
         .then(($item) => {
           cy.intercept(
             { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
@@ -247,10 +254,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.getByRole('status', 'Transaction successful').should('be.visible');
     cy.getByRole('dialog', 'Market').within(($dialog) => {
       cy.wrap($dialog).getByRole('tab', 'Sell').click();
-      cy.wrap($dialog)
-        .getByTestId(`market-sell-padded-armor`)
-        .scrollIntoView()
-        .should('be.visible');
+      cy.wrap($dialog).getByTestId(`market-sell-shield`).scrollIntoView().should('be.visible');
       cy.get('@moneyBeforeFreeMode').then((moneyBeforeFreeMode) =>
         cy
           .wrap($dialog)
@@ -268,8 +272,15 @@ describe('Character Equipment Market & Management End-to-End', () => {
       selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
     }).should('have.length', characterWithEquipment.equipments!.length + 1);
     cy.getByTestId('equipment-section-content').within(($section) =>
-      cy.wrap($section).getByTestId('equipment-item-padded-armor').should('be.visible')
+      cy.wrap($section).getByTestId('equipment-item-shield').should('be.visible')
     );
+
+    // Test: Equip the newly bought armor and verify AC update
+    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('previous-step').click();
+    cy.getByTestId('previous-step').click();
+    cy.getByTestId('stats-section').should('be.visible');
+    cy.getByTestId('armor-class').should('contain.text', '16');
 
     // Test: Verify data persists after page reload
     cy.reload();
@@ -282,21 +293,21 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.get('@moneyBeforeFreeMode').then((moneyBeforeFreeMode) =>
       cy.getByTestId('money-display').getByTestId('gp').should('contain.text', moneyBeforeFreeMode)
     );
-    cy.getByTestId('equipment-item-padded-armor').should('be.visible');
+    cy.getByTestId('equipment-item-shield').should('be.visible');
 
     cy.getButton('Market').click();
     // Test: Free mode selling
     cy.getByRole('dialog', 'Market').within(($dialog) => {
       cy.contains('Free Mode').parent().find('input[type="checkbox"]').click();
       cy.contains('Free Mode').parent().find('input[type="checkbox"]').should('be.checked');
-      cy.wrap($dialog).getByTestId(`market-sell-padded-armor`).getButton('Remove').click();
+      cy.wrap($dialog).getByTestId(`market-sell-shield`).getButton('Remove').click();
       cy.getButton('Remove').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
     // Test: Verify Remove transaction and money still unchanged
     cy.getByRole('status', 'Transaction successful').should('be.visible');
     cy.getByRole('dialog', 'Market').within(($dialog) => {
-      cy.wrap($dialog).getByTestId(`market-sell-padded-armor`).should('not.exist');
+      cy.wrap($dialog).getByTestId(`market-sell-shield`).should('not.exist');
       cy.get('@moneyBeforeFreeMode').then((moneyBeforeFreeMode) =>
         cy
           .wrap($dialog)
@@ -305,7 +316,15 @@ describe('Character Equipment Market & Management End-to-End', () => {
           .getByTestId('gp')
           .should('contain.text', moneyBeforeFreeMode)
       );
+      cy.getByTestId('close-market').click();
     });
+    cy.getByRole('dialog', 'Market').should('not.exist');
+
+    //Test: Verify AC reverts after removing equipped armor
+    cy.getByTestId('previous-step').click();
+    cy.getByTestId('previous-step').click();
+    cy.getByTestId('stats-section').should('be.visible');
+    cy.getByTestId('armor-class').should('contain.text', '14');
   });
 
   it('should handle custom pricing for items without cost', () => {
@@ -470,6 +489,10 @@ describe('Character Equipment Market & Management End-to-End', () => {
             .should('contain.value', '20');
 
           cy.wrap($item).get('#quantity-crossbow-bolt').clear().type('40').blur();
+          cy.intercept(
+            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
+            { delay: 1000 }
+          );
           cy.wrap($item).getButton('Buy').click();
           cy.wrap($item).getButton('Buy').should('be.disabled');
 

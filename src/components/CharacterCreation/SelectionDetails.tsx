@@ -257,24 +257,24 @@ export function SelectionDetails({
               </AccordionDetails>
             </Accordion>
           )}
-
-          {info.spells?.length ? (
-            <AccordionButtonDialog
-              fullWidth
-              maxWidth="lg"
-              PaperProps={{ elevation: 0 }}
-              slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
-              title={`${subSelected?.name} Spells (${filterSpellsByPrerequisites(info.spells, characterInfo.charLevel, characterInfo.classIndex, characterInfo.features).length})`}
-            >
-              <SpellList
-                characterInfo={characterInfo}
-                additionalSpellList={info.spells}
-                spellListOnly={true}
-                showDesc={true}
-              />
-            </AccordionButtonDialog>
-          ) : null}
         </Fragment>
+      ) : null}
+
+      {info && 'spells' in info && info.spells?.length ? (
+        <AccordionButtonDialog
+          fullWidth
+          maxWidth="lg"
+          PaperProps={{ elevation: 0 }}
+          slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+          title={`${subSelected?.name} Spells ${detailsType === 'race' ? 'Choice ' : ''}(${filterSpellsByPrerequisites(info.spells, characterInfo.charLevel, characterInfo.classIndex, characterInfo.features).length})`}
+        >
+          <SpellList
+            characterInfo={characterInfo}
+            additionalSpellList={info.spells}
+            spellListOnly={true}
+            showDesc={true}
+          />
+        </AccordionButtonDialog>
       ) : null}
 
       {features?.length ? (

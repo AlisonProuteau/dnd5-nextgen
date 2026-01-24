@@ -1,6 +1,8 @@
 import type { Feature } from '@representations/abilities/feature.representation';
+import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
+import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
@@ -126,7 +128,8 @@ export const formatPointsForDB = (
   character: Character,
   points: Record<string, number>,
   abilities?: AbilityScore[] | null,
-  classInfo?: Classes | null
+  classInfo?: Classes | null,
+  equipmentList?: (Equipment | MagicItem)[]
 ) => {
   let formattedAbilities: Record<
     string,
@@ -170,7 +173,7 @@ export const formatPointsForDB = (
     saving_throws: classInfo?.saving_throws,
     armorClass: getArmorClass(
       formattedAbilities['dex'].modifier,
-      character?.equipments,
+      equipmentList,
       character?.features,
       character?.class.index === 'monk'
         ? formattedAbilities['wis']?.modifier || 0

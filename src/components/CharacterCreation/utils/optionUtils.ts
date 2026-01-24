@@ -100,34 +100,18 @@ export function hasRequiredProficiencies(
 /**
  * Combines current item with bundle siblings, filtering out the current item to avoid duplicates
  */
-export function getBundleItems(
+export const getBundleItems = (
   itemToSelect: (DefaultRepresentation | AbilityBonusOption) & {
     count?: number;
   },
   bundleSiblings: ((AbilityBonusOption | DefaultRepresentation) & {
     count?: number;
   })[]
-) {
-  const itemIndex =
-    'index' in itemToSelect
-      ? itemToSelect.index
-      : 'ability_score' in itemToSelect
-        ? itemToSelect.ability_score.index
-        : undefined;
-
-  const otherSiblings = bundleSiblings.filter((sibling) =>
-    'index' in sibling
-      ? sibling.index
-      : 'ability_score' in sibling
-        ? sibling.ability_score.index
-        : undefined !== itemIndex
-  );
-
-  return uniqBy([itemToSelect, ...otherSiblings], (el) =>
+) =>
+  uniqBy([itemToSelect, ...bundleSiblings], (el) =>
     'index' in el
       ? `${el.index}-${el.count || 0}`
       : 'ability_score' in el
         ? `${el.ability_score.index}-${el.count || 0}`
         : ''
   );
-}

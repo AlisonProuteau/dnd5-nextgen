@@ -1,12 +1,13 @@
 describe('Choices', () => {
   beforeEach(() => {
+    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
     cy.login(Cypress.testUser.uid);
     cy.visit('/');
   });
 
-  it('Test the choices in chearacter creation', { retries: 1 }, function () {
+  it('Test the choices in chearacter creation', function () {
     cy.visit('/create');
-    cy.waitForLoading();
+    cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
 
     // Test: Select race and check choices are reset when changing race
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
@@ -16,8 +17,15 @@ describe('Choices', () => {
       .find('input')
       .should('be.checked');
 
-    cy.getByTestId('race-card-next', { selector: ' button' }).click();
-    cy.getByTestId('race-card-prev', { selector: ' button' }).click();
+    (this.isMobile
+      ? cy.getByTestId('race-card-current').next()
+      : cy.getByTestId('race-card-next', { selector: ' button' })
+    ).click();
+    cy.getByTestId('race-card-current').should('contain.text', 'Dwarf');
+    (this.isMobile
+      ? cy.getByTestId('race-card-current').prev()
+      : cy.getByTestId('race-card-prev', { selector: ' button' })
+    ).click();
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
     cy.getByTestId('race-choices-')
       .find('label:visible:contains("Black")')
@@ -199,13 +207,19 @@ describe('Choices', () => {
     testId: string,
     i = 1
   ): Cypress.Chainable<JQuery<HTMLElement>> => {
-    cy.getByTestId(`${testId}-next`, { selector: ' button' }).click();
+    cy.get('@isMobile')
+      .then((isMobile) =>
+        isMobile
+          ? cy.getByTestId(`${testId}-current`).next()
+          : cy.getByTestId(`${testId}-next`, { selector: ' button' })
+      )
+      .click();
     return cy.getByTestId(`${testId}-current`).then((el) => {
       const currentLabel = el.text().trim();
       const maxReached = i >= 10;
 
       if (maxReached && currentLabel !== label)
-        expect(currentLabel).contains(label, 'Race not found in 10 clicks');
+        expect(currentLabel).contains(label, 'Element not found in 10 clicks');
       return currentLabel === label || maxReached
         ? cy.wrap(el)
         : nextUntilCard(label, testId, i + 1);

@@ -47,15 +47,6 @@ export async function getAll(
   }
 
   const order = orderByField ? orderBy(orderByField, orderDirection ?? 'asc') : undefined;
-  // if (limitRes && order) {
-  //   //TODO: Offset doesn't work that way with Firestore, need to use cursors
-  //   const limitMax = limit(limitRes);
-  //   const offset = startAfter(((page || 1) - 1) * limitRes);
-
-  //   q = conditions
-  //     ? query(ref, conditions as any, order, limitMax, offset)
-  //     : query(ref, order, limitMax, offset);
-  // } else
   if (order) {
     q = conditions ? query(ref, conditions as any, order) : query(ref, order);
   } else {

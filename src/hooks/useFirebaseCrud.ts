@@ -57,11 +57,8 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
-  const queryKeyWithUserId = (key: string[], uid: string): string[] => {
-    const queryKeyUserIdIndex = key.indexOf('{userId}');
-    if (queryKeyUserIdIndex !== -1) key[queryKeyUserIdIndex] = uid;
-    return queryKeyUserIdIndex !== -1 ? key : [...key, uid];
-  };
+  const queryKeyWithUserId = (key: string[], uid: string): string[] =>
+    key.indexOf('{userId}') === -1 ? [...key, uid] : key.map((k) => (k === '{userId}' ? uid : k));
 
   const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
     // Create a promise that rejects if the time limit is reached
