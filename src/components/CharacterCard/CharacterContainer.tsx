@@ -28,6 +28,7 @@ import { MoneyManager } from './Equipment/MoneyManager';
 import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
+// TODO: edit and delete character + add e2e tests
 export function CharacterContainer() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -171,15 +172,9 @@ export function CharacterContainer() {
         <CircularProgress size={24} data-testid="loading" />
       )}
 
-      <Fab size="small" sx={{ ...button, ...fab }} disabled={true}>
-        <Link to="points" state={{ characterId: id }} css={linkButton}>
-          <EditRounded />
-        </Link>
-      </Fab>
-
       <Fab
         size="small"
-        sx={{ ...button, ...fab, marginRight: 6 }}
+        sx={{ ...button, ...fab }}
         onClick={openNote}
         data-testid={`notes-${character.id}`}
       >
@@ -189,12 +184,21 @@ export function CharacterContainer() {
 
       <Fab
         size="small"
-        sx={{ ...button, ...fab, padding: 0.6, marginRight: 12 }}
+        sx={{ ...button, ...fab, padding: 0.6, marginRight: 6 }}
         onClick={openMoneyDialog}
         data-testid={`coin-purse-${character.id}`}
       >
         <CoinPurse fill="currentColor" width="100%" height="100%" />
       </Fab>
+
+      {activeStep === 0 && (
+        <Fab size="small" sx={{ ...button, ...fab, marginRight: 12 }}>
+          <Link to="points" state={{ characterId: id }} css={linkButton}>
+            <EditRounded />
+          </Link>
+        </Fab>
+      )}
+
       <MoneyManager
         characterId={character.id}
         isMoneyDialogOpen={isMoneyDialogOpen}
