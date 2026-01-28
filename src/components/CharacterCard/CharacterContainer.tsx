@@ -28,7 +28,7 @@ import { MoneyManager } from './Equipment/MoneyManager';
 import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
-// TODO: edit and delete character + add e2e tests
+// TODO: Delete character + add e2e tests
 export function CharacterContainer() {
   const { user } = useAuth();
   const navigate = useNavigate();

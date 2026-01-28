@@ -1,3 +1,4 @@
+import { pickBy, uniqBy } from 'lodash';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
@@ -5,7 +6,7 @@ import type { AbilityScore } from '@representations/campaign/adventure.represent
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import type { Character } from '@representations/user.representation';
+import type { Character, CharacterFormData } from '@representations/user.representation';
 import { getAbilityScoreModifier, getArmorClass } from './character.utils';
 
 export type ChoiceSelection = DefaultRepresentation & {
@@ -123,6 +124,40 @@ export const mapTraits = (
     secondOptionMatcher: (f, index) => f.index === index,
     secondOptionKey: 'spells'
   });
+
+export const transformFormData = (data: Partial<CharacterFormData>): Partial<Character> => {
+  const skills = data.proficiencies?.filter((p) => p.index.startsWith('skill-'));
+  const formattedProficiencies = data.proficiencies?.filter(
+    (p) => !p.index.startsWith('saving-throw-') && !p.index.startsWith('skill-')
+  );
+
+  return pickBy(
+    {
+      ...data,
+      class: data.class ? { index: data.class?.index, name: data.class?.name } : undefined,
+      race: data.race ? { index: data.race?.index, name: data.race?.name } : undefined,
+      languages: uniqBy(data.languages, 'index'),
+      proficiencies: uniqBy(formattedProficiencies, 'index'),
+      skills: uniqBy(skills, 'index'),
+      equipments: data.equipments?.reduce((acc: ChoiceSelection[], curr) => {
+        const existingIndex = acc.findIndex(({ index }) => index === curr.index);
+        if (existingIndex >= 0) {
+          return acc.with(existingIndex, {
+            ...curr,
+            count: (acc[existingIndex].count || 1) + (curr.count || 1)
+          });
+        }
+        return [...acc, curr];
+      }, []),
+      bonds: data.bonds?.flatMap((bond) => bond.split('\n')),
+      personality: data.personality?.flatMap((trait) => trait.split('\n')),
+      ideals: data.ideals?.flatMap((ideal) => ideal.split('\n')),
+      flaws: data.flaws?.flatMap((flaw) => flaw.split('\n')),
+      level: 1
+    },
+    (d) => !!(Array.isArray(d) ? d?.length : d)
+  );
+};
 
 export const formatPointsForDB = (
   character: Character,

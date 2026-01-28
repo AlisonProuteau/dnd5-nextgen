@@ -23,13 +23,34 @@ import type { CharacterFormData } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { Choices } from './Choices';
 
+const emptyChoice: Choice = {
+  choose: -1,
+  type: '',
+  from: { option_set_type: 'resource_list', resource_list_path: '/' }
+};
+
+const customBackground: Background = {
+  index: 'custom',
+  name: 'Custom',
+  feature: { name: 'Blank slate', desc: ['Build your own character'] },
+  starting_proficiencies: [],
+  starting_equipment: [],
+  starting_equipment_options: [],
+  language_options: emptyChoice,
+  personality_traits: emptyChoice,
+  ideals: emptyChoice,
+  bonds: emptyChoice,
+  flaws: emptyChoice
+};
+
 interface CharacterBackgroundFormProps {
-  onNext: (raceInfo: Partial<CharacterFormData>) => void;
-  onPrev: (raceInfo: Partial<CharacterFormData>) => void;
+  onNext?: (raceInfo: Partial<CharacterFormData>) => void;
+  onPrev?: (raceInfo: Partial<CharacterFormData>) => void;
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
   equipment?: ChoiceSelection[];
   isActive?: boolean;
+  defaultData?: Partial<CharacterFormData>;
 }
 
 export function CharacterBackgroundForm({
@@ -38,10 +59,11 @@ export function CharacterBackgroundForm({
   proficiencies = [],
   languages = [],
   equipment = [],
-  isActive = false
+  isActive = false,
+  defaultData = {}
 }: CharacterBackgroundFormProps) {
   const { version } = useAuth();
-  const [selectedBackground, setSelectedBackground] = useState<Background>();
+  const [selectedBackground, setSelectedBackground] = useState<Background>(customBackground);
   const [selectedAlignment, setSelectedAlignment] = useState<Alignment>();
   const [selectedBonds, setSelectedBonds] = useState<ChoiceObjectType[]>([]);
   const [selectedPersonality, setSelectedPersonality] = useState<ChoiceObjectType[]>([]);
@@ -49,26 +71,6 @@ export function CharacterBackgroundForm({
   const [selectedFlaws, setSelectedFlaws] = useState<ChoiceObjectType[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<ChoiceObjectType[]>([]);
   const [selectedEquipments, setSelectedEquipments] = useState<ChoiceObjectType[]>([]);
-
-  const emptyChoice: Choice = {
-    choose: -1,
-    type: '',
-    from: { option_set_type: 'resource_list', resource_list_path: '/' }
-  };
-
-  const customBackground: Background = {
-    index: 'custom',
-    name: 'Custom',
-    feature: { name: 'Blank slate', desc: ['Build your own character'] },
-    starting_proficiencies: [],
-    starting_equipment: [],
-    starting_equipment_options: [],
-    language_options: emptyChoice,
-    personality_traits: emptyChoice,
-    ideals: emptyChoice,
-    bonds: emptyChoice,
-    flaws: emptyChoice
-  };
 
   const { data: backgrounds } = useQuery({
     queryKey: ['fetchBackgrounds', version],
@@ -84,19 +86,89 @@ export function CharacterBackgroundForm({
   });
 
   useEffect(() => {
-    if (backgrounds) {
-      setSelectedBonds([]);
-      setSelectedPersonality([]);
-      setSelectedIdeals([]);
-      setSelectedFlaws([]);
-      setSelectedLanguages([]);
-      setSelectedEquipments([]);
-      setSelectedAlignment(undefined);
-      setSelectedBackground(
-        backgrounds.find((e) => e.index === selectedBackground?.index) || backgrounds[0]
-      );
+    if (defaultData.background && backgrounds?.length && alignments?.length && isActive) {
+      const background =
+        backgrounds.find((b) => b.index === defaultData.background?.index) || customBackground;
+      setSelectedBackground(background);
+
+      if (defaultData.alignment && alignments) {
+        const alignment = alignments.find((a) => a.index === defaultData.alignment?.index);
+        setSelectedAlignment(alignment);
+      }
+
+      const newBonds =
+        background.index === 'custom'
+          ? [{ index: 'bond', name: defaultData.bonds?.join('\n') || '', type: 0 }]
+          : (defaultData.bonds || []).map((name) => ({
+              count: undefined,
+              index: `${name}-bonds`,
+              name,
+              type: 0
+            }));
+      setSelectedBonds(newBonds);
+
+      const newPersonality =
+        background.index === 'custom'
+          ? [{ index: 'personality', name: defaultData.personality?.join('\n') || '', type: 0 }]
+          : (defaultData.personality || []).map((name) => ({
+              count: undefined,
+              index: `${name}-personality_traits`,
+              name,
+              type: 0
+            }));
+      setSelectedPersonality(newPersonality);
+
+      const newIdeals =
+        background.index === 'custom'
+          ? [{ index: 'ideals', name: defaultData.ideals?.join('\n') || '', type: 0 }]
+          : (defaultData.ideals || []).map((name) => ({
+              count: undefined,
+              index: `ideals-${background.ideals.from.options?.findIndex(({ desc }) => desc === name) ?? 0}`,
+              name,
+              type: 0
+            }));
+      setSelectedIdeals(newIdeals);
+
+      const newFlaws =
+        background.index === 'custom'
+          ? [{ index: 'flaws', name: defaultData.flaws?.join('\n') || '', type: 0 }]
+          : (defaultData.flaws || []).map((name) => ({
+              count: undefined,
+              index: `${name}-flaws`,
+              name,
+              type: 0
+            }));
+      setSelectedFlaws(newFlaws);
+
+      if (background.language_options)
+        setSelectedLanguages(
+          defaultData.languages
+            ?.filter(({ type }) => type === 'background')
+            ?.map((l) => ({ index: l.index, name: l.name, type: 0 })) || []
+        );
+
+      if (background.starting_equipment_options.length)
+        setSelectedEquipments(
+          defaultData.equipments
+            ?.filter(
+              ({ index, type }) =>
+                type === 'background' &&
+                !background.starting_equipment.some(({ equipment }) => equipment.index === index)
+            )
+            ?.map((l) => ({ index: l.index, name: l.name, type: 0 })) || []
+        );
     }
-  }, [backgrounds, selectedBackground?.index]);
+  }, [
+    defaultData.background?.index,
+    defaultData.alignment?.index,
+    defaultData.bonds?.join(', '),
+    defaultData.personality?.join(', '),
+    defaultData.ideals?.join(', '),
+    defaultData.flaws?.join(', '),
+    backgrounds,
+    alignments,
+    isActive
+  ]);
 
   const isValid = () => {
     return (
@@ -155,14 +227,15 @@ export function CharacterBackgroundForm({
               disabled={!backgrounds}
               value={selectedBackground?.index || ''}
               onChange={({ target }) => {
-                setSelectedAlignment(undefined);
                 setSelectedBonds([]);
                 setSelectedPersonality([]);
                 setSelectedIdeals([]);
                 setSelectedFlaws([]);
                 setSelectedLanguages([]);
                 setSelectedEquipments([]);
-                setSelectedBackground(backgrounds.find((e) => e.index === target.value));
+                setSelectedBackground(
+                  backgrounds?.find((e) => e.index === target.value) || customBackground
+                );
               }}
             >
               {backgrounds.map((currentBackground) => (
@@ -201,9 +274,9 @@ export function CharacterBackgroundForm({
                         (option) => option.desc === ideal.name
                       )?.alignments;
 
-                      return !availableAlignments?.find(
-                        ({ index }) => index === currentAlignment.index
-                      );
+                      return availableAlignments !== undefined
+                        ? !availableAlignments.find(({ index }) => index === currentAlignment.index)
+                        : false;
                     })
                   }
                 >
@@ -235,6 +308,7 @@ export function CharacterBackgroundForm({
                 multiline
                 id="bonds"
                 label="Bonds"
+                value={selectedBonds[0]?.name || ''}
                 onChange={(value) =>
                   setSelectedBonds(
                     value ? [{ index: 'bond', name: value.toString(), type: 0 }] : []
@@ -246,6 +320,7 @@ export function CharacterBackgroundForm({
                 multiline
                 id="personality"
                 label="Personality traits"
+                value={selectedPersonality[0]?.name || ''}
                 onChange={(value) =>
                   setSelectedPersonality(
                     value ? [{ index: 'personality', name: value.toString(), type: 0 }] : []
@@ -257,6 +332,7 @@ export function CharacterBackgroundForm({
                 multiline
                 id="ideals"
                 label="Ideals"
+                value={selectedIdeals[0]?.name || ''}
                 onChange={(value) =>
                   setSelectedIdeals(
                     value ? [{ index: 'ideals', name: value.toString(), type: 0 }] : []
@@ -268,6 +344,7 @@ export function CharacterBackgroundForm({
                 multiline
                 id="flaws"
                 label="Flaws"
+                value={selectedFlaws[0]?.name || ''}
                 onChange={(value) =>
                   setSelectedFlaws(
                     value ? [{ index: 'flaws', name: value.toString(), type: 0 }] : []
@@ -364,9 +441,9 @@ export function CharacterBackgroundForm({
                   sx={{ paddingTop: '15px' }}
                   variant="middle"
                 >
-                  <Typography>
+                  <Typography sx={{ verticalAlign: 'baseline' }}>
                     Choose Languages ({selectedBackground.language_options.choose || 0})
-                    <Typography display="inline" sx={{ verticalAlign: 'top' }} variant="subtitle2">
+                    <Typography variant="overline" sx={{ verticalAlign: 'super' }} lineHeight={0}>
                       *
                     </Typography>
                   </Typography>
@@ -388,7 +465,7 @@ export function CharacterBackgroundForm({
                 >
                   <Typography>
                     Choose equipments
-                    <Typography display="inline" sx={{ verticalAlign: 'top' }} variant="subtitle2">
+                    <Typography variant="overline" sx={{ verticalAlign: 'super' }} lineHeight={0}>
                       *
                     </Typography>
                   </Typography>
@@ -406,12 +483,16 @@ export function CharacterBackgroundForm({
         </Fragment>
       )}
 
-      <Button sx={{ float: 'left', paddingBottom: '15px' }} onClick={() => handleSubmit(onPrev)}>
-        Back
-      </Button>
-      <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>
-        Next
-      </Button>
+      {onPrev && (
+        <Button sx={{ float: 'left', paddingBottom: '15px' }} onClick={() => handleSubmit(onPrev)}>
+          Back
+        </Button>
+      )}
+      {onNext && (
+        <Button sx={{ float: 'right' }} disabled={!isValid()} onClick={() => handleSubmit(onNext)}>
+          Next
+        </Button>
+      )}
     </Box>
   );
 }

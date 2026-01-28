@@ -60,7 +60,7 @@ export function CharacterDescription({ setFormData, onPrev }: CharacterDescripti
       <ControledInput
         fullWidth
         multiline
-        id="apperance"
+        id="appearance"
         label="Appearance"
         onChange={(value) => setFormData({ appearance: value as string })}
       />

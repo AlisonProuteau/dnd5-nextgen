@@ -228,6 +228,7 @@ MIT License - see [package.json](package.json) for details.
 
 #### Dev
 
+- [ ] Update loading states to use Backdrop
 - [ ] Replace custom useForm by react-hook-form?
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
 - [ ] Update Qodo Merge config

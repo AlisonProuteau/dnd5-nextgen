@@ -168,9 +168,10 @@ export function ChoiceGroup({
 
           return disabled ? null : (
             <FormControlLabel
-              key={`option-${choiceIndex}-${index}-${choice.type}`}
+              key={`option-${choiceIndex}-${index}-${choice.type}-${checked}`}
               control={
                 <Checkbox
+                  key={`option-${choiceIndex}-${index}-${choice.type}-${checked}`}
                   id={checkboxId}
                   checked={checked}
                   disabled={disabled}

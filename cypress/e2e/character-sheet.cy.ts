@@ -295,49 +295,55 @@ describe(`Character Sheet End-to-End`, () => {
 
     cy.getByTestId('description-appearance')
       .should('contain.text', 'Appearance')
-      .and('contain.text', delfyData.appearance!);
+      .and('include.text', delfyData.appearance!);
     cy.getByTestId('description-background').should('have.text', 'BackgroundCustom');
     cy.getByTestId('description-bonds')
       .should('contain.text', 'Bonds')
-      .and('contain.text', delfyData.bonds!.join(''));
+      .and('include.text', delfyData.bonds!.join(''));
     cy.getByTestId('description-ideals')
       .should('contain.text', 'Ideals')
-      .and('contain.text', delfyData.ideals!.join(''));
+      .and('include.text', delfyData.ideals!.join(''));
     cy.getByTestId('description-flaws')
       .should('contain.text', 'Flaws')
-      .and('contain.text', delfyData.flaws!.join(''));
+      .and('include.text', delfyData.flaws!.join(''));
     cy.getByTestId('description-personality')
       .should('contain.text', 'Personality')
-      .and('contain.text', delfyData.personality!.join(''));
+      .and('include.text', delfyData.personality!.join(''));
 
-    // Test: Edit description fields
+    // Test: Edit appearance field
     cy.getByTestId('description-appearance', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
+      cy.wrap($el).getByTestId('-edit', { type: 'contains' }).click();
       cy.get('#appearance').clear().type('New appearance text');
-      cy.wrap($el).getByTestId('-save-button', { type: 'contains' }).click();
+      cy.wrap($el).getByTestId('-save', { type: 'contains' }).click();
     });
-    cy.getByTestId('description-appearance').should('contain.text', 'New appearance text');
+    cy.getByTestId('description-appearance').should('include.text', 'New appearance text');
 
-    cy.getByTestId('description-personality', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
-      cy.get('#personality')
+    cy.getByTestId('description-appearance', { type: 'exact' }).within(($el) => {
+      cy.wrap($el).getByTestId('-edit', { type: 'contains' }).click();
+      cy.get('#appearance')
         .clear()
-        .type('New personality trait')
+        .type('New appearance text with multiple lines')
         .type('{enter}')
-        .type('Another trait');
-      cy.wrap($el).getByTestId('-save-button', { type: 'contains' }).click();
+        .type('Second Line');
+      cy.wrap($el).getByTestId('-save', { type: 'contains' }).click();
     });
-    cy.getByTestId('description-personality')
-      .should('contain.text', 'New personality trait')
-      .and('contain.text', 'Another trait');
+    cy.getByTestId('description-appearance').should(
+      'include.text',
+      'New appearance text with multiple linesSecond Line'
+    );
 
     // Test: Cancel edit
-    cy.getByTestId('description-ideals', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
-      cy.get('#ideals').clear().type('This should be cancelled');
-      cy.wrap($el).getByTestId('-cancel-button', { type: 'contains' }).click();
+    cy.getByTestId('description-appearance', { type: 'exact' }).within(($el) => {
+      cy.wrap($el).getByTestId('-edit', { type: 'contains' }).click();
+      cy.get('#appearance').clear().type('This should be cancelled');
+      cy.wrap($el).getByTestId('-cancel', { type: 'contains' }).click();
     });
-    cy.getByTestId('description-ideals').should('contain.text', delfyData.ideals!.join(''));
+    cy.getByTestId('description-appearance').should(
+      'include.text',
+      'New appearance text with multiple linesSecond Line'
+    );
+
+    // TODO: Test edit background fields
 
     // Test: Spell section
     clickUntilStep('spells');
