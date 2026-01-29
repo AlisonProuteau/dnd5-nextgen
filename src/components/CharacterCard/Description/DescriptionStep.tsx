@@ -1,21 +1,25 @@
-import { Fragment, useEffect, useState } from 'react';
-import { AgeIcon, AlignmentIcon, FemaleIcon, HeightIcon, MaleIcon, OtherIcon } from '@assets';
-import { Cancel, Close, Edit, Save } from '@mui/icons-material';
+import { Fragment, useEffect } from 'react';
+import { AgeIcon, AlignmentIcon, HeightIcon } from '@assets';
+import { Close, Edit } from '@mui/icons-material';
 import { Backdrop, IconButton, Paper, Typography } from '@mui/material';
 import { Box, Container, type SxProps, type Theme } from '@mui/system';
 import { isEqual, omit, sortBy, uniq } from 'lodash';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { ControledInput } from '@shared/ControledInput';
 import { IconText } from '@shared/IconText';
 import { transformFormData } from '@utils/character';
+import { getGenderIcon } from '@utils/ui';
 import type { CharacterFormData } from '@representations/user.representation';
 import { CharacterBackgroundForm } from 'src/components/CharacterCreation/CharacterBackgroundForm';
 import type { DefaultProps } from 'src/pages/Header';
-import { GenderIndexes } from '../../CharacterCreation/CharacterDescription';
+import { CharacterDescription, GenderIndexes } from '../../CharacterCreation/CharacterDescription';
 
 export function Description({ character }: DefaultProps) {
-  const [isEditAppearance, toggleEditAppearance] = useState(false);
+  const {
+    isOn: isEditDescription,
+    turnOn: openEditDescription,
+    turnOff: closeEditDescription
+  } = useToggle(false);
   const {
     isOn: isEditBackground,
     turnOn: openEditBackground,
@@ -25,6 +29,13 @@ export function Description({ character }: DefaultProps) {
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
   });
+
+  useEffect(() => {
+    document.body.style.overflow = isEditBackground || isEditDescription ? 'hidden' : 'auto';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isEditBackground, isEditDescription]);
 
   const onSave = async (update: Partial<CharacterFormData>) => {
     const formattedData = {
@@ -59,28 +70,9 @@ export function Description({ character }: DefaultProps) {
     );
 
     if (Object.keys(updateData).length > 0) await firebaseCrud.update(character.id, updateData);
-    toggleEditAppearance(false);
+    closeEditDescription();
     closeEditBackground();
   };
-
-  const getGenderIcon = (genderIndex: GenderIndexes) => {
-    switch (genderIndex) {
-      case GenderIndexes.female:
-        return FemaleIcon;
-      case GenderIndexes.male:
-        return MaleIcon;
-      default:
-        return OtherIcon;
-    }
-  };
-
-  useEffect(() => {
-    document.body.style.overflow = isEditBackground ? 'hidden' : 'auto';
-
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isEditBackground]);
 
   return (
     <Fragment>
@@ -89,7 +81,7 @@ export function Description({ character }: DefaultProps) {
         display="flex"
         gap="15px"
         flexDirection="column"
-        inert={isEditBackground}
+        inert={isEditBackground || isEditDescription}
       >
         <Box display="grid" gridTemplateColumns="1fr 1fr 1fr 1fr" alignItems="end">
           <IconText
@@ -123,68 +115,15 @@ export function Description({ character }: DefaultProps) {
           />
         </Box>
 
-        <Box data-testid={`description-appearance`} gap={1} alignItems="baseline">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const newValue = (e.target as HTMLFormElement).appearance.value;
-              onSave({
-                appearance: Array.isArray(newValue) ? newValue.join('\n') : newValue || ''
-              });
-            }}
-            onReset={() => toggleEditAppearance(!isEditAppearance)}
-          >
-            <Typography variant="subtitle2" color="primary" display="inline-block">
-              Appearance
-            </Typography>
-
-            <Box display="inline" marginLeft={1}>
-              {isEditAppearance && (
-                <IconButton
-                  color="primary"
-                  type="submit"
-                  disabled={firebaseCrud.isLoading}
-                  data-testid={'description-appearance-save'}
-                >
-                  <Save fontSize="small" />
-                </IconButton>
-              )}
-
-              <IconButton
-                color={isEditAppearance ? 'secondary' : 'primary'}
-                type="reset"
-                disabled={firebaseCrud.isLoading}
-                data-testid={`description-appearance-${isEditAppearance ? 'cancel' : 'edit'}`}
-              >
-                {isEditAppearance ? <Cancel fontSize="small" /> : <Edit fontSize="small" />}
-              </IconButton>
-            </Box>
-
-            {isEditAppearance ? (
-              <ControledInput
-                fullWidth
-                multiline
-                id="appearance"
-                label="Appearance"
-                defaultValue={character.appearance || ''}
-              />
-            ) : (
-              character.appearance?.split('\n').map((line, lineIndex) => (
-                <Typography key={`appearance-line-${lineIndex}`} variant="body1" display="block">
-                  {line}
-                </Typography>
-              )) || (
-                <Typography variant={'body2'} sx={{ color: 'text.secondary' }}>
-                  Not specified
-                </Typography>
-              )
-            )}
-          </form>
-        </Box>
-
         <Box display="grid" gridTemplateColumns="repeat(auto-fill, minmax(350px, 1fr))" gap={3}>
           {(
             [
+              {
+                title: 'Appearance',
+                testid: 'appearance',
+                onEdit: openEditDescription,
+                sx: { gridColumn: '1 / -1' }
+              },
               {
                 title: 'Background',
                 testid: 'background',
@@ -219,17 +158,20 @@ export function Description({ character }: DefaultProps) {
                 </IconButton>
               )}
 
-              {(Array.isArray(character[testid]) ? character[testid] : [character[testid]]).map(
-                (line, lineIndex) => (
-                  <Typography
-                    key={`${testid}-line-${lineIndex}`}
-                    variant={character[testid] ? 'body1' : 'body2'}
-                    sx={{ color: !character[testid] ? 'text.secondary' : '' }}
-                  >
-                    {line?.name ?? line ?? 'Not specified'}
-                  </Typography>
-                )
-              )}
+              {(Array.isArray(character[testid])
+                ? character[testid]
+                : typeof character[testid] === 'string'
+                  ? (character[testid] || '').split('\n')
+                  : [character[testid]]
+              ).map((line, lineIndex) => (
+                <Typography
+                  key={`${testid}-line-${lineIndex}`}
+                  variant={character[testid] ? 'body1' : 'body2'}
+                  sx={{ color: !character[testid] ? 'text.secondary' : '' }}
+                >
+                  {line?.name ?? line ?? 'Not specified'}
+                </Typography>
+              ))}
             </Box>
           ))}
         </Box>
@@ -243,26 +185,34 @@ export function Description({ character }: DefaultProps) {
           borderBottom: 'solid 16px transparent',
           overflow: 'auto'
         })}
-        open={isEditBackground}
-        onClick={closeEditBackground}
+        open={isEditBackground || isEditDescription}
+        onClick={() => (isEditBackground ? closeEditBackground() : closeEditDescription())}
       >
         <IconButton
-          data-testid="close-background-edit"
-          onClick={closeEditBackground}
+          data-testid={`close-${isEditBackground ? 'background' : 'descripiton'}-edit`}
+          onClick={isEditBackground ? closeEditBackground : closeEditDescription}
           sx={{ position: 'fixed', right: 0, top: 0 }}
         >
           <Close />
         </IconButton>
         <Container maxWidth="md" sx={{ height: '100%' }}>
-          <Paper sx={{ padding: 2 }} onClick={(e) => e.stopPropagation()}>
-            <CharacterBackgroundForm
-              onNext={onSave}
-              defaultData={character}
-              proficiencies={character.proficiencies.filter(({ type }) => type !== 'background')}
-              languages={character.languages.filter(({ type }) => type !== 'background')}
-              equipment={character.equipments.filter(({ type }) => type !== 'background')}
-              isActive={isEditBackground}
-            />
+          <Paper sx={{ padding: 2, paddingBottom: 5 }} onClick={(e) => e.stopPropagation()}>
+            {isEditBackground ? (
+              <CharacterBackgroundForm
+                onNext={onSave}
+                defaultData={character}
+                proficiencies={character.proficiencies.filter(({ type }) => type !== 'background')}
+                languages={character.languages.filter(({ type }) => type !== 'background')}
+                equipment={character.equipments.filter(({ type }) => type !== 'background')}
+                isActive={isEditBackground}
+              />
+            ) : (
+              <CharacterDescription
+                onNext={onSave}
+                defaultData={character}
+                isActive={isEditDescription}
+              />
+            )}
           </Paper>
         </Container>
       </Backdrop>

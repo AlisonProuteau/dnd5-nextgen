@@ -155,8 +155,13 @@ export function CharacterCreation() {
         </Box>
 
         <Box display={form.steps[form.activeStep].id === 'info' ? 'revert' : 'none'}>
-          <CharacterDescription setFormData={form.setFormData} onPrev={() => onPrevStep()} />
+          <CharacterDescription
+            setFormData={form.setFormData}
+            onPrev={() => onPrevStep()}
+            isActive={form.steps[form.activeStep].id === 'info'}
+          />
         </Box>
+
         {form.isLastStep && (
           <Button
             sx={{ float: 'right' }}

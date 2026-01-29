@@ -1,4 +1,6 @@
+import { FemaleIcon, MaleIcon, OtherIcon } from '@assets';
 import type { MoneyUnitType } from '@representations/campaign/equipment.representation';
+import { GenderIndexes } from 'src/components/CharacterCreation/CharacterDescription';
 
 /**
  * Scroll behavior utility for UI interactions
@@ -24,5 +26,16 @@ export const getCoinColor = (type: MoneyUnitType) => {
       return '#B87333'; // Copper
     default:
       return 'white';
+  }
+};
+
+export const getGenderIcon = (genderIndex: GenderIndexes) => {
+  switch (genderIndex) {
+    case GenderIndexes.female:
+      return FemaleIcon;
+    case GenderIndexes.male:
+      return MaleIcon;
+    default:
+      return OtherIcon;
   }
 };

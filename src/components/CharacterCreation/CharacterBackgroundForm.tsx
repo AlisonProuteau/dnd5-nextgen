@@ -44,8 +44,8 @@ const customBackground: Background = {
 };
 
 interface CharacterBackgroundFormProps {
-  onNext?: (raceInfo: Partial<CharacterFormData>) => void;
-  onPrev?: (raceInfo: Partial<CharacterFormData>) => void;
+  onNext?: (backgroundInfo: Partial<CharacterFormData>) => void;
+  onPrev?: (backgroundInfo: Partial<CharacterFormData>) => void;
   proficiencies?: ChoiceSelection[];
   languages?: ChoiceSelection[];
   equipment?: ChoiceSelection[];
