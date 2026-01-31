@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import Button from '@mui/material/Button';
 import ButtonGroup from '@mui/material/ButtonGroup';
@@ -34,12 +34,13 @@ export function SplitButton({
   };
 
   const handleClose = (event: Event) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
-      return;
-    }
-
+    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) return;
     turnOff();
   };
+
+  useEffect(() => {
+    if (defaultValue) setSelectedIndex(defaultValue);
+  }, [defaultValue]);
 
   return (
     <Fragment>

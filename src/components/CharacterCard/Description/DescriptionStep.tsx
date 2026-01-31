@@ -74,6 +74,18 @@ export function Description({ character }: DefaultProps) {
     closeEditBackground();
   };
 
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.code === 'Escape') {
+        closeEditDescription();
+        closeEditBackground();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, []);
+
   return (
     <Fragment>
       <Box

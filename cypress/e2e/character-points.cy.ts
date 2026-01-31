@@ -1,3 +1,4 @@
+import { baseCharacter } from 'cypress/support/mocks/baseCharacter';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
@@ -7,7 +8,7 @@ describe(`Character Points End-to-End Flow`, () => {
 
   afterEach(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('should complete full ability score allocation flow with "Set" method and race modifiers', () => {
+  it('Set - should be able to set ability scores', () => {
     // Create character with specific race that has ability modifiers
     cy.createTestCharacter(Cypress.testUser.uid, 'points-test-char', {
       name: 'Points Test Character',
@@ -31,7 +32,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.contains('WIS: +1').should('be.visible');
 
     // Test: Select "Simple" (set) method
-    cy.contains('button', 'Custom').next().click();
+    cy.contains('button', 'Point Buy').next().click();
     cy.get('[role="menuitem"]').contains('Simple').click();
 
     // Test: Standard array values are present
@@ -83,7 +84,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('ability-cha').should('contain.text', '-1'); // 8 = -1
   });
 
-  it('should complete ability score allocation with "Point Buy" method including validation', () => {
+  it('Point Buy - should be able to set ability scores', () => {
     cy.createTestCharacter(Cypress.testUser.uid, 'pointbuy-char', {
       name: 'Point Buy Character',
       abilityScores: undefined
@@ -93,9 +94,8 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('character-card-pointbuy-char').click();
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
-    // Test: Select "Point Buy" method
-    cy.contains('button', 'Custom').next().click();
-    cy.getByRole('menuitem', 'Point Buy').click();
+    // Test: Point Buy method is default
+    cy.contains('button', 'Point Buy').should('be.visible');
 
     // Test: All abilities start at 8
     cy.get('input[id^="ability-"]').each(($input) => {
@@ -158,7 +158,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('ability-cha').should('contain.text', '0').and('contain.text', '10');
   });
 
-  it('should complete ability score allocation with "Custom" (random) method', () => {
+  it('Custom (random) - should be able to set ability scores', () => {
     cy.createTestCharacter(Cypress.testUser.uid, 'random-char', {
       name: 'Random Character',
       abilityScores: undefined
@@ -168,9 +168,9 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('character-card-random-char').click();
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
-    // Test: Custom/Random method is default
-    cy.contains('button', 'Custom').should('be.visible');
-    cy.getButton('Custom').should('be.visible');
+    // Test: Select "Custom" (random) method
+    cy.contains('button', 'Point Buy').next().click();
+    cy.getByRole('menuitem', 'Custom').click();
 
     // Test: All ability inputs have random values
     cy.get('input[id^="ability-"]').first().should('not.have.value', 0); // Wait for first input to populate
@@ -259,7 +259,7 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('character-card-derived-stats-char').click();
 
     // Assign ability scores with high CON (for HP) and high DEX (for AC)
-    cy.contains('button', 'Custom').next().click();
+    cy.contains('button', 'Point Buy').next().click();
     cy.getByRole('menuitem', 'Simple').click();
 
     cy.get('div#ability-15').click();
@@ -292,5 +292,168 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('ability-con').should('contain.text', '+2');
     cy.getByTestId('ability-dex').should('contain.text', '14');
     cy.getByTestId('ability-dex').should('contain.text', '+2');
+  });
+
+  it('should be able to edit ability scores', () => {
+    // Test: Create character with existing ability scores
+    const testCharacter = {
+      ...baseCharacter,
+      id: 'edit-points-char',
+      name: 'Edit Points Character',
+      race: { index: 'elf', name: 'Elf' },
+      abilities: [{ ability_score: { index: 'dex', name: 'DEX' }, bonus: 2 }],
+      class: { index: 'wizard', name: 'Wizard' }
+    };
+    cy.createTestCharacter(Cypress.testUser.uid, testCharacter.id, testCharacter);
+
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId('character-card-edit-points-char').click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Edit button only visible on stats step
+    cy.getByTestId('stats-section').should('be.visible');
+    cy.getByTestId('edit-points-edit-points-char').should('be.visible');
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('edit-points-edit-points-char').should('not.exist');
+    cy.getByTestId('previous-step').click();
+
+    // Test: Navigate to points page via edit button
+    cy.getByTestId('edit-points-edit-points-char').click();
+    cy.url().should('include', '/points');
+    cy.getByRole('presentation', 'Ability Scores').should('be.visible');
+
+    // Test: Race modifiers are displayed
+    cy.contains('Race Modifiers:').should('be.visible');
+    cy.contains('DEX: +2').should('be.visible');
+
+    // Test: Custom (random) method is default for existing characters
+    cy.contains('button', 'Custom').should('be.visible');
+
+    // Test: Ability scores are pre-filled with existing values
+    cy.get('#ability-str').should('have.value', testCharacter.abilityScores.str.score);
+    cy.get('#ability-dex').should('have.value', testCharacter.abilityScores.dex.score - 2); // Without race bonus
+    cy.get('#ability-con').should('have.value', testCharacter.abilityScores.con.score);
+    cy.get('#ability-int').should('have.value', testCharacter.abilityScores.int.score);
+    cy.get('#ability-wis').should('have.value', testCharacter.abilityScores.wis.score);
+    cy.get('#ability-cha').should('have.value', testCharacter.abilityScores.cha.score);
+
+    // Test: Edit ability scores using Point Buy method
+    cy.getButton('Custom').next().click();
+    cy.getByRole('menuitem', 'Point Buy').click();
+
+    // Test: Verify all abilities have their current values
+    cy.get('#ability-str').invoke('val').should('not.eq', '8');
+    cy.get('#ability-dex').invoke('val').should('not.eq', '8');
+
+    // Test: Modify ability scores
+    cy.get('#ability-str').clear().type('13').blur();
+    cy.get('#ability-int').clear().type('15').blur();
+    cy.get('#ability-wis').clear().type('14').blur();
+    cy.get('#ability-cha').clear().type('8').blur();
+    cy.get('#ability-con').clear().type('9').blur();
+    cy.get('#ability-dex').clear().type('13').blur();
+
+    // Test: Verify points are calculated correctly (should be valid)
+    cy.contains('Remaining Points:').should('be.visible');
+    cy.contains('Remaining Points:').next().should('not.contain.text', '-');
+
+    // Test: Save modified scores
+    cy.getByTestId('save-scores').should('be.enabled').click();
+    cy.getByRole('status', 'Character Points Updated').should('be.visible');
+
+    // Test: Verify redirect back to character sheet
+    cy.url().should('include', '/character');
+    cy.url().should('not.include', '/points');
+
+    // Test: Verify updated ability scores  and modifieres with race modifiers
+    cy.getByTestId('ability-str').should('contain.text', '13').and('contain.text', '+1');
+    cy.getByTestId('ability-dex').should('contain.text', '15').and('contain.text', '+2'); // With race bonus
+    cy.getByTestId('ability-con').should('contain.text', '9').and('contain.text', '-1');
+    cy.getByTestId('ability-int').should('contain.text', '15').and('contain.text', '+2');
+    cy.getByTestId('ability-wis').should('contain.text', '14').and('contain.text', '+2');
+    cy.getByTestId('ability-cha').should('contain.text', '8').and('contain.text', '-1');
+
+    // Test: Verify AC updated based on new DEX modifier
+    cy.getByTestId('armor-class')
+      .invoke('text')
+      .then((newAC) => cy.wrap(parseInt(newAC)).should('eq', testCharacter.armorClass + 2));
+
+    // Test: Navigate back to edit points and switch to Random method
+    cy.getByTestId('edit-points-edit-points-char').click();
+    cy.url().should('include', '/points');
+
+    cy.contains('button', 'Point Buy').next().click();
+    cy.getByRole('menuitem', 'Custom').click();
+
+    // Test: All abilities should be filled with current values
+    cy.get('#ability-str').should('have.value', '13');
+    cy.get('#ability-dex').should('have.value', '13'); // Without race bonus
+    cy.get('#ability-con').should('have.value', '9');
+    cy.get('#ability-int').should('have.value', '15');
+    cy.get('#ability-wis').should('have.value', '14');
+    cy.get('#ability-cha').should('have.value', '8');
+
+    // Test: Test reroll functionality
+    cy.get('#ability-str')
+      .invoke('val')
+      .then(() => {
+        cy.getByTestId('reroll-str').click();
+        cy.get('#ability-str').invoke('val').should('not.eq', '13');
+      });
+
+    // Test: Cancel edit by navigating back without saving
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId('character-card-edit-points-char').click();
+
+    // Test: Verify original values are still there (previous save is persisted)
+    cy.getByTestId('ability-str').should('contain.text', '13').and('contain.text', '+1');
+    cy.getByTestId('ability-dex').should('contain.text', '15').and('contain.text', '+2'); // With race bonus
+    cy.getByTestId('ability-con').should('contain.text', '9').and('contain.text', '-1');
+    cy.getByTestId('ability-int').should('contain.text', '15').and('contain.text', '+2');
+    cy.getByTestId('ability-wis').should('contain.text', '14').and('contain.text', '+2');
+    cy.getByTestId('ability-cha').should('contain.text', '8').and('contain.text', '-1');
+
+    // Test: Edit points using Simple (Set) method
+    cy.getByTestId('edit-points-edit-points-char').click();
+    cy.contains('button', 'Point Buy').next().click();
+    cy.getByRole('menuitem', 'Simple').click();
+
+    // Test: All abilities should have dropdowns with standard array
+    [15, 14, 13, 12, 10, 8].forEach((score) => {
+      cy.get(`#ability-${score}`).should('have.value', score);
+    });
+
+    // Test: Reassign abilities
+    cy.get('div#ability-15').click();
+    cy.getByRole('option', 'Strength').click();
+    cy.get('div#ability-14').click();
+    cy.getByRole('option', 'Intelligence').click();
+    cy.get('div#ability-13').click();
+    cy.getByRole('option', 'Dexterity').click();
+    cy.get('div#ability-12').click();
+    cy.getByRole('option', 'Wisdom').click();
+    cy.get('div#ability-10').click();
+    cy.getByRole('option', 'Constitution').click();
+    cy.get('div#ability-8').click();
+    cy.getByRole('option', 'Charisma').click();
+
+    cy.getByTestId('save-scores').click();
+    cy.getByRole('status', 'Character Points Updated').should('be.visible');
+
+    // Test: Verify newly assigned values
+    cy.getByTestId('ability-str').should('contain.text', '15');
+    cy.getByTestId('ability-dex').should('contain.text', '15'); // With race bonus
+    cy.getByTestId('ability-int').should('contain.text', '14');
+    cy.getByTestId('ability-wis').should('contain.text', '12');
+    cy.getByTestId('ability-con').should('contain.text', '10');
+    cy.getByTestId('ability-cha').should('contain.text', '8');
+
+    // Test: Verify persistence after reload
+    cy.reload();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('ability-str').should('contain.text', '15');
+    cy.getByTestId('ability-dex').should('contain.text', '15');
   });
 });

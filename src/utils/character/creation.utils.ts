@@ -176,26 +176,25 @@ export const formatPointsForDB = (
       modifier: number;
     }
   > = character?.abilityScores || {};
-  if (!character?.abilityScores)
-    abilities?.forEach((ability) => {
-      const raceModifier = character?.abilities.find(
-        (bonusAbility) => bonusAbility.ability_score.index === ability.index
-      );
-      const finalScore = raceModifier
-        ? points[ability.index] + raceModifier.bonus
-        : points[ability.index];
+  abilities?.forEach((ability) => {
+    const raceModifier = character?.abilities.find(
+      (bonusAbility) => bonusAbility.ability_score.index === ability.index
+    );
+    const finalScore = raceModifier
+      ? points[ability.index] + raceModifier.bonus
+      : points[ability.index];
 
-      formattedAbilities = {
-        ...formattedAbilities,
-        [ability.index]: {
-          index: ability.index,
-          name: ability.name,
-          full_name: ability.full_name,
-          score: finalScore,
-          modifier: getAbilityScoreModifier(finalScore)
-        }
-      };
-    });
+    formattedAbilities = {
+      ...formattedAbilities,
+      [ability.index]: {
+        index: ability.index,
+        name: ability.name,
+        full_name: ability.full_name,
+        score: finalScore,
+        modifier: getAbilityScoreModifier(finalScore)
+      }
+    };
+  });
 
   const hitPoints =
     (classInfo?.hit_die || 6) +

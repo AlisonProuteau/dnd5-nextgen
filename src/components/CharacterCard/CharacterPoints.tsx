@@ -26,12 +26,11 @@ import { button, fab, linkButton } from '@utils/ui';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Classes } from '@representations/character/class.representation';
+import type { AbilityScoreMethod } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
-type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
-
 export function CharacterPoints() {
-  const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('random');
+  const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>('point_cost');
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
   const { user, version } = useAuth();
@@ -40,15 +39,11 @@ export function CharacterPoints() {
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', id ?? ''],
-    successMessages: {
-      update: 'Character Points Updated'
-    },
-    redirect: {
-      update: { path: '/character', state: { characterId: '{id}' } }
-    }
+    successMessages: { update: 'Character Points Updated' },
+    redirect: { update: { path: '/character', state: { characterId: id } } }
   });
 
-  const { data: character } = useQuery({
+  const { data: character, isLoading: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
     queryFn: async () => (user?.uid && id ? await getCharacter(user.uid, id) : null),
     enabled: !!user?.uid && !!id
@@ -125,23 +120,69 @@ export function CharacterPoints() {
   };
 
   useEffect(() => {
-    if (!isAbilitiesLoading && !character?.abilityScores) {
+    if (isAbilitiesLoading || isCharacterLoading) return;
+    if (abilityScoreMethod === 'set') {
+      setPoints(() => ({}));
+      return;
+    }
+
+    if (
+      (!character?.abilityScores && Object.keys(points).length === 0) ||
+      Object.values(points).every((score) => score === 8)
+    ) {
       if (abilityScoreMethod === 'random') abilities?.forEach(({ index }) => setScore(index));
       else if (abilityScoreMethod === 'point_cost')
         abilities?.forEach(({ index }) => setScore(index, 8));
-      else setPoints(() => ({}));
+    } else {
+      setPoints((currentPoints) => {
+        const updatedPoints: Record<string, number> = {};
+
+        const mappedPoints = Object.entries(currentPoints).map(([index, score]) => ({
+          index,
+          score: abilityScoreMethod === 'point_cost' ? Math.max(8, Math.min(15, score)) : score
+        }));
+        const characterMappedScores: { index: string; score: number }[] = character?.abilityScores
+          ? Object.values(character.abilityScores).map(({ index, score }) => {
+              const raceModifier = character?.abilities.find(
+                (bonusAbility) => bonusAbility.ability_score.index === index
+              );
+              const modifiedScore = raceModifier ? score - raceModifier.bonus : score;
+              return {
+                index,
+                score:
+                  abilityScoreMethod === 'point_cost'
+                    ? Math.max(8, Math.min(15, modifiedScore))
+                    : modifiedScore
+              };
+            })
+          : [];
+
+        [...characterMappedScores, ...mappedPoints].forEach(({ index, score }) => {
+          updatedPoints[index] = score;
+        });
+        return updatedPoints;
+      });
     }
-  }, [isAbilitiesLoading, abilityScoreMethod]);
+  }, [isAbilitiesLoading, isCharacterLoading, abilityScoreMethod]);
 
   useEffect(() => {
     if (character?.abilityScores) {
       const updatedPoints: Record<string, number> = {};
       Object.values(character.abilityScores).forEach(({ index, score }) => {
-        updatedPoints[index] = score;
+        const raceModifier = character?.abilities.find(
+          (bonusAbility) => bonusAbility.ability_score.index === index
+        );
+        const finalScore = raceModifier ? score - raceModifier.bonus : score;
+        updatedPoints[index] = finalScore;
       });
-      setPoints(updatedPoints);
+      setPoints(() => updatedPoints);
+      setAbilityScoreMethod(character.abilityScoreMethod || 'random');
     }
-  }, [character?.abilityScores]);
+  }, [
+    Object.values(character?.abilityScores || {})
+      .map((ability) => ability.index + ability.score)
+      .join(',')
+  ]);
 
   const isValid =
     abilities?.every((ability) => points[ability.index]) &&
@@ -159,7 +200,7 @@ export function CharacterPoints() {
         equipmentList || []
       );
 
-      await firebaseCrud.update(id, formattedPoints);
+      await firebaseCrud.update(id, { ...formattedPoints, abilityScoreMethod });
     }
   };
 
@@ -181,7 +222,7 @@ export function CharacterPoints() {
 
         <SplitButton
           variant="outlined"
-          defaultValue="random"
+          defaultValue={abilityScoreMethod}
           options={[
             { value: 'set', text: 'Simple' },
             { value: 'point_cost', text: 'Point Buy' },
@@ -205,6 +246,7 @@ export function CharacterPoints() {
                         if (previousAbility) setPoints((current) => omit(current, previousAbility));
                         setScore(e.target.value as string, score);
                       }}
+                      defaultValue=""
                       sx={{ height: '42px' }}
                     >
                       {abilities.map((ability) => (
