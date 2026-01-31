@@ -175,24 +175,20 @@ export const formatPointsForDB = (
       score: number;
       modifier: number;
     }
-  > = character?.abilityScores || {};
+  > = {};
   abilities?.forEach((ability) => {
+    const score = points[ability.index] || character.abilityScores[ability.index].score || 8;
     const raceModifier = character?.abilities.find(
       (bonusAbility) => bonusAbility.ability_score.index === ability.index
     );
-    const finalScore = raceModifier
-      ? points[ability.index] + raceModifier.bonus
-      : points[ability.index];
 
-    formattedAbilities = {
-      ...formattedAbilities,
-      [ability.index]: {
-        index: ability.index,
-        name: ability.name,
-        full_name: ability.full_name,
-        score: finalScore,
-        modifier: getAbilityScoreModifier(finalScore)
-      }
+    const finalScore = raceModifier ? score + raceModifier.bonus : score;
+    formattedAbilities[ability.index] = {
+      index: ability.index,
+      name: ability.name,
+      full_name: ability.full_name,
+      score: finalScore,
+      modifier: getAbilityScoreModifier(finalScore)
     };
   });
 

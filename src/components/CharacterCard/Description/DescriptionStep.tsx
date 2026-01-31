@@ -3,11 +3,11 @@ import { AgeIcon, AlignmentIcon, HeightIcon } from '@assets';
 import { Close, Edit } from '@mui/icons-material';
 import { Backdrop, IconButton, Paper, Typography } from '@mui/material';
 import { Box, Container, type SxProps, type Theme } from '@mui/system';
-import { isEqual, omit, sortBy, uniq } from 'lodash';
+import { isEqual, omit, sortBy, uniqBy } from 'lodash';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import { transformFormData } from '@utils/character';
+import { type ChoiceSelection, transformFormData } from '@utils/character';
 import { getGenderIcon } from '@utils/ui';
 import type { CharacterFormData } from '@representations/user.representation';
 import { CharacterBackgroundForm } from 'src/components/CharacterCreation/CharacterBackgroundForm';
@@ -54,12 +54,15 @@ export function Description({ character }: DefaultProps) {
               typeof item === 'object' && (!('type' in item) || item.type !== 'background')
           );
           if (nonBackgroundItems.length) {
-            const mergedValue = [...nonBackgroundItems, ...value];
+            const mergedValue = [...nonBackgroundItems, ...value] as ChoiceSelection[];
             return !isEqual(
               sortBy(mergedValue, ['index', 'type']),
               sortBy(originalValue, ['index', 'type'])
             )
-              ? { ...result, [key]: uniq(mergedValue) }
+              ? {
+                  ...result,
+                  [key]: uniqBy(mergedValue, (v) => `${v?.type ?? ''}:${v?.index ?? ''}`)
+                }
               : result;
           }
         }
@@ -201,7 +204,7 @@ export function Description({ character }: DefaultProps) {
         onClick={() => (isEditBackground ? closeEditBackground() : closeEditDescription())}
       >
         <IconButton
-          data-testid={`close-${isEditBackground ? 'background' : 'descripiton'}-edit`}
+          data-testid={`close-${isEditBackground ? 'background' : 'description'}-edit`}
           onClick={isEditBackground ? closeEditBackground : closeEditDescription}
           sx={{ position: 'fixed', right: 0, top: 0 }}
         >

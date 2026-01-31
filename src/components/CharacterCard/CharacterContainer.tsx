@@ -247,10 +247,18 @@ export function CharacterContainer() {
           This action cannot be undone.
         </DialogContent>
         <DialogActions>
-          <Button autoFocus onClick={closeDelete}>
+          <Button autoFocus disabled={firebaseCrud.isLoading} onClick={closeDelete}>
             Cancel
           </Button>
-          <Button onClick={async () => await firebaseCrud.remove(character.id)}>Ok</Button>
+          <Button
+            disabled={firebaseCrud.isLoading}
+            onClick={async () => {
+              await firebaseCrud.remove(character.id);
+              closeDelete();
+            }}
+          >
+            Ok
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

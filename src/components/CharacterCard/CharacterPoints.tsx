@@ -169,7 +169,7 @@ export function CharacterPoints() {
     if (character?.abilityScores) {
       const updatedPoints: Record<string, number> = {};
       Object.values(character.abilityScores).forEach(({ index, score }) => {
-        const raceModifier = character?.abilities.find(
+        const raceModifier = character.abilities.find(
           (bonusAbility) => bonusAbility.ability_score.index === index
         );
         const finalScore = raceModifier ? score - raceModifier.bonus : score;
@@ -178,11 +178,7 @@ export function CharacterPoints() {
       setPoints(() => updatedPoints);
       setAbilityScoreMethod(character.abilityScoreMethod || 'random');
     }
-  }, [
-    Object.values(character?.abilityScores || {})
-      .map((ability) => ability.index + ability.score)
-      .join(',')
-  ]);
+  }, [character?.abilityScores]);
 
   const isValid =
     abilities?.every((ability) => points[ability.index]) &&

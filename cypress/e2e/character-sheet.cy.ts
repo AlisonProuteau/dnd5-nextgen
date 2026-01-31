@@ -312,7 +312,7 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Edit description fields
     cy.getByTestId('description-appearance-edit').should('be.visible').click();
-    cy.getByTestId('close-descripiton-edit').should('be.visible');
+    cy.getByTestId('close-description-edit').should('be.visible');
     cy.getByTestId('description-selection').should('be.visible');
 
     cy.get('#name').should('have.value', delfyData.name);
@@ -327,7 +327,7 @@ describe(`Character Sheet End-to-End`, () => {
 
     cy.getButton('Next').should('be.enabled').click();
     cy.getByRole('status', 'Updated successfully').should('be.visible');
-    cy.getByTestId('close-descripiton-edit').should('not.be.visible');
+    cy.getByTestId('close-description-edit').should('not.be.visible');
 
     // Test: Verify changes persisted
     cy.contains('Delfy Updated').should('be.visible');
@@ -356,14 +356,14 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('description-appearance-edit').click();
     cy.get('#name').clear().type('Should not save');
     cy.press('Escape');
-    cy.getByTestId('close-descripiton-edit').should('not.be.visible');
+    cy.getByTestId('close-description-edit').should('not.be.visible');
     cy.contains('Delfy').should('be.visible');
     cy.contains('Should not save').should('not.exist');
 
     // Test: Cancel description edit via close button
     cy.getByTestId('description-appearance-edit').click();
     cy.get('#appearance').clear().type('This should be cancelled');
-    cy.getByTestId('close-descripiton-edit').click();
+    cy.getByTestId('close-description-edit').click();
     cy.getByTestId('description-appearance').should('not.contain.text', 'This should be cancelled');
     cy.getByTestId('description-appearance').should('contain.text', delfyData.appearance);
 

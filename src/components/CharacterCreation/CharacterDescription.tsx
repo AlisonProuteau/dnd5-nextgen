@@ -59,7 +59,8 @@ export function CharacterDescription({
           value={localFormData?.name}
           onChange={(value) => {
             const name = value as string | undefined;
-            setFormData ? setFormData({ name }) : setLocalFormData({ ...localFormData, name });
+            setLocalFormData((prev) => ({ ...prev, name }));
+            setFormData?.({ name });
           }}
         />
         <ControledInput
@@ -73,7 +74,8 @@ export function CharacterDescription({
               !value || isNaN(parseInt(value?.toString() || ''))
                 ? undefined
                 : parseInt(value?.toString()) || undefined;
-            setFormData ? setFormData({ age }) : setLocalFormData({ ...localFormData, age });
+            setLocalFormData((prev) => ({ ...prev, age }));
+            setFormData?.({ age });
           }}
         />
         <FormControl margin="dense" sx={{ width: '100px' }}>
@@ -85,7 +87,8 @@ export function CharacterDescription({
             value={localFormData?.sex?.index ?? 'O'}
             onChange={({ target }) => {
               const sex = genderInstances.find(({ index }) => index === target.value);
-              setFormData ? setFormData({ sex }) : setLocalFormData({ ...localFormData, sex });
+              setLocalFormData((prev) => ({ ...prev, sex }));
+              setFormData?.({ sex });
             }}
           >
             {genderInstances.map((currentSex: DefaultRepresentation) => (
