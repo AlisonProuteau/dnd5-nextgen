@@ -41,20 +41,15 @@ describe(`Character Points End-to-End Flow`, () => {
     });
 
     // Test: Assign abilities using dropdowns (prioritize race bonuses)
-    cy.get('div#ability-15').click();
-    cy.getByRole('option', 'Constitution').click(); // Will be 17 with +2
+    cy.selectOption('#ability-15-value', 'Constitution'); // Will be 17 with +2
     cy.getByRole('option', 'Constitution').should('not.be.visible');
-    cy.get('div#ability-14').click();
+    cy.get('#ability-14-value').click();
     cy.getByRole('option', 'Constitution').should('have.attr', 'aria-disabled', 'true'); // Already selected
     cy.getByRole('option', 'Wisdom').click(); // Will be 15 with +1
-    cy.get('div#ability-13').click();
-    cy.getByRole('option', 'Strength').click();
-    cy.get('div#ability-12').click();
-    cy.getByRole('option', 'Dexterity').click();
-    cy.get('div#ability-10').click();
-    cy.getByRole('option', 'Intelligence').click();
-    cy.get('div#ability-8').click();
-    cy.getByRole('option', 'Charisma').click();
+    cy.selectOption('#ability-13-value', 'Strength');
+    cy.selectOption('#ability-12-value', 'Dexterity');
+    cy.selectOption('#ability-10-value', 'Intelligence');
+    cy.selectOption('#ability-8-value', 'Charisma');
 
     // Test: Save button should be enabled
     cy.getByTestId('save-scores').should('be.enabled').click();
@@ -262,18 +257,12 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.contains('button', 'Point Buy').next().click();
     cy.getByRole('menuitem', 'Simple').click();
 
-    cy.get('div#ability-15').click();
-    cy.getByRole('option', 'Constitution').click(); // 15 = +2 modifier for HP
-    cy.get('div#ability-14').click();
-    cy.getByRole('option', 'Dexterity').click(); // 14 = +2 modifier for AC
-    cy.get('div#ability-13').click();
-    cy.getByRole('option', 'Strength').click();
-    cy.get('div#ability-12').click();
-    cy.getByRole('option', 'Wisdom').click();
-    cy.get('div#ability-10').click();
-    cy.getByRole('option', 'Intelligence').click();
-    cy.get('div#ability-8').click();
-    cy.getByRole('option', 'Charisma').click();
+    cy.selectOption('#ability-15-value', 'Constitution'); // 14 = +2 modifier for AC
+    cy.selectOption('#ability-14-value', 'Dexterity'); // 14 = +2 modifier for AC
+    cy.selectOption('#ability-13-value', 'Strength');
+    cy.selectOption('#ability-12-value', 'Wisdom');
+    cy.selectOption('#ability-10-value', 'Intelligence');
+    cy.selectOption('#ability-8-value', 'Charisma');
 
     cy.getByTestId('save-scores').click();
 
@@ -382,6 +371,12 @@ describe(`Character Points End-to-End Flow`, () => {
     // Test: Navigate back to edit points and switch to Random method
     cy.getByTestId('edit-points-edit-points-char').click();
     cy.url().should('include', '/points');
+    cy.get('#ability-str').should('have.value', '13');
+    cy.get('#ability-dex').should('have.value', '13'); // Without race bonus
+    cy.get('#ability-con').should('have.value', '9');
+    cy.get('#ability-int').should('have.value', '15');
+    cy.get('#ability-wis').should('have.value', '14');
+    cy.get('#ability-cha').should('have.value', '8');
 
     cy.contains('button', 'Point Buy').next().click();
     cy.getByRole('menuitem', 'Custom').click();
@@ -422,22 +417,29 @@ describe(`Character Points End-to-End Flow`, () => {
 
     // Test: All abilities should have dropdowns with standard array
     [15, 14, 13, 12, 10, 8].forEach((score) => {
-      cy.get(`#ability-${score}`).should('have.value', score);
+      cy.get(`#ability-${score}-value`)
+        .then((text) => {
+          ['Strength', 'Dexterity', 'Constitution', 'Intelligence', 'Wisdom', 'Charisma'].forEach(
+            (ability) => cy.wrap(text).should('not.contain.text', ability)
+          );
+        })
+        .click();
+      cy.getByRole('option')
+        .should(
+          'have.text',
+          ['Intelligence', 'Dexterity', 'Wisdom', 'Strength', 'Charisma', 'Constitution'].join('')
+        )
+        .each(($option) => cy.wrap($option).should('not.have.attr', 'aria-disabled', 'true'));
+      cy.press('Escape');
     });
 
     // Test: Reassign abilities
-    cy.get('div#ability-15').click();
-    cy.getByRole('option', 'Strength').click();
-    cy.get('div#ability-14').click();
-    cy.getByRole('option', 'Intelligence').click();
-    cy.get('div#ability-13').click();
-    cy.getByRole('option', 'Dexterity').click();
-    cy.get('div#ability-12').click();
-    cy.getByRole('option', 'Wisdom').click();
-    cy.get('div#ability-10').click();
-    cy.getByRole('option', 'Constitution').click();
-    cy.get('div#ability-8').click();
-    cy.getByRole('option', 'Charisma').click();
+    cy.selectOption('#ability-15-value', 'Strength');
+    cy.selectOption('#ability-14-value', 'Intelligence');
+    cy.selectOption('#ability-13-value', 'Dexterity');
+    cy.selectOption('#ability-12-value', 'Wisdom');
+    cy.selectOption('#ability-10-value', 'Constitution');
+    cy.selectOption('#ability-8-value', 'Charisma');
 
     cy.getByTestId('save-scores').click();
     cy.getByRole('status', 'Character Points Updated').should('be.visible');
@@ -455,5 +457,27 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('character-container').should('be.visible');
     cy.getByTestId('ability-str').should('contain.text', '15');
     cy.getByTestId('ability-dex').should('contain.text', '15');
+
+    cy.getByTestId('edit-points-edit-points-char').click();
+
+    cy.get('#ability-15-value').should('have.text', 'Strength');
+    cy.get('#ability-14-value').should('have.text', 'Intelligence');
+    cy.get('#ability-13-value').should('have.text', 'Dexterity');
+    cy.get('#ability-12-value').should('have.text', 'Wisdom');
+    cy.get('#ability-10-value').should('have.text', 'Constitution');
+    cy.get('#ability-8-value').should('have.text', 'Charisma');
+
+    cy.contains('button', 'Simple').next().click();
+    cy.getByRole('menuitem', 'Custom').click();
+    cy.get('#ability-str').clear().type('11').blur();
+    cy.contains('button', 'Custom').next().click();
+    cy.getByRole('menuitem', 'Simple').click();
+
+    cy.get('#ability-15-value').should('not.have.text', 'Strength');
+    cy.get('#ability-14-value').should('not.have.text', 'Intelligence');
+    cy.get('#ability-13-value').should('not.have.text', 'Dexterity');
+    cy.get('#ability-12-value').should('not.have.text', 'Wisdom');
+    cy.get('#ability-10-value').should('not.have.text', 'Constitution');
+    cy.get('#ability-8-value').should('not.have.text', 'Charisma');
   });
 });

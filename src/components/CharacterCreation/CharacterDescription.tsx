@@ -110,9 +110,8 @@ export function CharacterDescription({
           value={localFormData?.appearance}
           onChange={(value) => {
             const appearance = value as string | undefined;
-            setFormData
-              ? setFormData({ appearance })
-              : setLocalFormData({ ...localFormData, appearance });
+            setLocalFormData((prev) => ({ ...prev, appearance }));
+            setFormData?.({ appearance });
           }}
         />
       </Box>

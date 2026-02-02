@@ -177,7 +177,7 @@ export const formatPointsForDB = (
     }
   > = {};
   abilities?.forEach((ability) => {
-    const score = points[ability.index] || character.abilityScores[ability.index].score || 8;
+    const score = points[ability.index] || character.abilityScores?.[ability.index]?.score || 8;
     const raceModifier = character?.abilities.find(
       (bonusAbility) => bonusAbility.ability_score.index === ability.index
     );

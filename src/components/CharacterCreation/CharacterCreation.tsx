@@ -69,7 +69,7 @@ export function CharacterCreation() {
 
     await firebaseActions.create({
       ...transformFormData(form.formData),
-      version
+      version: version ?? 'Legacy'
     });
   };
 
