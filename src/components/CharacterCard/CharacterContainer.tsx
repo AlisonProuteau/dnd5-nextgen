@@ -2,12 +2,22 @@ import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useSwipeable } from 'react-swipeable';
 import { CoinPurse } from '@assets';
-import { EditRounded, EventNote, KeyboardArrowLeft, KeyboardArrowRight } from '@mui/icons-material';
+import {
+  Delete,
+  EditRounded,
+  EventNote,
+  KeyboardArrowLeft,
+  KeyboardArrowRight
+} from '@mui/icons-material';
 import {
   Box,
   Button,
   CircularProgress,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Fab,
   MobileStepper,
@@ -16,6 +26,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { getClassInfo } from '@api/ressources';
 import { getCharacter } from '@api/users';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { button, fab, linkButton } from '@utils/ui';
 import type { Classes } from '@representations/character/class.representation';
@@ -28,6 +39,7 @@ import { MoneyManager } from './Equipment/MoneyManager';
 import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
+// TODO: Add e2e tests for Edit and Delete
 export function CharacterContainer() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -36,11 +48,18 @@ export function CharacterContainer() {
   const [steps, setSteps] = useState(3);
   const [activeStep, setActiveStep] = useState(0);
   const { isOn: isNoteOpen, turnOn: openNote, turnOff: closeNote } = useToggle(false);
+  const { isOn: isDeleteOpen, turnOn: openDelete, turnOff: closeDelete } = useToggle(false);
   const {
     isOn: isMoneyDialogOpen,
     turnOn: openMoneyDialog,
     turnOff: closeMoneyDialog
   } = useToggle(false);
+  const firebaseCrud = useFirebaseCrud({
+    collectionPath: 'users/{userId}/characters',
+    invalidateQueryKey: ['fetchCharacters'],
+    successMessages: { delete: 'Character deleted successfully' },
+    redirect: { delete: { path: '/' } }
+  });
 
   const { data: character, isFetching: isCharacterLoading } = useQuery({
     queryKey: ['fetchCharacter', user?.uid, id],
@@ -107,7 +126,7 @@ export function CharacterContainer() {
   });
 
   return character ? (
-    <Container sx={{ paddingBottom: '30px' }} data-testid="character-container">
+    <Container sx={{ paddingBottom: '56px' }} data-testid="character-container">
       {character.abilityScores ? (
         <Fragment>
           <Box
@@ -171,15 +190,9 @@ export function CharacterContainer() {
         <CircularProgress size={24} data-testid="loading" />
       )}
 
-      <Fab size="small" sx={{ ...button, ...fab }} disabled={true}>
-        <Link to="points" state={{ characterId: id }} css={linkButton}>
-          <EditRounded />
-        </Link>
-      </Fab>
-
       <Fab
         size="small"
-        sx={{ ...button, ...fab, marginRight: 6 }}
+        sx={{ ...button, ...fab }}
         onClick={openNote}
         data-testid={`notes-${character.id}`}
       >
@@ -189,18 +202,65 @@ export function CharacterContainer() {
 
       <Fab
         size="small"
-        sx={{ ...button, ...fab, padding: 0.6, marginRight: 12 }}
+        sx={{ ...button, ...fab, padding: 0.6, marginRight: 6 }}
         onClick={openMoneyDialog}
         data-testid={`coin-purse-${character.id}`}
       >
         <CoinPurse fill="currentColor" width="100%" height="100%" />
       </Fab>
+
       <MoneyManager
         characterId={character.id}
         isMoneyDialogOpen={isMoneyDialogOpen}
         closeMoneyDialog={closeMoneyDialog}
         currentAmount={character.money}
       />
+
+      {activeStep === 0 && (
+        <Fragment>
+          <Fab
+            size="small"
+            sx={{ ...button, ...fab, marginRight: 12 }}
+            data-testid={`edit-points-${character.id}`}
+          >
+            <Link to="points" state={{ characterId: id }} css={linkButton}>
+              <EditRounded />
+            </Link>
+          </Fab>
+
+          <Fab
+            size="small"
+            sx={{ ...button, ...fab, padding: 0.6, marginRight: 18 }}
+            onClick={openDelete}
+            data-testid={`delete-${character.id}`}
+          >
+            <Delete />
+          </Fab>
+        </Fragment>
+      )}
+
+      <Dialog maxWidth="xs" open={isDeleteOpen} onClose={closeDelete}>
+        <DialogTitle>Delete {character.name}</DialogTitle>
+        <DialogContent>
+          Are you sure you want to delete this character?
+          <br />
+          This action cannot be undone.
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus disabled={firebaseCrud.isLoading} onClick={closeDelete}>
+            Cancel
+          </Button>
+          <Button
+            disabled={firebaseCrud.isLoading}
+            onClick={async () => {
+              await firebaseCrud.remove(character.id);
+              closeDelete();
+            }}
+          >
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   ) : null;
 }

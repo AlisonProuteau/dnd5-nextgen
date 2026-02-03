@@ -1,3 +1,4 @@
+import { pickBy, uniqBy } from 'lodash';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
@@ -5,7 +6,7 @@ import type { AbilityScore } from '@representations/campaign/adventure.represent
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
-import type { Character } from '@representations/user.representation';
+import type { Character, CharacterFormData } from '@representations/user.representation';
 import { getAbilityScoreModifier, getArmorClass } from './character.utils';
 
 export type ChoiceSelection = DefaultRepresentation & {
@@ -124,6 +125,52 @@ export const mapTraits = (
     secondOptionKey: 'spells'
   });
 
+export const transformFormData = (data: Partial<CharacterFormData>): Partial<Character> => {
+  const skills = data.proficiencies?.filter((p) => p.index.startsWith('skill-'));
+  const formattedProficiencies = data.proficiencies?.filter(
+    (p) => !p.index.startsWith('saving-throw-') && !p.index.startsWith('skill-')
+  );
+
+  return pickBy(
+    {
+      ...data,
+      class: data.class ? { index: data.class?.index, name: data.class?.name } : undefined,
+      race: data.race ? { index: data.race?.index, name: data.race?.name } : undefined,
+      languages: uniqBy(data.languages, 'index'),
+      proficiencies: uniqBy(formattedProficiencies, 'index'),
+      skills: uniqBy(skills, 'index'),
+      equipments: data.equipments?.reduce((acc: ChoiceSelection[], curr) => {
+        const existingIndex = acc.findIndex(({ index }) => index === curr.index);
+        if (existingIndex >= 0) {
+          return acc.with(existingIndex, {
+            ...curr,
+            count: (acc[existingIndex].count || 1) + (curr.count || 1)
+          });
+        }
+        return [...acc, curr];
+      }, []),
+      bonds: data.bonds
+        ?.flatMap((bond) => bond.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      personality: data.personality
+        ?.flatMap((trait) => trait.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      ideals: data.ideals
+        ?.flatMap((ideal) => ideal.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      flaws: data.flaws
+        ?.flatMap((flaw) => flaw.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      level: 1
+    },
+    (d) => !!(Array.isArray(d) ? d?.length : d)
+  );
+};
+
 export const formatPointsForDB = (
   character: Character,
   points: Record<string, number>,
@@ -140,27 +187,22 @@ export const formatPointsForDB = (
       score: number;
       modifier: number;
     }
-  > = character?.abilityScores || {};
-  if (!character?.abilityScores)
-    abilities?.forEach((ability) => {
-      const raceModifier = character?.abilities.find(
-        (bonusAbility) => bonusAbility.ability_score.index === ability.index
-      );
-      const finalScore = raceModifier
-        ? points[ability.index] + raceModifier.bonus
-        : points[ability.index];
+  > = {};
+  abilities?.forEach((ability) => {
+    const score = points[ability.index] || character.abilityScores?.[ability.index]?.score || 8;
+    const raceModifier = character?.abilities.find(
+      (bonusAbility) => bonusAbility.ability_score.index === ability.index
+    );
 
-      formattedAbilities = {
-        ...formattedAbilities,
-        [ability.index]: {
-          index: ability.index,
-          name: ability.name,
-          full_name: ability.full_name,
-          score: finalScore,
-          modifier: getAbilityScoreModifier(finalScore)
-        }
-      };
-    });
+    const finalScore = raceModifier ? score + raceModifier.bonus : score;
+    formattedAbilities[ability.index] = {
+      index: ability.index,
+      name: ability.name,
+      full_name: ability.full_name,
+      score: finalScore,
+      modifier: getAbilityScoreModifier(finalScore)
+    };
+  });
 
   const hitPoints =
     (classInfo?.hit_die || 6) +

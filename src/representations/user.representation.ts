@@ -39,6 +39,7 @@ export interface CharacterFormData {
   proficiencyBonus: number;
 }
 
+export type AbilityScoreMethod = 'set' | 'random' | 'point_cost';
 export type Character = CharacterFormData & {
   id: string;
   hit_die: number;
@@ -55,6 +56,7 @@ export type Character = CharacterFormData & {
       modifier: number;
     }
   >;
+  abilityScoreMethod: AbilityScoreMethod;
   level: number;
   knownSpells?: (DefaultRepresentation & { level: number; ritual?: boolean; added?: boolean })[];
   preparedSpells?: (DefaultRepresentation & { level: number })[];

@@ -295,49 +295,216 @@ describe(`Character Sheet End-to-End`, () => {
 
     cy.getByTestId('description-appearance')
       .should('contain.text', 'Appearance')
-      .and('contain.text', delfyData.appearance!);
+      .and('include.text', delfyData.appearance!);
     cy.getByTestId('description-background').should('have.text', 'BackgroundCustom');
     cy.getByTestId('description-bonds')
       .should('contain.text', 'Bonds')
-      .and('contain.text', delfyData.bonds!.join(''));
+      .and('include.text', delfyData.bonds!.join(''));
     cy.getByTestId('description-ideals')
       .should('contain.text', 'Ideals')
-      .and('contain.text', delfyData.ideals!.join(''));
+      .and('include.text', delfyData.ideals!.join(''));
     cy.getByTestId('description-flaws')
       .should('contain.text', 'Flaws')
-      .and('contain.text', delfyData.flaws!.join(''));
+      .and('include.text', delfyData.flaws!.join(''));
     cy.getByTestId('description-personality')
       .should('contain.text', 'Personality')
-      .and('contain.text', delfyData.personality!.join(''));
+      .and('include.text', delfyData.personality!.join(''));
 
     // Test: Edit description fields
-    cy.getByTestId('description-appearance', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
-      cy.get('#appearance').clear().type('New appearance text');
-      cy.wrap($el).getByTestId('-save-button', { type: 'contains' }).click();
-    });
-    cy.getByTestId('description-appearance').should('contain.text', 'New appearance text');
+    cy.getByTestId('description-appearance-edit').should('be.visible').click();
+    cy.getByTestId('close-description-edit').should('be.visible');
+    cy.getByTestId('description-selection').should('be.visible');
 
-    cy.getByTestId('description-personality', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
-      cy.get('#personality')
-        .clear()
-        .type('New personality trait')
-        .type('{enter}')
-        .type('Another trait');
-      cy.wrap($el).getByTestId('-save-button', { type: 'contains' }).click();
-    });
-    cy.getByTestId('description-personality')
-      .should('contain.text', 'New personality trait')
-      .and('contain.text', 'Another trait');
+    cy.get('#name').should('have.value', delfyData.name);
+    cy.get('#age').should('have.value', delfyData.age);
+    cy.get('#sex').should('contain.text', 'Female');
+    cy.get('#appearance').should('have.value', delfyData.appearance);
 
-    // Test: Cancel edit
-    cy.getByTestId('description-ideals', { type: 'exact' }).within(($el) => {
-      cy.wrap($el).getByTestId('-edit-button', { type: 'contains' }).click();
-      cy.get('#ideals').clear().type('This should be cancelled');
-      cy.wrap($el).getByTestId('-cancel-button', { type: 'contains' }).click();
-    });
-    cy.getByTestId('description-ideals').should('contain.text', delfyData.ideals!.join(''));
+    cy.get('#name').clear().type('Delfy Updated');
+    cy.get('#age').clear().type('25');
+    cy.selectOption('#sex', 'Male');
+    cy.get('#appearance').clear().type('Updated appearance text for testing.');
+
+    cy.getButton('Next').should('be.enabled').click();
+    cy.getByRole('status', 'Updated successfully').should('be.visible');
+    cy.getByTestId('close-description-edit').should('not.be.visible');
+
+    // Test: Verify changes persisted
+    cy.contains('Delfy Updated').should('be.visible');
+    cy.getByTestId('description-age').should('contain.text', '25');
+    cy.getByTestId('description-sex-M').should('exist');
+    cy.getByTestId('description-appearance').should(
+      'contain.text',
+      'Updated appearance text for testing.'
+    );
+
+    // Test: Revert to original
+    cy.getByTestId('description-appearance-edit').click();
+    cy.get('#name').clear().type('Delfy');
+    cy.get('#age').clear().type('23');
+    cy.selectOption('#sex', 'Female');
+    cy.get('#appearance').clear().type(delfyData.appearance!);
+    cy.getButton('Next').click();
+    cy.getByRole('status', 'Updated successfully').should('be.visible');
+
+    cy.contains('Updated').should('not.be.visible');
+    cy.getByTestId('description-age').should('contain.text', '23');
+    cy.getByTestId('description-sex-F').should('exist');
+    cy.getByTestId('description-appearance').should('contain.text', delfyData.appearance);
+
+    // Test: Cancel description edit via escape
+    cy.getByTestId('description-appearance-edit').click();
+    cy.get('#name').clear().type('Should not save');
+    cy.press('Escape');
+    cy.getByTestId('close-description-edit').should('not.be.visible');
+    cy.contains('Delfy').should('be.visible');
+    cy.contains('Should not save').should('not.exist');
+
+    // Test: Cancel description edit via close button
+    cy.getByTestId('description-appearance-edit').click();
+    cy.get('#appearance').clear().type('This should be cancelled');
+    cy.getByTestId('close-description-edit').click();
+    cy.getByTestId('description-appearance').should('not.contain.text', 'This should be cancelled');
+    cy.getByTestId('description-appearance').should('contain.text', delfyData.appearance);
+
+    // Test: Edit background fields (Acolyte)
+    cy.getByTestId('description-background-edit').should('be.visible').click();
+    cy.getByTestId('close-background-edit').should('be.visible');
+
+    cy.get('#background').should('contain.text', 'Custom');
+    cy.get('#bonds').should('have.value', delfyData.bonds!.join('\n'));
+    cy.get('#personality').should('have.value', delfyData.personality!.join('\n'));
+    cy.get('#ideals').should('have.value', delfyData.ideals!.join('\n'));
+    cy.get('#flaws').should('have.value', delfyData.flaws!.join('\n'));
+
+    cy.get('#background').click();
+    cy.getByRole('option', 'Acolyte').click();
+    cy.get('#alignment').should('have.text', delfyData.alignment.name);
+
+    cy.getByRole('presentation', 'Choose Bonds').next().find('[id^="choice-"]').first().click();
+    cy.getByRole('presentation', 'Choose Personality Traits')
+      .next()
+      .within(() => {
+        cy.get('[id^="choice-"]').first().click();
+        cy.get('[id^="choice-"]').eq(1).click();
+      });
+    cy.getByRole('presentation', 'Choose Ideals')
+      .next()
+      .should('have.text', 'Deselect your aligment to access all ideals');
+    cy.getByRole('presentation', 'Choose Ideals')
+      .next()
+      .next()
+      .within(() => {
+        cy.get('[id^="choice-"]').should('have.length', 3);
+        cy.get('[id^="choice-"]')
+          .parentsUntil('label')
+          .parent()
+          .each(($ideal) => cy.wrap($ideal).should('contain.text', delfyData.alignment.name));
+        cy.get('[id^="choice-"]').first().click();
+      });
+    cy.getByRole('presentation', 'Choose Flaws').next().find('[id^="choice-"]').first().click();
+    cy.getByRole('presentation', 'Choose Languages')
+      .next()
+      .within(() => {
+        cy.get('[id^="choice-"]').first().click();
+        cy.get('[id^="choice-"]').eq(1).click();
+      });
+    cy.getByRole('presentation', 'Choose equipments')
+      .next()
+      .find('[id^="choice-"]')
+      .first()
+      .click();
+
+    cy.getButton('Next').should('be.enabled').click();
+    cy.getByRole('status', 'Updated successfully').should('be.visible');
+    cy.getByTestId('close-background-edit').should('not.exist');
+
+    // Test: Verify changes persisted
+    cy.getByTestId('description-background').should('have.text', 'BackgroundAcolyte');
+    cy.getByTestId('description-bonds').should(
+      'have.text',
+      'BondsI would die to recover an ancient relic of my faith that was lost long ago.'
+    );
+    cy.getByTestId('description-personality').should(
+      'have.text',
+      "PersonalityI idolize a particular hero of my faith, and constantly refer to that person's deeds and example.I can find common ground between the fiercest enemies, empathizing with them and always working toward peace."
+    );
+    cy.getByTestId('description-ideals').should(
+      'have.text',
+      'IdealsCharity. I always try to help those in need, no matter what the personal cost.'
+    );
+    cy.getByTestId('description-flaws').should(
+      'have.text',
+      'FlawsI judge others harshly, and myself even more severely.'
+    );
+
+    // Test: Verify aligment changes to match background restrictions
+    cy.getByTestId('description-background-edit').click();
+    cy.getByRole('presentation', 'Choose Ideals')
+      .next()
+      .should('have.text', 'Deselect your ideal to access all aligments');
+    cy.getByRole('presentation', 'Choose Ideals')
+      .next()
+      .next()
+      .find('[id^="choice-"]')
+      .each(($ideal) => cy.wrap($ideal).click());
+    cy.selectOption('#alignment', /^ $/);
+    cy.getByRole('presentation', 'Choose Ideals')
+      .next()
+      .next()
+      .within(() => {
+        cy.get('[id^="choice-"]').should('have.length.above', 3);
+        cy.get('[id^="choice-"]')
+          .parentsUntil('label')
+          .parent()
+          .find(`:not(:contains('${delfyData.alignment.name}'))`)
+          .first()
+          .click();
+      });
+    cy.get('#alignment').click();
+    cy.getByRole('option')
+      .contains(delfyData.alignment.name)
+      .should('have.attr', 'aria-disabled', 'true');
+    cy.press('Escape');
+
+    // Test: Revert to custom background
+    cy.get('#background').click();
+    cy.getByRole('option', 'Custom').click();
+    cy.get('#alignment').should('have.value', '');
+    cy.selectOption('#alignment', delfyData.alignment.name);
+    cy.get('#bonds').clear().type(delfyData.bonds!.join('\n'));
+    cy.get('#personality').clear().type(delfyData.personality!.join('\n'));
+    cy.get('#ideals').clear().type(delfyData.ideals!.join('\n'));
+    cy.get('#flaws').clear().type(delfyData.flaws!.join('\n'));
+    cy.getButton('Next').click();
+    cy.getByRole('status', 'Updated successfully').should('be.visible');
+
+    cy.getByTestId('description-background').should('have.text', 'BackgroundCustom');
+    cy.getByTestId('description-bonds').should('have.text', 'Bonds' + delfyData.bonds!.join(''));
+    cy.getByTestId('description-personality').should(
+      'have.text',
+      'Personality' + delfyData.personality!.join('')
+    );
+    cy.getByTestId('description-ideals').should('have.text', 'Ideals' + delfyData.ideals!.join(''));
+    cy.getByTestId('description-flaws').should('have.text', 'Flaws' + delfyData.flaws!.join(''));
+
+    // Test: Cancel background edit via escape
+    cy.getByTestId('description-background-edit').click();
+    cy.get('#background').click();
+    cy.getByRole('option', 'Acolyte').click();
+    cy.press('Escape');
+    cy.getByTestId('close-background-edit').should('not.exist');
+    cy.getByTestId('description-background').should('have.text', 'BackgroundCustom');
+
+    // Test: Cancel background edit via close button
+    cy.getByTestId('description-background-edit').click();
+    cy.get('#bonds').clear().type('This change should be cancelled');
+    cy.getByTestId('close-background-edit').click();
+    cy.getByTestId('description-bonds').should(
+      'not.contain.text',
+      'This change should be cancelled'
+    );
+    cy.getByTestId('description-bonds').should('include.text', delfyData.bonds![0]);
 
     // Test: Spell section
     clickUntilStep('spells');
@@ -577,6 +744,60 @@ describe(`Character Sheet End-to-End`, () => {
       .should('be.visible');
     clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 14);
+  });
+
+  it('should handle delete character workflow with confirmation and cancellation', () => {
+    const deleteTestCharacter = {
+      ...delfyData,
+      id: 'delete-test-character',
+      name: 'Delete Test Character'
+    };
+    cy.createTestCharacter(Cypress.testUser.uid, deleteTestCharacter.id, deleteTestCharacter);
+
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${deleteTestCharacter.id}`).should('be.visible');
+    cy.getByTestId(`character-card-${deleteTestCharacter.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Delete button only visible on stats step
+    cy.getByTestId(`delete-${deleteTestCharacter.id}`).should('be.visible');
+    cy.getByTestId('next-step').click();
+    cy.getByTestId(`delete-${deleteTestCharacter.id}`).should('not.exist');
+    clickUntilStep('stats', 'previous');
+
+    // Test: Cancel delete via Cancel button
+    cy.getByTestId(`delete-${deleteTestCharacter.id}`).click();
+    cy.getByRole('dialog').within(($dialog) => {
+      cy.wrap($dialog).should('contain.text', `Delete ${deleteTestCharacter.name}`);
+      cy.wrap($dialog).should('contain.text', 'Are you sure you want to delete this character?');
+      cy.wrap($dialog).should('contain.text', 'This action cannot be undone.');
+      cy.wrap($dialog).getButton('Cancel').should('be.visible').click();
+    });
+    cy.getByRole('dialog').should('not.exist');
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Cancel delete via Escape key
+    cy.getByTestId(`delete-${deleteTestCharacter.id}`).click();
+    cy.getByRole('dialog').should('be.visible');
+    cy.press('Escape');
+    cy.getByRole('dialog').should('not.exist');
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Confirm delete and verify redirect to home
+    cy.getByTestId(`delete-${deleteTestCharacter.id}`).click();
+    cy.getByRole('dialog').within(($dialog) => {
+      cy.wrap($dialog).getButton('Ok').should('be.visible').click();
+    });
+    cy.url().should('not.include', '/character');
+    cy.getByRole('status', 'Character deleted successfully').should('be.visible');
+
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${deleteTestCharacter.id}`).should('not.exist');
+    cy.callFirestore(
+      'get',
+      `users/${Cypress.testUser.uid}/characters/${deleteTestCharacter.id}`
+    ).should('be.null');
   });
 
   const clickUntilStep = (

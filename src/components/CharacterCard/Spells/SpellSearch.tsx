@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Separator } from '@base-ui-components/react';
+import { Separator } from '@base-ui/react';
 import { AddCircleOutline, RemoveCircleOutline } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';

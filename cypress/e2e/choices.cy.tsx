@@ -187,6 +187,7 @@ describe('Choices', () => {
     // Test: Selected languages are removed (gnomish)
     cy.get('button:contains("Next"):visible').should('be.enabled').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.selectOption('#background', 'Acolyte');
     cy.getByTestId('background-selection')
       .getByRole('presentation', 'Choose Languages')
       .next()
