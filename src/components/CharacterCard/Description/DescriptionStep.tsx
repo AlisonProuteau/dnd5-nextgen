@@ -78,6 +78,7 @@ export function Description({ character }: DefaultProps) {
   };
 
   useEffect(() => {
+    if (!isEditBackground && !isEditDescription) return;
     const handleEscKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.code === 'Escape') {
         closeEditDescription();
@@ -87,7 +88,7 @@ export function Description({ character }: DefaultProps) {
 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, []);
+  }, [isEditBackground, isEditDescription, closeEditBackground, closeEditDescription]);
 
   return (
     <Fragment>

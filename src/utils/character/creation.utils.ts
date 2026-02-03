@@ -149,10 +149,22 @@ export const transformFormData = (data: Partial<CharacterFormData>): Partial<Cha
         }
         return [...acc, curr];
       }, []),
-      bonds: data.bonds?.flatMap((bond) => bond.split('\n')),
-      personality: data.personality?.flatMap((trait) => trait.split('\n')),
-      ideals: data.ideals?.flatMap((ideal) => ideal.split('\n')),
-      flaws: data.flaws?.flatMap((flaw) => flaw.split('\n')),
+      bonds: data.bonds
+        ?.flatMap((bond) => bond.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      personality: data.personality
+        ?.flatMap((trait) => trait.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      ideals: data.ideals
+        ?.flatMap((ideal) => ideal.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
+      flaws: data.flaws
+        ?.flatMap((flaw) => flaw.split('\n'))
+        .map((s) => s.trim())
+        .filter(Boolean),
       level: 1
     },
     (d) => !!(Array.isArray(d) ? d?.length : d)
