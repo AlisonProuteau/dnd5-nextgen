@@ -54,7 +54,7 @@ export function Home() {
         display="grid"
         data-testid="character-grid"
         sx={{
-          gridGap: '50px',
+          gridGap: '24px',
           gridTemplateColumns: `repeat(auto-fit, minmax(275px, 1fr))`
         }}
       >

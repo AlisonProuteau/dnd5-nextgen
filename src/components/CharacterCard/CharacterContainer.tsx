@@ -39,7 +39,6 @@ import { MoneyManager } from './Equipment/MoneyManager';
 import { SpellStep } from './Spells/SpellsStep';
 import { Stats } from './Stats/StatsStep';
 
-// TODO: Add e2e tests for Edit and Delete
 export function CharacterContainer() {
   const { user } = useAuth();
   const navigate = useNavigate();
