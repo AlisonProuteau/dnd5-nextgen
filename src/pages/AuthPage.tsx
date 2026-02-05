@@ -104,6 +104,7 @@ export function AuthPage() {
         {!isLogin && (
           <ControledInput
             fullWidth
+            id="passwordConfrim"
             type={form.formData.showPassword ? 'text' : 'password'}
             label="Confirm Password"
             autoComplete="off"

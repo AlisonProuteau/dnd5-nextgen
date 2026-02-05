@@ -8,7 +8,7 @@ interface LoaderProps {
 export function FullPageLoader({ open }: LoaderProps) {
   return (
     <Backdrop sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1, marginTop: '48px' })} open={open}>
-      <CircularProgress />
+      {open && <CircularProgress />}
     </Backdrop>
   );
 }
