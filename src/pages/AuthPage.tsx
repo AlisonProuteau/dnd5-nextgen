@@ -11,7 +11,7 @@ interface FormData {
   name?: string;
   email?: string;
   password?: string;
-  passwordConfrim?: string;
+  passwordConfirm?: string;
   showPassword: boolean;
 }
 
@@ -103,15 +103,15 @@ export function AuthPage() {
         {!isLogin && (
           <ControledInput
             fullWidth
-            id="passwordConfrim"
+            id="passwordConfirm"
             type={form.formData.showPassword ? 'text' : 'password'}
             label="Confirm Password"
             autoComplete="off"
             onInput={({ target }) =>
-              form.setFormData({ passwordConfrim: (target as HTMLInputElement).value as string })
+              form.setFormData({ passwordConfirm: (target as HTMLInputElement).value as string })
             }
-            errorMessage={form.getFieldError('passwordConfrim')}
-            hasError={!form.isFieldValid('passwordConfrim')}
+            errorMessage={form.getFieldError('passwordConfirm')}
+            hasError={!form.isFieldValid('passwordConfirm')}
             endAdornment={
               <InputAdornment position="end">
                 <IconButton

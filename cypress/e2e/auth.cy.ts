@@ -190,14 +190,14 @@ describe(`Authentication End-to-End`, () => {
       cy.get('#password').clear().type('P@ssWord123');
 
       // Test: password confirmation matching
-      cy.get('#passwordConfrim')
+      cy.get('#passwordConfirm')
         .type('differentPassword')
         .should('have.value', 'differentPassword')
         .blur();
-      cy.get('#passwordConfrim').closest('form').should('contain.text', 'Passwords mismatch');
+      cy.get('#passwordConfirm').closest('form').should('contain.text', 'Passwords mismatch');
       cy.get('button[type="submit"]').should('be.disabled');
 
-      cy.get('#passwordConfrim').clear().type('P@ssWord123').blur();
+      cy.get('#passwordConfirm').clear().type('P@ssWord123').blur();
       cy.get('button[type="submit"]').should('be.enabled').click();
 
       // Test: duplicate email error handling
@@ -219,7 +219,7 @@ describe(`Authentication End-to-End`, () => {
       cy.get('#name').type('Test User for Sign Up');
       cy.get('#email').type(testUser.email);
       cy.get('#password').type(testUser.password);
-      cy.get('#passwordConfrim').type(testUser.password);
+      cy.get('#passwordConfirm').type(testUser.password);
       cy.get('button[type="submit"]').click();
 
       cy.url().should('include', '/settings');
