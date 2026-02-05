@@ -3,7 +3,6 @@ import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
   Checkbox,
-  CircularProgress,
   FormControl,
   FormControlLabel,
   FormGroup,
@@ -15,6 +14,7 @@ import {
 } from '@mui/material';
 import { Box, Container } from '@mui/system';
 import { useFirebaseCrud, useForm } from '@hooks/index';
+import { Loader } from '@shared/Loader';
 import { type Version, VERSIONS } from '@utils/constants';
 import {
   AdditionalMoneyUnits,
@@ -132,7 +132,7 @@ export function Settings() {
             variant="contained"
             disabled={form.formData.version !== 'Legacy'}
           >
-            {firebaseCrud.isLoading ? <CircularProgress size={24} /> : 'Submit'}
+            Submit
           </Button>
 
           {form.formData.version !== 'Legacy' && (
@@ -152,6 +152,8 @@ export function Settings() {
           )}
         </FormControl>
       </form>
+
+      <Loader open={firebaseCrud.isLoading} />
     </Container>
   );
 }

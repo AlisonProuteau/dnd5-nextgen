@@ -18,6 +18,7 @@ import { isEqual, omit, omitBy, uniqBy } from 'lodash';
 import { getAllAbilities, getClassInfo, getEquipment, getMagicItem } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
 import { randomInteger } from '@utils/calculations';
@@ -223,7 +224,7 @@ export function CharacterPoints() {
     }
   };
 
-  return character ? (
+  return (
     <Container sx={{ overflowX: 'clip', paddingTop: '15px' }}>
       <Divider component="div" role="presentation" sx={{ paddingBottom: '30px' }} variant="middle">
         <Typography>Ability Scores</Typography>
@@ -232,7 +233,7 @@ export function CharacterPoints() {
       <Box display="flex" flexDirection="column" gap="15px" alignItems="center">
         <Box display="flex" gap="5px">
           <Typography variant="subtitle2">Race Modifiers: </Typography>
-          {character.abilities?.map((ability, i) => (
+          {character?.abilities?.map((ability, i) => (
             <Typography key={`modifier-${ability.ability_score.index}`} variant="subtitle2">
               {`${i > 0 ? '; ' : ''}${ability.ability_score.name}: +${ability.bonus}`}
             </Typography>
@@ -347,8 +348,8 @@ export function CharacterPoints() {
           <SaveAltRounded sx={linkButton} />
         </Fab>
       </Box>
+
+      <Loader open={!character || firebaseCrud.isLoading} />
     </Container>
-  ) : (
-    <CircularProgress size={24} />
   );
 }

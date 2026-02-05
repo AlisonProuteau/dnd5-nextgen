@@ -1,16 +1,15 @@
 import { type FormEvent, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Backdrop,
   Box,
   Button,
-  CircularProgress,
   Container,
   Step,
   StepLabel,
   Stepper
 } from '@mui/material';
 import { useFirebaseCrud, useForm } from '@hooks/index';
+import { Loader } from '@shared/Loader';
 import { transformFormData } from '@utils/character';
 import type { CharacterFormData } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -174,12 +173,7 @@ export function CharacterCreation() {
         )}
       </form>
 
-      <Backdrop
-        sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1 })}
-        open={firebaseActions.isLoading}
-      >
-        <CircularProgress />
-      </Backdrop>
+      <Loader open={firebaseActions.isLoading} />
     </Container>
   );
 }

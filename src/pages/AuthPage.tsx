@@ -1,17 +1,10 @@
 import { type FormEvent, Fragment, useEffect, useState } from 'react';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import {
-  Backdrop,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  IconButton,
-  InputAdornment
-} from '@mui/material';
+import { Box, Button, Container, IconButton, InputAdornment } from '@mui/material';
 import { createUser, signIn } from '@api/users';
 import { useForm, useToggle } from '@hooks/index';
 import { ControledInput } from '@shared/ControledInput';
+import { Loader } from '@shared/Loader';
 import { getLoginValidationSchema } from '@utils/ui/auth.utils';
 
 interface FormData {
@@ -51,10 +44,6 @@ export function AuthPage() {
 
   return (
     <Container maxWidth="xs">
-      <Backdrop sx={(theme) => ({ zIndex: theme.zIndex.drawer + 1 })} open={isSaving}>
-        <CircularProgress />
-      </Backdrop>
-
       <form
         onSubmit={handleSubmit}
         onFocus={({ target }) => target.id && form.clearFieldError(target.id as keyof FormData)}
@@ -127,9 +116,7 @@ export function AuthPage() {
               />
             )}
           </Fragment>
-        ) : (
-          <CircularProgress size={24} />
-        )}
+        ) : null}
 
         <Button
           disabled={!form.isValid || isSaving}
@@ -147,6 +134,8 @@ export function AuthPage() {
           </Button>
         </Box>
       </form>
+
+      <Loader open={isSaving} />
     </Container>
   );
 }
