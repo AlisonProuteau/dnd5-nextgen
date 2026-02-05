@@ -4,7 +4,7 @@ interface AuthFormData {
   name?: string;
   email?: string;
   password?: string;
-  passwordConfrim?: string;
+  passwordConfirm?: string;
   showPassword: boolean;
 }
 
@@ -35,7 +35,7 @@ export const getLoginValidationSchema = (isLogin: boolean): ValidationSchema<Aut
         }
       ]
     : [validationRules.required('Required')],
-  passwordConfrim: !isLogin
+  passwordConfirm: !isLogin
     ? [
         validationRules.required('Required'),
         (value: string, formData: Partial<AuthFormData>) =>

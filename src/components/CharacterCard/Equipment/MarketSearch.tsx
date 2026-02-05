@@ -1,16 +1,9 @@
 import { Fragment, useMemo, useState } from 'react';
-import {
-  Box,
-  CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  Typography
-} from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getAllEquipment, getAllMagicItems, getEquipmentCategories } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
+import { Loader } from '@shared/Loader';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -162,7 +155,7 @@ export function MarketSearch({
 
       <Box overflow="auto" flex={1} alignSelf="center" width="100%">
         {isEquipmentListLoading ? (
-          <CircularProgress size={24} sx={{ margin: 2 }} />
+          <Loader />
         ) : equipment.length === 0 ? (
           <Typography color="text.secondary" textAlign="center">
             {selectedCategory === 'all' && search.length === 0

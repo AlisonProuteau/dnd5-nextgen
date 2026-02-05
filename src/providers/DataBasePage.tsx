@@ -4,7 +4,6 @@ import {
   Box,
   Button,
   Checkbox,
-  CircularProgress,
   Container,
   FormControl,
   FormControlLabel,
@@ -14,6 +13,7 @@ import {
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
 import { getAllClasses, getAllRaces, getAllSubclasses, getAllSubraces } from '@api/ressources';
+import { FullPageLoader } from '@shared/Loader';
 import { getAll } from '@utils/api.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Level } from '@representations/campaign/level.representation';
@@ -243,10 +243,10 @@ export function DataBasePage() {
       <Button
         fullWidth
         variant="outlined"
-        disabled={isLoading || isMigrating || true}
+        disabled={isLoading || isMigrating}
         onClick={migrateData}
       >
-        {isMigrating ? <CircularProgress size={24} /> : 'Migrate All'}
+        Migrate All
       </Button>
 
       <form>
@@ -277,7 +277,7 @@ export function DataBasePage() {
             disabled={isLoading || isMigrating}
             onClick={() => createDocument(docContent, docID)}
           >
-            {isLoading ? <CircularProgress size={24} /> : 'Add to database'}
+            Add to database
           </Button>
           <FormControlLabel
             sx={{ marginX: 0 }}
@@ -286,6 +286,8 @@ export function DataBasePage() {
           />
         </Box>
       </form>
+
+      <FullPageLoader open={isLoading || isMigrating} />
     </Container>
   );
 }

@@ -1,11 +1,12 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { ArchiveOutlined, NoteAdd, NoteAlt } from '@mui/icons-material';
-import { Box, Button, CircularProgress, Drawer, IconButton, Typography } from '@mui/material';
+import { Box, Button, Drawer, IconButton, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCharacterNotes } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
+import { Loader } from '@shared/Loader';
 import type { Character, CharacterNote } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterNotesList } from './CharacterNotesList';
@@ -154,7 +155,7 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
         </Box>
 
         {isCharacterNotesLoading ? (
-          <CircularProgress key={`${character.id}-notes-loading`} sx={{ margin: 'auto' }} />
+          <Loader key={`${character.id}-notes-loading`} size={40} />
         ) : (
           <Box flex={1} overflow="auto">
             {editMode ? (

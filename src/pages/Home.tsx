@@ -7,13 +7,13 @@ import {
   CardActionArea,
   CardContent,
   CardMedia,
-  CircularProgress,
   Container,
   Fab,
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getUserCharacters } from '@api/users';
+import { FullPageLoader } from '@shared/Loader';
 import { button, fab, linkButton } from '@utils/ui';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -48,18 +48,18 @@ export function Home() {
     if (user && !isLoading && !characters?.length) navigate('/create');
   }, [isLoading]);
 
-  return characters?.length ? (
+  return (
     <Container>
       <Box
         display="grid"
         data-testid="character-grid"
         sx={{
-          gridGap: '50px',
+          gridGap: '24px',
           gridTemplateColumns: `repeat(auto-fit, minmax(275px, 1fr))`
         }}
       >
         {characters
-          .filter((c) => !!c.class && !!c.race)
+          ?.filter((c) => !!c.class && !!c.race)
           .map((character) => (
             <Box key={character.id} sx={{ display: 'flex', justifyContent: 'center' }}>
               <Card
@@ -100,8 +100,8 @@ export function Home() {
           </Link>
         </Fab>
       </Box>
+
+      <FullPageLoader open={isLoading} />
     </Container>
-  ) : (
-    <CircularProgress size={24} />
   );
 }

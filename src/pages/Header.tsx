@@ -1,4 +1,4 @@
-import { type FormEvent, Fragment, useMemo, useState } from 'react';
+import { Fragment, type SyntheticEvent, useMemo, useState } from 'react';
 import { Link, Outlet } from 'react-router-dom';
 import { Add, Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -28,7 +28,7 @@ export function Header() {
     initialData: { displayName: undefined }
   });
 
-  const handleSubmitUsername = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitUsername = async (event: SyntheticEvent) => {
     event.preventDefault();
     closeUsername();
 
@@ -71,8 +71,11 @@ export function Header() {
   return (
     <Fragment>
       <Box sx={{ flexGrow: 1, marginBottom: '1rem' }}>
-        <AppBar position="static">
-          <Toolbar sx={{ justifyContent: 'space-between', flexDirection: 'row-reverse' }}>
+        <AppBar sx={{ position: 'fixed', top: 0, zIndex: 1000 }}>
+          <Toolbar
+            variant="dense"
+            sx={{ justifyContent: 'space-between', flexDirection: 'row-reverse' }}
+          >
             {user ? (
               <Fragment>
                 <Box display="flex" alignItems="center">
@@ -147,6 +150,8 @@ export function Header() {
             )}
           </Toolbar>
         </AppBar>
+
+        <Box sx={{ height: '48px' }} />
       </Box>
 
       <Outlet />

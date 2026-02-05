@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CoinsIcon } from '@assets';
-import { Box, Button, CircularProgress, Dialog, Typography } from '@mui/material';
+import { Box, Button, Dialog, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useForm } from '@hooks/useForm';
+import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { remainingMoneyInCopper, updatePurse } from '@utils/character';
 import { getCoinColor } from '@utils/ui';
@@ -119,7 +120,7 @@ export function MoneyManager({
             }
             onClick={onSave}
           >
-            {firebaseCrud.isLoading ? <CircularProgress data-testid="loading" /> : 'Save'}
+            {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
           </Button>
           <Button onClick={closeMoneyDialog}>Cancel</Button>
         </Box>

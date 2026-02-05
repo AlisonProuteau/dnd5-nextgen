@@ -21,7 +21,6 @@ import {
   CardContent,
   CardHeader,
   Chip,
-  CircularProgress,
   Dialog,
   Divider,
   Typography
@@ -29,6 +28,7 @@ import {
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { groupBy, max, maxBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
+import { Loader } from '@shared/Loader';
 import { filterSpellsByPrerequisites } from '@utils/character';
 import type { Version } from '@utils/constants';
 import type { Spell } from '@representations/abilities/magic.representation';
@@ -381,6 +381,6 @@ export function SpellList({
       </Dialog>
     </Fragment>
   ) : (
-    <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
+    <Loader sx={{ margin: 1 }} />
   );
 }

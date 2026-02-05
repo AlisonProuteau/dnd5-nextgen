@@ -1,7 +1,8 @@
 import { type ReactElement, useMemo } from 'react';
-import { Box, Checkbox, CircularProgress, FormControlLabel, Typography } from '@mui/material';
+import { Box, Checkbox, FormControlLabel, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getResourceList } from '@api/ressources';
+import { Loader } from '@shared/Loader';
 import type { Alignment } from '@representations/character/background.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type {
@@ -101,7 +102,7 @@ export function ChoiceGroup({
   );
 
   return isLoading ? (
-    <CircularProgress size={24} />
+    <Loader />
   ) : (
     <Box
       sx={{
