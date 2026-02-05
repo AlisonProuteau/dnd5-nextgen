@@ -31,14 +31,13 @@ export function AuthPage() {
 
   const handleSubmit = async (event: SyntheticEvent) => {
     event.preventDefault();
-    if (isSaving) return;
+    if (isSaving || !form.isValid || !form.formData.email || !form.formData.password) return;
 
     setIsSaving(true);
-    if (form.formData.email && form.formData.password && form.isValid) {
-      if (!isLogin)
-        await createUser(form.formData.email, form.formData.password, form.formData.name);
-      else await signIn(form.formData.email, form.formData.password);
-    }
+
+    if (!isLogin) await createUser(form.formData.email, form.formData.password, form.formData.name);
+    else await signIn(form.formData.email, form.formData.password);
+
     setIsSaving(false);
   };
 

@@ -101,7 +101,7 @@ export function Home() {
         </Fab>
       </Box>
 
-      <FullPageLoader open={!characters?.length} />
+      <FullPageLoader open={isLoading} />
     </Container>
   );
 }

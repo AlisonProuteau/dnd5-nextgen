@@ -243,7 +243,7 @@ export function DataBasePage() {
       <Button
         fullWidth
         variant="outlined"
-        disabled={isLoading || isMigrating || true}
+        disabled={isLoading || isMigrating}
         onClick={migrateData}
       >
         Migrate All
