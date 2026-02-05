@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getUserCharacters } from '@api/users';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { button, fab, linkButton } from '@utils/ui';
 import { useAuth } from '../providers/AuthProvider';
 
@@ -101,7 +101,7 @@ export function Home() {
         </Fab>
       </Box>
 
-      <Loader open={!characters?.length} />
+      <FullPageLoader open={!characters?.length} />
     </Container>
   );
 }

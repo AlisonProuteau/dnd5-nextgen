@@ -7,7 +7,7 @@ import {
   useLocation,
   useRouteError
 } from 'react-router-dom';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { CharacterContainer } from './components/CharacterCard/CharacterContainer';
 import { CharacterPoints } from './components/CharacterCard/CharacterPoints';
 import { CharacterCreation } from './components/CharacterCreation/CharacterCreation';
@@ -82,6 +82,6 @@ export function App() {
       </Route>
     </Routes>
   ) : (
-    <Loader open={isLoading} />
+    <FullPageLoader open={isLoading} />
   );
 }

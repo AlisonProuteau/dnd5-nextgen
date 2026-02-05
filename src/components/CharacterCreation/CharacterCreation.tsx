@@ -1,15 +1,8 @@
-import { type FormEvent, useEffect } from 'react';
+import { type SyntheticEvent, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Button,
-  Container,
-  Step,
-  StepLabel,
-  Stepper
-} from '@mui/material';
+import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
 import { useFirebaseCrud, useForm } from '@hooks/index';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { transformFormData } from '@utils/character';
 import type { CharacterFormData } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -62,7 +55,7 @@ export function CharacterCreation() {
     form.formData.race?.index &&
     form.formData.class?.index;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SyntheticEvent) => {
     event.preventDefault();
     if (!isFormValid()) return;
 
@@ -173,7 +166,7 @@ export function CharacterCreation() {
         )}
       </form>
 
-      <Loader open={firebaseActions.isLoading} />
+      <FullPageLoader open={firebaseActions.isLoading} />
     </Container>
   );
 }

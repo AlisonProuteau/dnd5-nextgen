@@ -4,7 +4,7 @@ import { Box, Button, Container, IconButton, InputAdornment } from '@mui/materia
 import { createUser, signIn } from '@api/users';
 import { useForm, useToggle } from '@hooks/index';
 import { ControledInput } from '@shared/ControledInput';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { getLoginValidationSchema } from '@utils/ui/auth.utils';
 
 interface FormData {
@@ -142,7 +142,7 @@ export function AuthPage() {
         </Box>
       </form>
 
-      <Loader open={isSaving} />
+      <FullPageLoader open={isSaving} />
     </Container>
   );
 }

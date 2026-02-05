@@ -27,7 +27,7 @@ import { getClassInfo } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { button, fab, linkButton } from '@utils/ui';
 import type { Classes } from '@representations/character/class.representation';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -263,7 +263,7 @@ export function CharacterContainer() {
         </>
       )}
 
-      <Loader open={!character?.abilityScores} />
+      <FullPageLoader open={!character?.abilityScores} />
     </Container>
   );
 }

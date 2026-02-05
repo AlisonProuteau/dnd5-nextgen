@@ -1,9 +1,9 @@
 import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SpeedIcon } from '@assets';
-import { CircularProgress } from '@mui/material';
 import { Box } from '@mui/system';
 import { useQuery } from '@tanstack/react-query';
 import { getAllAbilities } from '@api/ressources';
 import { IconText } from '@shared/IconText';
+import { Loader } from '@shared/Loader';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { DefaultProps } from 'src/pages/Header';
@@ -92,7 +92,7 @@ export function Stats({ character }: DefaultProps) {
             ))}
         </Box>
       ) : (
-        <CircularProgress size={24} />
+        <Loader sx={{ minHeight: '50vh', alignContent: 'center' }} />
       )}
     </Box>
   );

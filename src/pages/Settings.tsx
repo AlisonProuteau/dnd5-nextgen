@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect } from 'react';
+import { type SyntheticEvent, useEffect } from 'react';
 import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import { Box, Container } from '@mui/system';
 import { useFirebaseCrud, useForm } from '@hooks/index';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { type Version, VERSIONS } from '@utils/constants';
 import {
   AdditionalMoneyUnits,
@@ -51,7 +51,7 @@ export function Settings() {
     redirect: { update: { path: '/' } }
   });
 
-  const handleSubmitVersion = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmitVersion = async (event: SyntheticEvent) => {
     event.preventDefault();
     if (!user?.uid) return;
 
@@ -153,7 +153,7 @@ export function Settings() {
         </FormControl>
       </form>
 
-      <Loader open={firebaseCrud.isLoading} />
+      <FullPageLoader open={firebaseCrud.isLoading} />
     </Container>
   );
 }

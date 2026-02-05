@@ -1,4 +1,4 @@
-import { type FormEvent, Fragment, useEffect, useMemo } from 'react';
+import { Fragment, type SyntheticEvent, useEffect, useMemo } from 'react';
 import {
   Button,
   Checkbox,
@@ -15,7 +15,7 @@ import { getUserCharacters } from '@api/users';
 import { useFirebaseCrud, useForm, type ValidationRule, validationRules } from '@hooks/index';
 import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import type { Version } from '@utils/constants';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -136,7 +136,7 @@ export function ContactForm() {
     form.updateValidationSchema(newSchema);
   }, [form.formData.type, form.formData.requestArea]);
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: SyntheticEvent) => {
     event.preventDefault();
 
     if (user?.uid) {
@@ -443,7 +443,7 @@ export function ContactForm() {
         </Button>
       </form>
 
-      <Loader open={firebaseCrud.isLoading} />
+      <FullPageLoader open={firebaseCrud.isLoading} />
     </Container>
   );
 }

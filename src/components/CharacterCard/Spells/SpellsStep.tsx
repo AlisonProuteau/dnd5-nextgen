@@ -1,15 +1,9 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
-import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
-  Box,
-  CircularProgress,
-  Typography
-} from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getClassInfo, getSubclassInfo } from '@api/ressources';
+import { Loader } from '@shared/Loader';
 import { SplitButton } from '@shared/SplitButton';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes } from '@representations/character/class.representation';
@@ -108,46 +102,50 @@ export function SpellStep({ character }: DefaultProps) {
     ];
   }, [slots.cantrips, slots.learn, slots.prepare]);
 
-  return slots ? (
+  return (
     <Box data-testid="spells-section">
-      <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
-        <SplitButton
-          options={spellMenu}
-          onClick={(val) => setPage(val as typeof page)}
-          defaultValue={page}
-          variant="outlined"
-        />
-      </Box>
+      {slots ? (
+        <Fragment>
+          <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
+            <SplitButton
+              options={spellMenu}
+              onClick={(val) => setPage(val as typeof page)}
+              defaultValue={page}
+              variant="outlined"
+            />
+          </Box>
 
-      {page === 'available' && <Spellbook character={character} slotInfo={slots} />}
+          {page === 'available' && <Spellbook character={character} slotInfo={slots} />}
 
-      {page === 'full' && (
-        <SpellList
-          characterInfo={{
-            version: character.version,
-            classIndex: character.class.index,
-            subclassIndex: character.subclass?.index,
-            slotLevels: [],
-            features: character.features,
-            charLevel: character.level
-          }}
-          additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
-        />
+          {page === 'full' && (
+            <SpellList
+              characterInfo={{
+                version: character.version,
+                classIndex: character.class.index,
+                subclassIndex: character.subclass?.index,
+                slotLevels: [],
+                features: character.features,
+                charLevel: character.level
+              }}
+              additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
+            />
+          )}
+
+          {page === 'howto' &&
+            classSpellcasting?.info.map((info) => (
+              <Accordion key={info.name}>
+                <AccordionSummary expandIcon={<ExpandMore />}>{info.name}</AccordionSummary>
+                <AccordionDetails sx={{ textAlign: 'justify' }}>
+                  {info.desc.map((desc, i) => (
+                    <Typography key={`${info.name}-description-${i}`}>{desc}</Typography>
+                  ))}
+                </AccordionDetails>
+              </Accordion>
+            ))}
+        </Fragment>
+      ) : (
+        <Loader sx={{ minHeight: '80vh', alignContent: 'center' }} />
       )}
-
-      {page === 'howto' &&
-        classSpellcasting?.info.map((info) => (
-          <Accordion key={info.name}>
-            <AccordionSummary expandIcon={<ExpandMore />}>{info.name}</AccordionSummary>
-            <AccordionDetails sx={{ textAlign: 'justify' }}>
-              {info.desc.map((desc, i) => (
-                <Typography key={`${info.name}-description-${i}`}>{desc}</Typography>
-              ))}
-            </AccordionDetails>
-          </Accordion>
-        ))}
     </Box>
-  ) : (
-    <CircularProgress size={24} sx={{ alignSelf: 'center' }} />
   );
 }

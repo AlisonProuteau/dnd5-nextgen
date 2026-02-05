@@ -13,7 +13,7 @@ import {
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { omit, uniqBy } from 'lodash';
 import { getAllClasses, getAllRaces, getAllSubclasses, getAllSubraces } from '@api/ressources';
-import { Loader } from '@shared/Loader';
+import { FullPageLoader } from '@shared/Loader';
 import { getAll } from '@utils/api.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Level } from '@representations/campaign/level.representation';
@@ -287,7 +287,7 @@ export function DataBasePage() {
         </Box>
       </form>
 
-      <Loader open={isLoading || isMigrating} />
+      <FullPageLoader open={isLoading || isMigrating} />
     </Container>
   );
 }
