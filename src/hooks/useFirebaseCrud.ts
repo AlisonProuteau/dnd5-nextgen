@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,9 +25,9 @@ export interface UseFirebaseCrudOptions {
 
 export interface UseFirebaseCrudReturn<T> {
   isLoading: boolean;
-  create: (data: Partial<T> & any, customPath?: string) => Promise<string | null>;
-  update: (id: string, data: Partial<T>, customPath?: string) => Promise<void>;
-  remove: (id: string, customPath?: string) => Promise<void>;
+  create: (data: Partial<T> & any) => Promise<string | null>;
+  update: (id: string, data: Partial<T>, notify?: boolean) => Promise<void>;
+  remove: (id: string) => Promise<void>;
 }
 
 export const useFirebaseCrud = <T extends Record<string, any>>(
@@ -39,10 +39,10 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
   const [isLoading, setIsLoading] = useState(false);
   const { collectionPath, invalidateQueryKey, successMessages = {}, redirect = {} } = options;
 
-  const buildPath = (customPath?: string): string => {
-    const path = customPath || collectionPath;
-    return path.replace('{userId}', user?.uid || '');
-  };
+  const path = useMemo(
+    () => collectionPath.replace('{userId}', user?.uid || ''),
+    [collectionPath, user?.uid]
+  );
 
   const stateWithId = (
     id: string,
@@ -73,7 +73,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return Promise.race([asyncPromise, timeoutPromise]);
   };
 
-  const create = async (data: Partial<T>, customPath?: string): Promise<string | null> => {
+  const create = async (data: Partial<T>): Promise<string | null> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
       return null;
@@ -81,9 +81,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
     setIsLoading(true);
     try {
-      const path = buildPath(customPath);
       const newDocRef = doc(collection(database, path));
-
       const documentData = {
         ...data,
         id: newDocRef.id
@@ -113,7 +111,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     }
   };
 
-  const update = async (id: string, data: Partial<T>, customPath?: string): Promise<void> => {
+  const update = async (id: string, data: Partial<T>, notify = true): Promise<void> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
       return;
@@ -121,9 +119,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
     setIsLoading(true);
     try {
-      const path = buildPath(customPath);
       const docRef = doc(database, path, id);
-
       DEV_MODE
         ? await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT)
         : await updateDoc(docRef, data as unknown as T);
@@ -135,7 +131,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       if (redirect.update)
         navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
-      toast.success(successMessages.update || 'Updated successfully');
+      notify && toast.success(successMessages.update || 'Updated successfully');
     } catch (error) {
       toast.error(`Update failed:
         ${(error as Error).message}`);
@@ -144,7 +140,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     }
   };
 
-  const remove = async (id: string, customPath?: string): Promise<void> => {
+  const remove = async (id: string): Promise<void> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
       return;
@@ -152,7 +148,6 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
 
     setIsLoading(true);
     try {
-      const path = buildPath(customPath);
       const docRef = doc(database, path, id);
 
       DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
