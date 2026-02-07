@@ -18,10 +18,11 @@ export function CastSpellMenu({
   const availableSlotLevels = useMemo(() => {
     if (spell.level === 0) return [];
 
-    return Object.entries(availableSlots)
+    const regularAvailableSlots = Object.entries(availableSlots)
       .filter(([level, available]) => parseInt(level) >= spell.level && available > 0)
       .map(([level]) => parseInt(level))
       .sort((a, b) => a - b);
+    return regularAvailableSlots.concat(spell.ritual && regularAvailableSlots.length ? [0] : []);
   }, [availableSlots, spell]);
 
   const castDisabled = useMemo(
@@ -34,7 +35,7 @@ export function CastSpellMenu({
     [availableSlots, spell]
   );
 
-  return spell.level > 0 ? (
+  return spell.level > 0 && !spell.racial ? (
     <Fragment>
       <Button
         fullWidth
@@ -52,27 +53,38 @@ export function CastSpellMenu({
       {availableSlotLevels.length > 1 && (
         <Menu anchorEl={menuAnchor} open={!!menuAnchor} onClose={() => setMenuAnchor(null)}>
           {menuAnchor &&
-            availableSlotLevels.map((slotLevel: number) => (
-              <MenuItem
-                key={slotLevel}
-                onClick={() => {
-                  handleCastSpell(spell, slotLevel);
-                  setMenuAnchor(null);
-                }}
-              >
-                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-                  <Typography>Level {slotLevel}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    ({availableSlots?.[slotLevel.toString()] || 0} available)
-                  </Typography>
-                  {slotLevel > spell.level && (
-                    <Typography variant="caption" color="primary">
-                      (Upcast)
+            availableSlotLevels.map((slotLevel: number) =>
+              slotLevel > 0 ? (
+                <MenuItem
+                  key={slotLevel}
+                  onClick={() => {
+                    handleCastSpell(spell, slotLevel);
+                    setMenuAnchor(null);
+                  }}
+                >
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography>Level {slotLevel}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      ({availableSlots?.[slotLevel.toString()] || 0} available)
                     </Typography>
-                  )}
-                </Box>
-              </MenuItem>
-            ))}
+                    {slotLevel > spell.level && (
+                      <Typography variant="caption" color="primary">
+                        (Upcast)
+                      </Typography>
+                    )}
+                  </Box>
+                </MenuItem>
+              ) : (
+                <MenuItem key="ritual" onClick={() => setMenuAnchor(null)}>
+                  <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                    <Typography>Ritual Cast</Typography>
+                    <Typography variant="caption" color="primary">
+                      (+10 minutes - no slot)
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              )
+            )}
         </Menu>
       )}
     </Fragment>

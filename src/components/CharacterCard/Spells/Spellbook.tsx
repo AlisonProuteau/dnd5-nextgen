@@ -20,6 +20,7 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 import { CastSpellMenu } from './CastSpellMenu';
 import { SpellList } from './SpellList';
@@ -157,17 +158,25 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     <Fragment>
       {!shouldLearn && !shouldPrepare && !isLearnOpen && !isPrepareOpen && (
         <Fragment>
-          <SpellSlots
-            slots={slotInfo.slots}
-            usedSlots={usedSlots}
-            onRestoreAll={handleRestoreAll}
-            disabled={firebaseCrud.isLoading}
-          />
+          {Object.values(slotInfo.slots).length ? (
+            <SpellSlots
+              slots={slotInfo.slots}
+              usedSlots={usedSlots}
+              onRestoreAll={handleRestoreAll}
+              disabled={firebaseCrud.isLoading}
+            />
+          ) : null}
 
           <SpellList
             characterInfo={characterInfo}
             additionalSpellList={(character.traits || [])
-              .flatMap(({ spells }) => spells || [])
+              .flatMap(
+                ({ spells }) =>
+                  spells?.map((spell): DefaultRepresentation & { racial?: boolean } => ({
+                    ...spell,
+                    racial: true
+                  })) || []
+              )
               .concat(...preparedSpells)
               .concat(
                 ...(slotInfo.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
@@ -194,6 +203,19 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                   </Divider>
                 </AccordionSummary>
                 <AccordionDetails>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight="normal"
+                    display="block"
+                    textAlign="center"
+                    sx={{ position: 'relative', top: '-20px', height: '15px' }}
+                  >
+                    Wizards can cast any ritual spell from their spellbook without preparing it or
+                    using a spell slot. <br />
+                    When casting a spell as a ritual, spell slots aren’t expended but the casting
+                    time is 10 minutes longer than normal.
+                  </Typography>
                   <SpellList
                     characterInfo={characterInfo}
                     additionalSpellList={knownSpells

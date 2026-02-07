@@ -50,7 +50,8 @@ interface SpellListProps {
     slotLevels: number[];
     features?: DefaultRepresentation[];
   };
-  additionalSpellList?: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[];
+  additionalSpellList?: (DefaultRepresentation &
+    Partial<TypeFromArray<Subclass['spells']>> & { racial?: boolean })[];
   slotLevel?: number;
   spellListOnly?: boolean;
   selectedSpells?: Character['knownSpells'] | Character['preparedSpells'];
@@ -142,6 +143,7 @@ export function SpellList({
 
               if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
             }
+            if (currentSpell?.racial) formattedData.racial = true;
 
             return formattedData;
           })
@@ -308,6 +310,7 @@ export function SpellList({
                               {spell.components}
                               {spell.concentration ? ' - Con' : ''}
                               {spell.ritual ? ' - Ritual' : ''}
+                              {spell.racial ? ' - Racial' : ''}
                             </Typography>
                           )}
                           {filteredAdditionalSpellList
