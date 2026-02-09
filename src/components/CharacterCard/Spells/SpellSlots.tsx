@@ -12,7 +12,7 @@ export function SpellSlots({ slots, usedSlots, onRestoreAll, disabled = false }:
   const hasUsedSlots = Object.values(usedSlots).some((used) => used > 0);
 
   return (
-    <Box display="flex" flexDirection="column" gap={0.5}>
+    <Box display="flex" flexDirection="column" gap={0.5} data-testid="spell-slots">
       <Box sx={{ display: 'flex', justifyContent: 'center', height: 30 }}>
         <Typography variant="subtitle1" fontWeight="bold" position="absolute">
           Spell Slots

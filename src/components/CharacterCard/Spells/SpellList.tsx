@@ -176,7 +176,12 @@ export function SpellList({
       );
     });
     const sortedSpells = uniqWith(
-      [...filteredSpells, ...additionnalSpells],
+      [
+        ...filteredSpells,
+        ...additionnalSpells.filter(
+          ({ name }) => !searchText.length || name.toLowerCase().includes(searchText.toLowerCase())
+        )
+      ],
       (a, b) => a.index === b.index && a.level === b.level
     ).sort((a, b) => {
       const aSelected = selectedSpells.find(
