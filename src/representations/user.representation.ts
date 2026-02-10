@@ -69,6 +69,7 @@ export type Character = CharacterFormData & {
     deathSaves?: {
       successes: number;
       failures: number;
+      usedSaves?: boolean;
     };
   };
 };
