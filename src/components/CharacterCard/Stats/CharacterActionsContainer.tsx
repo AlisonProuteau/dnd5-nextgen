@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
-import { CoinPurse } from '@assets';
+import { CoinPurse, HealIcon } from '@assets';
 import { Delete, EditRounded, EventNote } from '@mui/icons-material';
 import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab } from '@mui/material';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
@@ -8,6 +8,7 @@ import { useToggle } from '@hooks/useToggle';
 import { button, fab, linkButton } from '@utils/ui';
 import type { Character } from '@representations/user.representation';
 import { CharacterNotes } from '../CharacterNotes/CharacterNotes';
+import { HealthManager } from '../Equipment/HealthManager';
 import { MoneyManager } from '../Equipment/MoneyManager';
 
 export function CharacterActionsContainer({
@@ -23,6 +24,11 @@ export function CharacterActionsContainer({
     isOn: isMoneyDialogOpen,
     turnOn: openMoneyDialog,
     turnOff: closeMoneyDialog
+  } = useToggle(false);
+  const {
+    isOn: isHealthDialogOpen,
+    turnOn: openHealthDialog,
+    turnOff: closeHealthDialog
   } = useToggle(false);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
@@ -57,6 +63,21 @@ export function CharacterActionsContainer({
         isMoneyDialogOpen={isMoneyDialogOpen}
         closeMoneyDialog={closeMoneyDialog}
         currentAmount={character.money}
+      />
+
+      <Fab
+        size="small"
+        sx={{ ...button, ...fab, padding: 0.6, marginRight: 12 }}
+        onClick={openHealthDialog}
+        data-testid={`health-${character.id}`}
+      >
+        <HealIcon fill="currentColor" width="100%" height="100%" />
+      </Fab>
+
+      <HealthManager
+        character={character}
+        isHealthDialogOpen={isHealthDialogOpen}
+        closeHealthDialog={closeHealthDialog}
       />
 
       {activeStep === 0 && (

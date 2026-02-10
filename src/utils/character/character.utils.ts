@@ -298,3 +298,10 @@ export const formatEquipmentForDisplay = (
     return count ? { ...formattedEq, count } : formattedEq;
   });
 };
+
+export const getBaseHitPoints = (
+  conModifier: number,
+  features: DefaultRepresentation[],
+  hitDie = 6
+) =>
+  hitDie + conModifier + (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);

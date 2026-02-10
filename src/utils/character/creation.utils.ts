@@ -7,7 +7,7 @@ import type { Equipment } from '@representations/campaign/equipment.representati
 import type { Classes } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character, CharacterFormData } from '@representations/user.representation';
-import { getAbilityScoreModifier, getArmorClass } from './character.utils';
+import { getAbilityScoreModifier, getArmorClass, getBaseHitPoints } from './character.utils';
 
 export type ChoiceSelection = DefaultRepresentation & {
   type: 'class' | 'race' | 'background';
@@ -204,14 +204,13 @@ export const formatPointsForDB = (
     };
   });
 
-  const hitPoints =
-    (classInfo?.hit_die || 6) +
-    (formattedAbilities['con']?.modifier || 0) +
-    (character?.features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
-
   return {
     hit_die: classInfo?.hit_die,
-    hit_points: hitPoints,
+    hit_points: getBaseHitPoints(
+      formattedAbilities['con']?.modifier || 0,
+      character?.features || [],
+      classInfo?.hit_die
+    ),
     saving_throws: classInfo?.saving_throws,
     armorClass: getArmorClass(
       formattedAbilities['dex'].modifier,

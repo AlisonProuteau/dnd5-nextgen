@@ -63,6 +63,14 @@ export type Character = CharacterFormData & {
   usedSpellSlots?: Record<string, number>;
   version: Version;
   money?: MoneyObjectType;
+  health?: {
+    current: number;
+    temporary?: number;
+    deathSaves?: {
+      successes: number;
+      failures: number;
+    };
+  };
 };
 
 export interface CharacterNote {
