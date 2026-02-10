@@ -20,7 +20,8 @@ export const filterValidPreparedSpells = (
 };
 
 export const filterSpellsByPrerequisites = (
-  spellList: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[],
+  spellList: (DefaultRepresentation &
+    Partial<TypeFromArray<Subclass['spells']> & { racial?: boolean }>)[],
   charLevel: number,
   classIndex: string,
   features: DefaultRepresentation[]

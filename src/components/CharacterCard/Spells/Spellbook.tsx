@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { PrepareIcon, SpellbookIcon } from '@assets';
 import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
@@ -19,9 +20,13 @@ import { isEqual, max } from 'lodash';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
+import type { Spell } from '@representations/abilities/magic.representation';
+import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
+import { CastSpellMenu } from './CastSpellMenu';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
+import { SpellSlots } from './SpellSlots';
 
 interface SpellbookProps {
   character: Character;
@@ -36,6 +41,9 @@ interface SpellbookProps {
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
+  const [usedSlots, setUsedSlots] = useState<Record<string, number>>(
+    character.usedSpellSlots || {}
+  );
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
@@ -79,6 +87,27 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     await firebaseCrud.update(character.id, { preparedSpells });
   };
 
+  const handleRestoreAll = async () => {
+    if (!character.id) return;
+
+    setUsedSlots({});
+    await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
+  };
+
+  const handleCastSpell = async (spell: Spell, slotLevel?: number) => {
+    if (!character.id || spell.level === 0 || !slotLevel) return;
+
+    const newUsedSlots = {
+      ...usedSlots,
+      [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
+    };
+
+    if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
+      setUsedSlots(newUsedSlots);
+      await firebaseCrud.update(character.id, { usedSpellSlots: newUsedSlots }, false);
+    } else toast.error(`No spell slots of level ${slotLevel} available`);
+  };
+
   const shouldLearn = useMemo(
     () => knownSpells.filter(({ added }) => !added).length < (slotInfo.learn || 0),
     [slotInfo.learn, knownSpells]
@@ -95,6 +124,19 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         []
       ),
     [slotInfo.slots]
+  );
+
+  const availableSlots = useMemo(
+    () =>
+      Object.entries(slotInfo.slots).reduce(
+        (acc, [level, total]) => {
+          const used = usedSlots[level] || 0;
+          acc[level] = Math.max(total - used, 0);
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
+    [slotInfo.slots, usedSlots]
   );
 
   const characterInfo = useMemo(() => {
@@ -119,25 +161,64 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     <Fragment>
       {!shouldLearn && !shouldPrepare && !isLearnOpen && !isPrepareOpen && (
         <Fragment>
+          {Object.values(slotInfo.slots).length ? (
+            <SpellSlots
+              slots={slotInfo.slots}
+              usedSlots={usedSlots}
+              onRestoreAll={handleRestoreAll}
+              disabled={firebaseCrud.isLoading}
+            />
+          ) : null}
+
           <SpellList
             characterInfo={characterInfo}
             additionalSpellList={(character.traits || [])
-              .flatMap(({ spells }) => spells || [])
+              .flatMap(
+                ({ spells }) =>
+                  spells?.map((spell): DefaultRepresentation & { racial?: boolean } => ({
+                    ...spell,
+                    racial: true
+                  })) || []
+              )
               .concat(...preparedSpells)
               .concat(
                 ...(slotInfo.prepare ? knownSpells.filter(({ level }) => level === 0) : knownSpells)
               )}
             spellListOnly={true}
+            actions={(spell, onClick) => (
+              <CastSpellMenu
+                spell={spell}
+                availableSlots={availableSlots}
+                handleCastSpell={(spell, slotLevel) => {
+                  handleCastSpell(spell, slotLevel);
+                  onClick?.();
+                }}
+              />
+            )}
           />
+
           {character.class.index === 'wizard' &&
             knownSpells.filter(({ level }) => level > 0).length && (
               <Accordion sx={{ '&:before': { display: 'none' } }} elevation={0} disableGutters>
                 <AccordionSummary expandIcon={<ExpandMore />}>
                   <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
-                    All Ritual Spells
+                    <Typography variant="subtitle2">All Ritual Spells</Typography>
                   </Divider>
                 </AccordionSummary>
                 <AccordionDetails>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    fontWeight="normal"
+                    display="block"
+                    textAlign="center"
+                    sx={{ position: 'relative', top: '-20px', height: '15px' }}
+                  >
+                    Wizards can cast any ritual spell from their spellbook without preparing it or
+                    using a spell slot. <br />
+                    When casting a spell as a ritual, spell slots aren’t expended but the casting
+                    time is 10 minutes longer than normal.
+                  </Typography>
                   <SpellList
                     characterInfo={characterInfo}
                     additionalSpellList={knownSpells
@@ -278,27 +359,27 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                 <InfoOutlined color="info" fontSize="small" alignmentBaseline="central" />
               }
             >
-              Additional spells
+              <Typography variant="subtitle2">Additional spells</Typography>
             </AccordionSummary>
             <AccordionDetails
               sx={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '10px',
-                background: 'DimGray'
+                background: 'rgba(255, 255, 255, 0.05)'
               }}
             >
-              <Typography variant="subtitle2">
+              <Typography variant="caption">
                 You might find other spells during your adventures. You could discover a spell
                 recorded on a scroll in an evil wizard’s chest, for example, or in a dusty tome in
                 an ancient library.
               </Typography>
-              <Typography variant="subtitle2">
+              <Typography variant="caption">
                 When you find a wizard spell of 1st level or higher, you can add it to your
                 spellbook if it is of a spell level you can prepare and if you can spare the time to
                 decipher and copy it.
               </Typography>
-              <Typography variant="subtitle2">
+              <Typography variant="caption">
                 For each level of the spell, the process takes 2 hours and costs 50 gp. Once you
                 have spent this time and money, you can prepare the spell just like your other
                 spells.

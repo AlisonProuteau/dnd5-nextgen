@@ -106,7 +106,7 @@ export function SpellStep({ character }: DefaultProps) {
     <Box data-testid="spells-section">
       {slots ? (
         <Fragment>
-          <Box display="flex" flexDirection="column" alignItems="center" flex={1}>
+          <Box display="flex" flexDirection="column" alignItems="center" marginBottom={1}>
             <SplitButton
               options={spellMenu}
               onClick={(val) => setPage(val as typeof page)}
@@ -128,20 +128,24 @@ export function SpellStep({ character }: DefaultProps) {
                 charLevel: character.level
               }}
               additionalSpellList={character.traits?.flatMap(({ spells }) => spells || [])}
+              searchable={true}
             />
           )}
 
-          {page === 'howto' &&
-            classSpellcasting?.info.map((info) => (
-              <Accordion key={info.name}>
-                <AccordionSummary expandIcon={<ExpandMore />}>{info.name}</AccordionSummary>
-                <AccordionDetails sx={{ textAlign: 'justify' }}>
-                  {info.desc.map((desc, i) => (
-                    <Typography key={`${info.name}-description-${i}`}>{desc}</Typography>
-                  ))}
-                </AccordionDetails>
-              </Accordion>
-            ))}
+          {page === 'howto' && (
+            <Box display="flex" flexDirection="column" gap={0.5}>
+              {classSpellcasting?.info.map((info) => (
+                <Accordion key={info.name}>
+                  <AccordionSummary expandIcon={<ExpandMore />}>{info.name}</AccordionSummary>
+                  <AccordionDetails sx={{ textAlign: 'justify' }}>
+                    {info.desc.map((desc, i) => (
+                      <Typography key={`${info.name}-description-${i}`}>{desc}</Typography>
+                    ))}
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+          )}
         </Fragment>
       ) : (
         <Loader sx={{ minHeight: '80vh', alignContent: 'center' }} />

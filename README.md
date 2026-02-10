@@ -221,6 +221,7 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
+- [ ] Combat view with fast access to all info/action needed
 - [ ] Add info page for app navigation and features
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
 - [ ] Class archetype support?

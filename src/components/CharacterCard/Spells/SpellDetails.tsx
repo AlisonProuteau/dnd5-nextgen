@@ -1,10 +1,11 @@
-import { Fragment } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import {
   Accordion,
   AccordionDetails,
   AccordionSummary,
   Box,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Typography
@@ -17,9 +18,17 @@ interface SpellDetailsProps {
   spell: Spell;
   charLevel?: number;
   slotLevels?: number[];
+  actions?: (_: Spell, _fn?: () => void) => ReactNode;
+  onClose?: () => void;
 }
 
-export function SpellDetails({ spell, charLevel, slotLevels }: SpellDetailsProps) {
+export function SpellDetails({
+  spell,
+  charLevel,
+  slotLevels,
+  actions,
+  onClose
+}: SpellDetailsProps) {
   return (
     <Fragment>
       <DialogTitle data-testid="spell-dialog-title">
@@ -107,6 +116,12 @@ export function SpellDetails({ spell, charLevel, slotLevels }: SpellDetailsProps
           </AccordionDetails>
         </Accordion>
       </DialogContent>
+
+      {actions && (
+        <DialogActions sx={{ padding: 0, flexDirection: 'column' }}>
+          {actions(spell, onClose)}
+        </DialogActions>
+      )}
     </Fragment>
   );
 }

@@ -26,8 +26,9 @@ import {
   Typography
 } from '@mui/material';
 import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { groupBy, max, maxBy, uniqWith } from 'lodash';
+import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
+import { ControledInput } from '@shared/ControledInput';
 import { Loader } from '@shared/Loader';
 import { filterSpellsByPrerequisites } from '@utils/character';
 import type { Version } from '@utils/constants';
@@ -49,10 +50,13 @@ interface SpellListProps {
     slotLevels: number[];
     features?: DefaultRepresentation[];
   };
-  additionalSpellList?: (DefaultRepresentation & Partial<TypeFromArray<Subclass['spells']>>)[];
+  additionalSpellList?: (DefaultRepresentation &
+    Partial<TypeFromArray<Subclass['spells']>> & { racial?: boolean })[];
   slotLevel?: number;
   spellListOnly?: boolean;
   selectedSpells?: Character['knownSpells'] | Character['preparedSpells'];
+  actions?: (_: Spell, _fn?: () => void) => ReactNode;
+  searchable?: boolean;
   maxSelected?: [number, number];
   hideLevels?: boolean;
   showDesc?: boolean;
@@ -66,6 +70,8 @@ export function SpellList({
   spellListOnly = false,
   selectedSpells = [],
   setSelectedSpells,
+  actions,
+  searchable = false,
   maxSelected = [0, 0],
   hideLevels = false,
   showDesc = false,
@@ -76,6 +82,7 @@ export function SpellList({
   const { version } = useAuth();
   const [isExpanded, setIsExpanded] = useState<Record<string, boolean | undefined>>({});
   const [currentSpell, setCurrentSpell] = useState<Spell>();
+  const [searchText, setSearchText] = useState('');
 
   const { data: spells = [], isFetching: spellsFetching } = useQuery({
     queryKey: [
@@ -111,71 +118,97 @@ export function SpellList({
     [additionalSpellList, characterInfo, filterPrerequisites]
   );
 
-  const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
+  const { data: additionalSpells, isFetching: additionalSpellsFetching } = useQueries({
     queries:
-      filteredAdditionalSpellList?.map(({ index }) => ({
+      uniqBy(filteredAdditionalSpellList || [], 'index').map(({ index }) => ({
         queryKey: ['fetchSpell', version, index],
         queryFn: async () => (version ? await getSpell(version, index) : null),
         enabled: !!index && !!version
       })) || [],
-    combine: useCallback((results: UseQueryResult<Spell | null, Error>[]) => {
-      return {
-        data: results
-          .map(({ data }) => {
-            let formattedData = { ...data } as Spell;
-            const currentSpell = filteredAdditionalSpellList?.find(
-              ({ index }) => index === data?.index
-            );
-
-            if (currentSpell?.prerequisites) {
-              const preRequisiteLevel = parseInt(
-                currentSpell.prerequisites
-                  .find(({ type }) => type === 'level')
-                  ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+    combine: useCallback(
+      (results: UseQueryResult<Spell | null, Error>[]) => {
+        return {
+          data: results
+            .map(({ data }) => {
+              let formattedData = { ...data } as Spell;
+              const currentSpell = filteredAdditionalSpellList?.find(
+                ({ index }) => index === data?.index
               );
 
-              if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
-            }
+              if (currentSpell?.prerequisites) {
+                const preRequisiteLevel = parseInt(
+                  currentSpell.prerequisites
+                    .find(({ type }) => type === 'level')
+                    ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+                );
 
-            return formattedData;
-          })
-          .filter((data) => data) as Spell[],
-        isFetching: results.some((result) => result.isFetching),
-        dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
-      };
-    }, [])
+                if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
+              }
+              if (currentSpell?.racial) formattedData.racial = true;
+
+              return formattedData;
+            })
+            .filter((data) => data) as Spell[],
+          isFetching: results.some((result) => result.isFetching),
+          dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
+        };
+      },
+      [[filteredAdditionalSpellList, characterInfo.classIndex]]
+    )
   });
 
   const allSpells: Record<string, Array<Spell>> = useMemo(() => {
     if (
       !(
         (spellListOnly || !spellsFetching) &&
-        !additionnalSpellsFetching &&
-        (spells.length || additionnalSpells.length)
+        !additionalSpellsFetching &&
+        (spells.length || additionalSpells.length)
       )
     )
       return {};
 
-    const filteredSpells = uniqWith(
+    const filteredSpells = (spellListOnly ? [] : spells).filter(({ name, level }) => {
+      const isLevel = characterInfo.slotLevels.length
+        ? level > 0
+          ? (max(characterInfo.slotLevels) ?? 1 >= level)
+          : characterInfo.slotLevels.includes(0)
+        : true;
+
+      return (
+        isLevel && (!searchText.length || name.toLowerCase().includes(searchText.toLowerCase()))
+      );
+    });
+    const sortedSpells = uniqWith(
       [
-        ...(spellListOnly ? [] : spells).filter(
-          ({ level }) =>
-            !characterInfo.slotLevels.length || characterInfo.slotLevels.includes(level)
-        ),
-        ...additionnalSpells
+        ...filteredSpells,
+        ...additionalSpells.filter(
+          ({ name }) => !searchText.length || name.toLowerCase().includes(searchText.toLowerCase())
+        )
       ],
       (a, b) => a.index === b.index && a.level === b.level
-    ).sort(({ name: nameA }, { name: nameB }) => nameA.localeCompare(nameB));
+    ).sort((a, b) => {
+      const aSelected = selectedSpells.find(
+        ({ index, level }) => index === a.index && level === a.level
+      );
+      const bSelected = selectedSpells.find(
+        ({ index, level }) => index === b.index && level === b.level
+      );
 
-    return !hideLevels ? groupBy(filteredSpells, 'level') : { all: filteredSpells };
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    return !hideLevels ? groupBy(sortedSpells, 'level') : { all: sortedSpells };
   }, [
     spellListOnly,
     spellsFetching,
-    additionnalSpellsFetching,
+    additionalSpellsFetching,
     spells,
-    additionnalSpells.map(({ index, level }) => `${index}-${level}`).join(', '),
+    additionalSpells.map(({ index, level }) => `${index}-${level}`).join(', '),
     characterInfo.slotLevels.join(', '),
-    hideLevels
+    hideLevels,
+    searchText
   ]);
 
   const ConditionalAccordion = useMemo(
@@ -192,7 +225,7 @@ export function SpellList({
     []
   );
 
-  return !spellsFetching && !additionnalSpellsFetching ? (
+  return !spellsFetching && !additionalSpellsFetching ? (
     <Fragment>
       {setSelectedSpells && (
         <Fragment>
@@ -210,6 +243,17 @@ export function SpellList({
           )}
         </Fragment>
       )}
+
+      {searchable ? (
+        <ControledInput
+          fullWidth
+          id="search"
+          type="text"
+          label="Search"
+          autoComplete="off"
+          onChange={(value) => setSearchText(value as string)}
+        />
+      ) : null}
 
       {Object.keys(allSpells).map((currentLevel) => (
         <ConditionalAccordion
@@ -274,6 +318,7 @@ export function SpellList({
                               {spell.components}
                               {spell.concentration ? ' - Con' : ''}
                               {spell.ritual ? ' - Ritual' : ''}
+                              {spell.racial ? ' - Racial' : ''}
                             </Typography>
                           )}
                           {filteredAdditionalSpellList
@@ -318,43 +363,55 @@ export function SpellList({
                     )}
                   </CardActionArea>
 
-                  {setSelectedSpells && (
-                    <CardActions sx={{ alignSelf: 'center' }}>
-                      {selectedSpells.find(({ index }) => index === spell.index) ? (
-                        <Button
-                          data-testid={`remove-spell-${spell.index}`}
-                          onClick={() =>
-                            setSelectedSpells((prev) =>
-                              prev.filter(({ index }) => index !== spell.index)
-                            )
-                          }
-                        >
-                          Remove
-                        </Button>
-                      ) : (
-                        <Button
-                          data-testid={`add-spell-${spell.index}`}
-                          onClick={() =>
-                            setSelectedSpells((prev) => {
-                              const canAdd =
-                                prev
-                                  .filter((s) => ('added' in s ? !s.added : true))
-                                  .filter(({ level }) =>
-                                    spell.level === 0 ? level === 0 : level > 0
-                                  ).length < maxSelected[spell.level === 0 ? 0 : 1];
+                  {(setSelectedSpells || actions) && (
+                    <CardActions
+                      disableSpacing
+                      sx={{
+                        padding: 0,
+                        width: '100%',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      {setSelectedSpells &&
+                        (selectedSpells.find(({ index }) => index === spell.index) ? (
+                          <Button
+                            fullWidth
+                            data-testid={`remove-spell-${spell.index}`}
+                            onClick={() =>
+                              setSelectedSpells((prev) =>
+                                prev.filter(({ index }) => index !== spell.index)
+                              )
+                            }
+                          >
+                            Remove
+                          </Button>
+                        ) : (
+                          <Button
+                            fullWidth
+                            data-testid={`add-spell-${spell.index}`}
+                            onClick={() =>
+                              setSelectedSpells((prev) => {
+                                const canAdd =
+                                  prev
+                                    .filter((s) => ('added' in s ? !s.added : true))
+                                    .filter(({ level }) =>
+                                      spell.level === 0 ? level === 0 : level > 0
+                                    ).length < maxSelected[spell.level === 0 ? 0 : 1];
 
-                              return canAdd ? [...prev, spell] : prev;
-                            })
-                          }
-                          disabled={
-                            selectedSpells.filter(({ level }) =>
-                              spell.level === 0 ? level === 0 : level > 0
-                            ).length >= maxSelected[spell.level === 0 ? 0 : 1]
-                          }
-                        >
-                          Add
-                        </Button>
-                      )}
+                                return canAdd ? [...prev, spell] : prev;
+                              })
+                            }
+                            disabled={
+                              selectedSpells.filter(({ level }) =>
+                                spell.level === 0 ? level === 0 : level > 0
+                              ).length >= maxSelected[spell.level === 0 ? 0 : 1]
+                            }
+                          >
+                            Add
+                          </Button>
+                        ))}
+
+                      {actions && actions(spell)}
                     </CardActions>
                   )}
                 </Card>
@@ -363,6 +420,12 @@ export function SpellList({
           </AccordionDetails>
         </ConditionalAccordion>
       ))}
+
+      {Object.values(allSpells).flat().length === 0 && (
+        <Typography color="text.secondary" textAlign="center" marginTop={2}>
+          No spells to display
+        </Typography>
+      )}
 
       <Dialog
         open={!!currentSpell}
@@ -376,6 +439,8 @@ export function SpellList({
             spell={currentSpell}
             charLevel={characterInfo.charLevel}
             slotLevels={slotLevel ? [slotLevel] : characterInfo.slotLevels}
+            actions={actions}
+            onClose={() => setCurrentSpell(undefined)}
           />
         )}
       </Dialog>

@@ -28,6 +28,7 @@ export interface Spell {
   school: DefaultRepresentation;
   classes: string[];
   subclasses?: string[];
+  racial?: boolean;
 }
 
 export type MagicItem = {
