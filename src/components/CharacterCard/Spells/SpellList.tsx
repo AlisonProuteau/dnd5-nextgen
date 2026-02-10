@@ -118,7 +118,7 @@ export function SpellList({
     [additionalSpellList, characterInfo, filterPrerequisites]
   );
 
-  const { data: additionnalSpells, isFetching: additionnalSpellsFetching } = useQueries({
+  const { data: additionalSpells, isFetching: additionalSpellsFetching } = useQueries({
     queries:
       uniqBy(filteredAdditionalSpellList || [], 'index').map(({ index }) => ({
         queryKey: ['fetchSpell', version, index],
@@ -158,8 +158,8 @@ export function SpellList({
     if (
       !(
         (spellListOnly || !spellsFetching) &&
-        !additionnalSpellsFetching &&
-        (spells.length || additionnalSpells.length)
+        !additionalSpellsFetching &&
+        (spells.length || additionalSpells.length)
       )
     )
       return {};
@@ -178,7 +178,7 @@ export function SpellList({
     const sortedSpells = uniqWith(
       [
         ...filteredSpells,
-        ...additionnalSpells.filter(
+        ...additionalSpells.filter(
           ({ name }) => !searchText.length || name.toLowerCase().includes(searchText.toLowerCase())
         )
       ],
@@ -200,9 +200,9 @@ export function SpellList({
   }, [
     spellListOnly,
     spellsFetching,
-    additionnalSpellsFetching,
+    additionalSpellsFetching,
     spells,
-    additionnalSpells.map(({ index, level }) => `${index}-${level}`).join(', '),
+    additionalSpells.map(({ index, level }) => `${index}-${level}`).join(', '),
     characterInfo.slotLevels.join(', '),
     hideLevels,
     searchText
@@ -222,7 +222,7 @@ export function SpellList({
     []
   );
 
-  return !spellsFetching && !additionnalSpellsFetching ? (
+  return !spellsFetching && !additionalSpellsFetching ? (
     <Fragment>
       {setSelectedSpells && (
         <Fragment>

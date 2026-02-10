@@ -72,7 +72,7 @@ export const getArmorClass = (
     subfeatures?: DefaultRepresentation[];
     expertises?: DefaultRepresentation[];
   })[],
-  additionnalModifier?: number
+  additionalModifier?: number
 ): number => {
   const equippedItems =
     equipment
@@ -104,7 +104,7 @@ export const getArmorClass = (
     ]);
 
     if (featureIndexes?.some((index) => index.includes('unarmored-defense')))
-      baseAc = 10 + dexModifier + (additionnalModifier || 0);
+      baseAc = 10 + dexModifier + (additionalModifier || 0);
     else if (featureIndexes?.some((index) => index.includes('draconic-resilience')))
       baseAc = 13 + dexModifier;
   }

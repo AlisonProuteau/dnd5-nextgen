@@ -53,7 +53,7 @@ export function SpellSlots({ slots, usedSlots, onRestoreAll, disabled = false }:
                   ))}
                 </Box>
                 <Typography variant="caption" color="secondary">
-                  {available} of {total}
+                  {available >= 0 ? available : 0} of {total}
                 </Typography>
               </Box>
             );

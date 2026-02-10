@@ -22,7 +22,10 @@ export function CastSpellMenu({
       .filter(([level, available]) => parseInt(level) >= spell.level && available > 0)
       .map(([level]) => parseInt(level))
       .sort((a, b) => a - b);
-    return regularAvailableSlots.concat(spell.ritual && regularAvailableSlots.length ? [0] : []);
+
+    return spell.ritual && regularAvailableSlots.length
+      ? regularAvailableSlots.concat([0])
+      : regularAvailableSlots;
   }, [availableSlots, spell]);
 
   const castDisabled = useMemo(

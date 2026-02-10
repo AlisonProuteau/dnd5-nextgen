@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState } from 'react';
+import toast from 'react-hot-toast';
 import { PrepareIcon, SpellbookIcon } from '@assets';
 import { ExpandMore, InfoOutlined } from '@mui/icons-material';
 import {
@@ -101,8 +102,10 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
     };
 
-    setUsedSlots(newUsedSlots);
-    await firebaseCrud.update(character.id, { usedSpellSlots: newUsedSlots }, false);
+    if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
+      setUsedSlots(newUsedSlots);
+      await firebaseCrud.update(character.id, { usedSpellSlots: newUsedSlots }, false);
+    } else toast.error(`No spell slots of level ${slotLevel} available`);
   };
 
   const shouldLearn = useMemo(
@@ -128,7 +131,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       Object.entries(slotInfo.slots).reduce(
         (acc, [level, total]) => {
           const used = usedSlots[level] || 0;
-          acc[level] = total - used;
+          acc[level] = used <= total ? total - used : total;
           return acc;
         },
         {} as Record<string, number>

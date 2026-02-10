@@ -24,6 +24,7 @@ describe(`Character Creation End-to-End`, () => {
       .click();
     cy.get('button:contains("Next"):visible').should('be.enabled').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
+    cy.getByTestId('class-carousel').should('be.visible');
 
     // Test: Browser back button should navigate back to race step
     cy.go('back');
