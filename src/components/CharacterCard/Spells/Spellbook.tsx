@@ -131,7 +131,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       Object.entries(slotInfo.slots).reduce(
         (acc, [level, total]) => {
           const used = usedSlots[level] || 0;
-          acc[level] = used <= total ? total - used : total;
+          acc[level] = Math.max(total - used, 0);
           return acc;
         },
         {} as Record<string, number>

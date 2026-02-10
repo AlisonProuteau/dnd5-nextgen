@@ -125,33 +125,36 @@ export function SpellList({
         queryFn: async () => (version ? await getSpell(version, index) : null),
         enabled: !!index && !!version
       })) || [],
-    combine: useCallback((results: UseQueryResult<Spell | null, Error>[]) => {
-      return {
-        data: results
-          .map(({ data }) => {
-            let formattedData = { ...data } as Spell;
-            const currentSpell = filteredAdditionalSpellList?.find(
-              ({ index }) => index === data?.index
-            );
-
-            if (currentSpell?.prerequisites) {
-              const preRequisiteLevel = parseInt(
-                currentSpell.prerequisites
-                  .find(({ type }) => type === 'level')
-                  ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+    combine: useCallback(
+      (results: UseQueryResult<Spell | null, Error>[]) => {
+        return {
+          data: results
+            .map(({ data }) => {
+              let formattedData = { ...data } as Spell;
+              const currentSpell = filteredAdditionalSpellList?.find(
+                ({ index }) => index === data?.index
               );
 
-              if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
-            }
-            if (currentSpell?.racial) formattedData.racial = true;
+              if (currentSpell?.prerequisites) {
+                const preRequisiteLevel = parseInt(
+                  currentSpell.prerequisites
+                    .find(({ type }) => type === 'level')
+                    ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+                );
 
-            return formattedData;
-          })
-          .filter((data) => data) as Spell[],
-        isFetching: results.some((result) => result.isFetching),
-        dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
-      };
-    }, [])
+                if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
+              }
+              if (currentSpell?.racial) formattedData.racial = true;
+
+              return formattedData;
+            })
+            .filter((data) => data) as Spell[],
+          isFetching: results.some((result) => result.isFetching),
+          dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
+        };
+      },
+      [[filteredAdditionalSpellList, characterInfo.classIndex]]
+    )
   });
 
   const allSpells: Record<string, Array<Spell>> = useMemo(() => {
