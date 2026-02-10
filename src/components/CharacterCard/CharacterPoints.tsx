@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
 import {
   Box,
+  Button,
   Container,
   Divider,
   Fab,
@@ -29,7 +30,15 @@ import type { Classes } from '@representations/character/class.representation';
 import type { AbilityScoreMethod } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 
-export function CharacterPoints() {
+export function CharacterPoints({
+  characterId,
+  onSave,
+  redirect = true
+}: {
+  characterId?: string;
+  onSave?: () => void;
+  redirect?: boolean;
+}) {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>();
   const [points, setPoints] = useState<Record<string, number>>({});
   const [id, setId] = useState<string>();
@@ -40,7 +49,7 @@ export function CharacterPoints() {
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', id ?? ''],
     successMessages: { update: 'Character Points Updated' },
-    redirect: { update: { path: '/character', state: { characterId: id } } }
+    redirect: redirect ? { update: { path: '/character', state: { characterId: id } } } : undefined
   });
 
   const { data: character, isLoading: isCharacterLoading } = useQuery({
@@ -93,7 +102,10 @@ export function CharacterPoints() {
     )
   });
 
-  useEffect(() => setId(location.state?.characterId), [location.state?.characterId]);
+  useEffect(
+    () => setId(characterId ?? location.state?.characterId),
+    [characterId, location.state?.characterId]
+  );
 
   const setScore = (index: string, val?: number) => {
     let res = val;
@@ -220,6 +232,7 @@ export function CharacterPoints() {
       );
 
       await firebaseCrud.update(id, { ...formattedPoints, abilityScoreMethod });
+      onSave?.();
     }
   };
 
@@ -229,7 +242,13 @@ export function CharacterPoints() {
         <Typography>Ability Scores</Typography>
       </Divider>
 
-      <Box display="flex" flexDirection="column" gap="15px" alignItems="center" minHeight="80vh">
+      <Box
+        display="flex"
+        flexDirection="column"
+        gap="15px"
+        alignItems="center"
+        minHeight={redirect ? '80vh' : '100%'}
+      >
         <Box display="flex" gap="5px">
           <Typography variant="subtitle2">Race Modifiers: </Typography>
           {character?.abilities?.map((ability, i) => (
@@ -337,15 +356,27 @@ export function CharacterPoints() {
           <Loader />
         )}
 
-        <Fab
-          size="small"
-          sx={{ ...button, ...fab }}
-          disabled={!isValid}
-          onClick={onSubmit}
-          data-testid="save-scores"
-        >
-          <SaveAltRounded sx={linkButton} />
-        </Fab>
+        {redirect ? (
+          <Fab
+            size="small"
+            sx={{ ...button, ...fab }}
+            disabled={!isValid}
+            onClick={onSubmit}
+            data-testid="save-scores-fab"
+          >
+            <SaveAltRounded sx={linkButton} />
+          </Fab>
+        ) : (
+          <Button
+            id="save-scores"
+            disabled={!isValid || firebaseCrud.isLoading}
+            onClick={onSubmit}
+            data-testid="save-scores"
+            sx={{ alignSelf: 'flex-end' }}
+          >
+            Save
+          </Button>
+        )}
       </Box>
 
       <FullPageLoader open={!character || firebaseCrud.isLoading} />

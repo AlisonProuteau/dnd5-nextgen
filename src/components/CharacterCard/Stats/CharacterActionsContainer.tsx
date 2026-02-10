@@ -1,13 +1,22 @@
 import { Fragment } from 'react';
-import { Link } from 'react-router-dom';
 import { CoinPurse, HealIcon } from '@assets';
 import { Delete, EditRounded, EventNote } from '@mui/icons-material';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, Fab } from '@mui/material';
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Fab,
+  Typography
+} from '@mui/material';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { button, fab, linkButton } from '@utils/ui';
+import { button, fab } from '@utils/ui';
 import type { Character } from '@representations/user.representation';
 import { CharacterNotes } from '../CharacterNotes/CharacterNotes';
+import { CharacterPoints } from '../CharacterPoints';
 import { HealthManager } from '../Equipment/HealthManager';
 import { MoneyManager } from '../Equipment/MoneyManager';
 
@@ -19,6 +28,7 @@ export function CharacterActionsContainer({
   activeStep: number;
 }) {
   const { isOn: isNoteOpen, turnOn: openNote, turnOff: closeNote } = useToggle(false);
+  const { isOn: isPointsOpen, turnOn: openPoints, turnOff: closePoints } = useToggle(false);
   const { isOn: isDeleteOpen, turnOn: openDelete, turnOff: closeDelete } = useToggle(false);
   const {
     isOn: isMoneyDialogOpen,
@@ -81,17 +91,22 @@ export function CharacterActionsContainer({
       />
 
       {activeStep === 0 && (
-        // TODO: Make this a modal
         <Fragment>
           <Fab
             size="small"
             sx={{ ...button, ...fab, marginRight: 18 }}
+            onClick={openPoints}
             data-testid={`edit-points-${character.id}`}
           >
-            <Link to="points" state={{ characterId: character.id }} css={linkButton}>
-              <EditRounded />
-            </Link>
+            <EditRounded />
           </Fab>
+
+          <Dialog maxWidth="sm" fullWidth open={isPointsOpen} onClose={closePoints}>
+            <Box display="flex" flexDirection="column" gap={3} p={3}>
+              <Typography variant="h6">Edit Character Points</Typography>
+              <CharacterPoints characterId={character.id} redirect={false} onSave={closePoints} />
+            </Box>
+          </Dialog>
 
           <Fab
             size="small"
