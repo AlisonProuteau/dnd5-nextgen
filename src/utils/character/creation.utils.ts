@@ -1,4 +1,4 @@
-import { pickBy, uniqBy } from 'lodash';
+import { omitBy, pickBy, uniqBy } from 'lodash';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
@@ -204,22 +204,52 @@ export const formatPointsForDB = (
     };
   });
 
-  return {
-    hit_die: classInfo?.hit_die,
-    hit_points: getBaseHitPoints(
-      formattedAbilities['con']?.modifier || 0,
-      character?.features || [],
-      classInfo?.hit_die
-    ),
-    saving_throws: classInfo?.saving_throws,
-    armorClass: getArmorClass(
-      formattedAbilities['dex'].modifier,
-      equipmentList,
-      character?.features,
-      character?.class.index === 'monk'
-        ? formattedAbilities['wis']?.modifier || 0
-        : formattedAbilities['con']?.modifier || 0
-    ),
-    abilityScores: formattedAbilities
-  };
+  let hitPoints = 0;
+  let health: Character['health'] = undefined;
+  if (
+    character.hit_points &&
+    formattedAbilities.con.modifier !== character.abilityScores?.con.modifier
+  ) {
+    const conDifference =
+      (formattedAbilities.con.modifier - (character.abilityScores?.con.modifier || 0)) *
+      character.level;
+    hitPoints = character.hit_points + conDifference;
+    health = {
+      ...character.health,
+      current:
+        character.health?.current === 0
+          ? 0
+          : (character.health?.current ?? character.hit_points) + conDifference > 0
+            ? (character.health?.current ?? character.hit_points) + conDifference
+            : 1
+    };
+  } else {
+    hitPoints =
+      character.hit_points ??
+      getBaseHitPoints(
+        formattedAbilities['con']?.modifier || 0,
+        character?.features || [],
+        classInfo?.hit_die,
+        character.level
+      );
+  }
+
+  return omitBy(
+    {
+      hit_die: classInfo?.hit_die,
+      hit_points: hitPoints,
+      health: health ?? character.health,
+      saving_throws: classInfo?.saving_throws,
+      armorClass: getArmorClass(
+        formattedAbilities['dex'].modifier,
+        equipmentList,
+        character?.features,
+        character?.class.index === 'monk'
+          ? formattedAbilities['wis']?.modifier || 0
+          : formattedAbilities['con']?.modifier || 0
+      ),
+      abilityScores: formattedAbilities
+    },
+    (value) => value === undefined
+  );
 };

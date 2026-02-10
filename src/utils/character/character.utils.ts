@@ -302,6 +302,9 @@ export const formatEquipmentForDisplay = (
 export const getBaseHitPoints = (
   conModifier: number,
   features: DefaultRepresentation[],
-  hitDie = 6
+  hitDie = 6,
+  level = 1
 ) =>
-  hitDie + conModifier + (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
+  hitDie +
+  conModifier * level +
+  (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
