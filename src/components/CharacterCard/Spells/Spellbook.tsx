@@ -29,7 +29,7 @@ import { SpellSearch } from './SpellSearch';
 import { SpellSlots } from './SpellSlots';
 
 interface SpellbookProps {
-  character: Character;
+  character: Character & { ritualCaster?: boolean };
   slotInfo: {
     cantrips?: number;
     learn?: number;
@@ -193,6 +193,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                   handleCastSpell(spell, slotLevel);
                   onClick?.();
                 }}
+                canCastRitual={character.ritualCaster}
               />
             )}
           />

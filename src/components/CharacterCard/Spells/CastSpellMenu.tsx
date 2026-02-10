@@ -6,12 +6,14 @@ interface CastSpellMenuProps {
   spell: Spell;
   availableSlots?: Record<string, number>;
   handleCastSpell?: (spell: Spell, slotLevel?: number) => void;
+  canCastRitual?: boolean;
 }
 
 export function CastSpellMenu({
   spell,
   availableSlots = {},
-  handleCastSpell = () => undefined
+  handleCastSpell = () => undefined,
+  canCastRitual = false
 }: CastSpellMenuProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -23,7 +25,7 @@ export function CastSpellMenu({
       .map(([level]) => parseInt(level))
       .sort((a, b) => a - b);
 
-    return spell.ritual && regularAvailableSlots.length
+    return spell.ritual && canCastRitual && regularAvailableSlots.length
       ? regularAvailableSlots.concat([0])
       : regularAvailableSlots;
   }, [availableSlots, spell]);

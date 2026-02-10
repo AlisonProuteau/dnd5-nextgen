@@ -115,7 +115,15 @@ export function SpellStep({ character }: DefaultProps) {
             />
           </Box>
 
-          {page === 'available' && <Spellbook character={character} slotInfo={slots} />}
+          {page === 'available' && (
+            <Spellbook
+              character={{
+                ...character,
+                ritualCaster: classSpellcasting?.info.some(({ name }) => name === 'Ritual Casting')
+              }}
+              slotInfo={slots}
+            />
+          )}
 
           {page === 'full' && (
             <SpellList
