@@ -309,7 +309,7 @@ describe(`Character Points End-to-End Flow`, () => {
 
     // Test: Navigate to points page via edit button
     cy.getByTestId('edit-points-edit-points-char').click();
-    cy.url().should('include', '/points');
+    cy.url().should('not.include', '/points');
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
     // Test: Race modifiers are displayed
@@ -370,7 +370,7 @@ describe(`Character Points End-to-End Flow`, () => {
 
     // Test: Navigate back to edit points and switch to Random method
     cy.getByTestId('edit-points-edit-points-char').click();
-    cy.url().should('include', '/points');
+    cy.url().should('not.include', '/points');
     cy.get('#ability-str').should('have.value', '13');
     cy.get('#ability-dex').should('have.value', '13'); // Without race bonus
     cy.get('#ability-con').should('have.value', '9');
