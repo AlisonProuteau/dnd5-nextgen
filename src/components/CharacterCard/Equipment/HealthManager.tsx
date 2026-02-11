@@ -85,7 +85,18 @@ export function HealthManager({
   const onSave = async () => {
     await firebaseCrud.update(
       character.id,
-      overrideHitPoints ? { health, hit_points: health.current || 1 } : { health }
+      overrideHitPoints
+        ? {
+            health: {
+              ...character.health,
+              current:
+                (character.health?.current ?? 0) > health.current
+                  ? health.current
+                  : (character.health?.current ?? 0)
+            },
+            hit_points: health.current || 1
+          }
+        : { health }
     );
     closeHealthDialog();
   };
@@ -137,6 +148,7 @@ export function HealthManager({
                 max={character.hit_points}
                 value={health.temporary}
                 onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
+                disabled={overrideHitPoints}
               />
             </Tooltip>
 
@@ -183,6 +195,7 @@ export function HealthManager({
                         deathSaves: { ...prev.deathSaves, successes: value ?? 0 }
                       }))
                     }
+                    disabled={overrideHitPoints}
                   />
                   <NumberInput
                     id="deathSaveFailures"
@@ -196,6 +209,7 @@ export function HealthManager({
                         deathSaves: { ...prev.deathSaves, failures: value ?? 0 }
                       }))
                     }
+                    disabled={overrideHitPoints}
                   />
                 </Box>
               </Box>
@@ -224,6 +238,7 @@ export function HealthManager({
                 })
               }
               sx={{ paddingBottom: 0, width: 'fit-content' }}
+              disabled={overrideHitPoints}
             >
               <RestartAlt />
             </IconButton>
@@ -239,7 +254,7 @@ export function HealthManager({
             <Button
               key="update-health"
               id="update-health"
-              disabled={firebaseCrud.isLoading}
+              disabled={firebaseCrud.isLoading || (overrideHitPoints && health.current === 0)}
               onClick={onSave}
             >
               {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
