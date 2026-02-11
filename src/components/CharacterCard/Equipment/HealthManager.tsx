@@ -24,7 +24,6 @@ interface HealthManagerProps {
 }
 
 //TODO-blocked: Add rest functionality and hit dice management
-//TODO: E2E
 export function HealthManager({
   character,
   isHealthDialogOpen,
@@ -53,7 +52,7 @@ export function HealthManager({
   });
 
   useEffect(() => {
-    if (!isHealthDialogOpen) {
+    if (isHealthDialogOpen) {
       setHealth({
         current: character.health?.current ?? character.hit_points ?? 0,
         temporary: character.health?.temporary || 0,
@@ -73,30 +72,33 @@ export function HealthManager({
   );
 
   useEffect(() => {
-    if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves) {
+    if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves && !overrideHitPoints) {
       setHealth((prev) => ({
         ...prev,
         current: 1,
         deathSaves: { ...prev.deathSaves, usedSaves: true }
       }));
     }
-  }, [health.current, canAutoSave]);
+  }, [health.current, canAutoSave, health.deathSaves.usedSaves, overrideHitPoints]);
 
   const onSave = async () => {
+    const newHealth = { ...character.health, ...health };
+
+    if (overrideHitPoints) {
+      const hpDifference = health.current - (character.hit_points ?? 0);
+      newHealth.current =
+        character.health?.current === 0
+          ? 0
+          : (character.health?.current ?? 0) + hpDifference > 0
+            ? (character.health?.current ?? 0) + hpDifference
+            : 1;
+    }
+
     await firebaseCrud.update(
       character.id,
       overrideHitPoints
-        ? {
-            health: {
-              ...character.health,
-              current:
-                (character.health?.current ?? 0) > health.current
-                  ? health.current
-                  : (character.health?.current ?? 0)
-            },
-            hit_points: health.current || 1
-          }
-        : { health }
+        ? { health: newHealth, hit_points: health.current || 1 }
+        : { health: newHealth }
     );
     closeHealthDialog();
   };
@@ -134,7 +136,7 @@ export function HealthManager({
             </Tooltip>
           </Box>
 
-          <Box display="flex" flexDirection="column" gap={1}>
+          <Box display="flex" flexDirection="column" gap={1} align-items="center">
             <Tooltip
               title="Grants a protective buffer above your hit points that absorbs
                 damage first. It fades after a long rest. New temporary health replaces any existing
@@ -158,6 +160,7 @@ export function HealthManager({
               min={health.temporary ? health.current : 0}
               max={overrideHitPoints ? 99 : character.hit_points}
               value={health.current}
+              disabled={!overrideHitPoints && health.temporary > 0}
               onChange={(_, value) =>
                 setHealth((prev) => ({
                   ...prev,

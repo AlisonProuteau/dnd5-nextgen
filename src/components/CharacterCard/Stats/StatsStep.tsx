@@ -53,7 +53,7 @@ export function Stats({ character }: DefaultProps) {
         <IconText
           label="Hit Points"
           value={
-            (character.health?.current || character.hit_points) + (character.health?.temporary || 0)
+            (character.health?.current ?? character.hit_points) + (character.health?.temporary ?? 0)
           }
           Icon={HitPointsIcon}
           color="grey"

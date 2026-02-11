@@ -1,6 +1,6 @@
 import { characters } from 'cypress/support/mocks/characterList';
 
-// TODO: Add leveling when implemented
+// TODO-blocked: Add leveling when implemented
 describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
   const isMobile = Cypress.config('viewportWidth') === 375;
 
@@ -397,7 +397,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
           cy.getByRole('dialog', 'Learn').within(($el) => {
             // Test: Learn spells with 1 missing
-            // TODO: get the spell levels available and add a little in each
+            // TODO-blocked: get the spell levels available and add a little in each
             for (let i = 0; i < learnNum - 1; i++) {
               cy.wrap($el).getByTestId('edit-spell-item-').eq(i).getButton(/^Add$/).click();
             }
@@ -529,11 +529,11 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           }
 
           // Test: Prepare spells with 1 missing
-          // TODO: Preparing spells with previously learned if they can learn
+          // TODO-blocked: Preparing spells with previously learned if they can learn
           if (learnNum > 0) {
             if (classData.index === 'wizard') cy.contains(/Faerie Fire/).should('exist');
           }
-          // TODO: get the spell levels available and add a little in each
+          // TODO-blocked: get the spell levels available and add a little in each
           for (let i = 0; i < prepareCNum - 1; i++) {
             cy.getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
@@ -585,7 +585,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           cy.getByRole('dialog').should('not.exist');
         }
 
-        // TODO: should test specific spell names + levels
+        // TODO-blocked: should test specific spell names + levels
         cy.getByTestId('spells-section')
           .getByTestId('spell-list-0')
           .getByTestId('view-spell-item-')
