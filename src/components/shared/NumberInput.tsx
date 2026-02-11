@@ -50,17 +50,21 @@ export const NumberInput = forwardRef(function CustomNumberInput(
           ...props.slots
         }}
         slotProps={{
-          input: { id, 'aria-label': props['aria-label'] || label },
+          input: {
+            id,
+            'aria-label': props['aria-label'] || label,
+            disabled: props.disabled
+          },
           incrementButton: {
             children: <Add fontSize="small" />,
             className: 'increment',
-            disabled: addDisabled,
+            disabled: props.disabled || addDisabled,
             id: `${id}-increment`
           },
           decrementButton: {
             children: <Remove fontSize="small" />,
             className: 'decrement',
-            disabled: removeDisabled,
+            disabled: props.disabled || removeDisabled,
             id: `${id}-decrement`
           },
           ...props.slotProps
@@ -71,35 +75,11 @@ export const NumberInput = forwardRef(function CustomNumberInput(
   );
 });
 
-const blue = {
-  100: '#daecff',
-  200: '#b6daff',
-  300: '#66b2ff',
-  400: '#3399ff',
-  500: '#007fff',
-  600: '#0072e5',
-  700: '#0059B2',
-  800: '#004c99'
-};
-
-const grey = {
-  50: '#F3F6F9',
-  100: '#E5EAF2',
-  200: '#DAE2ED',
-  300: '#C7D0DD',
-  400: '#B0B8C4',
-  500: '#9DA8B7',
-  600: '#6B7A90',
-  700: '#434D5B',
-  800: '#303740',
-  900: '#1C2025'
-};
-
 const StyledInputRoot = styled('div')(
   ({ theme }) => `
   font-family: 'IBM Plex Sans', sans-serif;
   font-weight: 400;
-  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[500]};
+  color: ${theme.palette.grey[500]};
   display: flex;
   flex-flow: row nowrap;
   justify-content: center;
@@ -113,9 +93,9 @@ const StyledInput = styled('input')(
   font-family: inherit;
   font-weight: 400;
   line-height: 1.375;
-  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
-  background: ${theme.palette.mode === 'dark' ? grey[900] : '#fff'};
-  border: 1px solid ${theme.palette.mode === 'dark' ? grey[700] : grey[200]};
+  color: ${theme.palette.text.primary};
+  background: ${theme.palette.background.paper};
+  border: 1px solid ${theme.palette.grey[700]};
   box-shadow: 0px 2px 4px ${
     theme.palette.mode === 'dark' ? 'rgba(0,0,0, 0.5)' : 'rgba(0,0,0, 0.05)'
   };
@@ -128,16 +108,23 @@ const StyledInput = styled('input')(
   text-align: center;
 
   &:hover {
-    border-color: ${blue[400]};
+    border-color: ${theme.palette.primary.main};
   }
 
   &:focus {
-    border-color: ${blue[400]};
-    box-shadow: 0 0 0 3px ${theme.palette.mode === 'dark' ? blue[700] : blue[200]};
+    border-color: ${theme.palette.primary.main};
+    box-shadow: 0 0 0 3px ${theme.palette.primary.dark};
   }
 
   &:focus-visible {
     outline: 0;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: ${theme.palette.action.disabledBackground};
+    color: ${theme.palette.text.disabled};
   }
 `
 );
@@ -150,9 +137,9 @@ const StyledButton = styled('button')(
   line-height: 1.5;
   border: 1px solid;
   border-radius: 999px;
-  border-color: ${theme.palette.mode === 'dark' ? grey[800] : grey[200]};
-  background: ${theme.palette.mode === 'dark' ? grey[900] : grey[50]};
-  color: ${theme.palette.mode === 'dark' ? grey[200] : grey[900]};
+  border-color: ${theme.palette.grey[700]};
+  background: ${theme.palette.background.default};
+  color: ${theme.palette.text.primary};
   width: 32px;
   height: 32px;
   display: flex;
@@ -165,9 +152,9 @@ const StyledButton = styled('button')(
 
   &:hover {
     cursor: pointer;
-    background: ${theme.palette.mode === 'dark' ? blue[700] : blue[500]};
-    border-color: ${theme.palette.mode === 'dark' ? blue[500] : blue[400]};
-    color: ${grey[50]};
+    background: ${theme.palette.primary.main};
+    border-color: ${theme.palette.primary.dark};
+    color: ${theme.palette.primary.contrastText};
   }
 
   &:focus-visible {
@@ -176,6 +163,13 @@ const StyledButton = styled('button')(
 
   &.increment {
     order: 1;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: ${theme.palette.action.disabledBackground};
+    color: ${theme.palette.text.disabled};
   }
 `
 );
@@ -186,9 +180,9 @@ const StyledInputCompact = styled('input')(
   font-family: inherit;
   font-weight: 400;
   line-height: 1.375;
-  color: ${theme.palette.mode === 'dark' ? grey[300] : grey[900]};
-  background: ${theme.palette.mode === 'dark' ? grey[900] : '#fff'};
-  border: 1px solid ${theme.palette.mode === 'dark' ? grey[700] : grey[200]};
+  color: ${theme.palette.text.primary};
+  background: ${theme.palette.background.paper};
+  border: 1px solid ${theme.palette.grey[700]};
   box-shadow: 0px 2px 4px ${
     theme.palette.mode === 'dark' ? 'rgba(0,0,0, 0.5)' : 'rgba(0,0,0, 0.05)'
   };
@@ -201,16 +195,23 @@ const StyledInputCompact = styled('input')(
   text-align: center;
 
   &:hover {
-    border-color: ${blue[400]};
+    border-color: ${theme.palette.primary.main};
   }
 
   &:focus {
-    border-color: ${blue[400]};
-    box-shadow: 0 0 0 3px ${theme.palette.mode === 'dark' ? blue[700] : blue[200]};
+    border-color: ${theme.palette.primary.main};
+    box-shadow: 0 0 0 3px ${theme.palette.primary.dark};
   }
 
   &:focus-visible {
     outline: 0;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: ${theme.palette.action.disabledBackground};
+    color: ${theme.palette.text.disabled};
   }
 `
 );
@@ -223,9 +224,9 @@ const StyledButtonCompact = styled('button')(
   line-height: 1.5;
   border: 1px solid;
   border-radius: 999px;
-  border-color: ${theme.palette.mode === 'dark' ? grey[800] : grey[200]};
-  background: ${theme.palette.mode === 'dark' ? grey[900] : grey[50]};
-  color: ${theme.palette.mode === 'dark' ? grey[200] : grey[900]};
+  border-color: ${theme.palette.grey[700]};
+  background: ${theme.palette.background.default};
+  color: ${theme.palette.text.primary};
   width: 24px;
   height: 24px;
   display: flex;
@@ -238,9 +239,9 @@ const StyledButtonCompact = styled('button')(
 
   &:hover {
     cursor: pointer;
-    background: ${theme.palette.mode === 'dark' ? blue[700] : blue[500]};
-    border-color: ${theme.palette.mode === 'dark' ? blue[500] : blue[400]};
-    color: ${grey[50]};
+    background: ${theme.palette.primary.main};
+    border-color: ${theme.palette.primary.dark};
+    color: ${theme.palette.primary.contrastText};
   }
 
   &:focus-visible {
@@ -249,6 +250,13 @@ const StyledButtonCompact = styled('button')(
 
   &.increment {
     order: 1;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background: ${theme.palette.action.disabledBackground};
+    color: ${theme.palette.text.disabled};
   }
 `
 );
