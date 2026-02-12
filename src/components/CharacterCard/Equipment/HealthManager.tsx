@@ -51,6 +51,24 @@ export function HealthManager({
     successMessages: { update: 'Health Updated' }
   });
 
+  const canAutoSave = useMemo(
+    () => character.traits?.some(({ index }) => index === 'relentless-endurance'),
+    [character.traits]
+  );
+
+  const initialHealth = useMemo(
+    () => ({
+      current: character.health?.current ?? character.hit_points ?? 0,
+      temporary: character.health?.temporary || 0,
+      deathSaves: {
+        successes: character.health?.deathSaves?.successes || 0,
+        failures: character.health?.deathSaves?.failures || 0,
+        usedSaves: character.health?.deathSaves?.usedSaves || false
+      }
+    }),
+    [character.health, character.hit_points]
+  );
+
   useEffect(() => {
     if (isHealthDialogOpen) {
       setHealth({
@@ -66,11 +84,6 @@ export function HealthManager({
     }
   }, [isHealthDialogOpen]);
 
-  const canAutoSave = useMemo(
-    () => character.traits?.some(({ index }) => index === 'relentless-endurance'),
-    [character.traits]
-  );
-
   useEffect(() => {
     if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves && !overrideHitPoints) {
       setHealth((prev) => ({
@@ -84,14 +97,12 @@ export function HealthManager({
   const onSave = async () => {
     const newHealth = { ...character.health, ...health };
 
-    if (overrideHitPoints) {
-      const hpDifference = health.current - (character.hit_points ?? 0);
+    if (overrideHitPoints && character.health !== undefined) {
+      const newHealthCurrent =
+        character.health.current + (health.current - (character.hit_points ?? 0));
+
       newHealth.current =
-        character.health?.current === 0
-          ? 0
-          : (character.health?.current ?? 0) + hpDifference > 0
-            ? (character.health?.current ?? 0) + hpDifference
-            : 1;
+        character.health.current === 0 ? 0 : newHealthCurrent > 0 ? newHealthCurrent : 1;
     }
 
     await firebaseCrud.update(
@@ -113,7 +124,7 @@ export function HealthManager({
       <Dialog
         open={isHealthDialogOpen}
         onClose={(_, reason) =>
-          reason && !isEqual(character.health, health) ? openConfirmDialog() : closeHealthDialog()
+          reason && !isEqual(initialHealth, health) ? openConfirmDialog() : closeHealthDialog()
         }
         fullWidth
       >

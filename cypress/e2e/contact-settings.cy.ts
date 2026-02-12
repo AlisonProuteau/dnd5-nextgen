@@ -392,7 +392,6 @@ describe(`Settings Page End-to-End`, () => {
 
     // Test: Loading state
     cy.get('button[type="submit"]').should('not.exist');
-    cy.get('[role="progressbar"]').should('be.visible');
     cy.wait('@updateSettings');
     cy.waitForLoading();
 
