@@ -1,10 +1,11 @@
 import { Fragment, useCallback } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
-import { useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getTrait } from '@api/ressources';
 import { blackList } from '@utils/character/characteristics.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
@@ -30,12 +31,7 @@ export function TraitsDisplay({
           queryFn: async () => await getTrait(character.version || 'Legacy', index),
           enabled: !!index
         })) || [],
-    combine: useCallback((results: UseQueryResult<Trait | null, Error>[]) => {
-      return {
-        data: results.map(({ data }) => data).filter((data) => data) as Trait[],
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+    combine: useCallback(createQueryCombiner<Trait>(), [])
   });
 
   const { data: subtraits } = useQueries({
@@ -50,12 +46,7 @@ export function TraitsDisplay({
         queryFn: async () => await getTrait(character.version || 'Legacy', index),
         enabled: !!index
       })) || [],
-    combine: useCallback((results: UseQueryResult<Trait | null, Error>[]) => {
-      return {
-        data: results.map(({ data }) => data).filter((data) => data) as Trait[],
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+    combine: useCallback(createQueryCombiner<Trait>(), [])
   });
   return (
     traits && (

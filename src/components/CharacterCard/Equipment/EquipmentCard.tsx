@@ -11,10 +11,11 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
-import { useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getProperty } from '@api/ressources';
 import { EquipmentLine } from '@shared/EquipmentLine';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
@@ -36,12 +37,7 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
           enabled: !!index && !!version
         })
       ) || [],
-    combine: useCallback((results: UseQueryResult<WeaponProperty | null, Error>[]) => {
-      return {
-        data: results.map(({ data }) => data).filter((data) => data) as WeaponProperty[],
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+    combine: useCallback(createQueryCombiner<WeaponProperty>(), [])
   });
 
   return (

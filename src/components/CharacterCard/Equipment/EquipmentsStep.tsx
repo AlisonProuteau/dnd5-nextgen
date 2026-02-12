@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
-import { useQueries, type UseQueryResult } from '@tanstack/react-query';
-import { flatten, groupBy, uniqBy } from 'lodash';
+import { useQueries } from '@tanstack/react-query';
+import { type Dictionary, flatten, groupBy, uniqBy } from 'lodash';
 import { getEquipment, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
 import { formatEquipmentForDisplay, getArmorClass, hasRequiredStrength } from '@utils/character';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
@@ -41,16 +42,15 @@ export function Equipments({ character }: DefaultProps) {
         enabled: !!index
       })) || [],
     combine: useCallback(
-      (results: UseQueryResult<Equipment | MagicItem | null, Error>[]) => ({
-        data: groupBy(
-          formatEquipmentForDisplay(
-            results.map(({ data }) => data).filter(Boolean) as (Equipment | MagicItem)[],
-            character.equipments
-          ),
+      createQueryCombiner<
+        Equipment | MagicItem,
+        Dictionary<ReturnType<typeof formatEquipmentForDisplay>>
+      >((formattedData) =>
+        groupBy(
+          formatEquipmentForDisplay(formattedData, character.equipments),
           'equipment_category.index'
-        ),
-        isFetching: results.some((result) => result.isFetching)
-      }),
+        )
+      ),
       [character.equipments]
     )
   });
@@ -71,12 +71,12 @@ export function Equipments({ character }: DefaultProps) {
         equipped: character.equipments.find(({ index }) => index === eq?.index)?.equipped ?? true
       }));
       const newArmorClass = getArmorClass(
-        character.abilityScores['dex'].modifier,
+        character.abilityScores.dex.modifier,
         updatedEquipments || [],
         character?.features,
         character?.class.index === 'monk'
-          ? character.abilityScores['wis']?.modifier || 0
-          : character.abilityScores['con']?.modifier || 0
+          ? character.abilityScores.wis?.modifier || 0
+          : character.abilityScores.con?.modifier || 0
       );
 
       if (!cancelled && newArmorClass !== character.armorClass)
@@ -109,12 +109,12 @@ export function Equipments({ character }: DefaultProps) {
       }))
       .filter(Boolean) as (Equipment | MagicItem)[];
     const newArmorClass = getArmorClass(
-      character.abilityScores['dex'].modifier,
+      character.abilityScores.dex.modifier,
       fullUpdatedEquipments,
       character?.features,
       character?.class.index === 'monk'
-        ? character.abilityScores['wis']?.modifier || 0
-        : character.abilityScores['con']?.modifier || 0
+        ? character.abilityScores.wis?.modifier || 0
+        : character.abilityScores.con?.modifier || 0
     );
 
     await firebaseCrud.update(character.id, {
