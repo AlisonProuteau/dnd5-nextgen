@@ -206,11 +206,14 @@ export const formatPointsForDB = (
 
   let hitPoints = 0;
   let health: Character['health'] = undefined;
-  const oldConMod = character.abilityScores?.con?.modifier ?? 0;
-  const newConMod = formattedAbilities?.con?.modifier;
 
-  if (character.hit_points && newConMod !== oldConMod) {
-    const conDifference = (newConMod - oldConMod) * character.level;
+  if (
+    character.hit_points &&
+    character.abilityScores?.con?.modifier !== undefined &&
+    formattedAbilities.con.modifier !== character.abilityScores?.con?.modifier
+  ) {
+    const conDifference =
+      (formattedAbilities.con.modifier - character.abilityScores?.con?.modifier) * character.level;
     hitPoints = character.hit_points + conDifference;
 
     const oldHealth = character.health?.current ?? character.hit_points;
@@ -224,7 +227,7 @@ export const formatPointsForDB = (
     hitPoints =
       character.hit_points ??
       getBaseHitPoints(
-        newConMod || 0,
+        formattedAbilities.con.modifier || 0,
         character?.features || [],
         classInfo?.hit_die,
         character.level

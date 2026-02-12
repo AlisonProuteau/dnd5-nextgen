@@ -11,7 +11,7 @@ function combineQueryResults<T, U = T[]>(
   dataFormatter: (data: T[]) => U
 ) {
   return {
-    data: dataFormatter(results.map(({ data }) => data).filter((data) => data) as T[]),
+    data: dataFormatter(results.map(({ data }) => data).filter(Boolean) as T[]),
     isFetching: results.some((result) => result.isFetching)
   };
 }
