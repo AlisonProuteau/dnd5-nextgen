@@ -19,7 +19,7 @@ describe(`Character Generator End-to-End`, () => {
 
   beforeEach(() => cy.task('clearDownloadsFolder'));
 
-  it.only('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
+  it('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
     // Test: Admin route protection
     cy.visit('/character-generator');
     cy.url().should('not.include', '/character-generator');

@@ -218,6 +218,7 @@ export const formatPointsForDB = (
 
     const oldHealth = character.health?.current ?? character.hit_points;
     const newHealth = oldHealth + conDifference;
+
     health = {
       temporary: character.health?.temporary ?? 0,
       deathSaves: character.health?.deathSaves ?? { successes: 0, failures: 0 },
@@ -230,7 +231,7 @@ export const formatPointsForDB = (
         formattedAbilities.con.modifier || 0,
         character?.features || [],
         classInfo?.hit_die,
-        character.level
+        character.level || 1
       );
   }
 

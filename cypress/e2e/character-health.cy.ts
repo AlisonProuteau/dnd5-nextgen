@@ -11,12 +11,20 @@ describe('Character Health Management End-to-End', () => {
     }
   };
 
+  beforeEach(() => {
+    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
+    cy.login(Cypress.testUser.uid);
+  });
+
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('should complete full health management workflow with validation and error handling', () => {
-    const healthTestChar = { ...characterData, ...baseHealth, id: 'health-test-char' };
+  it('should complete full health management workflow with validation and error handling', function () {
+    const healthTestChar = {
+      ...characterData,
+      ...baseHealth,
+      id: `health-test-char-${this.isMobile ? 'mobile' : 'desktop'}`
+    };
     cy.createTestCharacter(Cypress.testUser.uid, healthTestChar.id, healthTestChar);
-    cy.login(Cypress.testUser.uid);
 
     cy.visit('/');
     cy.getByTestId(`character-card-${healthTestChar.id}`).click();
@@ -157,11 +165,14 @@ describe('Character Health Management End-to-End', () => {
     });
   });
 
-  it('should handle override hit points and relentless endurance workflows', () => {
+  it('should handle override hit points and relentless endurance workflows', function () {
     const characterWithSaves = characters.find(({ name }) => name === 'Ravy')!;
-    const relentlessChar = { ...characterWithSaves, id: 'relentless-test-char', ...baseHealth };
+    const relentlessChar = {
+      ...characterWithSaves,
+      id: `relentless-test-char-${this.isMobile ? 'mobile' : 'desktop'}`,
+      ...baseHealth
+    };
     cy.createTestCharacter(Cypress.testUser.uid, relentlessChar.id, relentlessChar);
-    cy.login(Cypress.testUser.uid);
 
     cy.visit('/');
     cy.getByTestId(`character-card-${relentlessChar.id}`).click();
@@ -308,11 +319,11 @@ describe('Character Health Management End-to-End', () => {
     });
   });
 
-  it('should recalculate hit points when constitution modifier changes', () => {
+  it('should recalculate hit points when constitution modifier changes', function () {
     // Test: Create character with initial CON modifier of +1 (CON 13), level 2
     const conTestChar = {
       ...characterData,
-      id: 'con-change-char',
+      id: `con-change-char-${this.isMobile ? 'mobile' : 'desktop'}`,
       level: 2,
       abilityScores: {
         ...characterData.abilityScores,
@@ -325,7 +336,6 @@ describe('Character Health Management End-to-End', () => {
       }
     };
     cy.createTestCharacter(Cypress.testUser.uid, conTestChar.id, conTestChar);
-    cy.login(Cypress.testUser.uid);
 
     cy.visit('/');
     cy.getByTestId(`character-card-${conTestChar.id}`).click();

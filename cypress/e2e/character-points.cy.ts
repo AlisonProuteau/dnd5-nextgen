@@ -4,13 +4,16 @@ import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
 
 describe(`Character Points End-to-End Flow`, () => {
-  beforeEach(() => cy.login(Cypress.testUser.uid));
+  beforeEach(() => {
+    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
+    cy.login(Cypress.testUser.uid);
+  });
 
   afterEach(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('Set - should be able to set ability scores', () => {
-    // Create character with specific race that has ability modifiers
-    cy.createTestCharacter(Cypress.testUser.uid, 'points-test-char', {
+  it('Set - should be able to set ability scores', function () {
+    const charId = `points-test-char-${this.isMobile ? 'mobile' : 'desktop'}`;
+    cy.createTestCharacter(Cypress.testUser.uid, charId, {
       name: 'Points Test Character',
       race: { index: 'dwarf', name: 'Dwarf' },
       abilities: [
@@ -21,7 +24,7 @@ describe(`Character Points End-to-End Flow`, () => {
     });
 
     cy.visit('/');
-    cy.getByTestId('character-card-points-test-char').click();
+    cy.getByTestId(`character-card-${charId}`).click();
 
     // Test: Should redirect to points page when abilityScores is null
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
@@ -79,14 +82,15 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('ability-cha').should('contain.text', '-1'); // 8 = -1
   });
 
-  it('Point Buy - should be able to set ability scores', () => {
-    cy.createTestCharacter(Cypress.testUser.uid, 'pointbuy-char', {
+  it('Point Buy - should be able to set ability scores', function () {
+    const charId = `pointbuy-char-${this.isMobile ? 'mobile' : 'desktop'}`;
+    cy.createTestCharacter(Cypress.testUser.uid, charId, {
       name: 'Point Buy Character',
       abilityScores: undefined
     });
 
     cy.visit('/');
-    cy.getByTestId('character-card-pointbuy-char').click();
+    cy.getByTestId(`character-card-${charId}`).click();
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
     // Test: Point Buy method is default
@@ -153,14 +157,15 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('ability-cha').should('contain.text', '0').and('contain.text', '10');
   });
 
-  it('Custom (random) - should be able to set ability scores', () => {
-    cy.createTestCharacter(Cypress.testUser.uid, 'random-char', {
+  it('Custom (random) - should be able to set ability scores', function () {
+    const charId = `random-char-${this.isMobile ? 'mobile' : 'desktop'}`;
+    cy.createTestCharacter(Cypress.testUser.uid, charId, {
       name: 'Random Character',
       abilityScores: undefined
     });
 
     cy.visit('/');
-    cy.getByTestId('character-card-random-char').click();
+    cy.getByTestId(`character-card-${charId}`).click();
     cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
     // Test: Select "Custom" (random) method
@@ -222,15 +227,15 @@ describe(`Character Points End-to-End Flow`, () => {
     );
   });
 
-  it('should not show points page for character with already calculated scores', () => {
-    // Create character WITH ability scores
-    cy.createTestCharacter(Cypress.testUser.uid, 'complete-char', {
+  it('should not show points page for character with already calculated scores', function () {
+    const charId = `complete-char-${this.isMobile ? 'mobile' : 'desktop'}`;
+    cy.createTestCharacter(Cypress.testUser.uid, charId, {
       name: 'Complete Character'
       // baseCharacter includes abilityScores
     });
 
     cy.visit('/');
-    cy.getByTestId('character-card-complete-char').click();
+    cy.getByTestId(`character-card-${charId}`).click();
 
     // Test: Should go directly to character sheet
     cy.url().should('include', '/character');
@@ -241,17 +246,21 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.getByTestId('character-container').should('be.visible');
   });
 
-  it('should calculate AC and HP correctly based on ability scores', () => {
-    // Test AC calculation and HP with Barbarian (d12 hit die, no armor)
-    cy.createTestCharacter(Cypress.testUser.uid, 'derived-stats-char', {
+  it('should calculate AC and HP correctly based on ability scores', function () {
+    const charId = `derived-stats-char-${this.isMobile ? 'mobile' : 'desktop'}`;
+    cy.createTestCharacter(Cypress.testUser.uid, charId, {
       name: 'Derived Stats Character',
       class: { index: 'barbarian', name: 'Barbarian' }, // d12 hit die for HP test
       equipments: [], // No armor for AC test
-      abilityScores: undefined
+      abilityScores: undefined,
+      hit_points: undefined,
+      level: 1
     });
 
+    // Test AC calculation and HP with Barbarian (d12 hit die, no armor)
     cy.visit('/');
-    cy.getByTestId('character-card-derived-stats-char').click();
+    cy.getByTestId(`character-card-${charId}`).click();
+    cy.url().should('include', '/points');
 
     // Assign ability scores with high CON (for HP) and high DEX (for AC)
     cy.contains('button', 'Point Buy').next().click();
@@ -263,31 +272,25 @@ describe(`Character Points End-to-End Flow`, () => {
     cy.selectOption('#ability-12-value', 'Wisdom');
     cy.selectOption('#ability-10-value', 'Intelligence');
     cy.selectOption('#ability-8-value', 'Charisma');
-
     cy.getByTestId('save-scores').click();
 
-    // Test: Verify redirect to character sheet
     cy.url().should('include', '/character');
     cy.url().should('not.include', '/points');
 
-    // Test: AC should be 10 + DEX modifier (10 + 2 = 12)
-    cy.getByTestId('armor-class').should('contain.text', '12');
-
-    // Test: HP should be hit die + CON modifier (12 + 2 = 14) for Barbarian
-    cy.getByTestId('hit-points').should('contain.text', '14');
-
     // Test: Verify the ability scores and modifiers are correct
-    cy.getByTestId('ability-con').should('contain.text', '15');
-    cy.getByTestId('ability-con').should('contain.text', '+2');
-    cy.getByTestId('ability-dex').should('contain.text', '14');
-    cy.getByTestId('ability-dex').should('contain.text', '+2');
+    cy.getByTestId('ability-con').should('contain.text', '15').and('contain.text', '+2');
+    cy.getByTestId('ability-dex').should('contain.text', '14').and('contain.text', '+2');
+
+    // Test: Verify AC and HP reflect the DEX and CON modifiers
+    cy.getByTestId('armor-class').should('contain.text', '12');
+    cy.getByTestId('hit-points').should('contain.text', '14');
   });
 
-  it('should be able to edit ability scores', () => {
+  it('should be able to edit ability scores', function () {
     // Test: Create character with existing ability scores
     const testCharacter = {
       ...baseCharacter,
-      id: 'edit-points-char',
+      id: `edit-points-char-${this.isMobile ? 'mobile' : 'desktop'}`,
       name: 'Edit Points Character',
       race: { index: 'elf', name: 'Elf' },
       abilities: [{ ability_score: { index: 'dex', name: 'DEX' }, bonus: 2 }],

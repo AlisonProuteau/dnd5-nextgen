@@ -42,7 +42,7 @@ export function CharacterPoints({
 }) {
   const [abilityScoreMethod, setAbilityScoreMethod] = useState<AbilityScoreMethod>();
   const [points, setPoints] = useState<Record<string, number>>({});
-  const [id, setId] = useState<string>();
+  const [id, setId] = useState<string | undefined>(characterId);
   const { user, version } = useAuth();
   const location = useLocation();
 
@@ -100,7 +100,7 @@ export function CharacterPoints({
   });
 
   useEffect(
-    () => setId(characterId ?? location.state?.characterId),
+    () => setId(characterId || location.state?.characterId),
     [characterId, location.state?.characterId]
   );
 
