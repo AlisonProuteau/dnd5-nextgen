@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Box, FormControl, FormLabel } from '@mui/material';
-import type { ChoiceObjectType } from '@utils/character';
+import type { ChoiceObjectType } from '@utils/character/creation.utils';
 import type { Alignment } from '@representations/character/background.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { Choice, DefaultRepresentation } from '@representations/common.representation';

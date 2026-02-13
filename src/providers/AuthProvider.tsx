@@ -2,7 +2,7 @@ import { createContext, type JSX, useContext, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query';
 import type { User } from 'firebase/auth';
 import { getUserData } from '@api/users';
-import type { Version } from '@utils/constants';
+import type { Version } from '@utils/constants/versions.constants';
 import type { AdditionalMoneyUnitType } from '@representations/campaign/equipment.representation';
 import { onAuthChange } from 'src/firebase';
 
