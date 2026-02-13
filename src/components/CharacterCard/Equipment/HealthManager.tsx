@@ -71,18 +71,10 @@ export function HealthManager({
 
   useEffect(() => {
     if (isHealthDialogOpen) {
-      setHealth({
-        current: character.health?.current ?? character.hit_points ?? 0,
-        temporary: character.health?.temporary || 0,
-        deathSaves: {
-          successes: character.health?.deathSaves?.successes || 0,
-          failures: character.health?.deathSaves?.failures || 0,
-          usedSaves: character.health?.deathSaves?.usedSaves || false
-        }
-      });
+      setHealth(initialHealth);
       setOverrideHitPoints(false);
     }
-  }, [isHealthDialogOpen]);
+  }, [isHealthDialogOpen, initialHealth]);
 
   useEffect(() => {
     if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves && !overrideHitPoints) {
