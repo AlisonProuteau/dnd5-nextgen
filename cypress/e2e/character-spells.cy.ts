@@ -90,7 +90,6 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   it('Should not display spell section for non-spellcaster', () => {
-    cy.login(Cypress.testUser.uid);
     cy.visit('/');
     cy.waitForLoading();
 
@@ -149,7 +148,6 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       usedSpellSlots: undefined
     });
 
-    cy.login(Cypress.testUser.uid);
     cy.visit('/');
     cy.waitForLoading();
 

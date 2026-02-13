@@ -8,13 +8,13 @@ describe('Character Money Management End-to-End', () => {
     money: { gp: 10, sp: 5, cp: 3 }
   };
 
-  afterEach(() =>
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`)
-  );
+  beforeEach(() => {
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`);
+    cy.login(Cypress.testUser.uid);
+  });
 
   it('should complete full money management workflow with validation and error handling', () => {
     cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
-    cy.login(Cypress.testUser.uid);
 
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
@@ -316,7 +316,6 @@ describe('Character Money Management End-to-End', () => {
         cp: 7
       }
     });
-    cy.login(Cypress.testUser.uid);
     cy.visit('/');
 
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
