@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { button, fab } from '@utils/ui';
+import { button, fab } from '@utils/ui/style.utils';
 import type { Character } from '@representations/user.representation';
 import { CharacterNotes } from '../CharacterNotes/CharacterNotes';
 import { CharacterPoints } from '../CharacterPoints';

@@ -14,7 +14,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { getUserCharacters } from '@api/users';
 import { FullPageLoader } from '@shared/Loader';
-import { button, fab, linkButton } from '@utils/ui';
+import { button, fab, linkButton } from '@utils/ui/style.utils';
 import { useAuth } from '../providers/AuthProvider';
 
 const RaceImages: Record<string, string> = {

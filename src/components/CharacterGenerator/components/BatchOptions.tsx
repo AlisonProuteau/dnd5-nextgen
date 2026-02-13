@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Button, Checkbox, FormControlLabel, Typography } from '@mui/material';
-import { type ActionState, downloadImage, uploadImage } from '@utils/ui';
+import { type ActionState, downloadImage, uploadImage } from '@utils/ui/generatedImages.utils';
 import type { CharacterDetails } from '../utils/character';
 import {
   classes as allClasses,

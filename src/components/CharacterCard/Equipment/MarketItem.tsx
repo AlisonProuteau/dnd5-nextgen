@@ -4,8 +4,8 @@ import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/materia
 import { omit } from 'lodash';
 import { useToggle } from '@hooks/useToggle';
 import { NumberInput } from '@shared/NumberInput';
-import { remainingMoneyInCopper } from '@utils/character';
-import { getCoinColor } from '@utils/ui';
+import { remainingMoneyInCopper } from '@utils/character/character.utils';
+import { getCoinColor } from '@utils/ui/ui.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import {
   type Equipment,

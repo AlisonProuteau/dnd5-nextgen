@@ -82,7 +82,7 @@ export function SpellSearch({
         type="text"
         label="Search"
         autoComplete="off"
-        onChange={(value) => {
+        onChange={(value: string | boolean | undefined) => {
           setIsLoading(true);
           if (runningTimer) clearTimeout(runningTimer);
           setRunningTimer(

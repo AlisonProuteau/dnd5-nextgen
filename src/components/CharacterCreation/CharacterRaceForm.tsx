@@ -15,13 +15,13 @@ import { useQueries, useQuery } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
 import { IconText } from '@shared/IconText';
+import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import {
   type ChoiceObjectType,
   type ChoiceSelection,
   mapDataForForm,
   mapTraits
-} from '@utils/character';
-import { getAbilityIcon } from '@utils/character/characteristics.utils';
+} from '@utils/character/creation.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { Subclass } from '@representations/character/class.representation';

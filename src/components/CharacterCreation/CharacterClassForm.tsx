@@ -21,13 +21,13 @@ import {
   getSubclassInfo
 } from '@api/ressources';
 import { IconText } from '@shared/IconText';
+import { getAbilityIcon } from '@utils/character/characteristics.utils';
 import {
   type ChoiceObjectType,
   type ChoiceSelection,
   mapDataForForm,
   mapFeatures
-} from '@utils/character';
-import { getAbilityIcon } from '@utils/character/characteristics.utils';
+} from '@utils/character/creation.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Level } from '@representations/campaign/level.representation';

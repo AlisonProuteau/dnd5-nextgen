@@ -2,7 +2,7 @@ import toast from 'react-hot-toast';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { get, getAll } from '@utils/api.utils';
-import { type Version, VERSIONS } from '@utils/constants';
+import { type Version, VERSIONS } from '@utils/constants/versions.constants';
 import type { Character, CharacterNote, UserData } from '@representations/user.representation';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from 'src/firebase';
 

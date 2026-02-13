@@ -7,7 +7,11 @@ import { getEquipment, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import { formatEquipmentForDisplay, getArmorClass, hasRequiredStrength } from '@utils/character';
+import {
+  formatEquipmentForDisplay,
+  getArmorClass,
+  hasRequiredStrength
+} from '@utils/character/character.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';

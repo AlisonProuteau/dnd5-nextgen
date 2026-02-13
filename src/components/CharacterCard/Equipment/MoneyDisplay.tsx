@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { CoinsIcon } from '@assets';
 import { Box, type BoxProps, Typography } from '@mui/material';
-import { remainingMoneyInCopper, updatePurse } from '@utils/character';
-import { getCoinColor } from '@utils/ui';
+import { remainingMoneyInCopper, updatePurse } from '@utils/character/character.utils';
+import { getCoinColor } from '@utils/ui/ui.utils';
 import {
   type AdditionalMoneyUnitType,
   type MoneyObjectType,
