@@ -63,6 +63,7 @@ describe(`Character Creation End-to-End`, () => {
 
     // Test: Browser back button from background to class
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
+    cy.getByTestId('background-selection').should('be.visible');
     cy.go('back');
     cy.url().should('include', '/create');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');

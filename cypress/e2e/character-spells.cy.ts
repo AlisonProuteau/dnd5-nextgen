@@ -155,6 +155,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
     cy.getByTestId(`character-card-${charID}`).click();
     cy.getByTestId('stats-section').should('be.visible');
+    cy.get('.MuiMobileStepper-dot').should('have.length', 5);
     cy.getByTestId('previous-step').click();
     cy.getByTestId('spells-section').should('be.visible');
 
@@ -773,6 +774,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
         cy.reload();
         cy.getByTestId('stats-section').should('be.visible');
+        cy.get('.MuiMobileStepper-dot').should('have.length', 5);
         cy.getByTestId('previous-step').click();
         cy.getByTestId('spell-slots').within(($el) => {
           cy.wrap($el).should(
