@@ -117,7 +117,7 @@ export function HealthManager({
   useEffect(() => {
     if (!overrideHitPoints && health.current > character.hit_points)
       setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
-  }, [overrideHitPoints, health]);
+  }, [overrideHitPoints, health.current, character.hit_points]);
 
   return (
     <Fragment>

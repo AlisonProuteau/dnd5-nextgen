@@ -87,7 +87,16 @@ export function Equipments({ character }: DefaultProps) {
     return () => {
       cancelled = true;
     };
-  }, [equipmentListString, character.equipments, isEquipmentListFetching]);
+  }, [
+    equipmentListString,
+    isEquipmentListFetching,
+    character.abilityScores.dex.modifier,
+    character.abilityScores.wis?.modifier,
+    character.abilityScores.con?.modifier,
+    character.class.index,
+    character.features,
+    character.armorClass
+  ]);
 
   const toggleEquip = async (equipment: Equipment | MagicItem) => {
     const updatedEquipments = [...character.equipments];
