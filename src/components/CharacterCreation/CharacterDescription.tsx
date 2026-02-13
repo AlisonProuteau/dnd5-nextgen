@@ -57,7 +57,7 @@ export function CharacterDescription({
           label="Name"
           sx={{ flexGrow: 1, flexBasis: '50%' }}
           value={localFormData?.name}
-          onChange={(value) => {
+          onChange={(value: string | boolean | undefined) => {
             const name = value as string | undefined;
             setLocalFormData((prev) => ({ ...prev, name }));
             setFormData?.({ name });
@@ -69,7 +69,7 @@ export function CharacterDescription({
           label="Age"
           sx={{ width: '85px' }}
           value={localFormData?.age}
-          onChange={(value) => {
+          onChange={(value: string | boolean | undefined) => {
             const age =
               !value || isNaN(parseInt(value?.toString() || ''))
                 ? undefined
@@ -108,7 +108,7 @@ export function CharacterDescription({
           id="appearance"
           label="Appearance"
           value={localFormData?.appearance}
-          onChange={(value) => {
+          onChange={(value: string | boolean | undefined) => {
             const appearance = value as string | undefined;
             setLocalFormData((prev) => ({ ...prev, appearance }));
             setFormData?.({ appearance });

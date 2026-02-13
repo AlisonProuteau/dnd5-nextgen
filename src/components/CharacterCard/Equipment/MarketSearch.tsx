@@ -146,7 +146,7 @@ export function MarketSearch({
           id="search"
           type="text"
           label="Search"
-          onChange={(value) => {
+          onChange={(value: string | boolean | undefined) => {
             if (runningTimer) clearTimeout(runningTimer);
             setRunningTimer(setTimeout(() => setSearch(value as string), 500));
           }}
