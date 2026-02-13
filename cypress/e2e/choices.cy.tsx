@@ -197,7 +197,7 @@ describe('Choices', () => {
       });
   });
 
-  // TODO: Test proficiency prerequisites
+  // TODO-blocked: Test proficiency prerequisites
   // it.skip('should respect proficiency prerequisites', () => {
   //   // Cleric WarHammer choice only shown if Proficiency in Warhammers is already selected
   //   // No way to get this proficiency during character creation currently

@@ -11,7 +11,7 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getAllRaces, getRaceGuide, getRaceInfo, getSubraceInfo, getTrait } from '@api/ressources';
 import { IconText } from '@shared/IconText';
@@ -22,6 +22,7 @@ import {
   mapTraits
 } from '@utils/character';
 import { getAbilityIcon } from '@utils/character/characteristics.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
@@ -99,13 +100,7 @@ export function CharacterRaceForm({
           enabled: !!index && !!version && isActive
         })
       ) || [],
-    combine: useCallback(
-      (results: UseQueryResult<Trait | null, Error>[]) => ({
-        data: results.map(({ data }) => data).filter((data) => data) as Trait[],
-        isFetching: results.some((result) => result.isFetching)
-      }),
-      []
-    )
+    combine: useCallback(createQueryCombiner<Trait>(), [])
   });
 
   useEffect(() => {

@@ -25,13 +25,14 @@ import {
   Divider,
   Typography
 } from '@mui/material';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { groupBy, max, maxBy, uniqBy, uniqWith } from 'lodash';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { groupBy, max, uniqBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
 import { Loader } from '@shared/Loader';
 import { filterSpellsByPrerequisites } from '@utils/character';
 import type { Version } from '@utils/constants';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -126,34 +127,28 @@ export function SpellList({
         enabled: !!index && !!version
       })) || [],
     combine: useCallback(
-      (results: UseQueryResult<Spell | null, Error>[]) => {
-        return {
-          data: results
-            .map(({ data }) => {
-              let formattedData = { ...data } as Spell;
-              const currentSpell = filteredAdditionalSpellList?.find(
-                ({ index }) => index === data?.index
-              );
+      createQueryCombiner<Spell>((data) =>
+        data.map((spell) => {
+          let formattedData = { ...spell } as Spell;
+          const currentSpell = filteredAdditionalSpellList?.find(
+            ({ index }) => index === spell?.index
+          );
 
-              if (currentSpell?.prerequisites) {
-                const preRequisiteLevel = parseInt(
-                  currentSpell.prerequisites
-                    .find(({ type }) => type === 'level')
-                    ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
-                );
+          if (currentSpell?.prerequisites) {
+            const preRequisiteLevel = parseInt(
+              currentSpell.prerequisites
+                .find(({ type }) => type === 'level')
+                ?.index.replace(new RegExp(`^${characterInfo.classIndex}-`), '') || '0'
+            );
 
-                if (preRequisiteLevel > (data?.level || 0)) formattedData.level = preRequisiteLevel;
-              }
-              if (currentSpell?.racial) formattedData.racial = true;
+            if (preRequisiteLevel > (spell?.level || 0)) formattedData.level = preRequisiteLevel;
+          }
+          if (currentSpell?.racial) formattedData.racial = true;
 
-              return formattedData;
-            })
-            .filter((data) => data) as Spell[],
-          isFetching: results.some((result) => result.isFetching),
-          dataUpdatedAt: maxBy(results, 'dataUpdatedAt')
-        };
-      },
-      [[filteredAdditionalSpellList, characterInfo.classIndex]]
+          return formattedData;
+        })
+      ),
+      [filteredAdditionalSpellList, characterInfo.classIndex]
     )
   });
 

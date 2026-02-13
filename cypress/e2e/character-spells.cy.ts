@@ -1,6 +1,6 @@
 import { characters } from 'cypress/support/mocks/characterList';
 
-// TODO: Add leveling when implemented
+// TODO-blocked: Add leveling when implemented
 describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
   const isMobile = Cypress.config('viewportWidth') === 375;
 
@@ -90,7 +90,6 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   it('Should not display spell section for non-spellcaster', () => {
-    cy.login(Cypress.testUser.uid);
     cy.visit('/');
     cy.waitForLoading();
 
@@ -145,15 +144,16 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         { index: 'acid-splash', name: 'Acid Splash', level: 0 },
         { index: 'chill-touch', name: 'Chill Touch', level: 0 },
         { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
-      ]
+      ],
+      usedSpellSlots: undefined
     });
 
-    cy.login(Cypress.testUser.uid);
     cy.visit('/');
     cy.waitForLoading();
 
     cy.getByTestId(`character-card-${charID}`).click();
     cy.getByTestId('stats-section').should('be.visible');
+    cy.get('.MuiMobileStepper-dot').should('have.length', 5);
     cy.getByTestId('previous-step').click();
     cy.getByTestId('spells-section').should('be.visible');
 
@@ -293,7 +293,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         const charID = `test-${classData.index}-${isMobile ? 'mobile' : 'desktop'}`;
         cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
           knownSpells: null,
-          preparedSpells: null
+          preparedSpells: null,
+          usedSpellSlots: null
         });
         const spells = characters
           .find((char) => char.class.index === classData.index)!
@@ -397,7 +398,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
           cy.getByRole('dialog', 'Learn').within(($el) => {
             // Test: Learn spells with 1 missing
-            // TODO: get the spell levels available and add a little in each
+            // TODO-blocked: get the spell levels available and add a little in each
             for (let i = 0; i < learnNum - 1; i++) {
               cy.wrap($el).getByTestId('edit-spell-item-').eq(i).getButton(/^Add$/).click();
             }
@@ -529,11 +530,11 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           }
 
           // Test: Prepare spells with 1 missing
-          // TODO: Preparing spells with previously learned if they can learn
+          // TODO-blocked: Preparing spells with previously learned if they can learn
           if (learnNum > 0) {
             if (classData.index === 'wizard') cy.contains(/Faerie Fire/).should('exist');
           }
-          // TODO: get the spell levels available and add a little in each
+          // TODO-blocked: get the spell levels available and add a little in each
           for (let i = 0; i < prepareCNum - 1; i++) {
             cy.getByTestId('spell-list-0')
               .getByTestId('edit-spell-item-')
@@ -585,7 +586,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           cy.getByRole('dialog').should('not.exist');
         }
 
-        // TODO: should test specific spell names + levels
+        // TODO-blocked: should test specific spell names + levels
         cy.getByTestId('spells-section')
           .getByTestId('spell-list-0')
           .getByTestId('view-spell-item-')
@@ -771,6 +772,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
         cy.reload();
         cy.getByTestId('stats-section').should('be.visible');
+        cy.get('.MuiMobileStepper-dot').should('have.length', 5);
         cy.getByTestId('previous-step').click();
         cy.getByTestId('spell-slots').within(($el) => {
           cy.wrap($el).should(

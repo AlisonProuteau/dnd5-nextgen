@@ -18,7 +18,7 @@ export function SpellSlots({ slots, usedSlots, onRestoreAll, disabled = false }:
           Spell Slots
         </Typography>
 
-        {/* TODO: Rest does a lot more */}
+        {/* TODO-blocked: Rest does a lot more */}
         {hasUsedSlots && (
           <Tooltip title="Long Rest - Restore All Slots">
             <Box marginLeft="auto">

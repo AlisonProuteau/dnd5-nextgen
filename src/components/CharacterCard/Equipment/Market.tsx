@@ -21,6 +21,11 @@ import {
   remainingMoneyInCopper,
   sellItem
 } from '@utils/character';
+import {
+  addOrUpdateEquipment,
+  calculateTotalQuantity,
+  updateEquipmentQuantity
+} from '@utils/character/equipment.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -70,17 +75,12 @@ export function Market({ character, purse, ownedEquipment, closeMarket }: Market
           Object.keys(customPrice ?? {}).length !== 0
         );
 
-    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
-    const updatedEquipments = character.equipments
-      ?.map((eq) => {
-        if (eq.index === item.index)
-          return (eq.count || 1) - totalQuantity > 0
-            ? { ...eq, count: (eq.count || 1) - totalQuantity }
-            : null;
-
-        return eq;
-      })
-      .filter((eq) => eq !== null && eq.count !== 0);
+    const totalQuantity = calculateTotalQuantity(item, quantity);
+    const updatedEquipments = updateEquipmentQuantity(
+      character.equipments,
+      item.index,
+      -totalQuantity
+    );
 
     await firebaseCrud.update(character.id, {
       equipments: updatedEquipments,
@@ -101,13 +101,8 @@ export function Market({ character, purse, ownedEquipment, closeMarket }: Market
       ? character.money || { cp: 0, sp: 0, gp: 0 }
       : buyItem(purse, totalCost, additionalCurrencies);
 
-    const totalQuantity = 'quantity' in item ? quantity * (item.quantity || 1) : quantity;
-    const updatedEquipments = character.equipments.find((eq) => eq.index === item.index)
-      ? character.equipments?.map((eq) => {
-          if (eq.index === item.index) return { ...eq, count: (eq.count || 1) + totalQuantity };
-          return eq;
-        })
-      : [...character.equipments, { index: item.index, name: item.name, count: totalQuantity }];
+    const totalQuantity = calculateTotalQuantity(item, quantity);
+    const updatedEquipments = addOrUpdateEquipment(character.equipments, item, totalQuantity);
 
     await firebaseCrud.update(character.id, {
       equipments: updatedEquipments,
@@ -211,7 +206,7 @@ export function Market({ character, purse, ownedEquipment, closeMarket }: Market
             onBuy={onBuy}
             disableAction={firebaseCrud.isLoading}
             hasRequiredStrength={(equipment) =>
-              hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
+              hasRequiredStrength(character.abilityScores.str?.score || 0, equipment)
             }
           />
         )}

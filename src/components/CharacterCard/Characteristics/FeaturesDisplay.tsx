@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
-import { useQueries, type UseQueryResult } from '@tanstack/react-query';
+import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getFeature } from '@api/ressources';
 import { blackList } from '@utils/character/characteristics.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
@@ -29,12 +30,7 @@ export function FeaturesDisplay({
           queryFn: async () => await getFeature(character.version || 'Legacy', index),
           enabled: !!index
         })) || [],
-    combine: useCallback((results: UseQueryResult<Feature | null, Error>[]) => {
-      return {
-        data: results.map(({ data }) => data).filter((data) => data) as Feature[],
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 
   const { data: subfeatures } = useQueries({
@@ -49,12 +45,7 @@ export function FeaturesDisplay({
         queryFn: async () => await getFeature(character.version || 'Legacy', index),
         enabled: !!index
       })) || [],
-    combine: useCallback((results: UseQueryResult<Feature | null, Error>[]) => {
-      return {
-        data: results.map(({ data }) => data).filter((data) => data) as Feature[],
-        isFetching: results.some((result) => result.isFetching)
-      };
-    }, [])
+    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
   return (
     features && (

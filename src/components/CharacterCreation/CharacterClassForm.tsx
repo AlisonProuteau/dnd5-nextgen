@@ -11,7 +11,7 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useQueries, useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import {
   getAllClasses,
@@ -28,6 +28,7 @@ import {
   mapFeatures
 } from '@utils/character';
 import { getAbilityIcon } from '@utils/character/characteristics.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';
@@ -136,13 +137,7 @@ export function CharacterClassForm({
         queryFn: async () => (version ? await getFeature(version, index) : null),
         enabled: !!index && !!version && isActive
       })) || [],
-    combine: useCallback(
-      (results: UseQueryResult<Feature | null, Error>[]) => ({
-        data: results.map(({ data }) => data).filter((data) => data) as Feature[],
-        isFetching: results.some((result) => result.isFetching)
-      }),
-      []
-    )
+    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 
   useEffect(() => {

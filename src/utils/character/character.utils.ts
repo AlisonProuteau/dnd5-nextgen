@@ -290,7 +290,7 @@ export const formatEquipmentForDisplay = (
   count?: number;
   equipped: boolean;
 })[] => {
-  return (equipment.filter((data) => data) as Equipment[]).map((eq) => {
+  return (equipment.filter(Boolean) as Equipment[]).map((eq) => {
     const currentEquipment = characterEquipment.find(({ index }) => index === eq.index);
     const formattedEq = { ...eq, equipped: currentEquipment?.equipped ?? true };
     const count = currentEquipment?.count;
@@ -298,3 +298,13 @@ export const formatEquipmentForDisplay = (
     return count ? { ...formattedEq, count } : formattedEq;
   });
 };
+
+export const getBaseHitPoints = (
+  conModifier: number,
+  features: DefaultRepresentation[],
+  hitDie = 6,
+  level = 1
+) =>
+  hitDie +
+  conModifier * level +
+  (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
