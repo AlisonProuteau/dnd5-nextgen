@@ -145,7 +145,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         { index: 'acid-splash', name: 'Acid Splash', level: 0 },
         { index: 'chill-touch', name: 'Chill Touch', level: 0 },
         { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
-      ]
+      ],
+      usedSpellSlots: undefined
     });
 
     cy.login(Cypress.testUser.uid);
@@ -293,7 +294,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         const charID = `test-${classData.index}-${isMobile ? 'mobile' : 'desktop'}`;
         cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
           knownSpells: null,
-          preparedSpells: null
+          preparedSpells: null,
+          usedSpellSlots: null
         });
         const spells = characters
           .find((char) => char.class.index === classData.index)!
