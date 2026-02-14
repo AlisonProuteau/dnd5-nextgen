@@ -20,7 +20,7 @@ describe(`Authentication End-to-End`, () => {
 
     it('should handle complete sign-in workflow with loading states, responsive design, and first-time user flow', () => {
       // Test: email validation
-      cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
+      cy.get('#email').type('invalid-email').should('have.value', 'invalid-email');
       cy.get('#email').should('have.attr', 'aria-invalid', 'true');
       cy.getByTestId('email-form').should('contain.text', 'Email invalid');
       cy.get('#email').clear();
@@ -148,23 +148,23 @@ describe(`Authentication End-to-End`, () => {
       cy.get('button[type="submit"]').should('be.disabled');
 
       // Test: name field validation (minimum length)
-      cy.get('#name').click();
+      cy.get('#name').click().type('a').clear();
       cy.press('Tab');
       cy.get('#name').should('have.attr', 'aria-invalid', 'true');
       cy.getByTestId('name-form').should('contain.text', 'Required');
-      cy.get('#name').type('Jo').should('have.value', 'Jo').blur();
+      cy.get('#name').type('Jo').should('have.value', 'Jo');
       cy.getByTestId('name-form').should('not.contain.text', 'Required');
       cy.get('button[type="submit"]').should('be.disabled');
 
       // Test: email validation
-      cy.get('#email').type('invalid-email').should('have.value', 'invalid-email').blur();
+      cy.get('#email').type('invalid-email').should('have.value', 'invalid-email');
       cy.get('#email').closest('form').should('contain.text', 'Email invalid');
       cy.get('button[type="submit"]').should('be.disabled');
 
       cy.get('#email').clear().type(Cypress.testUser.email);
 
       // Test: password complexity validation
-      cy.get('#password').type('>').should('have.value', '>').blur();
+      cy.get('#password').type('>').should('have.value', '>');
       cy.get('#password')
         .closest('form')
         .should(
@@ -192,12 +192,11 @@ describe(`Authentication End-to-End`, () => {
       // Test: password confirmation matching
       cy.get('#passwordConfirm')
         .type('differentPassword')
-        .should('have.value', 'differentPassword')
-        .blur();
+        .should('have.value', 'differentPassword');
       cy.get('#passwordConfirm').closest('form').should('contain.text', 'Passwords mismatch');
       cy.get('button[type="submit"]').should('be.disabled');
 
-      cy.get('#passwordConfirm').clear().type('P@ssWord123').blur();
+      cy.get('#passwordConfirm').clear().type('P@ssWord123');
       cy.get('button[type="submit"]').should('be.enabled').click();
 
       // Test: duplicate email error handling

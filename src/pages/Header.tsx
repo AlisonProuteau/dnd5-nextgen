@@ -1,4 +1,5 @@
-import { Fragment, type SyntheticEvent, useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Link, Outlet } from 'react-router-dom';
 import { Add, Help, Home, Menu as MenuIcon, Settings, Star } from '@mui/icons-material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -11,9 +12,9 @@ import { updateProfile } from 'firebase/auth';
 import { signOut } from '@api/users';
 import { ControledInput } from '@shared/ControledInput';
 import { StyledModal } from '@shared/StyledModal';
-import { button, linkButton } from '@utils/ui';
+import { button, linkButton } from '@utils/ui/style.utils';
 import type { Character } from '@representations/user.representation';
-import { useForm, useToggle } from '../hooks';
+import { useToggle } from '../hooks';
 import { useAuth } from '../providers/AuthProvider';
 
 export interface DefaultProps {
@@ -24,16 +25,16 @@ export function Header() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const { isOn: openUsername, turnOff: closeUsername } = useToggle(true);
   const { user } = useAuth();
-  const usernameForm = useForm<{ displayName: string }>({
-    initialData: { displayName: undefined }
+  const { register, handleSubmit } = useForm<{ displayName: string }>({
+    mode: 'onChange',
+    defaultValues: { displayName: '' }
   });
 
-  const handleSubmitUsername = async (event: SyntheticEvent) => {
-    event.preventDefault();
+  const onSubmit = async (data: { displayName: string }) => {
     closeUsername();
-
-    if (user && usernameForm.formData.displayName)
-      await updateProfile(user, { displayName: usernameForm.formData.displayName });
+    if (user && data.displayName) {
+      await updateProfile(user, { displayName: data.displayName });
+    }
   };
 
   const MenuItems = useMemo(
@@ -158,14 +159,14 @@ export function Header() {
 
       {user && !user.displayName && (
         <StyledModal open={openUsername} onClose={closeUsername} title="Update your display name">
-          <form onSubmit={handleSubmitUsername}>
+          <form onSubmit={handleSubmit(onSubmit)}>
             <ControledInput
               fullWidth
               required
               id="name"
               type="name"
               label="Display name"
-              onChange={(name) => usernameForm.setFormData({ displayName: name?.toString() || '' })}
+              {...register('displayName', { required: 'Required' })}
             />
             <Button sx={{ marginTop: '1rem' }} fullWidth type="submit" variant="contained">
               Submit

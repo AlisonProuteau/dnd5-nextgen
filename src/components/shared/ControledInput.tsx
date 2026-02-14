@@ -32,12 +32,12 @@ export function ControledInput({
       fullWidth={fullWidth}
       margin="dense"
       required={props.required}
-      data-testid={props?.id ? `${props.id}-form` : undefined}
+      data-testid={props.id ? `${props.id}-form` : undefined}
     >
       <InputLabel htmlFor={props.id}>{props.label}</InputLabel>
       <OutlinedInput
-        autoComplete={props.id}
         {...props}
+        autoComplete={props.autoComplete ?? props.id}
         onChange={(e) => {
           if (onChange) {
             // Check if it's an async function (react-hook-form pattern) or has 'event' as param name
@@ -55,8 +55,8 @@ export function ControledInput({
       {hasError &&
         errorMessage?.map((message, i) => (
           <FormHelperText
-            key={props?.id || '' + i}
-            id={props?.id || '' + i}
+            key={props.id || '' + 'error' + i}
+            id={props.id || '' + 'error' + i}
             sx={i ? { marginTop: '-4px' } : {}}
           >
             {message}

@@ -1,21 +1,26 @@
-import { validationRules, type ValidationSchema } from '@hooks/useForm';
+import type { RegisterOptions } from 'react-hook-form';
 
-interface AuthFormData {
-  name?: string;
-  email?: string;
-  password?: string;
-  passwordConfirm?: string;
-  showPassword: boolean;
-}
+export const getNameValidation = (isLogin: boolean): RegisterOptions =>
+  isLogin ? {} : { required: 'Required' };
 
-export const getLoginValidationSchema = (isLogin: boolean): ValidationSchema<AuthFormData> => ({
-  name: !isLogin ? [validationRules.required('Required')] : [],
-  email: [validationRules.required('Required'), validationRules.email()],
-  password: !isLogin
-    ? [
-        validationRules.required('Required'),
-        validationRules.minLength(8, 'Must be at least 8 characters'),
-        (value: string) => {
+export const getEmailValidation = (): RegisterOptions => ({
+  required: 'Required',
+  pattern: {
+    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    message: 'Email invalid'
+  }
+});
+
+export const getPasswordValidation = (isLogin: boolean): RegisterOptions =>
+  isLogin
+    ? { required: 'Required' }
+    : {
+        required: 'Required',
+        minLength: {
+          value: 8,
+          message: 'Must be at least 8 characters'
+        },
+        validate: (value: string) => {
           if (!value) return undefined;
           const errors: string[] = [];
 
@@ -31,15 +36,17 @@ export const getLoginValidationSchema = (isLogin: boolean): ValidationSchema<Aut
             errors.push('Contains invalid characters');
           }
 
-          return errors.length > 0 ? errors : undefined;
+          return errors.length > 0 ? errors.join('/n') : undefined;
         }
-      ]
-    : [validationRules.required('Required')],
-  passwordConfirm: !isLogin
-    ? [
-        validationRules.required('Required'),
-        (value: string, formData: Partial<AuthFormData>) =>
-          value !== formData.password ? 'Passwords mismatch' : undefined
-      ]
-    : []
-});
+      };
+
+export const getPasswordConfirmValidation = (
+  isLogin: boolean,
+  password: string
+): RegisterOptions =>
+  isLogin
+    ? {}
+    : {
+        required: 'Required',
+        validate: (value: string) => value === password || 'Passwords mismatch'
+      };

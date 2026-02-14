@@ -221,14 +221,12 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
-- [ ] Combat view with fast access to all info/action needed
-- [ ] Add info page for app navigation and features
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
 - [ ] Class archetype support?
 
 #### Dev
 
-- [ ] Replace custom useForm by react-hook-form?
+- [ ] Update the number Input (all lib updates)
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor

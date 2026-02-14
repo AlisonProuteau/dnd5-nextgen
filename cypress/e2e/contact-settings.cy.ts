@@ -24,7 +24,7 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('button[type="submit"]').should('be.disabled');
 
     // Test: Validation Testing - Required field validation
-    cy.get('#message').clear().blur();
+    cy.get('#message').type('a').clear();
     cy.getByTestId('message-input').should('have.class', 'Mui-error');
     cy.getByTestId('message-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
@@ -112,12 +112,12 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('button[type="submit"]').should('be.disabled');
 
     // Test: Validation Testing - Required field validation
-    cy.get('#message').clear().blur();
+    cy.get('#message').type('a').clear();
     cy.getByTestId('message-input').should('have.class', 'Mui-error');
     cy.getByTestId('message-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
 
-    cy.get('#reproSteps').clear().blur();
+    cy.get('#reproSteps').type('a').clear();
     cy.getByTestId('reproSteps-input').should('have.class', 'Mui-error');
     cy.getByTestId('reproSteps-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
@@ -148,7 +148,7 @@ describe(`Contact Form End-to-End`, () => {
     // Test: Custom area input
     cy.selectOption('#area', 'Other');
     cy.get('input[id="area"]').should('be.visible');
-    cy.get('input[id="area"]').clear().blur();
+    cy.get('input[id="area"]').type('a').clear();
     cy.getByTestId('area-input').should('have.class', 'Mui-error');
     cy.getByTestId('area-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
@@ -204,12 +204,12 @@ describe(`Contact Form End-to-End`, () => {
 
     // Test: Validation Testing - Required field validation
     cy.selectOption('#requestArea', 'Content');
-    cy.get('#requestContent').clear().blur();
+    cy.get('#requestContent').type('a').clear();
     cy.getByTestId('requestContent-input').should('have.class', 'Mui-error');
     cy.getByTestId('requestContent-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
 
-    cy.get('#message').clear().blur();
+    cy.get('#message').type('a').clear();
     cy.getByTestId('message-input').should('have.class', 'Mui-error');
     cy.getByTestId('message-form').should('contain.text', 'Required');
     cy.get('button[type="submit"]').should('be.disabled');
@@ -223,7 +223,7 @@ describe(`Contact Form End-to-End`, () => {
     // Test: Custom area functionality
     cy.selectOption('#requestArea', 'Other');
     cy.get('input[id="requestArea"]').should('be.visible');
-    cy.get('input[id="requestArea"]').clear().blur();
+    cy.get('input[id="requestArea"]').type('a').clear();
     cy.getByTestId('requestArea-input').should('have.class', 'Mui-error');
     cy.getByTestId('requestArea-form').should('contain.text', 'Required');
     cy.get('input[id="requestArea"]').type('Custom Feature Request Area');
