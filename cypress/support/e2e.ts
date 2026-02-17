@@ -3,16 +3,18 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
+import * as env from '../../cypress.env.json';
 import './commands';
 
 const { FIRESTORE_EMULATOR_HOST, FIREBASE_AUTH_EMULATOR_HOST, FIREBASE_STORAGE_EMULATOR_HOST } =
-  Cypress.env();
+  Cypress.expose();
 if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_EMULATOR_HOST) {
   let app: firebase.app.App;
+
   if (firebase.apps?.length === 0) {
     const firebaseConfig = {
-      apiKey: Cypress.env('FIREBASE_API_KEY'),
-      projectId: Cypress.env('FIREBASE_PROJECT_ID')
+      apiKey: env.FIREBASE_API_KEY,
+      projectId: env.FIREBASE_PROJECT_ID
     };
     app = firebase.initializeApp(firebaseConfig);
 
