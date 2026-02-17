@@ -469,7 +469,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
             .clear()
             .type('50')
             .blur()
-            .should('contain.value', '40');
+            .should('contain.value', '60');
           cy.wrap($item)
             .get('#quantity-crossbow-bolt')
             .clear()

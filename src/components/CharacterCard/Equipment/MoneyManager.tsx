@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { CoinsIcon } from '@assets';
 import { Box, Button, Dialog, Typography } from '@mui/material';
@@ -36,7 +36,6 @@ export function MoneyManager({
     mode: 'onChange',
     defaultValues: { gp: 0, sp: 0, cp: 0 }
   });
-  const [isUpdating, setIsUpdating] = useState(false);
   const money = watch();
 
   const firebaseCrud = useFirebaseCrud({
@@ -86,12 +85,7 @@ export function MoneyManager({
                           id={`money-units-${unit}`}
                           value={field.value || 0}
                           onClick={(e) => e.preventDefault()}
-                          onInputChange={(_) => setIsUpdating(true)}
-                          onChange={(_, v) => {
-                            field.onChange(v ?? 0);
-                            setIsUpdating(false);
-                          }}
-                          onBlur={() => setIsUpdating(false)}
+                          onChange={(_, v) => field.onChange(v ?? 0)}
                         />
                       )}
                     />
@@ -114,7 +108,6 @@ export function MoneyManager({
             key="update-money"
             id="update-money"
             disabled={
-              isUpdating ||
               remainingMoneyInCopper(currentAmount, money) < 0 ||
               isEqual(currentAmount, updatePurse(currentAmount, money, additionalCurrencies)) ||
               firebaseCrud.isLoading

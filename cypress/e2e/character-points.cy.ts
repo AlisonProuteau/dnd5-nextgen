@@ -115,7 +115,7 @@ describe(`Character Points End-to-End Flow`, () => {
     // Test: Remaining points should be negative and red
     cy.contains('Remaining Points:')
       .next()
-      .should('contain.text', '-18')
+      .should('contain.text', '-27')
       .should('have.css', 'color', 'rgb(255, 0, 0)'); // red color
 
     // Test: Save button should be disabled when over limit

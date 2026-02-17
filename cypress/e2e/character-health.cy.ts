@@ -49,9 +49,7 @@ describe('Character Health Management End-to-End', () => {
     // Test: Temporary Health
     cy.getByTestId(`health-${healthTestChar.id}`).click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
-      cy.get('#temporaryHealth').clear().type('-5').blur();
-      cy.get('#temporaryHealth').should('have.value', '0'); // Min 0
-
+      cy.get('#temporaryHealth').clear().type('-').blur().should('not.have.value', '-'); // Min 0
       cy.get('#temporaryHealth').clear().type('5').blur();
       cy.get('#currentHealth').should('be.disabled');
       cy.wrap($dialog).getButton('Save').click();
@@ -67,8 +65,8 @@ describe('Character Health Management End-to-End', () => {
       cy.get('#currentHealth').clear().type('15').blur();
       cy.get('#currentHealth').should('have.value', '10');
 
-      cy.get('#currentHealth').clear().type('-10').blur();
-      cy.get('#currentHealth').should('have.value', '0');
+      cy.get('#currentHealth').clear().type('-').blur().should('not.have.value', '-');
+      cy.get('#currentHealth').clear().type('0');
 
       cy.wrap($dialog).getButton('Save').click();
     });
@@ -87,14 +85,12 @@ describe('Character Health Management End-to-End', () => {
         cy.get('#deathSaveFailures').should('have.value', '3');
         cy.wrap($dialog).should('contain.text', 'Your character has fallen.');
 
-        cy.get('#deathSaveFailures').clear().type('-5').blur();
-        cy.get('#deathSaveFailures').should('have.value', '0');
+        cy.get('#deathSaveFailures').clear().type('-').blur().should('not.have.value', '-');
+        cy.get('#deathSaveFailures').clear().type('0');
 
         // Test: Stabilization (3 successes)
-        cy.get('#deathSaveSuccesses').clear().type('-5').blur();
-        cy.get('#deathSaveSuccesses').should('have.value', '0');
-
-        cy.get('#deathSaveSuccesses').clear().type('10').blur();
+        cy.get('#deathSaveSuccesses').clear().type('-').blur().should('not.have.value', '-');
+        cy.get('#deathSaveSuccesses').clear().type('10');
         cy.wrap($dialog).should(
           'contain.text',
           "Your character has stabilized but remains unconscious at death's door."

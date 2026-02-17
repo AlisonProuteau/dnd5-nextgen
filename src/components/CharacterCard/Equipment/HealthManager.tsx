@@ -165,11 +165,12 @@ export function HealthManager({
               value={health.current}
               disabled={!overrideHitPoints && health.temporary > 0}
               onChange={(_, value) =>
+                value !== null &&
                 setHealth((prev) => ({
                   ...prev,
-                  current: value ?? 0,
+                  current: value,
                   deathSaves:
-                    (value ?? 0) > 0
+                    value > 0
                       ? { successes: 0, failures: 0, usedSaves: prev.deathSaves.usedSaves }
                       : prev.deathSaves
                 }))
