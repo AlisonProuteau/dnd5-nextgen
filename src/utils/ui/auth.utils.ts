@@ -36,7 +36,7 @@ export const getPasswordValidation = (isLogin: boolean): RegisterOptions =>
             errors.push('Contains invalid characters');
           }
 
-          return errors.length > 0 ? errors.join('/n') : undefined;
+          return errors.length > 0 ? errors.join('\n') : undefined;
         }
       };
 

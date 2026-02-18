@@ -313,7 +313,7 @@ export function CharacterBackgroundForm({
                 id="bonds"
                 label="Bonds"
                 value={selectedBonds[0]?.name || ''}
-                onChange={(value: string | boolean | undefined) =>
+                onChange={(_, value) =>
                   setSelectedBonds(
                     value ? [{ index: 'bond', name: value.toString(), type: 0 }] : []
                   )
@@ -325,7 +325,7 @@ export function CharacterBackgroundForm({
                 id="personality"
                 label="Personality traits"
                 value={selectedPersonality[0]?.name || ''}
-                onChange={(value: string | boolean | undefined) =>
+                onChange={(_, value) =>
                   setSelectedPersonality(
                     value ? [{ index: 'personality', name: value.toString(), type: 0 }] : []
                   )
@@ -337,7 +337,7 @@ export function CharacterBackgroundForm({
                 id="ideals"
                 label="Ideals"
                 value={selectedIdeals[0]?.name || ''}
-                onChange={(value: string | boolean | undefined) =>
+                onChange={(_, value) =>
                   setSelectedIdeals(
                     value ? [{ index: 'ideals', name: value.toString(), type: 0 }] : []
                   )
@@ -349,7 +349,7 @@ export function CharacterBackgroundForm({
                 id="flaws"
                 label="Flaws"
                 value={selectedFlaws[0]?.name || ''}
-                onChange={(value: string | boolean | undefined) =>
+                onChange={(_, value) =>
                   setSelectedFlaws(
                     value ? [{ index: 'flaws', name: value.toString(), type: 0 }] : []
                   )

@@ -1,4 +1,4 @@
-import type { ChangeHandler } from 'react-hook-form';
+import type { ChangeEvent } from 'react';
 import {
   FormControl,
   FormHelperText,
@@ -10,7 +10,10 @@ import {
 } from '@mui/material';
 
 interface ControledInputProps {
-  onChange?: ((arg: string | boolean | undefined) => void) | ChangeHandler;
+  onChange?: (
+    event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement, Element>,
+    value: string | boolean | undefined
+  ) => void;
   errorMessage?: string[];
   sx?: SxProps<Theme>;
   hasError?: boolean;
@@ -38,25 +41,13 @@ export function ControledInput({
       <OutlinedInput
         {...props}
         autoComplete={props.autoComplete ?? props.id}
-        onChange={(e) => {
-          if (onChange) {
-            // Check if it's an async function (react-hook-form pattern) or has 'event' as param name
-            const fnStr = onChange.toString();
-            const isReactHookFormHandler =
-              fnStr.startsWith('async') ||
-              fnStr.includes('async (event)') ||
-              fnStr.includes('async(event)');
-
-            if (isReactHookFormHandler) return (onChange as any)(e);
-            else return (onChange as (arg: string | boolean | undefined) => void)(e.target.value);
-          }
-        }}
+        onChange={(e) => onChange?.(e, e.target.value)}
       />
       {hasError &&
         errorMessage?.map((message, i) => (
           <FormHelperText
-            key={props.id || '' + 'error' + i}
-            id={props.id || '' + 'error' + i}
+            key={`${props.id ?? 'input'}-error-${i}`}
+            id={`${props.id ?? 'input'}-error-${i}`}
             sx={i ? { marginTop: '-4px' } : {}}
           >
             {message}

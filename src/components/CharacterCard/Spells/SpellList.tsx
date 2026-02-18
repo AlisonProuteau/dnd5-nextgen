@@ -246,7 +246,7 @@ export function SpellList({
           type="text"
           label="Search"
           autoComplete="off"
-          onChange={(value: string | boolean | undefined) => setSearchText(value as string)}
+          onChange={(_, value) => setSearchText(value as string)}
         />
       ) : null}
 

@@ -226,7 +226,6 @@ MIT License - see [package.json](package.json) for details.
 
 #### Dev
 
-- [ ] Update the number Input (all lib updates)
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor
