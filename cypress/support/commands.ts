@@ -142,22 +142,22 @@ Cypress.Commands.add('loginNewUser', (id?: string) => {
  * Logs in as the admin user for character generator access. Creates the user if not present.
  */
 Cypress.Commands.add('loginAsAdmin', () => {
-  const adminId = Cypress.env('FIREBASE_ADMIN_UID'); // Admin UID from App.tsx
+  cy.env(['FIREBASE_ADMIN_UID']).then(({ FIREBASE_ADMIN_UID }) => {
+    cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
+      if (!existingUser?.uid) {
+        const user = {
+          displayName: 'Admin User',
+          uid: FIREBASE_ADMIN_UID,
+          email: 'admin@test.com'
+        };
+        cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
+          identifier: user.email,
+          version: 'Legacy'
+        });
+      }
 
-  cy.authGetUser(adminId).then((existingUser) => {
-    if (!existingUser?.uid) {
-      const user = {
-        displayName: 'Admin User',
-        uid: adminId,
-        email: 'admin@test.com'
-      };
-      cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
-        identifier: user.email,
-        version: 'Legacy'
-      });
-    }
-
-    cy.login(adminId);
+      cy.login(FIREBASE_ADMIN_UID);
+    });
   });
 });
 
@@ -192,13 +192,15 @@ Cypress.Commands.add('clearUser', (uid: string) => {
  * Clears all users except the default test and admin users.
  */
 Cypress.Commands.add('clearAllNonDefaultUsers', () => {
-  cy.authListUsers().then((users) => {
-    users.users.forEach((user) => {
-      if (user.uid !== Cypress.testUser.uid && user.uid !== Cypress.env('FIREBASE_ADMIN_UID')) {
-        cy.authDeleteUser(user.uid);
-        cy.callFirestore('delete', `users/${user.uid}/characters`);
-        cy.callFirestore('delete', `users/${user.uid}`);
-      }
+  cy.env(['FIREBASE_ADMIN_UID']).then(({ FIREBASE_ADMIN_UID }) => {
+    cy.authListUsers().then((users) => {
+      users.users.forEach((user) => {
+        if (user.uid !== Cypress.testUser.uid && user.uid !== FIREBASE_ADMIN_UID) {
+          cy.authDeleteUser(user.uid);
+          cy.callFirestore('delete', `users/${user.uid}/characters`);
+          cy.callFirestore('delete', `users/${user.uid}`);
+        }
+      });
     });
   });
 });

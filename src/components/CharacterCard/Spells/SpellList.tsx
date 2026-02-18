@@ -30,8 +30,8 @@ import { groupBy, max, uniqBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
 import { Loader } from '@shared/Loader';
-import { filterSpellsByPrerequisites } from '@utils/character';
-import type { Version } from '@utils/constants';
+import { filterSpellsByPrerequisites } from '@utils/character/spells.utils';
+import type { Version } from '@utils/constants/versions.constants';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { Subclass } from '@representations/character/class.representation';
@@ -246,7 +246,7 @@ export function SpellList({
           type="text"
           label="Search"
           autoComplete="off"
-          onChange={(value) => setSearchText(value as string)}
+          onChange={(_, value) => setSearchText(value as string)}
         />
       ) : null}
 

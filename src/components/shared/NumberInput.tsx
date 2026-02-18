@@ -1,20 +1,17 @@
 import { type ForwardedRef, forwardRef } from 'react';
-import {
-  Unstable_NumberInput as BaseNumberInput,
-  type NumberInputProps
-} from '@mui/base/Unstable_NumberInput';
+import { NumberField, type NumberFieldRootProps } from '@base-ui/react/number-field';
 import { Add, Remove } from '@mui/icons-material';
-import { Box, InputLabel, type SxProps, type Theme } from '@mui/material';
-import { styled } from '@mui/system';
+import { Box, InputLabel } from '@mui/material';
+import { styled } from '@mui/material/styles';
 
 interface CustomNumberInputProps {
   id: string;
   label?: string;
-  sx?: SxProps<Theme>;
-  fullWidth?: boolean;
   addDisabled?: boolean;
   removeDisabled?: boolean;
   compact?: boolean;
+  onChange?: (event: Event, value: number | null) => void;
+  buttonsHidden?: boolean;
 }
 
 export const NumberInput = forwardRef(function CustomNumberInput(
@@ -23,240 +20,170 @@ export const NumberInput = forwardRef(function CustomNumberInput(
     label,
     addDisabled,
     removeDisabled,
+    onChange,
     compact = false,
+    buttonsHidden = false,
     ...props
-  }: CustomNumberInputProps & NumberInputProps,
+  }: CustomNumberInputProps & NumberFieldRootProps,
   ref: ForwardedRef<HTMLDivElement>
 ) {
   return (
-    <Box
-      display="flex"
-      flexDirection="column"
-      alignItems="center"
-      marginY={compact ? 0 : '5px'}
-      sx={props.readOnly ? { ' button': { display: 'none' } } : {}}
+    <NumberField.Root
+      id={id}
+      {...props}
+      onValueChange={(newValue, e) => {
+        // TODO-blocked: Workaround for step not snapping properly with keyboard input - remove when fixed in @base-ui/react
+        const snappedValue =
+          newValue && props.step && props.step !== 'any'
+            ? Math.round(newValue / props.step) * props.step
+            : newValue;
+        onChange && e.reason !== 'input-blur' && onChange(e.event, snappedValue);
+      }}
+      ref={ref}
     >
-      <InputLabel sx={{ marginBottom: compact ? 0 : '-2px' }} htmlFor={id}>
-        {label}
-      </InputLabel>
-      <BaseNumberInput
-        id={id}
-        {...props}
-        slots={{
-          root: StyledInputRoot,
-          input: compact ? StyledInputCompact : StyledInput,
-          incrementButton: compact ? StyledButtonCompact : StyledButton,
-          decrementButton: compact ? StyledButtonCompact : StyledButton,
-          ...props.slots
-        }}
-        slotProps={{
-          input: {
-            id,
-            'aria-label': props['aria-label'] || label,
-            disabled: props.disabled
-          },
-          incrementButton: {
-            children: <Add fontSize="small" />,
-            className: 'increment',
-            disabled: props.disabled || addDisabled,
-            id: `${id}-increment`
-          },
-          decrementButton: {
-            children: <Remove fontSize="small" />,
-            className: 'decrement',
-            disabled: props.disabled || removeDisabled,
-            id: `${id}-decrement`
-          },
-          ...props.slotProps
-        }}
-        ref={ref}
-      />
-    </Box>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        marginY={compact ? 0 : '4px'}
+        sx={props.readOnly ? { ' button': { display: 'none' } } : {}}
+      >
+        {label ? (
+          <InputLabel sx={{ marginBottom: compact ? 0 : '-3px' }} htmlFor={id}>
+            {label}
+          </InputLabel>
+        ) : null}
+        <StyledGroup as={NumberField.Group}>
+          {buttonsHidden ? null : (
+            <StyledButton
+              as={NumberField.Decrement}
+              disabled={removeDisabled}
+              compact={compact}
+              position="left"
+              id={`${id}-decrement`}
+            >
+              <Remove fontSize="small" />
+            </StyledButton>
+          )}
+          <StyledInput as={NumberField.Input} compact={compact} id={id} />
+          {buttonsHidden ? null : (
+            <StyledButton
+              as={NumberField.Increment}
+              disabled={addDisabled}
+              compact={compact}
+              position="right"
+              id={`${id}-increment`}
+            >
+              <Add fontSize="small" />
+            </StyledButton>
+          )}
+        </StyledGroup>
+      </Box>
+    </NumberField.Root>
   );
 });
 
-const StyledInputRoot = styled('div')(
-  ({ theme }) => `
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-weight: 400;
-  color: ${theme.palette.grey[500]};
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: center;
-  align-items: center;
-`
-);
+const StyledGroup = styled('div')(() => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center'
+}));
 
-const StyledInput = styled('input')(
-  ({ theme }) => `
-  font-size: 0.875rem;
-  font-family: inherit;
-  font-weight: 400;
-  line-height: 1.375;
-  color: ${theme.palette.text.primary};
-  background: ${theme.palette.background.paper};
-  border: 1px solid ${theme.palette.grey[700]};
-  box-shadow: 0px 2px 4px ${
-    theme.palette.mode === 'dark' ? 'rgba(0,0,0, 0.5)' : 'rgba(0,0,0, 0.05)'
-  };
-  border-radius: 8px;
-  margin: 0 8px;
-  padding: 10px 12px;
-  outline: 0;
-  min-width: 0;
-  width: 4rem;
-  text-align: center;
+const StyledInput = styled('input')<{ compact?: boolean }>(({ theme, compact }) => ({
+  boxSizing: 'border-box',
+  fontSize: '0.875rem',
+  fontFamily: 'inherit',
+  fontWeight: 400,
+  lineHeight: 1.375,
+  color: theme.palette.text.primary,
+  background: theme.palette.background.paper,
+  border: `1px solid ${theme.palette.divider}`,
+  borderRadius: 6,
+  margin: compact ? '0 3px' : '0 6px',
+  padding: compact ? '3px 5px' : '8px 10px',
+  outline: 0,
+  minWidth: 0,
+  width: compact ? '2.5rem' : '4rem',
+  textAlign: 'center',
+  boxShadow:
+    theme.palette.mode === 'dark'
+      ? '0 1px 2px rgba(0, 0, 0, 0.3)'
+      : '0 1px 2px rgba(0, 0, 0, 0.05)',
 
-  &:hover {
-    border-color: ${theme.palette.primary.main};
+  '&:hover': {
+    borderColor: theme.palette.primary.light
+  },
+
+  '&:focus': {
+    borderColor: theme.palette.primary.main,
+    boxShadow: `0 0 0 2px ${theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.25)' : 'rgba(25, 118, 210, 0.25)'}`
+  },
+
+  '&:focus-visible': {
+    outline: 0
+  },
+
+  '&:disabled': {
+    cursor: 'not-allowed',
+    opacity: 0.4,
+    background: theme.palette.action.disabledBackground,
+    color: theme.palette.text.disabled
   }
+}));
 
-  &:focus {
-    border-color: ${theme.palette.primary.main};
-    box-shadow: 0 0 0 3px ${theme.palette.primary.dark};
-  }
+const StyledButton = styled('button')<{ compact?: boolean; position: 'left' | 'right' }>(
+  ({ theme, compact, position }) => ({
+    fontFamily: 'inherit',
+    fontSize: '0.875rem',
+    boxSizing: 'border-box',
+    lineHeight: 1.5,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 999,
+    background: theme.palette.background.default,
+    color: theme.palette.text.primary,
+    width: compact ? 24 : 32,
+    height: compact ? 24 : 32,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    margin: 0,
+    outline: 0,
+    padding: 0,
+    cursor: 'pointer',
+    transition: 'all 150ms ease',
+    boxShadow:
+      theme.palette.mode === 'dark'
+        ? '0 1px 2px rgba(0, 0, 0, 0.3)'
+        : '0 1px 2px rgba(0, 0, 0, 0.05)',
 
-  &:focus-visible {
-    outline: 0;
-  }
+    ...(position === 'right' && {
+      order: 1
+    }),
 
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background: ${theme.palette.action.disabledBackground};
-    color: ${theme.palette.text.disabled};
-  }
-`
-);
+    '&:hover:not(:disabled)': {
+      background: theme.palette.action.hover,
+      borderColor: theme.palette.primary.light,
+      boxShadow:
+        theme.palette.mode === 'dark'
+          ? '0 2px 4px rgba(0, 0, 0, 0.4)'
+          : '0 2px 4px rgba(0, 0, 0, 0.1)'
+    },
 
-const StyledButton = styled('button')(
-  ({ theme }) => `
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 0.875rem;
-  box-sizing: border-box;
-  line-height: 1.5;
-  border: 1px solid;
-  border-radius: 999px;
-  border-color: ${theme.palette.grey[700]};
-  background: ${theme.palette.background.default};
-  color: ${theme.palette.text.primary};
-  width: 32px;
-  height: 32px;
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: center;
-  align-items: center;
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 120ms;
+    '&:active:not(:disabled)': {
+      background: theme.palette.action.selected
+    },
 
-  &:hover {
-    cursor: pointer;
-    background: ${theme.palette.primary.main};
-    border-color: ${theme.palette.primary.dark};
-    color: ${theme.palette.primary.contrastText};
-  }
+    '&:focus-visible': {
+      outline: 0,
+      borderColor: theme.palette.primary.main
+    },
 
-  &:focus-visible {
-    outline: 0;
-  }
-
-  &.increment {
-    order: 1;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background: ${theme.palette.action.disabledBackground};
-    color: ${theme.palette.text.disabled};
-  }
-`
-);
-
-const StyledInputCompact = styled('input')(
-  ({ theme }) => `
-  font-size: 0.875rem;
-  font-family: inherit;
-  font-weight: 400;
-  line-height: 1.375;
-  color: ${theme.palette.text.primary};
-  background: ${theme.palette.background.paper};
-  border: 1px solid ${theme.palette.grey[700]};
-  box-shadow: 0px 2px 4px ${
-    theme.palette.mode === 'dark' ? 'rgba(0,0,0, 0.5)' : 'rgba(0,0,0, 0.05)'
-  };
-  border-radius: 8px;
-  margin: 0 4px;
-  padding: 4px 6px;
-  outline: 0;
-  min-width: 0;
-  width: 2.5rem;
-  text-align: center;
-
-  &:hover {
-    border-color: ${theme.palette.primary.main};
-  }
-
-  &:focus {
-    border-color: ${theme.palette.primary.main};
-    box-shadow: 0 0 0 3px ${theme.palette.primary.dark};
-  }
-
-  &:focus-visible {
-    outline: 0;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background: ${theme.palette.action.disabledBackground};
-    color: ${theme.palette.text.disabled};
-  }
-`
-);
-
-const StyledButtonCompact = styled('button')(
-  ({ theme }) => `
-  font-family: 'IBM Plex Sans', sans-serif;
-  font-size: 0.875rem;
-  box-sizing: border-box;
-  line-height: 1.5;
-  border: 1px solid;
-  border-radius: 999px;
-  border-color: ${theme.palette.grey[700]};
-  background: ${theme.palette.background.default};
-  color: ${theme.palette.text.primary};
-  width: 24px;
-  height: 24px;
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: center;
-  align-items: center;
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 120ms;
-
-  &:hover {
-    cursor: pointer;
-    background: ${theme.palette.primary.main};
-    border-color: ${theme.palette.primary.dark};
-    color: ${theme.palette.primary.contrastText};
-  }
-
-  &:focus-visible {
-    outline: 0;
-  }
-
-  &.increment {
-    order: 1;
-  }
-
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.5;
-    background: ${theme.palette.action.disabledBackground};
-    color: ${theme.palette.text.disabled};
-  }
-`
+    '&:disabled': {
+      cursor: 'not-allowed',
+      opacity: 0.4,
+      background: theme.palette.action.disabledBackground,
+      color: theme.palette.text.disabled,
+      boxShadow: 'none'
+    }
+  })
 );

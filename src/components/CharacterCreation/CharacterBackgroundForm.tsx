@@ -16,7 +16,11 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { getAllAligmenents, getAllBackgrounds } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
-import { type ChoiceObjectType, type ChoiceSelection, mapDataForForm } from '@utils/character';
+import {
+  type ChoiceObjectType,
+  type ChoiceSelection,
+  mapDataForForm
+} from '@utils/character/creation.utils';
 import type { Alignment, Background } from '@representations/character/background.representation';
 import type { Choice, DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
@@ -309,7 +313,7 @@ export function CharacterBackgroundForm({
                 id="bonds"
                 label="Bonds"
                 value={selectedBonds[0]?.name || ''}
-                onChange={(value) =>
+                onChange={(_, value) =>
                   setSelectedBonds(
                     value ? [{ index: 'bond', name: value.toString(), type: 0 }] : []
                   )
@@ -321,7 +325,7 @@ export function CharacterBackgroundForm({
                 id="personality"
                 label="Personality traits"
                 value={selectedPersonality[0]?.name || ''}
-                onChange={(value) =>
+                onChange={(_, value) =>
                   setSelectedPersonality(
                     value ? [{ index: 'personality', name: value.toString(), type: 0 }] : []
                   )
@@ -333,7 +337,7 @@ export function CharacterBackgroundForm({
                 id="ideals"
                 label="Ideals"
                 value={selectedIdeals[0]?.name || ''}
-                onChange={(value) =>
+                onChange={(_, value) =>
                   setSelectedIdeals(
                     value ? [{ index: 'ideals', name: value.toString(), type: 0 }] : []
                   )
@@ -345,7 +349,7 @@ export function CharacterBackgroundForm({
                 id="flaws"
                 label="Flaws"
                 value={selectedFlaws[0]?.name || ''}
-                onChange={(value) =>
+                onChange={(_, value) =>
                   setSelectedFlaws(
                     value ? [{ index: 'flaws', name: value.toString(), type: 0 }] : []
                   )

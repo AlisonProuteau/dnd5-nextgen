@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { CoinsIcon } from '@assets';
 import { Box, Button, Dialog, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
-import { useForm } from '@hooks/useForm';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
-import { remainingMoneyInCopper, updatePurse } from '@utils/character';
-import { getCoinColor } from '@utils/ui';
+import { remainingMoneyInCopper, updatePurse } from '@utils/character/character.utils';
+import { getCoinColor } from '@utils/ui/ui.utils';
 import {
   type AdditionalMoneyUnitType,
   type MoneyObjectType,
@@ -32,8 +32,12 @@ export function MoneyManager({
   currentAmount = { gp: 0, sp: 0, cp: 0 }
 }: MoneyManagerProps) {
   const { additionalCurrencies = [] } = useAuth();
-  const form = useForm<MoneyObjectType>({ initialData: { gp: 0, sp: 0, cp: 0 } });
-  const [isUpdating, setIsUpdating] = useState(false);
+  const { handleSubmit, watch, control, reset } = useForm<MoneyObjectType>({
+    mode: 'onChange',
+    defaultValues: { gp: 0, sp: 0, cp: 0 }
+  });
+  const money = watch();
+
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', characterId],
@@ -42,18 +46,15 @@ export function MoneyManager({
     }
   });
 
-  const onSave = async () => {
-    if (form.isValid === false) return;
-
-    const updatedPurse = updatePurse(currentAmount, form.formData, additionalCurrencies);
+  const onSubmit = async (changes: MoneyObjectType) => {
+    const updatedPurse = updatePurse(currentAmount, changes, additionalCurrencies);
     await firebaseCrud.update(characterId, { money: updatedPurse });
-
     closeMoneyDialog();
   };
 
   useEffect(() => {
-    if (!isMoneyDialogOpen) form.resetForm();
-  }, [isMoneyDialogOpen]);
+    if (!isMoneyDialogOpen) reset();
+  }, [isMoneyDialogOpen, reset]);
 
   const shouldShowCoin = (coin: MoneyUnitType) =>
     StandardMoneyUnits.includes(coin as any) ||
@@ -76,20 +77,17 @@ export function MoneyManager({
                     flexDirection="column"
                   >
                     <CoinsIcon height="20px" width="20px" fill={getCoinColor(unit)} />
-                    <NumberInput
-                      id={`money-units-${unit}`}
-                      value={form.formData[unit] || 0}
-                      onClick={(e) => e.preventDefault()}
-                      onInputChange={(e) => {
-                        setIsUpdating(true);
-                        const parsed = parseInt(e.target.value) || 0;
-                        if (parsed && !isNaN(parsed)) form.setFormData({ [unit]: parsed });
-                      }}
-                      onChange={(_, v) => {
-                        form.setFormData({ [unit]: v });
-                        setIsUpdating(false);
-                      }}
-                      onBlur={() => setIsUpdating(false)}
+                    <Controller
+                      name={unit}
+                      control={control}
+                      render={({ field }) => (
+                        <NumberInput
+                          id={`money-units-${unit}`}
+                          value={field.value || 0}
+                          onClick={(e) => e.preventDefault()}
+                          onChange={(_, v) => field.onChange(v ?? 0)}
+                        />
+                      )}
                     />
                   </Box>
                 )
@@ -101,7 +99,7 @@ export function MoneyManager({
             gap="5px"
             justifyContent="center"
             sx={{ float: 'right' }}
-            purse={updatePurse(currentAmount, form.formData, additionalCurrencies)}
+            purse={updatePurse(currentAmount, money, additionalCurrencies)}
           />
         </Box>
 
@@ -110,15 +108,11 @@ export function MoneyManager({
             key="update-money"
             id="update-money"
             disabled={
-              isUpdating ||
-              remainingMoneyInCopper(currentAmount, form.formData) < 0 ||
-              isEqual(
-                currentAmount,
-                updatePurse(currentAmount, form.formData, additionalCurrencies)
-              ) ||
+              remainingMoneyInCopper(currentAmount, money) < 0 ||
+              isEqual(currentAmount, updatePurse(currentAmount, money, additionalCurrencies)) ||
               firebaseCrud.isLoading
             }
-            onClick={onSave}
+            onClick={handleSubmit(onSubmit)}
           >
             {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
           </Button>

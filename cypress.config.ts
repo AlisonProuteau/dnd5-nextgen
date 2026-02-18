@@ -14,11 +14,11 @@ export default defineConfig({
   projectId: env.CYPRESS_PROJECT_ID,
   numTestsKeptInMemory: 5,
   e2e: {
-    env: {
+    env,
+    expose: {
       FIREBASE_AUTH_EMULATOR_HOST,
       FIRESTORE_EMULATOR_HOST,
-      FIREBASE_STORAGE_EMULATOR_HOST,
-      ...env
+      FIREBASE_STORAGE_EMULATOR_HOST
     },
     baseUrl: `http://${emulators.hosting.host}:${emulators.hosting.port}`,
     setupNodeEvents: (on, config) => {

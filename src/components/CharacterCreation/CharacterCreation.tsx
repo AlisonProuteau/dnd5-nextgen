@@ -1,9 +1,11 @@
-import { type SyntheticEvent, useEffect } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, Container, Step, StepLabel, Stepper } from '@mui/material';
-import { useFirebaseCrud, useForm } from '@hooks/index';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { useMultiStepForm } from '@hooks/useMultiStepForm';
 import { FullPageLoader } from '@shared/Loader';
-import { transformFormData } from '@utils/character';
+import { transformFormData } from '@utils/character/creation.utils';
 import type { CharacterFormData } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterBackgroundForm } from './CharacterBackgroundForm';
@@ -22,13 +24,20 @@ export function CharacterCreation() {
   const { version } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const form = useForm<CharacterFormData>({
-    steps,
-    initialData: {
+
+  const {
+    handleSubmit,
+    watch,
+    reset,
+    formState: { isValid }
+  } = useForm<CharacterFormData>({
+    mode: 'onChange',
+    defaultValues: {
       sex: { index: GenderIndexes.other, name: 'Other' }
-    },
-    autoScroll: true
+    }
   });
+  const stepper = useMultiStepForm({ steps, autoScroll: true });
+  const formData = watch();
 
   const firebaseActions = useFirebaseCrud<CharacterFormData>({
     collectionPath: 'users/{userId}/characters',
@@ -42,66 +51,69 @@ export function CharacterCreation() {
   });
 
   useEffect(() => {
-    if (location.state?.step !== null && location.state?.step !== form.activeStep)
-      form.goToStep(location.state?.step || 0);
-  }, [location.state?.step]);
+    if (location.state?.step !== null && location.state?.step !== stepper.activeStep)
+      stepper.goToStep(location.state?.step || 0);
+  }, [location.state?.step, stepper.activeStep, stepper.goToStep]);
 
   const isFormValid = () =>
-    form.formData.name &&
-    form.formData.age &&
-    form.formData.sex &&
-    form.formData.background?.index &&
-    form.formData.alignment?.index &&
-    form.formData.race?.index &&
-    form.formData.class?.index;
+    formData.name &&
+    formData.age &&
+    formData.sex &&
+    formData.background?.index &&
+    formData.alignment?.index &&
+    formData.race?.index &&
+    formData.class?.index;
 
-  const handleSubmit = async (event: SyntheticEvent) => {
-    event.preventDefault();
+  const onSubmit = async (data: CharacterFormData) => {
     if (!isFormValid()) return;
 
     await firebaseActions.create({
-      ...transformFormData(form.formData),
+      ...transformFormData(data),
       version: version ?? 'Legacy'
     });
+  };
+
+  const setFormData = (input: Partial<CharacterFormData>) => {
+    reset((prev) => ({ ...prev, ...input }), { keepDefaultValues: true });
   };
 
   const onNextStep = (input?: Partial<CharacterFormData>) => {
     if (firebaseActions.isLoading) return;
 
-    if (input) form.setFormData(input);
+    if (input) setFormData(input);
     navigate('/create', {
-      state: { step: form.activeStep + 1 },
+      state: { step: stepper.activeStep + 1 },
       viewTransition: false
     });
-    form.nextStep();
+    stepper.nextStep();
   };
 
   const onPrevStep = (input?: Partial<CharacterFormData>) => {
     if (firebaseActions.isLoading) return;
 
-    if (input) form.setFormData(input);
+    if (input) setFormData(input);
     navigate('/create', {
-      state: { step: form.activeStep - 1 },
+      state: { step: stepper.activeStep - 1 },
       viewTransition: false
     });
-    form.prevStep();
+    stepper.prevStep();
   };
 
   return (
     <Container sx={{ overflowX: 'clip' }}>
       <Stepper
-        activeStep={form.activeStep}
+        activeStep={stepper.activeStep}
         sx={{ marginBottom: '15px' }}
         alternativeLabel
         data-testid="character-stepper"
         role="tablist"
       >
-        {form.steps.map(({ id, label }) => (
-          <Step key={id} active={form.steps[form.activeStep].id === id}>
+        {stepper.steps.map(({ id, label }) => (
+          <Step key={id} active={stepper.steps[stepper.activeStep].id === id}>
             <StepLabel
               data-testid="step-label"
-              className={steps[form.activeStep].id === id ? 'active' : ''}
-              aria-selected={steps[form.activeStep].id === id}
+              className={steps[stepper.activeStep].id === id ? 'active' : ''}
+              aria-selected={steps[stepper.activeStep].id === id}
               role="tab"
             >
               {label}
@@ -110,56 +122,49 @@ export function CharacterCreation() {
         ))}
       </Stepper>
 
-      <form
-        onReset={form.resetForm}
-        onSubmit={handleSubmit}
-        onFocus={({ target }) => form.clearFieldError(target.id as keyof CharacterFormData)}
-        onInvalid={({ target }) =>
-          form.setErrors({ [(target as HTMLFormElement).id]: ['Invalid'] })
-        }
-      >
-        <Box display={form.steps[form.activeStep].id === 'race' ? 'revert' : 'none'}>
+      <form onReset={() => reset()} onSubmit={handleSubmit(onSubmit)}>
+        <Box display={stepper.steps[stepper.activeStep].id === 'race' ? 'revert' : 'none'}>
           <CharacterRaceForm
             onNext={onNextStep}
-            proficiencies={form.formData.proficiencies}
-            isActive={form.steps[form.activeStep].id === 'race'}
+            proficiencies={formData.proficiencies}
+            isActive={stepper.steps[stepper.activeStep].id === 'race'}
           />
         </Box>
 
-        <Box display={form.steps[form.activeStep].id === 'class' ? 'revert' : 'none'}>
+        <Box display={stepper.steps[stepper.activeStep].id === 'class' ? 'revert' : 'none'}>
           <CharacterClassForm
             onNext={onNextStep}
             onPrev={onPrevStep}
-            proficiencies={form.formData.proficiencies}
-            isActive={form.steps[form.activeStep].id === 'class'}
+            proficiencies={formData.proficiencies}
+            isActive={stepper.steps[stepper.activeStep].id === 'class'}
           />
         </Box>
 
-        <Box display={form.steps[form.activeStep].id === 'background' ? 'revert' : 'none'}>
+        <Box display={stepper.steps[stepper.activeStep].id === 'background' ? 'revert' : 'none'}>
           <CharacterBackgroundForm
             onNext={onNextStep}
             onPrev={onPrevStep}
-            proficiencies={form.formData.proficiencies}
-            languages={form.formData.languages}
-            equipment={form.formData.equipments}
-            isActive={form.steps[form.activeStep].id === 'background'}
+            proficiencies={formData.proficiencies}
+            languages={formData.languages}
+            equipment={formData.equipments}
+            isActive={stepper.steps[stepper.activeStep].id === 'background'}
           />
         </Box>
 
-        <Box display={form.steps[form.activeStep].id === 'info' ? 'revert' : 'none'}>
+        <Box display={stepper.steps[stepper.activeStep].id === 'info' ? 'revert' : 'none'}>
           <CharacterDescription
-            setFormData={form.setFormData}
+            setFormData={setFormData}
             onPrev={() => onPrevStep()}
-            isActive={form.steps[form.activeStep].id === 'info'}
+            isActive={stepper.steps[stepper.activeStep].id === 'info'}
           />
         </Box>
 
-        {form.isLastStep && (
+        {stepper.isLastStep && (
           <Button
             sx={{ float: 'right' }}
             variant="contained"
             type="submit"
-            disabled={!form.isValid || !isFormValid() || firebaseActions.isLoading}
+            disabled={!isValid || !isFormValid() || firebaseActions.isLoading}
           >
             Create
           </Button>

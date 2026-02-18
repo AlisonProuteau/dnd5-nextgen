@@ -11,7 +11,7 @@ import {
   Typography
 } from '@mui/material';
 import { EquipmentLine } from '@shared/EquipmentLine';
-import { getDamageMinMax, getSlotMinMax } from '@utils/character';
+import { getDamageMinMax, getSlotMinMax } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 
 interface SpellDetailsProps {

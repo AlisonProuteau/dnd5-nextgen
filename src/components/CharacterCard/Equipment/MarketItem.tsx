@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { CoinsIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
-import { omit } from 'lodash';
 import { useToggle } from '@hooks/useToggle';
 import { NumberInput } from '@shared/NumberInput';
-import { remainingMoneyInCopper } from '@utils/character';
-import { getCoinColor } from '@utils/ui';
+import { remainingMoneyInCopper } from '@utils/character/character.utils';
+import { getCoinColor } from '@utils/ui/ui.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import {
   type Equipment,
@@ -147,16 +146,7 @@ export function MarketItem({
                 max={maxQuantity}
                 value={quantity * minQuantity}
                 step={minQuantity}
-                onInputChange={(e) => {
-                  setIsUpdating(true);
-                  const parsed = parseInt(e.target.value);
-                  if (parsed !== null && !isNaN(parsed)) setQuantity(parsed / minQuantity);
-                }}
-                onChange={(_, value) => {
-                  setQuantity(value ? value / minQuantity : 1);
-                  setIsUpdating(false);
-                }}
-                onBlur={() => setIsUpdating(false)}
+                onChange={(_, value) => setQuantity(value ? value / minQuantity : 1)}
                 compact
               />
             </Box>
@@ -195,26 +185,12 @@ export function MarketItem({
                     <NumberInput
                       id={`money-units-${unit}`}
                       compact
-                      slotProps={
-                        {
-                          incrementButton: { sx: { display: 'none' } },
-                          decrementButton: { sx: { display: 'none' } }
-                        } as any
-                      }
+                      buttonsHidden
                       min={0}
                       value={customPrice[unit] ?? null}
-                      onInputChange={(e) => {
-                        setIsUpdating(true);
-                        const parsed = parseInt(e.target.value);
-                        if (parsed && !isNaN(parsed))
-                          setCustomPrice((prev) => ({ ...prev, [unit]: parsed }));
-                        else setCustomPrice((prev) => omit(prev, [unit]));
-                      }}
-                      onChange={(_, value) => {
-                        setIsUpdating(false);
-                        setCustomPrice((prev) => ({ ...prev, [unit]: value ?? null }));
-                      }}
-                      onBlur={() => setIsUpdating(false)}
+                      onChange={(_, value) =>
+                        setCustomPrice((prev) => ({ ...prev, [unit]: value ?? null }))
+                      }
                     />
                   </Box>
                 ))}

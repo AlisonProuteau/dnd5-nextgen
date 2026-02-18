@@ -1,4 +1,4 @@
-import type { ChoiceObjectType } from '@utils/character';
+import type { ChoiceObjectType } from '@utils/character/creation.utils';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 

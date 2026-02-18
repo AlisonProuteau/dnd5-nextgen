@@ -1,4 +1,5 @@
-import { type SyntheticEvent, useEffect } from 'react';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { InfoOutlined } from '@mui/icons-material';
 import {
   Button,
@@ -13,9 +14,9 @@ import {
   Typography
 } from '@mui/material';
 import { Box, Container } from '@mui/system';
-import { useFirebaseCrud, useForm } from '@hooks/index';
+import { useFirebaseCrud } from '@hooks/index';
 import { FullPageLoader } from '@shared/Loader';
-import { type Version, VERSIONS } from '@utils/constants';
+import { type Version, VERSIONS } from '@utils/constants/versions.constants';
 import {
   AdditionalMoneyUnits,
   type AdditionalMoneyUnitType
@@ -38,12 +39,17 @@ export function Settings() {
     version: currentUserVersion,
     additionalCurrencies: currentAdditionalCurrencies
   } = useAuth();
-  const form = useForm<SettingsFormData>({
-    initialData: {
+
+  const { control, handleSubmit, watch, reset } = useForm<SettingsFormData>({
+    mode: 'onChange',
+    defaultValues: {
       version: currentUserVersion || 'Legacy',
       additionalCurrencies: currentAdditionalCurrencies || []
     }
   });
+
+  const version = watch('version');
+
   const firebaseCrud = useFirebaseCrud<SettingsFormData>({
     collectionPath: 'users',
     invalidateQueryKey: ['fetchUserData'],
@@ -51,38 +57,21 @@ export function Settings() {
     redirect: { update: { path: '/' } }
   });
 
-  const handleSubmitVersion = async (event: SyntheticEvent) => {
-    event.preventDefault();
+  const onSubmit = async (data: SettingsFormData) => {
     if (!user?.uid) return;
 
     await firebaseCrud.update(user.uid, {
-      version: form.formData.version,
-      additionalCurrencies: form.formData.additionalCurrencies
+      version: data.version,
+      additionalCurrencies: data.additionalCurrencies
     });
   };
 
-  const handleCurrencyToggle = (currency: AdditionalMoneyUnitType) => {
-    const current = form.formData.additionalCurrencies || [];
-    const updated = current.includes(currency)
-      ? current.filter((c) => c !== currency)
-      : [...current, currency];
-    form.setFormData({ ...form.formData, additionalCurrencies: updated });
-  };
-
   useEffect(() => {
-    const updates: Partial<SettingsFormData> = {};
-    if (currentUserVersion && currentUserVersion !== form.formData.version) {
-      updates.version = currentUserVersion;
-    }
-    if (
-      JSON.stringify(currentAdditionalCurrencies) !==
-      JSON.stringify(form.formData.additionalCurrencies)
-    ) {
-      updates.additionalCurrencies = currentAdditionalCurrencies || [];
-    }
-
-    if (Object.keys(updates).length > 0) form.setFormData({ ...updates });
-  }, [currentUserVersion, currentAdditionalCurrencies]);
+    reset({
+      version: currentUserVersion || 'Legacy',
+      additionalCurrencies: currentAdditionalCurrencies || []
+    });
+  }, [currentUserVersion, currentAdditionalCurrencies, reset]);
 
   return (
     <Container>
@@ -90,52 +79,71 @@ export function Settings() {
         <Typography>User: {user?.displayName}</Typography>
         <Typography>Email: {user?.email}</Typography>
       </Box>
-      <form onSubmit={handleSubmitVersion} data-testid="version-form">
+      <form onSubmit={handleSubmit(onSubmit)} data-testid="version-form">
         <FormControl fullWidth disabled={!user || firebaseCrud.isLoading}>
           <FormGroup data-testid="version-select">
             <InputLabel htmlFor="version-select">Version</InputLabel>
-            <Select
-              id="version-select"
-              value={form.formData.version}
-              label="Version"
-              onChange={({ target }) => form.setFormData({ version: target.value })}
-            >
-              {VERSIONS?.map((current) => (
-                <MenuItem key={`version-${current}`} value={current} data-testid="version-option">
-                  {current}
-                </MenuItem>
-              ))}
-            </Select>
+            <Controller
+              name="version"
+              control={control}
+              render={({ field }) => (
+                <Select id="version-select" label="Version" {...field}>
+                  {VERSIONS?.map((current) => (
+                    <MenuItem
+                      key={`version-${current}`}
+                      value={current}
+                      data-testid="version-option"
+                    >
+                      {current}
+                    </MenuItem>
+                  ))}
+                </Select>
+              )}
+            />
           </FormGroup>
 
           <FormGroup data-testid="additional-currencies" sx={{ marginTop: 1 }}>
             <FormLabel component="legend">Additional Currencies</FormLabel>
-            {AdditionalMoneyUnits.map((currency) => (
-              <FormControlLabel
-                key={currency}
-                control={
-                  <Checkbox
-                    checked={(form.formData.additionalCurrencies || []).includes(currency)}
-                    onChange={() => handleCurrencyToggle(currency)}
-                    data-testid={`currency-${currency}`}
-                    sx={{ paddingY: 0.5 }}
-                  />
-                }
-                label={CurrencyLabels[currency]}
-              />
-            ))}
+            <Controller
+              name="additionalCurrencies"
+              control={control}
+              render={({ field }) => (
+                <>
+                  {AdditionalMoneyUnits.map((currency) => (
+                    <FormControlLabel
+                      key={currency}
+                      control={
+                        <Checkbox
+                          checked={(field.value || []).includes(currency)}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            const updated = isChecked
+                              ? [...(field.value || []), currency]
+                              : (field.value || []).filter((c) => c !== currency);
+                            field.onChange(updated);
+                          }}
+                          data-testid={`currency-${currency}`}
+                          sx={{ paddingY: 0.5 }}
+                        />
+                      }
+                      label={CurrencyLabels[currency]}
+                    />
+                  ))}
+                </>
+              )}
+            />
           </FormGroup>
 
           <Button
             sx={{ marginTop: 2 }}
             type="submit"
             variant="contained"
-            disabled={form.formData.version !== 'Legacy'}
+            disabled={version !== 'Legacy'}
           >
             Submit
           </Button>
 
-          {form.formData.version !== 'Legacy' && (
+          {version !== 'Legacy' && (
             <Typography
               color="warning"
               variant="overline"

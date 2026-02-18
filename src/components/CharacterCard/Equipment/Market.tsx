@@ -20,7 +20,7 @@ import {
   hasRequiredStrength,
   remainingMoneyInCopper,
   sellItem
-} from '@utils/character';
+} from '@utils/character/character.utils';
 import {
   addOrUpdateEquipment,
   calculateTotalQuantity,

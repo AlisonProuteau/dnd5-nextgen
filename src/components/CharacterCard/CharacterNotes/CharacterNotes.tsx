@@ -169,7 +169,7 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
                   type="text"
                   label="Content"
                   value={note.content || ''}
-                  onChange={(value) => setNote((n) => ({ ...n, content: value as string }))}
+                  onChange={(_, value) => setNote((n) => ({ ...n, content: value as string }))}
                 />
               </Fragment>
             ) : (

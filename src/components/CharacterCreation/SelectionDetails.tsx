@@ -9,8 +9,8 @@ import {
   Typography
 } from '@mui/material';
 import { AccordionButtonDialog } from '@shared/AccordionButton';
-import { filterSpellsByPrerequisites } from '@utils/character';
-import { scrollOnOpen } from '@utils/ui';
+import { filterSpellsByPrerequisites } from '@utils/character/spells.utils';
+import { scrollOnOpen } from '@utils/ui/ui.utils';
 import { MoneyUnits } from '@representations/campaign/equipment.representation';
 import type { Level } from '@representations/campaign/level.representation';
 import type { Classes, Subclass } from '@representations/character/class.representation';

@@ -1,5 +1,5 @@
 import { get, getAll, type QueryObject } from '@utils/api.utils';
-import type { Version } from '@utils/constants';
+import type { Version } from '@utils/constants/versions.constants';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem, Spell } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';

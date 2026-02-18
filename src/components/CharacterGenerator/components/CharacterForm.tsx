@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   Button,
   FormControl,
@@ -10,7 +11,6 @@ import {
   TextField,
   Typography
 } from '@mui/material';
-import { useForm } from '@hooks/useForm';
 import type { CharacterDetails } from '../utils/character';
 import {
   buildPrompt,
@@ -32,8 +32,9 @@ export default function CharacterForm({
   setPrompt: (prompt: string) => void;
   setCharacter: (character: CharacterDetails | null) => void;
 }) {
-  const form = useForm<CharacterDetails>({
-    initialData: {
+  const { control, getValues } = useForm<CharacterDetails>({
+    mode: 'onChange',
+    defaultValues: {
       race: 'Human',
       gender: 'Gender-neutral',
       class: 'Barbarian',
@@ -55,22 +56,19 @@ export default function CharacterForm({
     url: ''
   };
 
-  const handleChange = (field: keyof CharacterDetails) => (e: any) => {
-    form.setFormData({ [field]: e.target.value });
-  };
-
   const handleGenerate = async () => {
     setCharacter(null);
     setPrompt('');
 
     try {
       setIsLoading(true);
+      const formData = getValues();
 
-      const prompt = buildPrompt(form.formData as CharacterDetails);
+      const prompt = buildPrompt(formData as CharacterDetails);
       setPrompt(prompt);
 
-      const url = await generateImage(form.formData as CharacterDetails, prompt);
-      if (url) setCharacter({ ...(form.formData as CharacterDetails), url });
+      const url = await generateImage(formData as CharacterDetails, prompt);
+      if (url) setCharacter({ ...(formData as CharacterDetails), url });
     } catch (err: any) {
       console.error('Generation failed:', err);
       alert(`Image generation failed: ${err.message}`);
@@ -98,31 +96,42 @@ export default function CharacterForm({
           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={field}>
             <FormControl fullWidth>
               <InputLabel htmlFor={fieldNames[field]}>{fieldNames[field]}</InputLabel>
-              <Select
-                id={fieldNames[field]}
-                data-testid={`${field}-select`}
-                value={form.formData[field] ?? ''}
-                label={fieldNames[field]}
-                onChange={handleChange(field)}
-              >
-                {options.map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {opt || 'None'}
-                  </MenuItem>
-                ))}
-              </Select>
+              <Controller
+                name={field}
+                control={control}
+                render={({ field: formField }) => (
+                  <Select
+                    id={fieldNames[field]}
+                    data-testid={`${field}-select`}
+                    label={fieldNames[field]}
+                    {...formField}
+                    value={formField.value ?? ''}
+                  >
+                    {options.map((opt) => (
+                      <MenuItem key={opt} value={opt}>
+                        {opt || 'None'}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                )}
+              />
             </FormControl>
           </Grid>
         ))}
         <Grid size={{ xs: 12 }}>
-          <TextField
-            label="Refinement"
-            id="Refinement"
-            fullWidth
-            multiline
-            minRows={2}
-            value={form.formData.refinement || ''}
-            onChange={(e) => form.setFormData({ refinement: e.target.value })}
+          <Controller
+            name="refinement"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                label="Refinement"
+                id="Refinement"
+                fullWidth
+                multiline
+                minRows={2}
+                {...field}
+              />
+            )}
           />
         </Grid>
         <Grid size={{ xs: 12 }}>
