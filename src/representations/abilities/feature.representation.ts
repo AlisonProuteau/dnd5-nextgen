@@ -31,4 +31,5 @@ export type Feature = {
   reference?: string;
   subclass?: DefaultRepresentation;
   feature_specific?: FeatureSpecific;
+  onRest?: 'short_rest' | 'long_rest';
 };

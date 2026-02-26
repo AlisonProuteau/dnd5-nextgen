@@ -33,4 +33,5 @@ export type Trait = {
   subraces?: DefaultRepresentation[];
   parent?: DefaultRepresentation;
   trait_specific?: TraitSpecific;
+  onRest?: 'short_rest' | 'long_rest';
 };
