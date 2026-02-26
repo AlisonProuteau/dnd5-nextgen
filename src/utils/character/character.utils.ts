@@ -5,7 +5,11 @@ import type {
   Equipment,
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
-import type { DefaultRepresentation } from '@representations/common.representation';
+import {
+  ABILITIES,
+  type DefaultRepresentation,
+  type Usage
+} from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 
 /**
@@ -308,3 +312,58 @@ export const getBaseHitPoints = (
   hitDie +
   conModifier * level +
   (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
+
+/**
+ * Calculate the number of times a resource can be used based on its usage definition and character stats.
+ * Handles various usage types including fixed numbers, level dependant, level-based scaling, and ability score-based scaling.
+ */
+export const getUsageTimes = (
+  usage: Usage,
+  character: { abilityScores: Character['abilityScores']; level: number }
+): number => {
+  if (typeof usage.times === 'number') return usage.times;
+
+  if (typeof usage.times === 'string') {
+    const op = new RegExp(`^(${ABILITIES.join('|')}|level)([+\\-\\*/])(\\d+)$`).exec(usage.times);
+    if (op) {
+      const [, resource, operator, value] = op;
+      const abilityValue =
+        resource === 'level' ? character.level : character.abilityScores[resource].modifier;
+      let result = 0;
+      switch (operator) {
+        case '+':
+          result = abilityValue + parseInt(value);
+          break;
+        case '-':
+          result = abilityValue - parseInt(value);
+          break;
+        case '*':
+          result = abilityValue * parseInt(value);
+          break;
+        case '/':
+          result = Math.floor(abilityValue / (parseInt(value) || 1));
+          break;
+      }
+      return result > 0 ? result : 1;
+    }
+    if (ABILITIES.includes(usage.times))
+      return character.abilityScores[usage.times].modifier > 0
+        ? character.abilityScores[usage.times].modifier
+        : 1;
+    if (usage.times.includes('level')) return character.level || 1;
+
+    return Infinity;
+  }
+
+  if (typeof usage.times === 'object')
+    return Object.entries(usage.times).reduce(
+      (acc, [level, times]) => {
+        if (character.level >= parseInt(level) && parseInt(level) > acc.level)
+          return { level: parseInt(level), times };
+        else return acc;
+      },
+      { level: -Infinity, times: 0 } as unknown as { level: number; times: number }
+    ).times;
+
+  return 1;
+};

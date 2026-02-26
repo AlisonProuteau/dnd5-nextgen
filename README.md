@@ -221,12 +221,16 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
+- [ ] Add status effect (+ select to clear on rest?)
+- [ ] Add "Action Record" that can track spells/feature/traits used + rests + maybe health or money + custom?
+- [ ] Handle Level class_specific and race_specific data?
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
 - [ ] Class archetype support?
 
 #### Dev
 
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
+- [ ] Improve ticket system
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor
 - [ ] D&D 2024 edition support

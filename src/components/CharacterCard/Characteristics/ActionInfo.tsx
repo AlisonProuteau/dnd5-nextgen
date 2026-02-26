@@ -1,4 +1,4 @@
-import { AreaIcon, BladeIcon, DodgeIcon, TimeIcon } from '@assets';
+import { AreaIcon, BladeIcon, DodgeIcon } from '@assets';
 import { Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import { getDamageMinMax } from '@utils/character/spells.utils';
@@ -13,14 +13,6 @@ interface ActionInfoProps {
 export function ActionInfo({ action, charLevel, slotLevel }: ActionInfoProps) {
   return (
     <Box paddingBottom="15px" paddingLeft="15px">
-      <Box display="flex" gap="5px">
-        <TimeIcon height="20px" width="20px" fill="white" />
-        <Typography>
-          {action.usage.times}
-          {action.usage.type}
-        </Typography>
-      </Box>
-
       {action.area_of_effect && (
         <Box display="flex" gap="5px">
           <AreaIcon height="20px" width="20px" fill="white" />

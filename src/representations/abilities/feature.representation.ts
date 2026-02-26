@@ -1,4 +1,4 @@
-import type { Choice, DefaultRepresentation } from '../common.representation';
+import type { Choice, DefaultRepresentation, Usage } from '../common.representation';
 
 type Prerequisite = LevelPrerequisite | FeaturePrerequisite | SpellPrerequisite;
 type LevelPrerequisite = {
@@ -22,6 +22,7 @@ type FeatureSpecific = {
 export type Feature = {
   class: DefaultRepresentation;
   desc: string[];
+  usage?: Usage;
   parent?: DefaultRepresentation;
   index: string;
   level: number;

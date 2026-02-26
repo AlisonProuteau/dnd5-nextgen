@@ -10,11 +10,14 @@ import {
   Tooltip,
   Typography
 } from '@mui/material';
-import { isEqual } from 'lodash';
+import { useQuery } from '@tanstack/react-query';
+import { isEqual, omit } from 'lodash';
+import { getTrait } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
+import { getUsageTimes } from '@utils/index';
 import type { Character } from '@representations/user.representation';
 
 interface HealthManagerProps {
@@ -41,7 +44,7 @@ export function HealthManager({
     deathSaves: {
       successes: character.health?.deathSaves?.successes || 0,
       failures: character.health?.deathSaves?.failures || 0,
-      usedSaves: character.health?.deathSaves?.usedSaves || false
+      usedSaves: (character.resourceUsages?.['relentless-endurance']?.current || 0) > 0
     }
   });
 
@@ -56,6 +59,13 @@ export function HealthManager({
     [character.traits]
   );
 
+  const { data: relentlessTraitUsageMax } = useQuery({
+    queryKey: ['fetchTrait', character.version, 'relentless-endurance'],
+    queryFn: async () => await getTrait(character.version || 'Legacy', 'relentless-endurance'),
+    enabled: canAutoSave,
+    select: (trait) => (trait?.usage ? getUsageTimes(trait?.usage, character) : 1)
+  });
+
   const initialHealth = useMemo(
     () => ({
       current: character.health?.current ?? character.hit_points ?? 0,
@@ -63,10 +73,17 @@ export function HealthManager({
       deathSaves: {
         successes: character.health?.deathSaves?.successes || 0,
         failures: character.health?.deathSaves?.failures || 0,
-        usedSaves: character.health?.deathSaves?.usedSaves || false
+        usedSaves:
+          (character.resourceUsages?.['relentless-endurance']?.current || 0) >=
+          (relentlessTraitUsageMax ?? 1)
       }
     }),
-    [character.health, character.hit_points]
+    [
+      character.health,
+      character.hit_points,
+      character.resourceUsages?.['relentless-endurance']?.current,
+      relentlessTraitUsageMax
+    ]
   );
 
   useEffect(() => {
@@ -86,8 +103,14 @@ export function HealthManager({
     }
   }, [health.current, canAutoSave, health.deathSaves.usedSaves, overrideHitPoints]);
 
+  useEffect(() => {
+    if (!overrideHitPoints && health.current > character.hit_points)
+      setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
+  }, [overrideHitPoints, health.current, character.hit_points]);
+
   const onSave = async () => {
-    const newHealth = { ...character.health, ...health };
+    const newHealth: Character['health'] = { ...character.health, ...health };
+    newHealth.deathSaves = omit(newHealth.deathSaves, 'usedSaves');
 
     if (overrideHitPoints && character.health !== undefined) {
       const newHealthCurrent =
@@ -101,15 +124,20 @@ export function HealthManager({
       character.id,
       overrideHitPoints
         ? { health: newHealth, hit_points: health.current || 1 }
-        : { health: newHealth }
+        : {
+            health: newHealth,
+            resourceUsages: {
+              ...character.resourceUsages,
+              'relentless-endurance': {
+                type: 'trait',
+                usage: 'long_rest',
+                current: health.deathSaves.usedSaves ? 1 : 0
+              }
+            }
+          }
     );
     closeHealthDialog();
   };
-
-  useEffect(() => {
-    if (!overrideHitPoints && health.current > character.hit_points)
-      setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
-  }, [overrideHitPoints, health.current, character.hit_points]);
 
   return (
     <Fragment>

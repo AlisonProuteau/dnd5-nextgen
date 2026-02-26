@@ -3,10 +3,12 @@ import {
   buyItem,
   EquipmentCategoryType,
   getSellingPrice,
+  getUsageTimes,
   remainingMoneyInCopper,
   sellItem,
   updatePurse
 } from '@utils/character/character.utils';
+import type { Character } from '@representations/user.representation';
 
 describe('Coin Management Functions', () => {
   describe('remainingMoneyInCopper', () => {
@@ -658,6 +660,266 @@ describe('Coin Management Functions', () => {
 
         expect(result).toEqual({ pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 });
       });
+    });
+  });
+});
+
+describe('getUsageTimes', () => {
+  const mockCharacter = {
+    level: 5,
+    abilityScores: {
+      str: { index: 'str', name: 'STR', full_name: 'Strength', score: 16, modifier: 3 },
+      dex: { index: 'dex', name: 'DEX', full_name: 'Dexterity', score: 14, modifier: 2 },
+      con: { index: 'con', name: 'CON', full_name: 'Constitution', score: 12, modifier: 1 },
+      int: { index: 'int', name: 'INT', full_name: 'Intelligence', score: 10, modifier: 0 },
+      wis: { index: 'wis', name: 'WIS', full_name: 'Wisdom', score: 8, modifier: -1 },
+      cha: { index: 'cha', name: 'CHA', full_name: 'Charisma', score: 6, modifier: -2 }
+    }
+  };
+
+  // ─── usage.times: number ────────────────────────────────────────────────────
+
+  describe('usage.times: number (fixed)', () => {
+    it('should return the exact fixed number', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 3 }, mockCharacter)).toBe(3);
+    });
+
+    it('should return 1 when times is 1', () => {
+      expect(getUsageTimes({ type: 'short_rest', times: 1 }, mockCharacter)).toBe(1);
+    });
+
+    it('should return 0 when times is 0', () => {
+      expect(getUsageTimes({ type: 'per_day', times: 0 }, mockCharacter)).toBe(0);
+    });
+
+    it('should return large fixed numbers unchanged', () => {
+      expect(getUsageTimes({ type: 'per_day', times: 100 }, mockCharacter)).toBe(100);
+    });
+  });
+
+  // ─── usage.times: bare ability string ───────────────────────────────────────
+
+  describe('usage.times: ability name (returns modifier)', () => {
+    it('times: "str" → str modifier (3)', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'str' }, mockCharacter)).toBe(3);
+    });
+
+    it('times: "dex" → dex modifier (2)', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'dex' }, mockCharacter)).toBe(2);
+    });
+
+    it('times: "con" → con modifier (1)', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'con' }, mockCharacter)).toBe(1);
+    });
+
+    it('times: "int" → int modifier (0) → clamped to 1', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'int' }, mockCharacter)).toBe(1);
+    });
+
+    it('times: "wis" → wis modifier (-1) → clamped to 1', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'wis' }, mockCharacter)).toBe(1);
+    });
+
+    it('times: "cha" → cha modifier (-2) → clamped to 1', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'cha' }, mockCharacter)).toBe(1);
+    });
+  });
+
+  // ─── usage.times: ability expression strings ────────────────────────────────
+
+  describe('usage.times: ability expression (str+n, dex-n, …)', () => {
+    describe('addition (+)', () => {
+      it('times: "str+2" → 3 + 2 = 5', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'str+2' }, mockCharacter)).toBe(5);
+      });
+
+      it('times: "dex+1" → 2 + 1 = 3', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'dex+1' }, mockCharacter)).toBe(3);
+      });
+
+      it('times: "int+1" → 0 + 1 = 1 (at minimum boundary)', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'int+1' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "cha+1" → -2 + 1 = -1 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'cha+1' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "wis+3" → -1 + 3 = 2', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'wis+3' }, mockCharacter)).toBe(2);
+      });
+    });
+
+    describe('subtraction (-)', () => {
+      it('times: "str-1" → 3 - 1 = 2', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'str-1' }, mockCharacter)).toBe(2);
+      });
+
+      it('times: "dex-1" → 2 - 1 = 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'dex-1' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "con-2" → 1 - 2 = -1 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'con-2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "int-1" → 0 - 1 = -1 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'int-1' }, mockCharacter)).toBe(1);
+      });
+    });
+
+    describe('multiplication (*)', () => {
+      it('times: "str*2" → 3 * 2 = 6', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'str*2' }, mockCharacter)).toBe(6);
+      });
+
+      it('times: "con*3" → 1 * 3 = 3', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'con*3' }, mockCharacter)).toBe(3);
+      });
+
+      it('times: "wis*2" → -1 * 2 = -2 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'wis*2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "int*5" → 0 * 5 = 0 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'int*5' }, mockCharacter)).toBe(1);
+      });
+    });
+
+    describe('division (/)', () => {
+      it('times: "str/2" → floor(3 / 2) = 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'str/2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "str/1" → floor(3 / 1) = 3', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'str/1' }, mockCharacter)).toBe(3);
+      });
+
+      it('times: "dex/2" → floor(2 / 2) = 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'dex/2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "int/2" → floor(0 / 2) = 0 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'int/2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "cha/2" → floor(-2 / 2) = -1 → clamped to 1', () => {
+        expect(getUsageTimes({ type: 'long_rest', times: 'cha/2' }, mockCharacter)).toBe(1);
+      });
+
+      it('times: "cha/0" → floor(-2 / 1) = -2 → clamped to 1, does not throw', () => {
+        expect(() =>
+          getUsageTimes({ type: 'long_rest', times: 'cha/0' }, mockCharacter)
+        ).not.toThrow();
+        expect(getUsageTimes({ type: 'long_rest', times: 'cha/0' }, mockCharacter)).toBe(1);
+      });
+    });
+  });
+
+  // ─── usage.times: 'level' ───────────────────────────────────────────────────
+
+  describe('usage.times: "level" (returns character level)', () => {
+    it('times: "level" → character.level (5)', () => {
+      expect(getUsageTimes({ type: 'per_day', times: 'level' }, mockCharacter)).toBe(5);
+    });
+
+    it('times: "level" reflects a different character level', () => {
+      const lvl10Char = { ...mockCharacter, level: 10 } as unknown as Character;
+      expect(getUsageTimes({ type: 'per_day', times: 'level' }, lvl10Char)).toBe(10);
+    });
+  });
+
+  // ─── usage.times: level expression strings ──────────────────────────────────
+
+  describe('usage.times: level expression (level+n, level-n, …)', () => {
+    it('times: "level+2" → 5 + 2 = 7', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level+2' }, mockCharacter)).toBe(7);
+    });
+
+    it('times: "level-2" → 5 - 2 = 3', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level-2' }, mockCharacter)).toBe(3);
+    });
+
+    it('times: "level-4" → 5 - 4 = 1 (minimum boundary)', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level-4' }, mockCharacter)).toBe(1);
+    });
+
+    it('times: "level-10" → 5 - 10 = -5 → clamped to 1', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level-10' }, mockCharacter)).toBe(1);
+    });
+
+    it('times: "level*2" → 5 * 2 = 10', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level*2' }, mockCharacter)).toBe(10);
+    });
+
+    it('times: "level/2" → floor(5 / 2) = 2', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level/2' }, mockCharacter)).toBe(2);
+    });
+
+    it('times: "level/3" → floor(5 / 3) = 1', () => {
+      expect(getUsageTimes({ type: 'long_rest', times: 'level/3' }, mockCharacter)).toBe(1);
+    });
+  });
+
+  // ─── usage.times: 'unlimited' ───────────────────────────────────────────────
+
+  describe('usage.times: "unlimited" (returns Infinity)', () => {
+    it('times: "unlimited" → Infinity', () => {
+      expect(getUsageTimes({ type: 'per_day', times: 'unlimited' }, mockCharacter)).toBe(Infinity);
+    });
+  });
+
+  // ─── usage.times: level-based object ────────────────────────────────────────
+
+  describe('usage.times: object { [level]: number }', () => {
+    it('returns the value for the exact matching level threshold', () => {
+      // level 5 matches key "5"
+      expect(getUsageTimes({ type: 'long_rest', times: { 1: 2, 3: 3, 5: 4 } }, mockCharacter)).toBe(
+        4
+      );
+    });
+
+    it('returns the highest threshold at or below character level', () => {
+      // level 5: thresholds 1, 3, 7 → highest at-or-below is 3 (times: 3)
+      expect(getUsageTimes({ type: 'long_rest', times: { 1: 2, 3: 3, 7: 5 } }, mockCharacter)).toBe(
+        3
+      );
+    });
+
+    it('returns the only matching threshold when just one entry qualifies', () => {
+      // level 5 >= 1 only
+      expect(getUsageTimes({ type: 'long_rest', times: { 1: 2 } }, mockCharacter)).toBe(2);
+    });
+
+    it('returns the entry at the characters level when multiple lower thresholds exist', () => {
+      // level 5: qualifies for 3, 4, 5 → takes level 5 (times: 10)
+      expect(
+        getUsageTimes({ type: 'long_rest', times: { 1: 1, 3: 2, 5: 10, 11: 15 } }, mockCharacter)
+      ).toBe(10);
+    });
+
+    it('uses the highest qualifying level when character level is between thresholds', () => {
+      // level 5: qualifies for 2 and 4 → takes level 4 (times: 5)
+      expect(getUsageTimes({ type: 'long_rest', times: { 2: 3, 4: 5, 8: 7 } }, mockCharacter)).toBe(
+        5
+      );
+    });
+
+    it('works correctly at character level 1 with multiple thresholds', () => {
+      const lvl1Char = { ...mockCharacter, level: 1 } as unknown as Character;
+      expect(getUsageTimes({ type: 'long_rest', times: { 1: 2, 5: 4, 10: 6 } }, lvl1Char)).toBe(2);
+    });
+
+    it('works correctly at high character level', () => {
+      const lvl20Char = { ...mockCharacter, level: 20 } as unknown as Character;
+      expect(
+        getUsageTimes({ type: 'long_rest', times: { 1: 2, 5: 4, 11: 5, 17: 6 } }, lvl20Char)
+      ).toBe(6);
+    });
+
+    it('returns 0 when character level is below all thresholds', () => {
+      const lvl1Char = { ...mockCharacter, level: 1 } as unknown as Character;
+      expect(getUsageTimes({ type: 'long_rest', times: { 3: 2, 5: 4, 10: 6 } }, lvl1Char)).toBe(0);
     });
   });
 });
