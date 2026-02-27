@@ -329,9 +329,9 @@ describe('Character Health Management End-to-End', () => {
       health: {
         current: 8,
         temporary: 0,
-        deathSaves: { successes: 0, failures: 0 },
-        resourceUsages: {}
-      }
+        deathSaves: { successes: 0, failures: 0 }
+      },
+      resourceUsages: {}
     };
     cy.createTestCharacter(Cypress.testUser.uid, conTestChar.id, conTestChar);
 

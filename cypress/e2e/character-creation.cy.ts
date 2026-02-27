@@ -211,6 +211,22 @@ describe(`Character Creation End-to-End`, () => {
     cy.getButton('Create').should('be.disabled');
     cy.go('forward');
     cy.url().should('include', '/character/points');
+
+    // Test: Dragonborn shows draconic ancestry with selected type and action data
+    cy.getByTestId('save-scores').click();
+    cy.url().should('eq', Cypress.config().baseUrl + '/character');
+    cy.waitForLoading();
+    cy.getByTestId('character-container').should('be.visible');
+    cy.getByTestId('next-step').click();
+    cy.getByTestId('characteristics-section').should('be.visible');
+
+    cy.getByTestId('trait-draconic-ancestry').click();
+    cy.getByTestId('trait-details-draconic-ancestry').should('be.visible');
+    cy.getByTestId('trait-subtrait-draconic-ancestry-black')
+      .should('be.visible')
+      .should('contain.text', 'Black Draconic Ancestry - Acid');
+    cy.getByTestId('trait-subtrait-name-draconic-ancestry-black').should('contain.text', 'Acid');
+    cy.getByTestId('trait-breath-weapon').should('be.visible');
   });
 
   it('should complete the full character sheet happy path workflow', function () {

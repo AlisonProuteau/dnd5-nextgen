@@ -745,6 +745,57 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('armor-class').should('contain.text', 14);
   });
 
+  it('should display USE button for features and traits with usage data and track resource usage', () => {
+    const tillyData = characters.find(({ name }) => name === 'Tilly')!;
+    const usageTestChar = {
+      ...tillyData,
+      id: 'usage-test-character',
+      resourceUsages: {}
+    };
+    cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
+
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${usageTestChar.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    clickUntilStep('characteristics');
+
+    // Test: USE button visible on arcane-recovery feature
+    cy.getByTestId('feature-arcane-recovery').click();
+    cy.getByTestId('feature-details-arcane-recovery').should('be.visible');
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .as('featureUseButton')
+      .should('be.visible')
+      .and('be.enabled')
+      .and('contain.text', '0/1');
+
+    // Test: USE button visible on infernal-legacy trait
+    cy.getByTestId('trait-infernal-legacy').click();
+    cy.getByTestId('trait-details-infernal-legacy').should('be.visible');
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .as('traitUseButton')
+      .should('be.visible')
+      .and('be.enabled')
+      .and('contain.text', '0/1');
+
+    // Test: Clicking USE on the trait increments counter and disables button at max
+    cy.get('@traitUseButton').click();
+    cy.get('@traitUseButton').should('be.disabled').and('contain.text', '1/1');
+
+    // Test: Persistence after reload
+    cy.reload();
+    cy.getByTestId('character-container').should('be.visible');
+    clickUntilStep('characteristics');
+    cy.getByTestId('trait-infernal-legacy').click();
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+  });
+
   it('should handle delete character workflow with confirmation and cancellation', () => {
     const deleteTestCharacter = {
       ...delfyData,
