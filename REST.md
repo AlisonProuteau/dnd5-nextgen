@@ -19,10 +19,9 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 
 # TODO
 
-- [ ] Use traits/feature/equipments/actions (dragon breath)
-  - Choose spells or equipment or something? Maybe just add a note is OK and/or maybe add a temporary spells to add spells regardless of prepare/learn
+- Choose spells or equipment or something? Maybe just add a note is OK and/or maybe add a temporary spells to add spells regardless of prepare/learn
 - [ ] Add "Action Record"
-  - Track spells/feature/traits used + rests + maybe health or money + custom
+  - Track spells/feature/traits used rests + maybe health or money + custom (equipment drop down?)
 - [ ] Add partial regain spell slots
 - [ ] Add Status Effect UI
 - [ ] Add short rest UI

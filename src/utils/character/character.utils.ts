@@ -1,5 +1,7 @@
 import { omit } from 'lodash';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
+import { Trait } from '@representations/abilities/trait.representation';
 import type {
   AdditionalMoneyUnitType,
   Equipment,
@@ -16,7 +18,7 @@ import type { Character } from '@representations/user.representation';
  * Calculate ability score modifier based on D&D 5e rules
  */
 export const getAbilityScoreModifier = (score: number): number => {
-  if (score === 1) return -5;
+  if (score <= 1) return -5;
   else if (score <= 3) return -4;
   else if (score <= 5) return -3;
   else if (score <= 7) return -2;
@@ -31,7 +33,7 @@ export const getAbilityScoreModifier = (score: number): number => {
   else if (score <= 25) return 7;
   else if (score <= 27) return 8;
   else if (score <= 29) return 9;
-  else if (score === 30) return 10;
+  else if (score >= 30) return 10;
 
   return 0;
 };
@@ -319,7 +321,7 @@ export const getBaseHitPoints = (
  */
 export const getUsageTimes = (
   usage: Usage,
-  character: { abilityScores: Character['abilityScores']; level: number }
+  character: { abilityScores?: Character['abilityScores']; level?: number }
 ): number => {
   if (typeof usage.times === 'number') return usage.times;
 
@@ -328,7 +330,9 @@ export const getUsageTimes = (
     if (op) {
       const [, resource, operator, value] = op;
       const abilityValue =
-        resource === 'level' ? character.level : character.abilityScores[resource].modifier;
+        resource === 'level'
+          ? (character.level ?? 1)
+          : (character.abilityScores?.[resource].modifier ?? 1);
       let result = 0;
       switch (operator) {
         case '+':
@@ -347,8 +351,8 @@ export const getUsageTimes = (
       return result > 0 ? result : 1;
     }
     if (ABILITIES.includes(usage.times))
-      return character.abilityScores[usage.times].modifier > 0
-        ? character.abilityScores[usage.times].modifier
+      return (character.abilityScores?.[usage.times].modifier ?? 0) > 0
+        ? (character.abilityScores?.[usage.times].modifier ?? 1)
         : 1;
     if (usage.times.includes('level')) return character.level || 1;
 
@@ -358,7 +362,7 @@ export const getUsageTimes = (
   if (typeof usage.times === 'object')
     return Object.entries(usage.times).reduce(
       (acc, [level, times]) => {
-        if (character.level >= parseInt(level) && parseInt(level) > acc.level)
+        if ((character.level ?? 1) >= parseInt(level) && parseInt(level) > acc.level)
           return { level: parseInt(level), times };
         else return acc;
       },
@@ -366,4 +370,60 @@ export const getUsageTimes = (
     ).times;
 
   return 1;
+};
+
+export const getUsageType = (usage: Usage, features: Feature[]) => {
+  if (typeof usage.type === 'object' && 'feature' in usage.type) {
+    const relatedFeatureID = usage.type.feature;
+    return (
+      features.find(({ index }) => index === relatedFeatureID)?.usage?.type ?? usage.type['default']
+    );
+  }
+  return usage.type;
+};
+
+export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
+  const usages =
+    resources?.flatMap(({ usage }) => usage).filter((usage): usage is Usage => !!usage) || [];
+  const relatedFeatures = usages
+    .map(({ type }) => (typeof type === 'object' && 'feature' in type ? type.feature : null))
+    .filter((index): index is string => !!index);
+
+  return relatedFeatures;
+};
+
+export const getUsageTypeLabel = (usageType: Usage['type']): string | undefined => {
+  switch (usageType) {
+    case 'long_rest':
+      return 'Long Rest';
+    case 'short_rest':
+      return 'Short Rest';
+    case 'per_rest':
+      return 'Short or Long Rest';
+    case 'per_day':
+      return 'Day';
+    case 'per_month':
+      return 'Month';
+    case 'per_week':
+      return 'Week';
+    default:
+      if (Array.isArray(usageType))
+        return usageType.map((type) => getUsageTypeLabel(type)).join(' / ');
+  }
+};
+
+export const formatUsageLabel = (
+  index: string,
+  resourceUsage: Usage,
+  character: {
+    abilityScores?: Character['abilityScores'];
+    level?: number;
+    resourceUsages?: Character['resourceUsages'];
+  },
+  features: Feature[]
+) => {
+  const currentUsage = character.resourceUsages?.[index];
+  const usageType = getUsageType(resourceUsage, features);
+
+  return `${currentUsage?.current ?? 0}/${getUsageTimes(resourceUsage, character)} (${getUsageTypeLabel(usageType)})`;
 };

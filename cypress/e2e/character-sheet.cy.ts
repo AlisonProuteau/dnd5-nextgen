@@ -4,7 +4,6 @@ describe(`Character Sheet End-to-End`, () => {
   const delfyData = characters.find(({ name }) => name === 'Delfy')!;
   const devyData = characters.find(({ name }) => name === 'Devy')!;
   const blackList: string[] = [
-    'draconic-ancestry',
     'otherworldly-patron',
     'barbarian-unarmored-defense',
     'monk-unarmored-defense',
