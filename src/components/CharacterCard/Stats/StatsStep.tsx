@@ -1,17 +1,39 @@
+import { Fragment } from 'react';
 import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SpeedIcon } from '@assets';
+import { Delete, EditAttributes } from '@mui/icons-material';
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Typography
+} from '@mui/material';
 import { Box } from '@mui/system';
 import { useQuery } from '@tanstack/react-query';
 import { getAllAbilities } from '@api/ressources';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
 import { Loader } from '@shared/Loader';
 import type { AbilityScore } from '@representations/campaign/adventure.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { DefaultProps } from 'src/pages/Header';
 import { useAuth } from 'src/providers/AuthProvider';
+import { CharacterPoints } from '../CharacterPoints';
 import { AbilityComponent } from './AbilityComponent';
 
 export function Stats({ character }: DefaultProps) {
+  const { isOn: isPointsOpen, turnOn: openPoints, turnOff: closePoints } = useToggle(false);
+  const { isOn: isDeleteOpen, turnOn: openDelete, turnOff: closeDelete } = useToggle(false);
   const { version } = useAuth();
+
+  const firebaseCrud = useFirebaseCrud({
+    collectionPath: 'users/{userId}/characters',
+    invalidateQueryKey: ['fetchCharacters'],
+    successMessages: { delete: 'Character deleted successfully' },
+    redirect: { delete: { path: '/' } }
+  });
 
   const { data: abilities } = useQuery({
     queryKey: ['fetchAbilities', version],
@@ -97,6 +119,63 @@ export function Stats({ character }: DefaultProps) {
       ) : (
         <Loader sx={{ minHeight: '50vh', alignContent: 'center' }} />
       )}
+
+      <Fragment>
+        <Box display="flex" justifyContent="center" gap={1} flexWrap="wrap">
+          <Button
+            data-testid={`edit-points-${character.id}`}
+            onClick={openPoints}
+            sx={{ display: 'flex', flexDirection: 'column' }}
+            color="primary"
+          >
+            <EditAttributes />
+            <Typography variant="button" color="text.secondary">
+              Edit Points
+            </Typography>
+          </Button>
+          <Button
+            data-testid={`delete-${character.id}`}
+            onClick={openDelete}
+            color="secondary"
+            sx={{ display: 'flex', flexDirection: 'column' }}
+          >
+            <Delete />
+            <Typography variant="button" color="text.secondary">
+              Delete Character
+            </Typography>
+          </Button>
+        </Box>
+
+        <Dialog maxWidth="sm" fullWidth open={isPointsOpen} onClose={closePoints}>
+          <Box display="flex" flexDirection="column" gap={3} p={3}>
+            <Typography variant="h6">Edit Character Points</Typography>
+            <CharacterPoints characterId={character.id} redirect={false} onSave={closePoints} />
+          </Box>
+        </Dialog>
+
+        <Dialog maxWidth="xs" open={isDeleteOpen} onClose={closeDelete}>
+          <DialogTitle>Delete {character.name}</DialogTitle>
+          <DialogContent>
+            Are you sure you want to delete this character?
+            <br />
+            This action cannot be undone.
+          </DialogContent>
+          <DialogActions>
+            <Button autoFocus disabled={firebaseCrud.isLoading} onClick={closeDelete}>
+              Cancel
+            </Button>
+            <Button
+              disabled={firebaseCrud.isLoading}
+              onClick={async () => {
+                await firebaseCrud.remove(character.id);
+                closeDelete();
+              }}
+            >
+              Ok
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Fragment>
     </Box>
   );
 }

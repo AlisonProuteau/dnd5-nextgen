@@ -94,7 +94,7 @@ export function Header() {
                 </Box>
 
                 <Box display="flex" alignItems="center">
-                  <Box sx={button}>
+                  <Box sx={{ ...button, backgroundColor: 'transparent' }}>
                     <Link to="/" aria-label="home" data-testid="home-link" css={linkButton}>
                       <Home />
                     </Link>
@@ -143,7 +143,7 @@ export function Header() {
                 </Box>
               </Fragment>
             ) : (
-              <Box sx={button}>
+              <Box sx={{ ...button, backgroundColor: 'transparent' }}>
                 <Link to="/auth" css={linkButton}>
                   <AccountCircle />
                 </Link>
