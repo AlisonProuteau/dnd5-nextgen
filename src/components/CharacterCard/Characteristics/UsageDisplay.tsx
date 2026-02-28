@@ -25,9 +25,9 @@ export function UsageDisplay({
     invalidateQueryKey: ['fetchCharacter', '{userId}', character?.id || '']
   });
 
-  const formatResourceUsageForCharacter = (current: number) => ({
-    ...character.resourceUsages,
+  const updateResourceUsage = (current: number) => ({
     resourceUsages: {
+      ...character.resourceUsages,
       [resource.index]: {
         type,
         usage: resource.usage?.type,
@@ -40,9 +40,7 @@ export function UsageDisplay({
     if (character.id && resource.usage)
       await firebaseCrud.update(
         character.id,
-        formatResourceUsageForCharacter(
-          (character.resourceUsages?.[resource.index]?.current ?? 0) + 1
-        ),
+        updateResourceUsage((character.resourceUsages?.[resource.index]?.current ?? 0) + 1),
         false
       );
   };
