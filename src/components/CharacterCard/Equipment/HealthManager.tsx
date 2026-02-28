@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { RestartAlt } from '@mui/icons-material';
+import { InfoOutlined, RestartAlt } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -7,7 +7,6 @@ import {
   Dialog,
   FormControlLabel,
   IconButton,
-  Tooltip,
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -17,6 +16,7 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
+import { TooltipButton } from '@shared/TooltipButton';
 import { getUsageTimes } from '@utils/index';
 import type { Character } from '@representations/user.representation';
 
@@ -32,6 +32,7 @@ export function HealthManager({
   isHealthDialogOpen,
   closeHealthDialog
 }: HealthManagerProps) {
+  const { isOn: isShowOverrideInfo, toggle: toggleOverrideInfo } = useToggle(false);
   const [overrideHitPoints, setOverrideHitPoints] = useState(false);
   const {
     isOn: isConfirmDialogOpen,
@@ -151,39 +152,53 @@ export function HealthManager({
         <Box display="flex" flexDirection="column" p={3} gap={2}>
           <Box display="flex" gap={1} justifyContent="space-between" flexWrap="wrap">
             <Typography variant="h6">Manage Health</Typography>
-
-            <Tooltip title="Permanently modify your character's hit points instead of current health. This changes the base stat and cannot be undone.">
-              <FormControlLabel
-                label={<Typography variant="caption">Override Hit Points</Typography>}
-                sx={{ width: 'fit-content', margin: 0 }}
-                control={
-                  <Checkbox
-                    sx={{ padding: 0, paddingRight: 0.25 }}
-                    checked={overrideHitPoints}
-                    onChange={(_, checked) => setOverrideHitPoints(checked)}
-                  />
-                }
-              />
-            </Tooltip>
+            <FormControlLabel
+              label={
+                <Fragment>
+                  <Typography variant="caption">Override Hit Points</Typography>
+                  <TooltipButton
+                    title="Permanently modify your character's hit points instead of current health. This changes the base stat and cannot be undone."
+                    sx={{ marginLeft: 0.25, position: 'relative', top: '-5px' }}
+                    placement="top"
+                  >
+                    <InfoOutlined color="info" fontSize="small" />
+                  </TooltipButton>
+                </Fragment>
+              }
+              sx={{ width: 'fit-content', margin: 0 }}
+              control={
+                <Checkbox
+                  sx={{ padding: 0, paddingRight: 0.25 }}
+                  checked={overrideHitPoints}
+                  onChange={(_, checked) => setOverrideHitPoints(checked)}
+                />
+              }
+            />
           </Box>
 
           <Box display="flex" flexDirection="column" gap={1} align-items="center">
-            <Tooltip
-              title="Grants a protective buffer above your hit points that absorbs
+            <NumberInput
+              id="temporaryHealth"
+              label={
+                <Fragment>
+                  Temporary Health
+                  <TooltipButton
+                    title="Grants a protective buffer above your hit points that absorbs
                 damage first. It fades after a long rest. New temporary health replaces any existing
                 amount rather than stacking."
-              placement="top"
-            >
-              <NumberInput
-                id="temporaryHealth"
-                label="Temporary Health"
-                min={0}
-                max={character.hit_points}
-                value={health.temporary}
-                onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
-                disabled={overrideHitPoints}
-              />
-            </Tooltip>
+                    sx={{ marginLeft: 0.25, position: 'relative', top: '-5px' }}
+                    placement="top"
+                  >
+                    <InfoOutlined color="info" fontSize="small" />
+                  </TooltipButton>
+                </Fragment>
+              }
+              min={0}
+              max={character.hit_points}
+              value={health.temporary}
+              onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
+              disabled={overrideHitPoints}
+            />
 
             <NumberInput
               id="currentHealth"

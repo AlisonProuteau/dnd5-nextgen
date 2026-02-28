@@ -28,7 +28,14 @@ export function CharacterActionsContainer({
   } = useToggle(false);
 
   return (
-    <Box sx={fab} display="grid" gridAutoFlow="column" gridAutoColumns="40px" gap={0.5}>
+    <Box
+      sx={fab}
+      display="grid"
+      gridAutoFlow="column"
+      gridAutoColumns="40px"
+      gap={0.5}
+      overflow="clip"
+    >
       <IconButton
         data-testid={`health-${character.id}`}
         onClick={openHealthDialog}

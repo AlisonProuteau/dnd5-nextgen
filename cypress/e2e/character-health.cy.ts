@@ -50,6 +50,9 @@ describe('Character Health Management End-to-End', () => {
     // Test: Temporary Health
     cy.getByTestId(`health-${healthTestChar.id}`).click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+      cy.get('label[for="temporaryHealth"]').find('button').click();
+      cy.getByRole('tooltip').should('contain.text', 'Grants a protective buffer');
+
       cy.get('#temporaryHealth').clear().type('-').blur().should('not.have.value', '-'); // Min 0
       cy.get('#temporaryHealth').clear().type('5').blur();
       cy.get('#currentHealth').should('be.disabled');
@@ -184,6 +187,9 @@ describe('Character Health Management End-to-End', () => {
         .find('input[type="checkbox"]')
         .should('not.be.checked')
         .check();
+
+      cy.contains('Override Hit Points').parent().find('button').click();
+      cy.getByRole('tooltip').should('contain.text', 'Permanently modify');
 
       cy.get('#temporaryHealth').should('be.disabled');
       cy.getByTestId('reset-health-button').should('be.disabled');

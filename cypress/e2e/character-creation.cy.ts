@@ -229,7 +229,7 @@ describe(`Character Creation End-to-End`, () => {
     cy.getByTestId('trait-breath-weapon').should('be.visible');
   });
 
-  it('should complete the full character sheet happy path workflow', function () {
+  it('should complete the full character creation happy path workflow', function () {
     cy.getByTestId('create-character-fab').click();
     cy.url().should('include', '/create');
 

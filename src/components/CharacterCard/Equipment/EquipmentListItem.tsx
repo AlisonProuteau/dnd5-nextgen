@@ -1,6 +1,7 @@
 import { BladeIcon, ShieldIcon } from '@assets';
 import { CheckCircle, CircleOutlined, InfoOutlined, Warning } from '@mui/icons-material';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, IconButton, Typography } from '@mui/material';
+import { TooltipButton } from '@shared/TooltipButton';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 
@@ -51,14 +52,14 @@ export function EquipmentListItem({
             {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
           </Typography>
           {!hasRequiredStrength(equipment) && (
-            <Tooltip title="Minimum strength requirement not met" arrow>
+            <TooltipButton title="Minimum strength requirement not met">
               <Warning
                 color="warning"
                 fontSize="small"
                 sx={{ verticalAlign: 'middle', marginX: 1 }}
                 data-testid="strength-requirement-warning"
               />
-            </Tooltip>
+            </TooltipButton>
           )}
         </Box>
 

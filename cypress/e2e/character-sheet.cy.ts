@@ -65,9 +65,9 @@ describe(`Character Sheet End-to-End`, () => {
         .should('have.text', 'Nature');
       cy.get(' button').should('exist').click();
     });
-    cy.getByRole('dialog').should('contain.text', 'Saving ThrowsIntelligence, Wisdom');
+    cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
     cy.press('Escape');
-    cy.getByTestId('saving-throws-dialog').should('not.exist');
+    cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
     cy.getByTestId('ability-wis').within(($el) => {
       cy.wrap($el)
@@ -85,9 +85,9 @@ describe(`Character Sheet End-to-End`, () => {
         .should('have.text', 'Animal HandlingPerception');
       cy.wrap($el).get(' button').should('exist').click();
     });
-    cy.getByRole('dialog').should('contain.text', 'Saving ThrowsIntelligence, Wisdom');
+    cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
     cy.press('Escape');
-    cy.getByTestId('saving-throws-dialog').should('not.exist');
+    cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
     cy.getByTestId('ability-dex').within(($el) => {
       cy.wrap($el)
@@ -720,7 +720,14 @@ describe(`Character Sheet End-to-End`, () => {
         .should('be.visible')
         .trigger('mouseover');
     });
-    cy.contains('Minimum strength requirement not met').should('be.visible');
+    cy.getByRole('tooltip', 'Minimum strength requirement not met').should('be.visible');
+    cy.getByTestId('equipment-item-chain-mail', { type: 'exact' }).within(($el) => {
+      cy.wrap($el)
+        .getByTestId('strength-requirement-warning')
+        .should('be.visible')
+        .trigger('mouseout');
+    });
+    cy.getByRole('tooltip', 'Minimum strength requirement not met').should('not.exist');
 
     // Test: Shield can be equipped/unequipped independently
     cy.getByTestId('equipment-item-shield-equip').click();
