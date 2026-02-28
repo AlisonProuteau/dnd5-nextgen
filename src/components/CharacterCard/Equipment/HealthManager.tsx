@@ -121,21 +121,24 @@ export function HealthManager({
         character.health.current === 0 ? 0 : newHealthCurrent > 0 ? newHealthCurrent : 1;
     }
 
+    const relentlessUsagePatch = canAutoSave
+      ? {
+          resourceUsages: {
+            ...character.resourceUsages,
+            'relentless-endurance': {
+              type: 'trait',
+              usage: 'long_rest',
+              current: health.deathSaves.usedSaves ? 1 : 0
+            }
+          }
+        }
+      : {};
+
     await firebaseCrud.update(
       character.id,
       overrideHitPoints
         ? { health: newHealth, hit_points: health.current || 1 }
-        : {
-            health: newHealth,
-            resourceUsages: {
-              ...character.resourceUsages,
-              'relentless-endurance': {
-                type: 'trait',
-                usage: 'long_rest',
-                current: health.deathSaves.usedSaves ? 1 : 0
-              }
-            }
-          }
+        : { health: newHealth, ...relentlessUsagePatch }
     );
     closeHealthDialog();
   };
