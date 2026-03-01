@@ -2,7 +2,7 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 
 # Short Rest (1hr+)
 
-- Healing -> Characters can spend one or more Hit Dice (up to their total level) to regain hit points. For each die, roll it and add the Constitution modifier, regaining that total.
+- Healing -> Characters can spend one or more Hit Dice (up to their total level) to regain hit points. For each die, roll it and add the Constitution modifier, regaining that total. Works for unconscious charaters.
 - Resource Recovery -> usage with type 'short_rest' | 'per_rest'
 - Rest actions (Traits or Features) -> onRest with type 'short_rest'
 - Spell Slots -> all for warlock + some for druid feature

@@ -60,11 +60,19 @@ export function HealthManager({
     [character.traits]
   );
 
-  const { data: relentlessTraitUsageMax } = useQuery({
+  const {
+    data: { times: relentlessTraitUsageMax = 0, type: relentlessTraitType = 'long_rest' } = {}
+  } = useQuery({
     queryKey: ['fetchTrait', character.version, 'relentless-endurance'],
     queryFn: async () => await getTrait(character.version || 'Legacy', 'relentless-endurance'),
     enabled: canAutoSave,
-    select: (trait) => (trait?.usage ? getUsageTimes(trait?.usage, character) : 1)
+    select: (trait) =>
+      trait?.usage
+        ? {
+            type: trait.usage.type,
+            times: getUsageTimes(trait?.usage, character)
+          }
+        : {}
   });
 
   const initialHealth = useMemo(
@@ -121,24 +129,20 @@ export function HealthManager({
         character.health.current === 0 ? 0 : newHealthCurrent > 0 ? newHealthCurrent : 1;
     }
 
-    const relentlessUsagePatch = canAutoSave
+    const relentlessUsagePatch: Character['resourceUsages'] = canAutoSave
       ? {
-          resourceUsages: {
-            ...character.resourceUsages,
-            'relentless-endurance': {
-              type: 'trait',
-              usage: 'long_rest',
-              current: health.deathSaves.usedSaves ? 1 : 0
-            }
+          ...character.resourceUsages,
+          'relentless-endurance': {
+            type: 'trait',
+            usage: relentlessTraitType,
+            current: health.deathSaves.usedSaves ? 1 : 0
           }
         }
       : {};
-
+    const updateData = { health: newHealth, resourceUsages: relentlessUsagePatch };
     await firebaseCrud.update(
       character.id,
-      overrideHitPoints
-        ? { health: newHealth, hit_points: health.current || 1 }
-        : { health: newHealth, ...relentlessUsagePatch }
+      overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData
     );
     closeHealthDialog();
   };

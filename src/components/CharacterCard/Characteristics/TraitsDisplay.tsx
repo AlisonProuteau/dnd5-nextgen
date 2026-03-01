@@ -168,7 +168,7 @@ export function TraitsDisplay({
                             <Typography
                               data-testid={`trait-subtrait-action-desc-${subtrait.trait_specific?.action.index}`}
                             >
-                              {subtrait.desc}
+                              {subtrait.trait_specific.action.desc}
                             </Typography>
                           </Fragment>
                         ) : (

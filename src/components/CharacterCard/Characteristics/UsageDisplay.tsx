@@ -37,12 +37,11 @@ export function UsageDisplay({
   });
 
   const useResource = async () => {
-    if (character.id && resource.usage)
-      await firebaseCrud.update(
-        character.id,
-        updateResourceUsage((character.resourceUsages?.[resource.index]?.current ?? 0) + 1),
-        false
-      );
+    if (!character.id || !resource.usage) return;
+
+    const current = character.resourceUsages?.[resource.index]?.current ?? 0;
+    if (current < getUsageTimes(resource.usage, character))
+      await firebaseCrud.update(character.id, updateResourceUsage(current + 1), false);
   };
 
   //   TODO-blocked: For testing until rest is implemented

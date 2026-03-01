@@ -222,6 +222,13 @@ describe('Resource Usage Functions', () => {
   });
 
   describe('getUsageType', () => {
+    const baseFeature: Partial<Feature> = {
+      name: 'Feature',
+      desc: [],
+      level: 1,
+      class: { index: 'test', name: 'Test' }
+    };
+
     it('literal type (string or array)', () => {
       // TEST: returns the literal type string
       expect(getUsageType({ type: 'long_rest', times: 1 }, [])).toBe('long_rest');
@@ -235,11 +242,9 @@ describe('Resource Usage Functions', () => {
 
     it('feature-linked type', () => {
       const channelDivinityFeature = {
+        ...baseFeature,
         index: 'channel-divinity',
-        name: 'Channel Divinity',
-        desc: [],
-        level: 1,
-        class: { index: 'test', name: 'Test' }
+        name: 'Channel Divinity'
       } as Feature;
 
       // TEST: resolves feature-linked type from the features array
@@ -258,6 +263,66 @@ describe('Resource Usage Functions', () => {
       expect(
         getUsageType({ type: { feature: 'channel-divinity', default: 'per_day' }, times: 1 }, [
           channelDivinityFeature
+        ])
+      ).toBe('per_day');
+    });
+
+    it('chained feature-linked type', () => {
+      const featureA = {
+        ...baseFeature,
+        index: 'feature-a',
+        usage: { type: { feature: 'feature-b', default: 'long_rest' }, times: 1 }
+      } as Feature;
+      const featureB = {
+        ...baseFeature,
+        index: 'feature-b',
+        usage: { type: 'short_rest', times: 1 }
+      } as Feature;
+
+      // TEST: resolves a chain A → B → short_rest
+      expect(
+        getUsageType({ type: { feature: 'feature-a', default: 'long_rest' }, times: 1 }, [
+          featureA,
+          featureB
+        ])
+      ).toBe('short_rest');
+
+      // TEST: resolves a deeper chain A → B → C → per_day
+      const featureC = {
+        ...baseFeature,
+        index: 'feature-c',
+        usage: { type: 'per_day', times: 1 }
+      } as Feature;
+      const featureBLinked = {
+        ...featureB,
+        usage: { type: { feature: 'feature-c', default: 'long_rest' }, times: 1 }
+      } as Feature;
+      expect(
+        getUsageType({ type: { feature: 'feature-a', default: 'long_rest' }, times: 1 }, [
+          featureA,
+          featureBLinked,
+          featureC
+        ])
+      ).toBe('per_day');
+    });
+
+    it('cycle detection', () => {
+      const featureA = {
+        ...baseFeature,
+        index: 'feature-a',
+        usage: { type: { feature: 'feature-b', default: 'long_rest' }, times: 1 }
+      } as Feature;
+      const featureB = {
+        ...baseFeature,
+        index: 'feature-b',
+        usage: { type: { feature: 'feature-a', default: 'per_day' }, times: 1 }
+      } as Feature;
+
+      // TEST: A → B → A cycle should not hang and should fall back to B's default
+      expect(
+        getUsageType({ type: { feature: 'feature-a', default: 'short_rest' }, times: 1 }, [
+          featureA,
+          featureB
         ])
       ).toBe('per_day');
     });

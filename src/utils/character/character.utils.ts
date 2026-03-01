@@ -323,8 +323,8 @@ export const getUsageTimes = (
   usage: Usage,
   character: { abilityScores?: Character['abilityScores']; level?: number }
 ): number => {
+  if (usage.times === 'unlimited') return Infinity;
   if (typeof usage.times === 'number') return usage.times;
-
   if (typeof usage.times === 'string') {
     const op = new RegExp(`^(${ABILITIES.join('|')}|level)([+\\-\\*/])(\\d+)$`).exec(usage.times);
     if (op) {
@@ -356,7 +356,7 @@ export const getUsageTimes = (
         : 1;
     if (usage.times.includes('level')) return character.level || 1;
 
-    return Infinity;
+    return 1;
   }
 
   if (typeof usage.times === 'object')
@@ -372,14 +372,21 @@ export const getUsageTimes = (
   return 1;
 };
 
-export const getUsageType = (usage: Usage, features: Feature[]) => {
-  if (typeof usage.type === 'object' && 'feature' in usage.type) {
-    const relatedFeatureID = usage.type.feature;
-    return (
-      features.find(({ index }) => index === relatedFeatureID)?.usage?.type ?? usage.type['default']
-    );
-  }
-  return usage.type;
+export const getUsageType = (
+  usage: Usage,
+  features: Feature[],
+  allRelatedFeatures: string[] = []
+): Exclude<Usage['type'], { feature: string }> => {
+  if (!usage.type || typeof usage.type !== 'object' || !('feature' in usage.type))
+    return usage.type ?? 'long_rest';
+
+  const relatedFeatureID = usage.type.feature;
+  const relatedFeatureUsage = features.find(({ index }) => index === relatedFeatureID)?.usage;
+  if (allRelatedFeatures.includes(relatedFeatureID) || !relatedFeatureUsage)
+    return usage.type.default ?? 'long_rest';
+
+  allRelatedFeatures.push(relatedFeatureID);
+  return getUsageType(relatedFeatureUsage, features, allRelatedFeatures);
 };
 
 export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
@@ -414,7 +421,7 @@ export const getUsageTypeLabel = (usageType: Usage['type']): string | undefined 
 
 export const formatUsageLabel = (
   index: string,
-  resourceUsage: Usage,
+  active: Usage,
   character: {
     abilityScores?: Character['abilityScores'];
     level?: number;
@@ -422,8 +429,8 @@ export const formatUsageLabel = (
   },
   features: Feature[]
 ) => {
-  const currentUsage = character.resourceUsages?.[index];
-  const usageType = getUsageType(resourceUsage, features);
+  const usageType = getUsageType(active, features);
+  const used = character.resourceUsages?.[index]?.current ?? 0;
 
-  return `${currentUsage?.current ?? 0}/${getUsageTimes(resourceUsage, character)} (${getUsageTypeLabel(usageType)})`;
+  return `${used}/${getUsageTimes(active, character)} (${getUsageTypeLabel(usageType)})`;
 };
