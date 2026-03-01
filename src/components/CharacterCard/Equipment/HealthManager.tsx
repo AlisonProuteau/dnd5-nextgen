@@ -133,8 +133,8 @@ export function HealthManager({
       ? {
           health: newHealth,
           resourceUsages: {
-            ...character.resourceUsages,
-            'relentless-endurance': {
+            ...(character.resourceUsages ?? {}),
+            [AUTO_SAVE_TRAIT]: {
               type: 'trait',
               usage: relentlessTraitType,
               current: health.deathSaves.usedSaves ? 1 : 0
