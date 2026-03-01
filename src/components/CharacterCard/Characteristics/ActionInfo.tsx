@@ -1,6 +1,6 @@
 import { AreaIcon, BladeIcon, DodgeIcon } from '@assets';
 import { Typography } from '@mui/material';
-import { Box } from '@mui/system';
+import { Box, BoxProps } from '@mui/system';
 import { getDamageMinMax } from '@utils/character/spells.utils';
 import type { Action } from '@representations/abilities/trait.representation';
 
@@ -10,9 +10,9 @@ interface ActionInfoProps {
   slotLevel?: number;
 }
 
-export function ActionInfo({ action, charLevel, slotLevel }: ActionInfoProps) {
+export function ActionInfo({ action, charLevel, slotLevel, ...props }: ActionInfoProps & BoxProps) {
   return (
-    <Box paddingBottom="15px" paddingLeft="15px">
+    <Box paddingBottom="15px" paddingLeft="15px" {...props}>
       {action.area_of_effect && (
         <Box display="flex" gap="5px">
           <AreaIcon height="20px" width="20px" fill="white" />

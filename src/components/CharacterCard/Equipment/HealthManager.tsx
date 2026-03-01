@@ -20,6 +20,8 @@ import { TooltipButton } from '@shared/TooltipButton';
 import { getUsageTimes } from '@utils/index';
 import type { Character } from '@representations/user.representation';
 
+const AUTO_SAVE_TRAIT = 'relentless-endurance';
+
 interface HealthManagerProps {
   character: Character;
   isHealthDialogOpen: boolean;
@@ -32,7 +34,6 @@ export function HealthManager({
   isHealthDialogOpen,
   closeHealthDialog
 }: HealthManagerProps) {
-  const { isOn: isShowOverrideInfo, toggle: toggleOverrideInfo } = useToggle(false);
   const [overrideHitPoints, setOverrideHitPoints] = useState(false);
   const {
     isOn: isConfirmDialogOpen,
@@ -45,7 +46,7 @@ export function HealthManager({
     deathSaves: {
       successes: character.health?.deathSaves?.successes || 0,
       failures: character.health?.deathSaves?.failures || 0,
-      usedSaves: (character.resourceUsages?.['relentless-endurance']?.current || 0) > 0
+      usedSaves: (character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0) > 0
     }
   });
 
@@ -56,15 +57,15 @@ export function HealthManager({
   });
 
   const canAutoSave = useMemo(
-    () => character.traits?.some(({ index }) => index === 'relentless-endurance'),
+    () => character.traits?.some(({ index }) => index === AUTO_SAVE_TRAIT),
     [character.traits]
   );
 
   const {
-    data: { times: relentlessTraitUsageMax = 0, type: relentlessTraitType = 'long_rest' } = {}
+    data: { times: relentlessTraitUsageMax = 1, type: relentlessTraitType = 'long_rest' } = {}
   } = useQuery({
-    queryKey: ['fetchTrait', character.version, 'relentless-endurance'],
-    queryFn: async () => await getTrait(character.version || 'Legacy', 'relentless-endurance'),
+    queryKey: ['fetchTrait', character.version, AUTO_SAVE_TRAIT],
+    queryFn: async () => await getTrait(character.version || 'Legacy', AUTO_SAVE_TRAIT),
     enabled: canAutoSave,
     select: (trait) =>
       trait?.usage
@@ -83,14 +84,13 @@ export function HealthManager({
         successes: character.health?.deathSaves?.successes || 0,
         failures: character.health?.deathSaves?.failures || 0,
         usedSaves:
-          (character.resourceUsages?.['relentless-endurance']?.current || 0) >=
-          (relentlessTraitUsageMax ?? 1)
+          (character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0) >= relentlessTraitUsageMax
       }
     }),
     [
       character.health,
       character.hit_points,
-      character.resourceUsages?.['relentless-endurance']?.current,
+      character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current,
       relentlessTraitUsageMax
     ]
   );
@@ -129,17 +129,19 @@ export function HealthManager({
         character.health.current === 0 ? 0 : newHealthCurrent > 0 ? newHealthCurrent : 1;
     }
 
-    const relentlessUsagePatch: Character['resourceUsages'] = canAutoSave
+    const updateData = canAutoSave
       ? {
-          ...character.resourceUsages,
-          'relentless-endurance': {
-            type: 'trait',
-            usage: relentlessTraitType,
-            current: health.deathSaves.usedSaves ? 1 : 0
+          health: newHealth,
+          resourceUsages: {
+            ...character.resourceUsages,
+            'relentless-endurance': {
+              type: 'trait',
+              usage: relentlessTraitType,
+              current: health.deathSaves.usedSaves ? 1 : 0
+            }
           }
         }
-      : {};
-    const updateData = { health: newHealth, resourceUsages: relentlessUsagePatch };
+      : { health: newHealth };
     await firebaseCrud.update(
       character.id,
       overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData

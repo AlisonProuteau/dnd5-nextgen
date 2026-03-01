@@ -226,7 +226,11 @@ describe(`Character Creation End-to-End`, () => {
       .should('be.visible')
       .should('contain.text', 'Black Draconic Ancestry - Acid');
     cy.getByTestId('trait-subtrait-name-draconic-ancestry-black').should('contain.text', 'Acid');
+    cy.getByTestId('trait-action-breath-weapon').should('not.be.visible');
+
+    cy.getByTestId('trait-breath-weapon').click();
     cy.getByTestId('trait-breath-weapon').should('be.visible');
+    cy.getByTestId('trait-action-breath-weapon').should('be.visible').and('contain.text', 'Acid');
   });
 
   it('should complete the full character creation happy path workflow', function () {
