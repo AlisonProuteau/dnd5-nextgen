@@ -1,18 +1,25 @@
 import { omit } from 'lodash';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
+import { Trait } from '@representations/abilities/trait.representation';
 import type {
   AdditionalMoneyUnitType,
   Equipment,
   MoneyObjectType
 } from '@representations/campaign/equipment.representation';
-import type { DefaultRepresentation } from '@representations/common.representation';
+import {
+  ABILITIES,
+  type DefaultRepresentation,
+  type Usage,
+  UsageTypes
+} from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 
 /**
  * Calculate ability score modifier based on D&D 5e rules
  */
 export const getAbilityScoreModifier = (score: number): number => {
-  if (score === 1) return -5;
+  if (score <= 1) return -5;
   else if (score <= 3) return -4;
   else if (score <= 5) return -3;
   else if (score <= 7) return -2;
@@ -27,7 +34,7 @@ export const getAbilityScoreModifier = (score: number): number => {
   else if (score <= 25) return 7;
   else if (score <= 27) return 8;
   else if (score <= 29) return 9;
-  else if (score === 30) return 10;
+  else if (score >= 30) return 10;
 
   return 0;
 };
@@ -308,3 +315,127 @@ export const getBaseHitPoints = (
   hitDie +
   conModifier * level +
   (features?.some(({ index }) => index === 'draconic-resilience') ? 1 : 0);
+
+/**
+ * Calculate the number of times a resource can be used based on its usage definition and character stats.
+ * Handles various usage types including fixed numbers, level dependant, level-based scaling, and ability score-based scaling.
+ */
+export const getUsageTimes = (
+  usage: Usage,
+  character: { abilityScores?: Character['abilityScores']; level?: number }
+): number => {
+  if (usage.times === 'unlimited') return Infinity;
+  if (typeof usage.times === 'number') return usage.times;
+  if (typeof usage.times === 'string') {
+    const op = new RegExp(`^(${ABILITIES.join('|')}|level)([+\\-\\*/])(\\d+)$`).exec(usage.times);
+    if (op) {
+      const [, resource, operator, value] = op;
+      const abilityValue =
+        resource === 'level'
+          ? (character.level ?? 1)
+          : (character.abilityScores?.[resource].modifier ?? 1);
+      let result = 0;
+      switch (operator) {
+        case '+':
+          result = abilityValue + parseInt(value);
+          break;
+        case '-':
+          result = abilityValue - parseInt(value);
+          break;
+        case '*':
+          result = abilityValue * parseInt(value);
+          break;
+        case '/':
+          result = Math.floor(abilityValue / (parseInt(value) || 1));
+          break;
+      }
+      return result > 0 ? result : 1;
+    }
+    if ((ABILITIES as readonly string[]).includes(usage.times))
+      return (character.abilityScores?.[usage.times].modifier ?? 0) > 0
+        ? (character.abilityScores?.[usage.times].modifier ?? 1)
+        : 1;
+    if (usage.times.includes('level')) return character.level || 1;
+
+    return 1;
+  }
+
+  if (typeof usage.times === 'object')
+    return Object.entries(usage.times).reduce(
+      (acc, [level, times]) => {
+        if ((character.level ?? 1) >= parseInt(level) && parseInt(level) > acc.level)
+          return { level: parseInt(level), times };
+        else return acc;
+      },
+      { level: -Infinity, times: 0 } as unknown as { level: number; times: number }
+    ).times;
+
+  return 1;
+};
+
+export const getUsageType = (
+  usage: Usage,
+  features: Feature[],
+  allRelatedFeatures: string[] = []
+): UsageTypes | UsageTypes[] => {
+  if (!usage.type || typeof usage.type !== 'object' || !('feature' in usage.type))
+    return usage.type ?? 'long_rest';
+
+  const relatedFeatureID = usage.type.feature;
+  const relatedFeatureUsage = features.find(({ index }) => index === relatedFeatureID)?.usage;
+  if (allRelatedFeatures.includes(relatedFeatureID) || !relatedFeatureUsage)
+    return usage.type.default ?? 'long_rest';
+
+  allRelatedFeatures.push(relatedFeatureID);
+  return getUsageType(relatedFeatureUsage, features, allRelatedFeatures);
+};
+
+export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
+  const usages =
+    resources?.flatMap(({ usage }) => usage).filter((usage): usage is Usage => !!usage) || [];
+  const relatedFeatures = usages
+    .map(({ type }) => (typeof type === 'object' && 'feature' in type ? type.feature : null))
+    .filter((index): index is string => !!index);
+
+  return relatedFeatures;
+};
+
+export const getUsageTypeLabel = (usageType: UsageTypes | UsageTypes[]): string | undefined => {
+  switch (usageType) {
+    case 'long_rest':
+      return 'Long Rest';
+    case 'short_rest':
+      return 'Short Rest';
+    case 'per_rest':
+      return 'Short or Long Rest';
+    case 'per_day':
+      return 'Day';
+    case 'per_month':
+      return 'Month';
+    case 'per_week':
+      return 'Week';
+    default:
+      if (Array.isArray(usageType)) {
+        const filteredLabels = usageType
+          .map((type) => getUsageTypeLabel(type))
+          .filter((label): label is string => !!label);
+        return filteredLabels.length > 0 ? filteredLabels.join(' / ') : undefined;
+      }
+  }
+};
+
+export const formatUsageLabel = (
+  index: string,
+  active: Usage,
+  character: {
+    abilityScores?: Character['abilityScores'];
+    level?: number;
+    resourceUsages?: Character['resourceUsages'];
+  },
+  features: Feature[]
+) => {
+  const usageType = getUsageType(active, features);
+  const used = character.resourceUsages?.[index]?.current ?? 0;
+
+  return `${used}/${getUsageTimes(active, character)} (${getUsageTypeLabel(usageType)})`;
+};

@@ -33,11 +33,7 @@ export default function SpeedDialButton({
   );
 
   return (
-    <SpeedDial
-      FabProps={{ size, sx: buttonSize }} // slotProps={{ fab: { ... } }}
-      icon={<SpeedDialIcon />}
-      {...props}
-    >
+    <SpeedDial FabProps={{ size, sx: buttonSize }} icon={<SpeedDialIcon />} {...props}>
       {actions
         .filter(({ hidden }) => !hidden)
         .map((action) => (

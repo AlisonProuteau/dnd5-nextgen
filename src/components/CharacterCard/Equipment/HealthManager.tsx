@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
-import { RestartAlt } from '@mui/icons-material';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { InfoOutlined, RestartAlt } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -7,15 +7,21 @@ import {
   Dialog,
   FormControlLabel,
   IconButton,
-  Tooltip,
   Typography
 } from '@mui/material';
-import { isEqual } from 'lodash';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { isEqual, omit, uniqBy } from 'lodash';
+import { getFeature, getTrait } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
+import { TooltipButton } from '@shared/TooltipButton';
+import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { Character } from '@representations/user.representation';
+
+const AUTO_SAVE_TRAIT = 'relentless-endurance';
 
 interface HealthManagerProps {
   character: Character;
@@ -41,7 +47,7 @@ export function HealthManager({
     deathSaves: {
       successes: character.health?.deathSaves?.successes || 0,
       failures: character.health?.deathSaves?.failures || 0,
-      usedSaves: character.health?.deathSaves?.usedSaves || false
+      usedSaves: character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0
     }
   });
 
@@ -52,8 +58,38 @@ export function HealthManager({
   });
 
   const canAutoSave = useMemo(
-    () => character.traits?.some(({ index }) => index === 'relentless-endurance'),
+    () => character.traits?.some(({ index }) => index === AUTO_SAVE_TRAIT),
     [character.traits]
+  );
+
+  const { data: autoSaveTrait } = useQuery({
+    queryKey: ['fetchTrait', character.version, AUTO_SAVE_TRAIT],
+    queryFn: async () => await getTrait(character.version || 'Legacy', AUTO_SAVE_TRAIT),
+    enabled: canAutoSave
+  });
+
+  const { data: features } = useQueries({
+    queries:
+      uniqBy(character.features, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled:
+          !!index &&
+          !!autoSaveTrait?.usage &&
+          getRelatedFeatures(autoSaveTrait ? [autoSaveTrait] : []).length > 0
+      })) || [],
+    combine: useCallback(createQueryCombiner<Feature>(), [])
+  });
+
+  const { times: autoSaveTraitUsageMax = 1, type: autoSaveTraitType = 'long_rest' } = useMemo(
+    () =>
+      autoSaveTrait?.usage
+        ? {
+            type: getUsageType(autoSaveTrait.usage, features),
+            times: getUsageTimes(autoSaveTrait.usage, character)
+          }
+        : {},
+    [autoSaveTrait?.usage, features, character]
   );
 
   const initialHealth = useMemo(
@@ -63,10 +99,15 @@ export function HealthManager({
       deathSaves: {
         successes: character.health?.deathSaves?.successes || 0,
         failures: character.health?.deathSaves?.failures || 0,
-        usedSaves: character.health?.deathSaves?.usedSaves || false
+        usedSaves: character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0
       }
     }),
-    [character.health, character.hit_points]
+    [
+      character.health,
+      character.hit_points,
+      character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current,
+      autoSaveTraitUsageMax
+    ]
   );
 
   useEffect(() => {
@@ -77,17 +118,34 @@ export function HealthManager({
   }, [isHealthDialogOpen, initialHealth]);
 
   useEffect(() => {
-    if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves && !overrideHitPoints) {
+    if (
+      health.current === 0 &&
+      canAutoSave &&
+      health.deathSaves.usedSaves < autoSaveTraitUsageMax &&
+      !overrideHitPoints
+    ) {
       setHealth((prev) => ({
         ...prev,
         current: 1,
-        deathSaves: { ...prev.deathSaves, usedSaves: true }
+        deathSaves: { ...prev.deathSaves, usedSaves: prev.deathSaves.usedSaves + 1 }
       }));
     }
-  }, [health.current, canAutoSave, health.deathSaves.usedSaves, overrideHitPoints]);
+  }, [
+    health.current,
+    canAutoSave,
+    health.deathSaves.usedSaves,
+    overrideHitPoints,
+    autoSaveTraitUsageMax
+  ]);
+
+  useEffect(() => {
+    if (!overrideHitPoints && health.current > character.hit_points)
+      setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
+  }, [overrideHitPoints, health.current, character.hit_points]);
 
   const onSave = async () => {
-    const newHealth = { ...character.health, ...health };
+    const newHealth: Character['health'] = { ...character.health, ...health };
+    newHealth.deathSaves = omit(newHealth.deathSaves, 'usedSaves');
 
     if (overrideHitPoints && character.health !== undefined) {
       const newHealthCurrent =
@@ -97,19 +155,22 @@ export function HealthManager({
         character.health.current === 0 ? 0 : newHealthCurrent > 0 ? newHealthCurrent : 1;
     }
 
+    const updateData = canAutoSave
+      ? {
+          health: newHealth,
+          [`resourceUsages.${AUTO_SAVE_TRAIT}`]: {
+            type: 'trait',
+            usage: autoSaveTraitType,
+            current: health.deathSaves.usedSaves
+          }
+        }
+      : { health: newHealth };
     await firebaseCrud.update(
       character.id,
-      overrideHitPoints
-        ? { health: newHealth, hit_points: health.current || 1 }
-        : { health: newHealth }
+      overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData
     );
     closeHealthDialog();
   };
-
-  useEffect(() => {
-    if (!overrideHitPoints && health.current > character.hit_points)
-      setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
-  }, [overrideHitPoints, health.current, character.hit_points]);
 
   return (
     <Fragment>
@@ -123,39 +184,53 @@ export function HealthManager({
         <Box display="flex" flexDirection="column" p={3} gap={2}>
           <Box display="flex" gap={1} justifyContent="space-between" flexWrap="wrap">
             <Typography variant="h6">Manage Health</Typography>
-
-            <Tooltip title="Permanently modify your character's hit points instead of current health. This changes the base stat and cannot be undone.">
-              <FormControlLabel
-                label={<Typography variant="caption">Override Hit Points</Typography>}
-                sx={{ width: 'fit-content', margin: 0 }}
-                control={
-                  <Checkbox
-                    sx={{ padding: 0, paddingRight: 0.25 }}
-                    checked={overrideHitPoints}
-                    onChange={(_, checked) => setOverrideHitPoints(checked)}
-                  />
-                }
-              />
-            </Tooltip>
+            <FormControlLabel
+              label={
+                <Fragment>
+                  <Typography variant="caption">Override Hit Points</Typography>
+                  <TooltipButton
+                    title="Permanently modify your character's hit points instead of current health. This changes the base stat and cannot be undone."
+                    sx={{ marginLeft: 0.25, position: 'relative', top: '-5px' }}
+                    placement="top"
+                  >
+                    <InfoOutlined color="info" fontSize="small" />
+                  </TooltipButton>
+                </Fragment>
+              }
+              sx={{ width: 'fit-content', margin: 0 }}
+              control={
+                <Checkbox
+                  sx={{ padding: 0, paddingRight: 0.25 }}
+                  checked={overrideHitPoints}
+                  onChange={(_, checked) => setOverrideHitPoints(checked)}
+                />
+              }
+            />
           </Box>
 
-          <Box display="flex" flexDirection="column" gap={1} align-items="center">
-            <Tooltip
-              title="Grants a protective buffer above your hit points that absorbs
+          <Box display="flex" flexDirection="column" gap={1} alignItems="center">
+            <NumberInput
+              id="temporaryHealth"
+              label={
+                <Fragment>
+                  Temporary Health
+                  <TooltipButton
+                    title="Grants a protective buffer above your hit points that absorbs
                 damage first. It fades after a long rest. New temporary health replaces any existing
                 amount rather than stacking."
-              placement="top"
-            >
-              <NumberInput
-                id="temporaryHealth"
-                label="Temporary Health"
-                min={0}
-                max={character.hit_points}
-                value={health.temporary}
-                onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
-                disabled={overrideHitPoints}
-              />
-            </Tooltip>
+                    sx={{ marginLeft: 0.25, position: 'relative', top: '-5px' }}
+                    placement="top"
+                  >
+                    <InfoOutlined color="info" fontSize="small" />
+                  </TooltipButton>
+                </Fragment>
+              }
+              min={0}
+              max={character.hit_points}
+              value={health.temporary}
+              onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
+              disabled={overrideHitPoints}
+            />
 
             <NumberInput
               id="currentHealth"
@@ -177,10 +252,12 @@ export function HealthManager({
               }
             />
 
-            {health.deathSaves.usedSaves && health.current > 0 && (
+            {health.deathSaves.usedSaves > 0 && health.current > 0 && (
               <Typography variant="caption" color="textSecondary">
-                Your character's racial ability has been used and won't trigger again until you
-                finish a long rest.
+                Your character's racial ability has been used
+                {health.deathSaves.usedSaves < autoSaveTraitUsageMax
+                  ? ` ${health.deathSaves.usedSaves} out of ${autoSaveTraitUsageMax} times.`
+                  : " and won't trigger again until you finish a long rest."}
               </Typography>
             )}
 
@@ -241,7 +318,7 @@ export function HealthManager({
                 setHealth({
                   current: character.hit_points ?? 0,
                   temporary: 0,
-                  deathSaves: { successes: 0, failures: 0, usedSaves: false }
+                  deathSaves: { successes: 0, failures: 0, usedSaves: 0 }
                 })
               }
               sx={{ paddingBottom: 0, width: 'fit-content' }}

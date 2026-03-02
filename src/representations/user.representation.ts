@@ -3,7 +3,7 @@ import type { Version } from '@utils/constants/versions.constants';
 import type { AdditionalMoneyUnitType, MoneyObjectType } from './campaign/equipment.representation';
 import type { Alignment } from './character/background.representation';
 import type { RaceAbilityBonus } from './character/race.representation';
-import type { DefaultRepresentation, Sizes } from './common.representation';
+import type { DefaultRepresentation, Sizes, UsageTypes } from './common.representation';
 
 export interface CharacterFormData {
   name: string;
@@ -69,7 +69,13 @@ export type Character = CharacterFormData & {
     deathSaves?: {
       successes: number;
       failures: number;
-      usedSaves?: boolean;
+    };
+  };
+  resourceUsages?: {
+    [resourceName: string]: {
+      type: 'feature' | 'spell' | 'trait' | 'other';
+      usage: UsageTypes | UsageTypes[];
+      current: number;
     };
   };
 };

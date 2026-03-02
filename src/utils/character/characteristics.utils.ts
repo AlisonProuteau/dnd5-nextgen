@@ -9,7 +9,6 @@ import {
 } from '@assets';
 
 export const blackList: string[] = [
-  'draconic-ancestry',
   'otherworldly-patron',
   'barbarian-unarmored-defense',
   'monk-unarmored-defense',
