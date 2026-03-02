@@ -311,3 +311,24 @@ export enum Sizes {
   Huge = 'Huge',
   Gargantuan = 'Gargantuan'
 }
+
+export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
+type Abilities = (typeof ABILITIES)[number];
+export type UsageTypes =
+  | 'short_rest'
+  | 'long_rest'
+  | 'per_rest'
+  | 'per_day'
+  | 'per_week'
+  | 'per_month';
+export type Usage = {
+  type: UsageTypes | UsageTypes[] | { feature: string; default: UsageTypes };
+  times:
+    | number
+    | { [level: number]: number }
+    | Abilities
+    | `${Abilities}${'+' | '*' | '-' | '/'}${number}`
+    | 'level'
+    | `level${'+' | '*' | '-' | '/'}${number}`
+    | 'unlimited';
+};

@@ -1,4 +1,4 @@
-import { type ForwardedRef, forwardRef } from 'react';
+import { type ForwardedRef, forwardRef, ReactNode } from 'react';
 import { NumberField, type NumberFieldRootProps } from '@base-ui/react/number-field';
 import { Add, Remove } from '@mui/icons-material';
 import { Box, InputLabel } from '@mui/material';
@@ -6,7 +6,7 @@ import { styled } from '@mui/material/styles';
 
 interface CustomNumberInputProps {
   id: string;
-  label?: string;
+  label?: ReactNode;
   addDisabled?: boolean;
   removeDisabled?: boolean;
   compact?: boolean;

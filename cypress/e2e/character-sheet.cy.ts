@@ -1,10 +1,10 @@
 import { characters } from 'cypress/support/mocks/characterList';
+import { Character } from 'src/representations/user.representation';
 
 describe(`Character Sheet End-to-End`, () => {
   const delfyData = characters.find(({ name }) => name === 'Delfy')!;
   const devyData = characters.find(({ name }) => name === 'Devy')!;
   const blackList: string[] = [
-    'draconic-ancestry',
     'otherworldly-patron',
     'barbarian-unarmored-defense',
     'monk-unarmored-defense',
@@ -66,9 +66,9 @@ describe(`Character Sheet End-to-End`, () => {
         .should('have.text', 'Nature');
       cy.get(' button').should('exist').click();
     });
-    cy.getByRole('dialog').should('contain.text', 'Saving ThrowsIntelligence, Wisdom');
+    cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
     cy.press('Escape');
-    cy.getByTestId('saving-throws-dialog').should('not.exist');
+    cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
     cy.getByTestId('ability-wis').within(($el) => {
       cy.wrap($el)
@@ -86,9 +86,9 @@ describe(`Character Sheet End-to-End`, () => {
         .should('have.text', 'Animal HandlingPerception');
       cy.wrap($el).get(' button').should('exist').click();
     });
-    cy.getByRole('dialog').should('contain.text', 'Saving ThrowsIntelligence, Wisdom');
+    cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
     cy.press('Escape');
-    cy.getByTestId('saving-throws-dialog').should('not.exist');
+    cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
     cy.getByTestId('ability-dex').within(($el) => {
       cy.wrap($el)
@@ -721,7 +721,14 @@ describe(`Character Sheet End-to-End`, () => {
         .should('be.visible')
         .trigger('mouseover');
     });
-    cy.contains('Minimum strength requirement not met').should('be.visible');
+    cy.getByRole('tooltip', 'Minimum strength requirement not met').should('be.visible');
+    cy.getByTestId('equipment-item-chain-mail', { type: 'exact' }).within(($el) => {
+      cy.wrap($el)
+        .getByTestId('strength-requirement-warning')
+        .should('be.visible')
+        .trigger('mouseout');
+    });
+    cy.getByRole('tooltip', 'Minimum strength requirement not met').should('not.exist');
 
     // Test: Shield can be equipped/unequipped independently
     cy.getByTestId('equipment-item-shield-equip').click();
@@ -744,6 +751,69 @@ describe(`Character Sheet End-to-End`, () => {
       .should('be.visible');
     clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 14);
+  });
+
+  it('should display USE button for features and traits with usage data and track resource usage', () => {
+    const tillyData = characters.find(({ name }) => name === 'Tilly')!;
+    const usageTestChar = {
+      ...tillyData,
+      id: 'usage-test-character',
+      resourceUsages: {
+        'arcane-recovery': { type: 'feature', usage: 'long_rest', current: 1 }
+      } as unknown as Character['resourceUsages']
+    };
+    cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
+
+    cy.visit('/');
+    cy.waitForLoading();
+    cy.getByTestId(`character-card-${usageTestChar.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    clickUntilStep('characteristics');
+
+    // Test: Pre-seeded arcane-recovery is already at max (1/1) and disabled
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .as('featureUseButton')
+      .should('be.visible')
+      .and('be.disabled')
+      .and('contain.text', '1/1');
+
+    // Test: USE button visible on infernal-legacy trait
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .as('traitUseButton')
+      .should('be.visible')
+      .and('be.enabled')
+      .and('contain.text', '0/1');
+
+    // Test: Clicking USE on the trait increments counter and disables button at max
+    cy.get('@traitUseButton').click();
+    cy.get('@traitUseButton').should('be.disabled').and('contain.text', '1/1');
+
+    // Test: Using infernal-legacy did not overwrite the arcane-recovery entry
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+
+    // Test: Both entries persist after reload
+    cy.reload();
+    cy.getByTestId('character-container').should('be.visible');
+    clickUntilStep('characteristics');
+
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
   });
 
   it('should handle delete character workflow with confirmation and cancellation', () => {

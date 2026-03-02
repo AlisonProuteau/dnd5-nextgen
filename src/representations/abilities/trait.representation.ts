@@ -3,18 +3,12 @@ import type {
   AreaOfEffect,
   DifficultyClass
 } from '../campaign/adventure.representation';
-import type { Choice, DefaultRepresentation } from '../common.representation';
-
-export type Usage = {
-  type: string;
-  times: number;
-};
+import type { Choice, DefaultRepresentation, Usage } from '../common.representation';
 
 export type Action = {
   index: string;
   name: string;
   desc: string;
-  usage: Usage;
   dc: DifficultyClass;
   damage: ActionDamage[];
   area_of_effect: AreaOfEffect;
@@ -31,6 +25,7 @@ export type Trait = {
   desc: string[];
   index: string;
   name: string;
+  usage?: Usage;
   proficiencies?: DefaultRepresentation[];
   proficiency_choices?: Choice;
   language_options?: Choice;
@@ -38,4 +33,5 @@ export type Trait = {
   subraces?: DefaultRepresentation[];
   parent?: DefaultRepresentation;
   trait_specific?: TraitSpecific;
+  onRest?: 'short_rest' | 'long_rest';
 };

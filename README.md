@@ -221,12 +221,15 @@ MIT License - see [package.json](package.json) for details.
 
 #### Features
 
+- [ ] Handle Level class_specific and race_specific data?
 - [ ] Spell enhancements (Manually add more cantrips/slots)?
 - [ ] Class archetype support?
 
 #### Dev
 
+- [ ] Remove duplicate feature/traits that only change a dice or usage
 - [ ] Add the subclass feature improvements https://github.com/5e-bits/5e-database/pull/836
+- [ ] Improve ticket system
 - [ ] Update Qodo Merge config
 - [ ] Complete code styling refactor
 - [ ] D&D 2024 edition support
