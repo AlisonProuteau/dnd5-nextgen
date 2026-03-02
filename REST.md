@@ -15,13 +15,16 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 - Hit Dice Recovery: Spent Hit Dice equal to half their total maximum (minimum of one)
 - Exhaustion: Reduces exhaustion level by 1
 - Rest actions (Traits or Features) -> onRest with type 'long_rest'
-- Spell Slots -> All
+- Spell Slots -> All + Temporary spells?
 
 # TODO
 
-- Choose spells or equipment or something? Maybe just add a note is OK and/or maybe add a temporary spells to add spells regardless of prepare/learn
 - [ ] Add "Action Record"
   - Track spells/feature/traits used rests + maybe health or money + custom (equipment drop down?)
+- Trait/Feature Actions with dependancies
+  - Choose spells or equipment or something?
+  - Maybe just add a note?
+  - Maybe add a temporary spells section to add spells regardless of prepare/learn
 - [ ] Add partial regain spell slots
 - [ ] Add Status Effect UI
 - [ ] Add short rest UI

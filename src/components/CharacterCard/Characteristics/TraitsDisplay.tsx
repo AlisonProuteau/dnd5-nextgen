@@ -155,18 +155,18 @@ export function TraitsDisplay({
                             : ''}
                         </Typography>
                         {subtrait.trait_specific?.action &&
-                        (subtrait.trait_specific?.action?.index === trait.index ||
+                        (subtrait.trait_specific.action.index === trait.index ||
                           !traits.find(
                             ({ index }) => index === subtrait.trait_specific?.action?.index
                           )) ? (
                           <Fragment>
                             <ActionInfo
-                              action={subtrait.trait_specific?.action}
+                              action={subtrait.trait_specific.action}
                               charLevel={character.level || 1}
-                              data-testid={`trait-subtrait-action-${subtrait.trait_specific?.action.index}`}
+                              data-testid={`trait-subtrait-action-${subtrait.trait_specific.action.index}`}
                             />
                             <Typography
-                              data-testid={`trait-subtrait-action-desc-${subtrait.trait_specific?.action.index}`}
+                              data-testid={`trait-subtrait-action-desc-${subtrait.trait_specific.action.index}`}
                             >
                               {subtrait.trait_specific.action.desc}
                             </Typography>

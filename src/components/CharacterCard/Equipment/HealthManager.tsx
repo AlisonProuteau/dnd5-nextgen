@@ -132,13 +132,10 @@ export function HealthManager({
     const updateData = canAutoSave
       ? {
           health: newHealth,
-          resourceUsages: {
-            ...(character.resourceUsages ?? {}),
-            [AUTO_SAVE_TRAIT]: {
-              type: 'trait',
-              usage: relentlessTraitType,
-              current: health.deathSaves.usedSaves ? 1 : 0
-            }
+          [`resourceUsages.${AUTO_SAVE_TRAIT}`]: {
+            type: 'trait',
+            usage: relentlessTraitType,
+            current: health.deathSaves.usedSaves ? 1 : 0
           }
         }
       : { health: newHealth };

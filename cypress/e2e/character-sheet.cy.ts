@@ -1,4 +1,5 @@
 import { characters } from 'cypress/support/mocks/characterList';
+import { Character } from 'src/representations/user.representation';
 
 describe(`Character Sheet End-to-End`, () => {
   const delfyData = characters.find(({ name }) => name === 'Delfy')!;
@@ -757,7 +758,9 @@ describe(`Character Sheet End-to-End`, () => {
     const usageTestChar = {
       ...tillyData,
       id: 'usage-test-character',
-      resourceUsages: {}
+      resourceUsages: {
+        'arcane-recovery': { type: 'feature', usage: 'long rest', current: 1 }
+      } as unknown as Character['resourceUsages']
     };
     cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
 
@@ -768,19 +771,15 @@ describe(`Character Sheet End-to-End`, () => {
 
     clickUntilStep('characteristics');
 
-    // Test: USE button visible on arcane-recovery feature
-    cy.getByTestId('feature-arcane-recovery').click();
-    cy.getByTestId('feature-details-arcane-recovery').should('be.visible');
+    // Test: Pre-seeded arcane-recovery is already at max (1/1) and disabled
     cy.getByTestId('feature-name-arcane-recovery')
       .getButton(/^USE/)
       .as('featureUseButton')
       .should('be.visible')
-      .and('be.enabled')
-      .and('contain.text', '0/1');
+      .and('be.disabled')
+      .and('contain.text', '1/1');
 
     // Test: USE button visible on infernal-legacy trait
-    cy.getByTestId('trait-infernal-legacy').click();
-    cy.getByTestId('trait-details-infernal-legacy').should('be.visible');
     cy.getByTestId('trait-name-infernal-legacy')
       .getButton(/^USE/)
       .as('traitUseButton')
@@ -792,12 +791,26 @@ describe(`Character Sheet End-to-End`, () => {
     cy.get('@traitUseButton').click();
     cy.get('@traitUseButton').should('be.disabled').and('contain.text', '1/1');
 
-    // Test: Persistence after reload
+    // Test: Using infernal-legacy did not overwrite the arcane-recovery entry
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+
+    // Test: Both entries persist after reload
     cy.reload();
     cy.getByTestId('character-container').should('be.visible');
     clickUntilStep('characteristics');
-    cy.getByTestId('trait-infernal-legacy').click();
+
     cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.disabled')
+      .and('contain.text', '1/1');
+    cy.getByTestId('feature-name-arcane-recovery')
       .getButton(/^USE/)
       .should('be.disabled')
       .and('contain.text', '1/1');

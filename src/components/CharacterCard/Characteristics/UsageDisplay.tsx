@@ -26,13 +26,10 @@ export function UsageDisplay({
   });
 
   const updateResourceUsage = (current: number) => ({
-    resourceUsages: {
-      ...(character.resourceUsages ?? {}),
-      [resource.index]: {
-        type,
-        usage: resource.usage?.type,
-        current
-      }
+    [`resourceUsages.${resource.index}`]: {
+      type,
+      usage: resource.usage?.type,
+      current
     }
   });
 
