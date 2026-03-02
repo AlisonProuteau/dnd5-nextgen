@@ -1,3 +1,4 @@
+import { ReactNode } from 'react';
 import { Box, ClickAwayListener, IconButton, SxProps, Tooltip, TooltipProps } from '@mui/material';
 import { useToggle } from '@hooks/useToggle';
 
@@ -7,7 +8,7 @@ export function TooltipButton({
   ...props
 }: {
   sx?: SxProps;
-  children: React.ReactNode;
+  children: ReactNode;
 } & Omit<TooltipProps, 'children' | 'open' | 'onClose' | 'disableTouchListener'>) {
   const { isOn: isOpen, turnOn: open, turnOff: close } = useToggle(false);
 

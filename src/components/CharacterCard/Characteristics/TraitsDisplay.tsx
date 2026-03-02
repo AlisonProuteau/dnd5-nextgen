@@ -2,7 +2,7 @@ import { Fragment, useCallback, useState } from 'react';
 import { ExpandMore } from '@mui/icons-material';
 import { Accordion, AccordionDetails, Box, ButtonBase, Typography } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
-import { uniq, uniqBy } from 'lodash';
+import { uniqBy } from 'lodash';
 import { getFeature, getTrait } from '@api/ressources';
 import { blackList } from '@utils/character/characteristics.utils';
 import { getRelatedFeatures } from '@utils/index';
@@ -56,13 +56,11 @@ export function TraitsDisplay({
 
   const { data: features } = useQueries({
     queries:
-      uniq(getRelatedFeatures(traits))
-        ?.filter((index) => (useblackList ? !blackList.includes(index) : true))
-        ?.map((index) => ({
-          queryKey: ['fetchFeature', character.version, index],
-          queryFn: async () => await getFeature(character.version || 'Legacy', index),
-          enabled: !!index
-        })) || [],
+      uniqBy(character.features, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled: !!index && getRelatedFeatures(traits).length > 0
+      })) || [],
     combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 

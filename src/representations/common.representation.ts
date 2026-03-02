@@ -312,7 +312,7 @@ export enum Sizes {
   Gargantuan = 'Gargantuan'
 }
 
-export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
 type Abilities = (typeof ABILITIES)[number];
 export type UsageTypes =
   | 'short_rest'

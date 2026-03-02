@@ -10,7 +10,7 @@ import {
   Typography
 } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { isEqual, omit, uniq } from 'lodash';
+import { isEqual, omit, uniqBy } from 'lodash';
 import { getFeature, getTrait } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
@@ -70,10 +70,13 @@ export function HealthManager({
 
   const { data: features } = useQueries({
     queries:
-      uniq(getRelatedFeatures(autoSaveTrait ? [autoSaveTrait] : []))?.map((index) => ({
+      uniqBy(character.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', character.version, index],
         queryFn: async () => await getFeature(character.version || 'Legacy', index),
-        enabled: !!index && !!autoSaveTrait?.usage
+        enabled:
+          !!index &&
+          !!autoSaveTrait?.usage &&
+          getRelatedFeatures(autoSaveTrait ? [autoSaveTrait] : []).length > 0
       })) || [],
     combine: useCallback(createQueryCombiner<Feature>(), [])
   });
@@ -205,7 +208,7 @@ export function HealthManager({
             />
           </Box>
 
-          <Box display="flex" flexDirection="column" gap={1} align-items="center">
+          <Box display="flex" flexDirection="column" gap={1} alignItems="center">
             <NumberInput
               id="temporaryHealth"
               label={

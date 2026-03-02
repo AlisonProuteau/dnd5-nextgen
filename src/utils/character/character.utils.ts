@@ -351,7 +351,7 @@ export const getUsageTimes = (
       }
       return result > 0 ? result : 1;
     }
-    if (ABILITIES.includes(usage.times))
+    if ((ABILITIES as readonly string[]).includes(usage.times))
       return (character.abilityScores?.[usage.times].modifier ?? 0) > 0
         ? (character.abilityScores?.[usage.times].modifier ?? 1)
         : 1;
