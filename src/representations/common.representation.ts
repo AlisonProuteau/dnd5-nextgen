@@ -314,7 +314,13 @@ export enum Sizes {
 
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
 type Abilities = (typeof ABILITIES)[number];
-type UsageTypes = 'short_rest' | 'long_rest' | 'per_rest' | 'per_day' | 'per_week' | 'per_month';
+export type UsageTypes =
+  | 'short_rest'
+  | 'long_rest'
+  | 'per_rest'
+  | 'per_day'
+  | 'per_week'
+  | 'per_month';
 export type Usage = {
   type: UsageTypes | UsageTypes[] | { feature: string; default: UsageTypes };
   times:

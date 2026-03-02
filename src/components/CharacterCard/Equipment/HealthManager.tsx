@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { InfoOutlined, RestartAlt } from '@mui/icons-material';
 import {
   Box,
@@ -9,15 +9,16 @@ import {
   IconButton,
   Typography
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { isEqual, omit } from 'lodash';
-import { getTrait } from '@api/ressources';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { isEqual, omit, uniq } from 'lodash';
+import { getFeature, getTrait } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { TooltipButton } from '@shared/TooltipButton';
-import { getUsageTimes } from '@utils/index';
+import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { Character } from '@representations/user.representation';
 
 const AUTO_SAVE_TRAIT = 'relentless-endurance';
@@ -46,7 +47,7 @@ export function HealthManager({
     deathSaves: {
       successes: character.health?.deathSaves?.successes || 0,
       failures: character.health?.deathSaves?.failures || 0,
-      usedSaves: (character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0) > 0
+      usedSaves: character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0
     }
   });
 
@@ -61,20 +62,32 @@ export function HealthManager({
     [character.traits]
   );
 
-  const {
-    data: { times: relentlessTraitUsageMax = 1, type: relentlessTraitType = 'long_rest' } = {}
-  } = useQuery({
+  const { data: autoSaveTrait } = useQuery({
     queryKey: ['fetchTrait', character.version, AUTO_SAVE_TRAIT],
     queryFn: async () => await getTrait(character.version || 'Legacy', AUTO_SAVE_TRAIT),
-    enabled: canAutoSave,
-    select: (trait) =>
-      trait?.usage
-        ? {
-            type: trait.usage.type,
-            times: getUsageTimes(trait?.usage, character)
-          }
-        : {}
+    enabled: canAutoSave
   });
+
+  const { data: features } = useQueries({
+    queries:
+      uniq(getRelatedFeatures(autoSaveTrait ? [autoSaveTrait] : []))?.map((index) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled: !!index && !!autoSaveTrait?.usage
+      })) || [],
+    combine: useCallback(createQueryCombiner<Feature>(), [])
+  });
+
+  const { times: autoSaveTraitUsageMax = 1, type: autoSaveTraitType = 'long_rest' } = useMemo(
+    () =>
+      autoSaveTrait?.usage
+        ? {
+            type: getUsageType(autoSaveTrait.usage, features),
+            times: getUsageTimes(autoSaveTrait.usage, character)
+          }
+        : {},
+    [autoSaveTrait?.usage, features, character]
+  );
 
   const initialHealth = useMemo(
     () => ({
@@ -83,15 +96,14 @@ export function HealthManager({
       deathSaves: {
         successes: character.health?.deathSaves?.successes || 0,
         failures: character.health?.deathSaves?.failures || 0,
-        usedSaves:
-          (character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0) >= relentlessTraitUsageMax
+        usedSaves: character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current || 0
       }
     }),
     [
       character.health,
       character.hit_points,
       character.resourceUsages?.[AUTO_SAVE_TRAIT]?.current,
-      relentlessTraitUsageMax
+      autoSaveTraitUsageMax
     ]
   );
 
@@ -103,14 +115,25 @@ export function HealthManager({
   }, [isHealthDialogOpen, initialHealth]);
 
   useEffect(() => {
-    if (health.current === 0 && canAutoSave && !health.deathSaves.usedSaves && !overrideHitPoints) {
+    if (
+      health.current === 0 &&
+      canAutoSave &&
+      health.deathSaves.usedSaves < autoSaveTraitUsageMax &&
+      !overrideHitPoints
+    ) {
       setHealth((prev) => ({
         ...prev,
         current: 1,
-        deathSaves: { ...prev.deathSaves, usedSaves: true }
+        deathSaves: { ...prev.deathSaves, usedSaves: prev.deathSaves.usedSaves + 1 }
       }));
     }
-  }, [health.current, canAutoSave, health.deathSaves.usedSaves, overrideHitPoints]);
+  }, [
+    health.current,
+    canAutoSave,
+    health.deathSaves.usedSaves,
+    overrideHitPoints,
+    autoSaveTraitUsageMax
+  ]);
 
   useEffect(() => {
     if (!overrideHitPoints && health.current > character.hit_points)
@@ -134,8 +157,8 @@ export function HealthManager({
           health: newHealth,
           [`resourceUsages.${AUTO_SAVE_TRAIT}`]: {
             type: 'trait',
-            usage: relentlessTraitType,
-            current: health.deathSaves.usedSaves ? 1 : 0
+            usage: autoSaveTraitType,
+            current: health.deathSaves.usedSaves
           }
         }
       : { health: newHealth };
@@ -226,10 +249,12 @@ export function HealthManager({
               }
             />
 
-            {health.deathSaves.usedSaves && health.current > 0 && (
+            {health.deathSaves.usedSaves > 0 && health.current > 0 && (
               <Typography variant="caption" color="textSecondary">
-                Your character's racial ability has been used and won't trigger again until you
-                finish a long rest.
+                Your character's racial ability has been used
+                {health.deathSaves.usedSaves < autoSaveTraitUsageMax
+                  ? ` ${health.deathSaves.usedSaves} out of ${autoSaveTraitUsageMax} times.`
+                  : " and won't trigger again until you finish a long rest."}
               </Typography>
             )}
 
@@ -290,7 +315,7 @@ export function HealthManager({
                 setHealth({
                   current: character.hit_points ?? 0,
                   temporary: 0,
-                  deathSaves: { successes: 0, failures: 0, usedSaves: false }
+                  deathSaves: { successes: 0, failures: 0, usedSaves: 0 }
                 })
               }
               sx={{ paddingBottom: 0, width: 'fit-content' }}

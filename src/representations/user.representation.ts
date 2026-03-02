@@ -3,7 +3,7 @@ import type { Version } from '@utils/constants/versions.constants';
 import type { AdditionalMoneyUnitType, MoneyObjectType } from './campaign/equipment.representation';
 import type { Alignment } from './character/background.representation';
 import type { RaceAbilityBonus } from './character/race.representation';
-import type { DefaultRepresentation, Sizes, Usage } from './common.representation';
+import type { DefaultRepresentation, Sizes, UsageTypes } from './common.representation';
 
 export interface CharacterFormData {
   name: string;
@@ -74,7 +74,7 @@ export type Character = CharacterFormData & {
   resourceUsages?: {
     [resourceName: string]: {
       type: 'feature' | 'spell' | 'trait' | 'other';
-      usage: Usage['type'];
+      usage: UsageTypes | UsageTypes[];
       current: number;
     };
   };

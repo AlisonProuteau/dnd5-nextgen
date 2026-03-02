@@ -22,7 +22,7 @@ export function AbilityComponent({
   modifier = 0
 }: AbilityProps) {
   return (
-    <Box display="flex" data-testid={`ability-${ability.index}`}>
+    <Box display="flex" position="relative" data-testid={`ability-${ability.index}`}>
       {savingThrows?.find(({ index }) => index === ability.index) ? (
         <TooltipButton title="Saving Throw" sx={{ position: 'absolute', margin: '-10px' }}>
           <Shield color="info" aria-label="Saving Throw" />

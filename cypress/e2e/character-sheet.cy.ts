@@ -759,7 +759,7 @@ describe(`Character Sheet End-to-End`, () => {
       ...tillyData,
       id: 'usage-test-character',
       resourceUsages: {
-        'arcane-recovery': { type: 'feature', usage: 'long rest', current: 1 }
+        'arcane-recovery': { type: 'feature', usage: 'long_rest', current: 1 }
       } as unknown as Character['resourceUsages']
     };
     cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);

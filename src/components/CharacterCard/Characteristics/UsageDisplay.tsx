@@ -1,7 +1,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import { BoxProps } from '@mui/system';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
-import { formatUsageLabel, getUsageTimes } from '@utils/index';
+import { formatUsageLabel, getUsageTimes, getUsageType } from '@utils/index';
 import type { Feature } from '@representations/abilities/feature.representation';
 import { Trait } from '@representations/abilities/trait.representation';
 import type { Character } from '@representations/user.representation';
@@ -25,13 +25,16 @@ export function UsageDisplay({
     invalidateQueryKey: ['fetchCharacter', '{userId}', character?.id || '']
   });
 
-  const updateResourceUsage = (current: number) => ({
-    [`resourceUsages.${resource.index}`]: {
-      type,
-      usage: resource.usage?.type,
-      current
-    }
-  });
+  const updateResourceUsage = (current: number) =>
+    resource.usage
+      ? {
+          [`resourceUsages.${resource.index}`]: {
+            type,
+            usage: getUsageType(resource.usage, fullFeatureList),
+            current
+          }
+        }
+      : {};
 
   const useResource = async () => {
     if (!character.id || !resource.usage) return;

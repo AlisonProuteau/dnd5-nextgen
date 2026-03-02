@@ -10,7 +10,8 @@ import type {
 import {
   ABILITIES,
   type DefaultRepresentation,
-  type Usage
+  type Usage,
+  UsageTypes
 } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
 
@@ -376,7 +377,7 @@ export const getUsageType = (
   usage: Usage,
   features: Feature[],
   allRelatedFeatures: string[] = []
-): Exclude<Usage['type'], { feature: string }> => {
+): UsageTypes | UsageTypes[] => {
   if (!usage.type || typeof usage.type !== 'object' || !('feature' in usage.type))
     return usage.type ?? 'long_rest';
 
@@ -399,7 +400,7 @@ export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
   return relatedFeatures;
 };
 
-export const getUsageTypeLabel = (usageType: Usage['type']): string | undefined => {
+export const getUsageTypeLabel = (usageType: UsageTypes | UsageTypes[]): string | undefined => {
   switch (usageType) {
     case 'long_rest':
       return 'Long Rest';
@@ -414,8 +415,12 @@ export const getUsageTypeLabel = (usageType: Usage['type']): string | undefined 
     case 'per_week':
       return 'Week';
     default:
-      if (Array.isArray(usageType))
-        return usageType.map((type) => getUsageTypeLabel(type)).join(' / ');
+      if (Array.isArray(usageType)) {
+        const filteredLabels = usageType
+          .map((type) => getUsageTypeLabel(type))
+          .filter((label): label is string => !!label);
+        return filteredLabels.length > 0 ? filteredLabels.join(' / ') : undefined;
+      }
   }
 };
 
