@@ -12,11 +12,13 @@ import {
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { isEqual, omit, uniqBy } from 'lodash';
 import { getFeature, getTrait } from '@api/ressources';
+import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { TooltipButton } from '@shared/TooltipButton';
+import { formatActionRecord, getHealthActionRecordData } from '@utils/actions.utils';
 import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
 import type { Character } from '@representations/user.representation';
@@ -51,6 +53,7 @@ export function HealthManager({
     }
   });
 
+  const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id],
@@ -165,10 +168,33 @@ export function HealthManager({
           }
         }
       : { health: newHealth };
-    await firebaseCrud.update(
+    const success = await firebaseCrud.update(
       character.id,
       overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData
     );
+
+    if (success) {
+      const actionRecordData = getHealthActionRecordData(
+        health.current,
+        overrideHitPoints ? (character.hit_points ?? 0) : initialHealth.current,
+        overrideHitPoints
+      );
+      if (actionRecordData) await logAction(formatActionRecord('health', actionRecordData));
+
+      const tempActionRecordData = getHealthActionRecordData(
+        health.temporary,
+        initialHealth.temporary,
+        false,
+        true
+      );
+      if (tempActionRecordData) await logAction(formatActionRecord('health', tempActionRecordData));
+
+      const diff = health.deathSaves.usedSaves - initialHealth.deathSaves.usedSaves;
+      if (canAutoSave && autoSaveTrait && diff > 0) {
+        for (let i = 0; i < diff; i++) await logAction(formatActionRecord('trait', autoSaveTrait));
+      }
+    }
+
     closeHealthDialog();
   };
 
@@ -338,7 +364,11 @@ export function HealthManager({
             <Button
               key="update-health"
               id="update-health"
-              disabled={firebaseCrud.isLoading || (overrideHitPoints && health.current === 0)}
+              disabled={
+                firebaseCrud.isLoading ||
+                (overrideHitPoints &&
+                  (health.current === 0 || health.current === character.hit_points))
+              }
               onClick={onSave}
             >
               {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}

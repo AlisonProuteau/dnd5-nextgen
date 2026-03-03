@@ -17,8 +17,10 @@ import {
 } from '@mui/material';
 import { Box } from '@mui/system';
 import { isEqual, max } from 'lodash';
+import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
+import { formatActionRecord, getSpellActionRecordData } from '@utils/actions.utils';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -48,6 +50,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
 
+  const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     successMessages: {
@@ -104,11 +107,14 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
     if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
       setUsedSlots(newUsedSlots);
-      await firebaseCrud.update(
+      const success = await firebaseCrud.update(
         character.id,
         { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
         false
       );
+
+      if (success)
+        await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
     } else toast.error(`No spell slots of level ${slotLevel} available`);
   };
 

@@ -1,6 +1,8 @@
 import { Box, Button, Typography } from '@mui/material';
 import { BoxProps } from '@mui/system';
+import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { formatActionRecord } from '@utils/actions.utils';
 import { formatUsageLabel, getUsageTimes, getUsageType } from '@utils/index';
 import type { Feature } from '@representations/abilities/feature.representation';
 import { Trait } from '@representations/abilities/trait.representation';
@@ -20,6 +22,7 @@ export function UsageDisplay({
   fullFeatureList = [],
   ...props
 }: UsageDisplayProps & Omit<BoxProps, 'resource' | 'children'>) {
+  const { logAction } = useActionRecord(character?.id || '');
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', character?.id || '']
@@ -40,8 +43,14 @@ export function UsageDisplay({
     if (!character.id || !resource.usage) return;
 
     const current = character.resourceUsages?.[resource.index]?.current ?? 0;
-    if (current < getUsageTimes(resource.usage, character))
-      await firebaseCrud.update(character.id, updateResourceUsage(current + 1), false);
+    if (current < getUsageTimes(resource.usage, character)) {
+      const success = await firebaseCrud.update(
+        character.id,
+        updateResourceUsage(current + 1),
+        false
+      );
+      if (success) await logAction(formatActionRecord(type, resource));
+    }
   };
 
   //   TODO-blocked: For testing until rest is implemented
