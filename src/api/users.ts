@@ -1,9 +1,14 @@
 import toast from 'react-hot-toast';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { get, getAll } from '@utils/api.utils';
+import { formatDates, get, getAll } from '@utils/api.utils';
 import { type Version, VERSIONS } from '@utils/constants/versions.constants';
-import type { Character, CharacterNote, UserData } from '@representations/user.representation';
+import type {
+  ActionRecord,
+  Character,
+  CharacterNote,
+  UserData
+} from '@representations/user.representation';
 import { createUserInFirebase, database, signInFirebase, signOutInFirebase } from 'src/firebase';
 
 export const createUser = (email: string, password: string, displayName?: string) =>
@@ -55,7 +60,9 @@ export const getCharacterNotes = async (
   userId: string,
   characterId: string
 ): Promise<CharacterNote[] | undefined> =>
-  (await getAll('All character notes', `users/${userId}/characters/${characterId}/notes`)).results;
+  (
+    await getAll('All character notes', `users/${userId}/characters/${characterId}/notes`)
+  ).results.map(formatDates);
 
 export const getCharacter = async (
   userId: string,
@@ -70,3 +77,11 @@ export const getUserData = async (userId: string): Promise<UserData | undefined>
     ? { ...data, version: undefined }
     : data;
 };
+
+export const getActionRecords = async (
+  userId: string,
+  characterId: string
+): Promise<ActionRecord[] | undefined> =>
+  (
+    await getAll('All action records', `users/${userId}/characters/${characterId}/actionRecords`)
+  ).results?.map(formatDates);

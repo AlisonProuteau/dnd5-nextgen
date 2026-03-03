@@ -9,7 +9,6 @@ import {
   Restore
 } from '@mui/icons-material';
 import { Box, Card, CardContent, IconButton, Typography } from '@mui/material';
-import type { Timestamp } from 'firebase/firestore';
 import { groupBy } from 'lodash';
 import SpeedDialButton from '@shared/SpeedDialButton';
 import type { CharacterNote } from '@representations/user.representation';
@@ -31,33 +30,11 @@ export function CharacterNotesList({
   isLoading,
   showArchived = false
 }: CharacterNotesListProps) {
-  const formatNoteDates = (note: CharacterNote) => {
-    const createdAtFormatted =
-      note.createdAt instanceof Date
-        ? note.createdAt
-        : (note.createdAt as unknown as Timestamp).toDate();
-    const updatedAtFormatted = note.updatedAt
-      ? note.updatedAt instanceof Date
-        ? note.updatedAt
-        : (note.updatedAt as unknown as Timestamp).toDate()
-      : undefined;
-
-    return note.updatedAt
-      ? {
-          ...note,
-          createdAt: createdAtFormatted,
-          updatedAt: updatedAtFormatted
-        }
-      : { ...note, createdAt: createdAtFormatted };
-  };
-
   const formatCharacterNotes = (
     notes: CharacterNote[],
     archived: boolean = false
   ): [CharacterNote[] | undefined, CharacterNote[] | undefined] => {
-    const formattedNotes = notes
-      .filter((note) => (note.archived || false) === archived)
-      .map(formatNoteDates);
+    const formattedNotes = notes.filter((note) => (note.archived || false) === archived);
     if (archived)
       return [
         undefined,

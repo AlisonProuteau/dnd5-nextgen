@@ -216,7 +216,11 @@ export function SpellList({
         condition: boolean;
         children: ReactNode;
       } & AccordionProps) =>
-        condition && children ? <Accordion {...props}>{children}</Accordion> : <>{children}</>,
+        condition && children ? (
+          <Accordion {...props}>{children}</Accordion>
+        ) : (
+          <Fragment>{children}</Fragment>
+        ),
     []
   );
 

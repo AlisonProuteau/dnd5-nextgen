@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Fragment, useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { InfoOutlined } from '@mui/icons-material';
 import {
@@ -17,6 +17,7 @@ import { Box, Container } from '@mui/system';
 import { useFirebaseCrud } from '@hooks/index';
 import { FullPageLoader } from '@shared/Loader';
 import { type Version, VERSIONS } from '@utils/constants/versions.constants';
+import { CurrencyLabels } from '@utils/index';
 import {
   AdditionalMoneyUnits,
   type AdditionalMoneyUnitType
@@ -26,11 +27,6 @@ import { useAuth } from 'src/providers/AuthProvider';
 interface SettingsFormData {
   version: Version;
   additionalCurrencies: AdditionalMoneyUnitType[];
-}
-
-enum CurrencyLabels {
-  ep = 'Electrum Pieces (ep)',
-  pp = 'Platinum Pieces (pp)'
 }
 
 export function Settings() {
@@ -108,7 +104,7 @@ export function Settings() {
               name="additionalCurrencies"
               control={control}
               render={({ field }) => (
-                <>
+                <Fragment>
                   {AdditionalMoneyUnits.map((currency) => (
                     <FormControlLabel
                       key={currency}
@@ -126,10 +122,10 @@ export function Settings() {
                           sx={{ paddingY: 0.5 }}
                         />
                       }
-                      label={CurrencyLabels[currency]}
+                      label={`${CurrencyLabels[currency]} (${currency})`}
                     />
                   ))}
-                </>
+                </Fragment>
               )}
             />
           </FormGroup>

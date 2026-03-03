@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import type { SwipeableCallbacks } from 'react-swipeable/es/types';
 import { ArrowBackIos, ArrowForwardIos, QuestionMark } from '@mui/icons-material';
@@ -109,7 +109,7 @@ function DesignCard({
           <DesignCardContent title={title} img={img} />
         </CardActionArea>
       ) : (
-        <>
+        <Fragment>
           <DesignCardContent title={title} img={img} moreInfofn={openInfo} />
           {children && (
             <Dialog open={isInfoOpen} onClose={closeInfo}>
@@ -117,7 +117,7 @@ function DesignCard({
               <DialogContent>{children}</DialogContent>
             </Dialog>
           )}
-        </>
+        </Fragment>
       )}
     </Card>
   );
