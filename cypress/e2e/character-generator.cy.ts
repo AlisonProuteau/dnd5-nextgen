@@ -68,19 +68,19 @@ describe(`Character Generator End-to-End`, () => {
     cy.get('*[id="Image Ratio"]').should('contain.text', '1:1');
 
     // Test: Description field validation
-    cy.get('#Refinement').should('be.visible').should('contain.value', '');
+    cy.get('#refinement').should('be.visible').should('contain.value', '');
 
     const longText = 'A'.repeat(500);
-    cy.get('#Refinement').type(longText).invoke('val').should('have.length', 500);
-    cy.get('#Refinement').clear();
+    cy.get('#refinement').type(longText).invoke('val').should('have.length', 500);
+    cy.get('#refinement').clear();
 
     const multilineText = 'Line one\nLine two\nLine three';
-    cy.get('#Refinement').type(multilineText, { delay: 0 }).should('contain.value', 'Line one');
-    cy.get('#Refinement').clear();
+    cy.get('#refinement').type(multilineText, { delay: 0 }).should('contain.value', 'Line one');
+    cy.get('#refinement').clear();
 
     const refinementText =
       'A wise and powerful spellcaster with flowing blue robes and a pointed hat';
-    cy.get('#Refinement').type(refinementText).should('have.value', refinementText);
+    cy.get('#refinement').type(refinementText).should('have.value', refinementText);
 
     // Test: Loading state and success generation
     cy.getButton('Generate Portrait').click();
