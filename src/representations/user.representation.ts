@@ -98,6 +98,7 @@ export interface ActionRecord {
   value?: number;
   valueUnit?: string;
   equipment?: DefaultRepresentation;
+  sourceIndex?: string;
   createdAt: Date;
   auto?: boolean;
 }

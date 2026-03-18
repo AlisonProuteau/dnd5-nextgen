@@ -437,5 +437,10 @@ export const formatUsageLabel = (
   const usageType = getUsageType(active, features);
   const used = character.resourceUsages?.[index]?.current ?? 0;
 
-  return `${used}/${getUsageTimes(active, character)} (${getUsageTypeLabel(usageType)})`;
+  return formatUsageLabelText(used, getUsageTimes(active, character), getUsageTypeLabel(usageType));
 };
+
+export const formatUsageLabelText = (used: number, max?: number, resetLabel?: string) =>
+  max
+    ? `${used}/${max}${resetLabel ? ` (${resetLabel})` : ''}`
+    : `${used}${resetLabel ? ` (${resetLabel})` : ''}`;
