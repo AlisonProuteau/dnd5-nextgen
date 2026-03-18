@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react';
-import { ArchiveOutlined, NoteAdd, NoteAlt } from '@mui/icons-material';
+import { NoteAdd } from '@mui/icons-material';
 import { Box, Button, Drawer, IconButton, Typography } from '@mui/material';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCharacterNotes } from '@api/users';
@@ -26,11 +26,6 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
     turnOff: exitEditMode,
     setIsOn: setEditMode
   } = useToggle(false);
-  const {
-    isOn: archiveMode,
-    toggle: toggleArchiveMode,
-    turnOff: exitArchiveMode
-  } = useToggle(false);
   const [note, setNote] = useState<Partial<CharacterNote>>({});
 
   const firebaseCrud = useFirebaseCrud<CharacterNote>({
@@ -55,7 +50,6 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
 
   useEffect(() => {
     if (isNoteOpen && !editMode) refetchCharacterNotes();
-    if (!isNoteOpen) exitArchiveMode();
   }, [isNoteOpen]);
 
   const isValid = useMemo(() => {
@@ -122,42 +116,27 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
       variant="temporary"
       data-testid={`notes-drawer-${character.id}`}
     >
-      <Box height="500px" padding={2} display="flex" flexDirection="column" gap={2} overflow="auto">
+      <Box height="500px" padding={2} display="flex" flexDirection="column" gap={2}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
-          <Typography variant="h5">
-            {character.name}'s Notes{archiveMode ? ' - Archive' : ''}
-          </Typography>
+          <Typography variant="h5">{character.name}'s Notes</Typography>
 
           {!editMode && !isCharacterNotesLoading && (
-            <Box>
-              {characterNotes?.filter(({ archived }) => archived).length ? (
-                <IconButton onClick={toggleArchiveMode} data-testid="archive-toggle">
-                  {archiveMode ? (
-                    <NoteAlt fontSize="medium" />
-                  ) : (
-                    <ArchiveOutlined fontSize="medium" />
-                  )}
-                </IconButton>
-              ) : null}
-              {!archiveMode && characterNotes?.filter(({ archived }) => !archived).length ? (
-                <IconButton
-                  onClick={() => {
-                    setNote({});
-                    enterEditMode();
-                  }}
-                  data-testid="add-note"
-                >
-                  <NoteAdd fontSize="medium" />
-                </IconButton>
-              ) : null}
-            </Box>
+            <IconButton
+              onClick={() => {
+                setNote({});
+                enterEditMode();
+              }}
+              data-testid="add-note"
+            >
+              <NoteAdd fontSize="medium" />
+            </IconButton>
           )}
         </Box>
 
         {isCharacterNotesLoading ? (
           <Loader key={`${character.id}-notes-loading`} size={40} />
         ) : (
-          <Box flex={1} overflow="auto">
+          <Box flex={1} overflow="hidden">
             {editMode ? (
               <Fragment>
                 <ControledInput
@@ -179,7 +158,6 @@ export function CharacterNotes({ isNoteOpen, closeNote, character }: CharacterNo
                 setNote={setNote}
                 setEditMode={setEditMode}
                 isLoading={firebaseCrud.isLoading}
-                showArchived={archiveMode}
               />
             )}
           </Box>

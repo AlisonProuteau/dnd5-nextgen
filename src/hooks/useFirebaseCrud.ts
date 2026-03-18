@@ -29,6 +29,7 @@ export interface UseFirebaseCrudReturn<T> {
   create: (data: Partial<T> & any, notify?: boolean) => Promise<string | null>;
   update: (id: string, data: Partial<T>, notify?: boolean) => Promise<boolean>;
   remove: (id: string, notify?: boolean) => Promise<boolean>;
+  invalidatedQueryKey: string[] | undefined;
 }
 
 export const useFirebaseCrud = <T extends Record<string, any>>(
@@ -58,8 +59,15 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
-  const queryKeyWithUserId = (key: string[], uid: string): string[] =>
-    key.indexOf('{userId}') === -1 ? [...key, uid] : key.map((k) => (k === '{userId}' ? uid : k));
+  const queryKeyWithUserId = useMemo(
+    () =>
+      invalidateQueryKey && user?.uid
+        ? invalidateQueryKey.indexOf('{userId}') === -1
+          ? [...invalidateQueryKey, user.uid]
+          : invalidateQueryKey.map((k) => (k === '{userId}' ? user.uid : k))
+        : undefined,
+    [invalidateQueryKey, user?.uid]
+  );
 
   const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
     // Create a promise that rejects if the time limit is reached
@@ -91,10 +99,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         ? await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT)
         : await setDoc(newDocRef, documentData);
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.create)
         navigate(
           redirect.create.path.replace('{id}', newDocRef.id),
@@ -128,10 +133,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         : await updateDoc(docRef, cleanData);
       success = true;
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.update)
         navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
@@ -159,10 +161,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
       DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
       success = true;
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.delete) navigate(redirect.delete.path, { state: redirect.delete.state });
 
       notify && toast.success(successMessages.delete || 'Deleted successfully');
@@ -179,6 +178,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     isLoading,
     create,
     update,
-    remove
+    remove,
+    invalidatedQueryKey: queryKeyWithUserId
   };
 };

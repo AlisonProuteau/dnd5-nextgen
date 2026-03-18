@@ -552,7 +552,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`notes-drawer-${delfyData.id}`).within(($el) => {
       cy.wrap($el).should('contain.text', 'No notes yet');
 
-      cy.wrap($el).getByTestId('add-note').click();
+      cy.wrap($el).getByTestId('add-note').first().click();
       cy.wrap($el).getButton('Save').should('be.disabled');
       cy.get('#content').clear().blur();
       cy.wrap($el).getButton('Save').should('be.disabled');
@@ -618,15 +618,15 @@ describe(`Character Sheet End-to-End`, () => {
 
       // Test: Pin notes
       cy.selectCardAction({ text: 'E2E test note - edited' }, 'Pin');
-      cy.wrap($el)
-        .getByTestId('note-card-')
-        .first()
-        .should('contain.text', 'E2E test note - edited');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'E2E test note - edited');
 
       cy.selectCardAction({ text: 'Note to delete' }, 'Pin');
-      cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to delete');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       cy.selectCardAction({ text: 'Note to archive' }, 'Pin');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to archive');
+
+      cy.getByRole('tab', 'Pinned').click();
       cy.wrap($el)
         .getByTestId('note-card-')
         .first()
@@ -636,20 +636,24 @@ describe(`Character Sheet End-to-End`, () => {
 
       // Test: Unpin note
       cy.selectCardAction({ text: 'Note to delete' }, 'Unpin');
-      cy.wrap($el).getByTestId('note-card-').first().should('not.contain.text', 'Note to delete');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       // Test: Delete note
+      cy.getByRole('tab', 'Notes').click();
       cy.selectCardAction({ text: 'Note to delete' }, 'Delete');
       cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       // Test: Archive note
+      cy.getByRole('tab', 'Pinned').click();
       cy.selectCardAction({ text: 'Note to archive' }, 'Archive');
       cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to archive');
+
+      cy.getByRole('tab', 'Notes').click();
       cy.selectCardAction({ text: 'Second note to archive' }, 'Archive');
-      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Second note to archive');
+      cy.wrap($el).getByTestId('note-card-').should('not.exist');
 
       // Test: View archived notes
-      cy.wrap($el).getByTestId('archive-toggle').click();
+      cy.getByRole('tab', 'Archived').click();
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'E2E test note - edited');
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to delete');
       cy.wrap($el).getByTestId('note-card-').should('contain.text', 'Note to archive');
@@ -661,7 +665,8 @@ describe(`Character Sheet End-to-End`, () => {
       cy.selectCardAction({ text: 'Note to archive' }, 'Restore');
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to archive');
 
-      cy.wrap($el).getByTestId('archive-toggle').click();
+      // "Note to archive" was pinned before archiving, so it restores to Pinned tab
+      cy.getByRole('tab', 'Pinned').click();
       cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to archive');
     });
 
