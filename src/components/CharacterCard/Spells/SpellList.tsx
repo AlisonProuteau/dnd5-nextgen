@@ -9,9 +9,7 @@ import {
 } from 'react';
 import { ExpandMore, Rule } from '@mui/icons-material';
 import {
-  Accordion,
   AccordionDetails,
-  type AccordionProps,
   AccordionSummary,
   Box,
   Button,
@@ -28,6 +26,7 @@ import {
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { groupBy, max, uniqBy, uniqWith } from 'lodash';
 import { getSpell, getSpellsForClass } from '@api/ressources';
+import { ConditionalAccordion } from '@shared/ConditionalAccordion';
 import { ControledInput } from '@shared/ControledInput';
 import { Loader } from '@shared/Loader';
 import { filterSpellsByPrerequisites } from '@utils/character/spells.utils';
@@ -205,24 +204,6 @@ export function SpellList({
     hideLevels,
     searchText
   ]);
-
-  const ConditionalAccordion = useMemo(
-    () =>
-      ({
-        condition,
-        children,
-        ...props
-      }: {
-        condition: boolean;
-        children: ReactNode;
-      } & AccordionProps) =>
-        condition && children ? (
-          <Accordion {...props}>{children}</Accordion>
-        ) : (
-          <Fragment>{children}</Fragment>
-        ),
-    []
-  );
 
   return !spellsFetching && !additionalSpellsFetching ? (
     <Fragment>
