@@ -22,7 +22,7 @@ describe(`Character Creation End-to-End`, () => {
       .should('have.length', 1)
       .get('label:visible:contains("Black")')
       .click();
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
     cy.getByTestId('class-carousel').should('be.visible');
 
@@ -37,7 +37,7 @@ describe(`Character Creation End-to-End`, () => {
       .get('label:visible')
       .should('have.length', 1)
       .should('contain.text', 'Black');
-    cy.get('button:contains("Next"):visible').click();
+    cy.getButton('Next', ':visible').click();
 
     // Test: Select class and move to background
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
@@ -59,7 +59,7 @@ describe(`Character Creation End-to-End`, () => {
         cy.get('label:visible:contains("Crystal")').click();
         cy.get('label:visible:contains("1 Scholar\'s Pack")').click();
       });
-    cy.get('button:contains("Next"):visible').click();
+    cy.getButton('Next', ':visible').click();
 
     // Test: Browser back button from background to class
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
@@ -127,7 +127,7 @@ describe(`Character Creation End-to-End`, () => {
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
     cy.selectOption('#background', 'Custom');
     cy.selectOption('#alignment', 'Lawful Good');
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
     cy.get('input[name="name"], input[id="name"]')
       .should('be.visible')
@@ -159,7 +159,7 @@ describe(`Character Creation End-to-End`, () => {
 
     // Test: Character Creation Submission
     cy.getButton('Create').click();
-    cy.get('button:contains("Create")').should('not.exist');
+    cy.getButton('Create').should('not.exist');
     cy.getByRole('progressbar').should('be.visible');
     cy.getByRole('status', 'Character created').should('be.visible');
     cy.url().should('include', '/character/points');
@@ -245,7 +245,7 @@ describe(`Character Creation End-to-End`, () => {
     // Test: Race Selection Step
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
     cy.getByTestId('race-carousel').should('be.visible');
-    cy.get('button:contains("Next"):visible').should('be.disabled');
+    cy.getButton('Next', ':visible').should('be.disabled');
     cy.getByTestId('race-card-').should('have.length', this.isMobile ? 1 : 3);
     cy.getByTestId('race-card-current').should('contain.text', 'Dragonborn');
 
@@ -292,7 +292,7 @@ describe(`Character Creation End-to-End`, () => {
       cy.get('label:visible:contains("Brewer\'s Supplies")').click();
       cy.get('label:visible').should('have.length', 1).should('contain.text', "Brewer's Supplies");
     });
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
 
     // Test: Back button
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
@@ -300,12 +300,12 @@ describe(`Character Creation End-to-End`, () => {
     cy.getButton('Back', ':visible').should('be.enabled').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
     cy.getByTestId('race-carousel').should('be.visible');
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
 
     // Test: Class Selection Step
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
     cy.getByTestId('class-carousel').should('be.visible');
-    cy.get('button:contains("Next"):visible').should('be.disabled');
+    cy.getButton('Next', ':visible').should('be.disabled');
     cy.getByTestId('class-card-').should('have.length', this.isMobile ? 1 : 3);
     cy.getByTestId('class-card-current').should('contain.text', 'Barbarian');
     cy.get('#subclass').should('contain.text', 'Berserker');
@@ -396,14 +396,14 @@ describe(`Character Creation End-to-End`, () => {
       cy.get('label:visible').should('have.length', 1);
     });
 
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
 
     // Test: Background Selection Step
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
     cy.selectOption('#background', 'Custom');
     cy.selectOption('#alignment', 'Lawful Good');
 
-    cy.get('button:contains("Next"):visible').should('be.enabled').click();
+    cy.getButton('Next', ':visible').should('be.enabled').click();
 
     // Test: Info Selection Step
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
@@ -447,18 +447,18 @@ describe(`Character Creation End-to-End`, () => {
     });
 
     // Test: Navigate forward again to Character Info
-    cy.get('button:contains("Next"):visible').click();
+    cy.getButton('Next', ':visible').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Class');
-    cy.get('button:contains("Next"):visible').click();
+    cy.getButton('Next', ':visible').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Background');
-    cy.get('button:contains("Next"):visible').click();
+    cy.getButton('Next', ':visible').click();
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Character Info');
     cy.get('input[name="name"], input[id="name"]').should('have.value', 'Test Character');
     cy.get('input[name="age"], input[id="age"]').should('have.value', '25');
 
     // Test: Character Creation Submission
     cy.getButton('Create').click();
-    cy.get('button:contains("Create")').should('not.exist');
+    cy.getButton('Create').should('not.exist');
     cy.getByRole('progressbar').should('be.visible');
     cy.getByRole('status', 'Character created').should('be.visible');
     cy.url().should('include', '/character');

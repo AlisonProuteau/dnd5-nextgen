@@ -19,9 +19,7 @@ describe('Character Money Management End-to-End', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
-    cy.getByTestId('next-step').click();
-    cy.getByTestId('next-step').click();
-    cy.getByTestId('equipment-section').should('be.visible');
+    cy.clickUntilStep('equipment');
 
     // Test: Verify initial money display in equipment section
     cy.getByTestId('money-display')
@@ -247,8 +245,7 @@ describe('Character Money Management End-to-End', () => {
 
     cy.getByTestId(`character-card-${characterWithMoney.id}`).should('be.visible');
     cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
-    cy.getByTestId('next-step').click();
-    cy.getByTestId('next-step').click();
+    cy.clickUntilStep('equipment');
 
     cy.getByTestId('money-display')
       .should('be.visible')
@@ -300,9 +297,7 @@ describe('Character Money Management End-to-End', () => {
       cy.reload();
       cy.waitForLoading();
       cy.getByTestId('character-container').should('be.visible');
-      cy.getByTestId('next-step').click();
-      cy.getByTestId('next-step').click();
-      cy.getByTestId('equipment-section').should('be.visible');
+      cy.clickUntilStep('equipment');
     };
 
     // Test: Setup & Navigation - Enable both additional currencies in user settings

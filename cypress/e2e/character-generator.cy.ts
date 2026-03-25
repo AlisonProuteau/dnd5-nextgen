@@ -235,7 +235,7 @@ describe(`Character Generator End-to-End`, () => {
         cy.wait('@getUploadedImage');
       }
       cy.wrap($el).getByTestId('upload-done').should('have.length', 4);
-      cy.get('button:contains("Upload")')
+      cy.getButton('Upload')
         .should('have.length', 5)
         .each(($element) => cy.wrap($element).should('be.disabled'));
     });

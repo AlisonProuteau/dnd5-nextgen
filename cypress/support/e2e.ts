@@ -41,7 +41,7 @@ if (FIRESTORE_EMULATOR_HOST && FIREBASE_AUTH_EMULATOR_HOST && FIREBASE_STORAGE_E
 }
 
 // returning false here prevents Cypress from failing the test
-Cypress.on('uncaught:exception', () => false);
+// Cypress.on('uncaught:exception', () => false);
 
 const hideFirebaseEmulatorWarning = () =>
   cy.get('body').then((body) => {
