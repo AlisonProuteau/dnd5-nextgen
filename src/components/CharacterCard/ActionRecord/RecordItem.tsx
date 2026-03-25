@@ -1,4 +1,4 @@
-import { Fragment, ReactNode, useState } from 'react';
+import { Fragment, ReactNode, useMemo, useState } from 'react';
 import {
   AutoAwesome,
   Build,
@@ -53,25 +53,31 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
     setEditing(false);
   };
 
-  const valueColor =
-    record.value !== undefined
-      ? record.value > 0
-        ? 'success'
-        : record.value < 0
-          ? 'error'
-          : undefined
-      : undefined;
+  const valueColor = useMemo(() => {
+    if (record.value === undefined) return undefined;
+
+    switch (record.valueUnit) {
+      case 'success':
+        return 'success';
+      case 'failure':
+        return 'error';
+      default:
+        return record.value > 0 ? 'success' : record.value < 0 ? 'error' : undefined;
+    }
+  }, [record.value, record.valueUnit]);
 
   return (
     <Fragment>
       <ListItem
         alignItems="flex-start"
+        data-testid={`record-item-${record.id}`}
         slotProps={{ root: { style: { paddingRight: !record.auto ? '72px' : '48px' } } }}
         secondaryAction={
           <Box display="flex" gap={0.25}>
             <IconButton
               size="small"
               edge="end"
+              data-testid="record-edit"
               onClick={() => (isEditing ? onEditSave(record.id) : setEditing(true))}
             >
               {isEditing ? (
@@ -81,7 +87,12 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
               )}
             </IconButton>
             {!record.auto && (
-              <IconButton size="small" edge="end" onClick={() => onDelete(record.id)}>
+              <IconButton
+                size="small"
+                edge="end"
+                data-testid="record-delete"
+                onClick={() => onDelete(record.id)}
+              >
                 <Delete fontSize="small" />
               </IconButton>
             )}
@@ -121,7 +132,10 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
                   onChange={(_, v) => typeof v === 'string' && setDescription(v ?? '')}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) onEditSave(record.id);
-                    if (e.key === 'Escape') onEditCancel();
+                    if (e.key === 'Escape') {
+                      e.stopPropagation();
+                      onEditCancel();
+                    }
                   }}
                 />
               ) : (

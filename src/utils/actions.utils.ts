@@ -9,12 +9,16 @@ export const getHealthActionRecordData = (
   previous: number,
   overrideHitPoints = false,
   temporary = false
-): Pick<ActionRecord, 'name' | 'description' | 'value'> | undefined => {
+): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'> | undefined => {
   const delta = current - previous;
   if (!delta) return;
 
   if (temporary)
-    return { name: delta > 0 ? 'Gained Temporary HP' : 'Lost Temporary HP', value: delta };
+    return {
+      name: delta > 0 ? 'Gained Temporary Health' : 'Lost Temporary Health',
+      value: delta,
+      valueUnit: 'THP'
+    };
 
   const differenceLabel = overrideHitPoints
     ? 'Hit points updated'
@@ -24,6 +28,7 @@ export const getHealthActionRecordData = (
   return {
     name: differenceLabel,
     value: delta,
+    valueUnit: 'HP',
     description: overrideHitPoints ? `Initial: ${previous}\nFinal: ${current}` : undefined
   };
 };
@@ -60,6 +65,20 @@ export const getMoneyActionRecordData = (
   };
 };
 
+export const getDeathSavesActionRecordData = (
+  current: number,
+  previous: number,
+  unit: 'success' | 'failure'
+): Pick<ActionRecord, 'name' | 'value' | 'valueUnit'> | undefined => {
+  const delta = current - previous;
+  if (!delta) return;
+  return {
+    name: 'Death Save',
+    value: delta,
+    valueUnit: unit
+  };
+};
+
 export const getSpellActionRecordData = (
   spell: Spell,
   slotLevel: number
@@ -76,9 +95,11 @@ export const formatActionRecord = (
   type: ActionRecordType,
   ressource: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'>,
   auto = true
-): Omit<ActionRecord, 'id' | 'createdAt'> => {
-  if (type === 'trait' || type === 'feature') return { auto, type, name: ressource.name };
-  if (type === 'custom') return { auto, type, ...ressource }; // TODO
+): Omit<ActionRecord, 'id'> => {
+  const createdAt = new Date();
+  if (type === 'trait' || type === 'feature')
+    return { auto, type, name: ressource.name, createdAt };
+  if (type === 'custom') return { auto, type, createdAt, ...ressource };
 
-  return { auto, type, ...ressource };
+  return { auto, type, createdAt, ...ressource };
 };

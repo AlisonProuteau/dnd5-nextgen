@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InfoOutlined, RestartAlt } from '@mui/icons-material';
 import {
   Box,
@@ -18,10 +18,14 @@ import { useToggle } from '@hooks/useToggle';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { TooltipButton } from '@shared/TooltipButton';
-import { formatActionRecord, getHealthActionRecordData } from '@utils/actions.utils';
+import {
+  formatActionRecord,
+  getDeathSavesActionRecordData,
+  getHealthActionRecordData
+} from '@utils/actions.utils';
 import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
-import type { Character } from '@representations/user.representation';
+import type { ActionRecord, Character } from '@representations/user.representation';
 
 const AUTO_SAVE_TRAIT = 'relentless-endurance';
 
@@ -38,6 +42,7 @@ export function HealthManager({
   closeHealthDialog
 }: HealthManagerProps) {
   const [overrideHitPoints, setOverrideHitPoints] = useState(false);
+  const pendingLogs = useRef<Omit<ActionRecord, 'id' | 'createdAt'>[]>([]);
   const {
     isOn: isConfirmDialogOpen,
     turnOn: openConfirmDialog,
@@ -117,6 +122,7 @@ export function HealthManager({
     if (isHealthDialogOpen) {
       setHealth(initialHealth);
       setOverrideHitPoints(false);
+      pendingLogs.current = [];
     }
   }, [isHealthDialogOpen, initialHealth]);
 
@@ -127,6 +133,10 @@ export function HealthManager({
       health.deathSaves.usedSaves < autoSaveTraitUsageMax &&
       !overrideHitPoints
     ) {
+      const healData = getHealthActionRecordData(1, 0);
+      if (healData) pendingLogs.current.push(formatActionRecord('health', healData));
+      if (autoSaveTrait) pendingLogs.current.push(formatActionRecord('trait', autoSaveTrait));
+
       setHealth((prev) => ({
         ...prev,
         current: 1,
@@ -136,6 +146,7 @@ export function HealthManager({
   }, [
     health.current,
     canAutoSave,
+    autoSaveTrait,
     health.deathSaves.usedSaves,
     overrideHitPoints,
     autoSaveTraitUsageMax
@@ -145,6 +156,26 @@ export function HealthManager({
     if (!overrideHitPoints && health.current > character.hit_points)
       setHealth((prev) => ({ ...prev, current: character.hit_points ?? 0 }));
   }, [overrideHitPoints, health.current, character.hit_points]);
+
+  const onCurrentHealthChange = (value: number | null) => {
+    if (value === null) return;
+
+    const data = getHealthActionRecordData(
+      value,
+      overrideHitPoints ? (character.hit_points ?? 0) : health.current,
+      overrideHitPoints
+    );
+    if (data) pendingLogs.current.push(formatActionRecord('health', data));
+
+    setHealth((prev) => ({
+      ...prev,
+      current: value,
+      deathSaves:
+        value > 0
+          ? { successes: 0, failures: 0, usedSaves: prev.deathSaves.usedSaves }
+          : prev.deathSaves
+    }));
+  };
 
   const onSave = async () => {
     const newHealth: Character['health'] = { ...character.health, ...health };
@@ -173,28 +204,7 @@ export function HealthManager({
       overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData
     );
 
-    if (success) {
-      const actionRecordData = getHealthActionRecordData(
-        health.current,
-        overrideHitPoints ? (character.hit_points ?? 0) : initialHealth.current,
-        overrideHitPoints
-      );
-      if (actionRecordData) await logAction(formatActionRecord('health', actionRecordData));
-
-      const tempActionRecordData = getHealthActionRecordData(
-        health.temporary,
-        initialHealth.temporary,
-        false,
-        true
-      );
-      if (tempActionRecordData) await logAction(formatActionRecord('health', tempActionRecordData));
-
-      const diff = health.deathSaves.usedSaves - initialHealth.deathSaves.usedSaves;
-      if (canAutoSave && autoSaveTrait && diff > 0) {
-        for (let i = 0; i < diff; i++) await logAction(formatActionRecord('trait', autoSaveTrait));
-      }
-    }
-
+    if (success) for (const log of pendingLogs.current) await logAction(log);
     closeHealthDialog();
   };
 
@@ -254,7 +264,12 @@ export function HealthManager({
               min={0}
               max={character.hit_points}
               value={health.temporary}
-              onChange={(_, value) => setHealth((prev) => ({ ...prev, temporary: value ?? 0 }))}
+              onChange={(_, value) => {
+                if (value === null) return;
+                const data = getHealthActionRecordData(value, health.temporary, false, true);
+                if (data) pendingLogs.current.push(formatActionRecord('health', data));
+                setHealth((prev) => ({ ...prev, temporary: value }));
+              }}
               disabled={overrideHitPoints}
             />
 
@@ -265,17 +280,7 @@ export function HealthManager({
               max={overrideHitPoints ? 99 : character.hit_points}
               value={health.current}
               disabled={!overrideHitPoints && health.temporary > 0}
-              onChange={(_, value) =>
-                value !== null &&
-                setHealth((prev) => ({
-                  ...prev,
-                  current: value,
-                  deathSaves:
-                    value > 0
-                      ? { successes: 0, failures: 0, usedSaves: prev.deathSaves.usedSaves }
-                      : prev.deathSaves
-                }))
-              }
+              onChange={(_, value) => onCurrentHealthChange(value)}
             />
 
             {health.deathSaves.usedSaves > 0 && health.current > 0 && (
@@ -299,12 +304,20 @@ export function HealthManager({
                     min={0}
                     max={3}
                     value={health.deathSaves.successes}
-                    onChange={(_, value) =>
+                    onChange={(_, value) => {
+                      if (value === null) return;
+                      const data = getDeathSavesActionRecordData(
+                        value,
+                        health.deathSaves.successes,
+                        'success'
+                      );
+                      if (data) pendingLogs.current.push(formatActionRecord('health', data));
+
                       setHealth((prev) => ({
                         ...prev,
-                        deathSaves: { ...prev.deathSaves, successes: value ?? 0 }
-                      }))
-                    }
+                        deathSaves: { ...prev.deathSaves, successes: value }
+                      }));
+                    }}
                     disabled={overrideHitPoints}
                   />
                   <NumberInput
@@ -313,12 +326,19 @@ export function HealthManager({
                     min={0}
                     max={3}
                     value={health.deathSaves.failures}
-                    onChange={(_, value) =>
+                    onChange={(_, value) => {
+                      if (value === null) return;
+                      const data = getDeathSavesActionRecordData(
+                        value,
+                        health.deathSaves.failures,
+                        'failure'
+                      );
+                      if (data) pendingLogs.current.push(formatActionRecord('health', data));
                       setHealth((prev) => ({
                         ...prev,
-                        deathSaves: { ...prev.deathSaves, failures: value ?? 0 }
-                      }))
-                    }
+                        deathSaves: { ...prev.deathSaves, failures: value }
+                      }));
+                    }}
                     disabled={overrideHitPoints}
                   />
                 </Box>
@@ -340,13 +360,14 @@ export function HealthManager({
           <Box display="flex" flexDirection="column" alignItems="center">
             <IconButton
               data-testid="reset-health-button"
-              onClick={() =>
+              onClick={() => {
+                pendingLogs.current = [];
                 setHealth({
                   current: character.hit_points ?? 0,
                   temporary: 0,
                   deathSaves: { successes: 0, failures: 0, usedSaves: 0 }
-                })
-              }
+                });
+              }}
               sx={{ paddingBottom: 0, width: 'fit-content' }}
               disabled={overrideHitPoints}
             >

@@ -31,6 +31,7 @@ interface ActionRecordProps {
   character: Character;
 }
 
+// TODO: Add date picker to filter by date range
 export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) {
   const { user } = useAuth();
   const [filter, setFilter] = useState<FilterType | 'all'>('all');
@@ -127,6 +128,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
         ModalProps={{ keepMounted: false }}
         disableSwipeToOpen={true}
         disableBackdropTransition={true}
+        data-testid={`action-record-drawer-${character.id}`}
       >
         <Box
           paddingY={2}
@@ -142,7 +144,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
           <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="h6">Action Record</Typography>
-              <IconButton onClick={openForm} aria-label="add record">
+              <IconButton onClick={openForm} data-testid="add-action-record">
                 <Add />
               </IconButton>
             </Box>
@@ -155,7 +157,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
                   size="small"
                   variant={filter === value ? 'filled' : 'outlined'}
                   color={filter === value ? 'primary' : 'default'}
-                  onClick={() => setFilter(value)}
+                  onClick={() => (value === filter ? setFilter('all') : setFilter(value))}
                   sx={{ fontWeight: filter === value ? 600 : 400 }}
                 />
               ))}

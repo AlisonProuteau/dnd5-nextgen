@@ -19,8 +19,6 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 
 # TODO
 
-- [x] Add "Action Record"
-  - Add Cypress
 - Trait/Feature Actions with dependancies
   - Add a temporary spells section to add spells regardless of prepare/learn
 - [ ] Add partial regain spell slots

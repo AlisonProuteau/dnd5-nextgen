@@ -1,6 +1,5 @@
 import { Fragment, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { AutoAwesome, Build, Psychology, Star } from '@mui/icons-material';
 import {
   Box,
   Button,
@@ -15,8 +14,6 @@ import {
   ListSubheader,
   MenuItem,
   Select,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
@@ -27,19 +24,11 @@ import { formatUsageLabelText, getUsageTimes, getUsageType, getUsageTypeLabel } 
 import { Usage } from '@representations/common.representation';
 import { ActionRecordType, Character } from '@representations/user.representation';
 
-export const ACTION_RECORD_TYPES: Partial<
-  Record<
-    ActionRecordType,
-    {
-      label: string;
-      icon: React.ReactNode;
-    }
-  >
-> = {
-  custom: { label: 'Custom', icon: <Build fontSize="small" /> },
-  trait: { label: 'Trait', icon: <Psychology fontSize="small" /> },
-  feature: { label: 'Feature', icon: <Star fontSize="small" /> },
-  spell: { label: 'Spell', icon: <AutoAwesome fontSize="small" /> }
+export const ACTION_RECORD_TYPES: Partial<Record<ActionRecordType, { label: string }>> = {
+  custom: { label: 'Custom' },
+  trait: { label: 'Trait' },
+  feature: { label: 'Feature' },
+  spell: { label: 'Spell' }
 };
 
 export interface ActionRecordFormData {
@@ -157,35 +146,18 @@ export function ActionRecordForm({
 
       <DialogContent sx={{ pt: 2 }}>
         <Box display="flex" flexDirection="column" gap={2.5}>
-          <ToggleButtonGroup
-            exclusive
-            value={type}
-            onChange={(_, v) => {
-              if (v) setValue('type', v as ActionRecordType);
-            }}
-            size="small"
-            sx={{ flexWrap: 'wrap', gap: 0.5 }}
-          >
-            {Object.entries(availableTypes).map(([v, { label, icon }]) => (
-              <ToggleButton
-                key={v}
-                value={v}
-                sx={(theme) => ({
-                  gap: 0.5,
-                  px: 1.25,
-                  py: 0.5,
-                  fontSize: '0.8rem',
-                  textTransform: 'none' as const,
-                  borderRadius: '20px !important',
-                  border: `1px solid ${theme.palette.divider} !important`,
-                  '&.Mui-selected': { fontWeight: 700 }
-                })}
-              >
-                {icon}
-                {label}
-              </ToggleButton>
+          <Box display="flex" gap={0.75} flexWrap="wrap">
+            {Object.entries(availableTypes).map(([value, { label }]) => (
+              <Chip
+                key={value}
+                label={label}
+                variant={type === value ? 'filled' : 'outlined'}
+                color={type === value ? 'primary' : 'default'}
+                onClick={() => setValue('type', value as ActionRecordType)}
+                sx={{ fontWeight: value === type ? 600 : 400 }}
+              />
             ))}
-          </ToggleButtonGroup>
+          </Box>
 
           {type === 'spell' && (
             <Box display="flex" flexDirection="column" gap={0.75}>
@@ -197,6 +169,7 @@ export function ActionRecordForm({
                   <FormControl fullWidth size="small" required>
                     <InputLabel>{ACTION_RECORD_TYPES[type]?.label}</InputLabel>
                     <Select
+                      id="source-select"
                       label={ACTION_RECORD_TYPES[type]?.label}
                       value={field.value ?? ''}
                       onChange={field.onChange}
@@ -250,6 +223,7 @@ export function ActionRecordForm({
                   <FormControl fullWidth size="small" required>
                     <InputLabel>{ACTION_RECORD_TYPES[type]?.label}</InputLabel>
                     <Select
+                      id="source-select"
                       label={ACTION_RECORD_TYPES[type]?.label}
                       value={field.value ?? ''}
                       onChange={field.onChange}
@@ -329,6 +303,7 @@ export function ActionRecordForm({
                     <FormControl fullWidth size="small">
                       <InputLabel>Equipment (optional)</InputLabel>
                       <Select
+                        id="equipment-select"
                         label="Equipment (optional)"
                         value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.value || undefined)}
