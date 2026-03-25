@@ -22,10 +22,14 @@ type BatchEntry = {
 
 export default function BatchOptions({
   character,
-  isLoading
+  isLoading,
+  initialCharUploadState,
+  onInitialCharUploadStateChange
 }: {
   character: CharacterDetails;
   isLoading?: boolean;
+  initialCharUploadState: ActionState;
+  onInitialCharUploadStateChange: (state: ActionState) => void;
 }) {
   const [filters, setFilters] = useState({ gender: false, class: false, race: false });
   const [isRunning, setIsRunning] = useState(false);
@@ -49,6 +53,12 @@ export default function BatchOptions({
     if (isLoading) clear();
   }, [isLoading]);
 
+  const isCurrentCharacterEntry = useCallback(
+    (c: CharacterDetails) =>
+      c.gender === character.gender && c.race === character.race && c.class === character.class,
+    [character]
+  );
+
   const updateQueueItem = useCallback((index: number, updates: Partial<BatchEntry>) => {
     setQueue((prev) => {
       const updated = [...prev];
@@ -57,6 +67,15 @@ export default function BatchOptions({
       return updated;
     });
   }, []);
+
+  // When PortraitDisplay uploads the current character, sync it into the matching batch entry
+  useEffect(() => {
+    if (initialCharUploadState !== 'done') return;
+    const index = queueRef.current.findIndex(
+      (item) => isCurrentCharacterEntry(item.character) && item.uploadState !== 'done'
+    );
+    if (index !== -1) updateQueueItem(index, { uploadState: 'done' });
+  }, [initialCharUploadState, isCurrentCharacterEntry, updateQueueItem]);
 
   const runBatch = useCallback(
     async (startIndex = 0, entries?: BatchEntry[]) => {
@@ -115,7 +134,8 @@ export default function BatchOptions({
                 : character.ethnicity
             },
             status: isCurrentCharacter ? 'done' : 'pending',
-            url: isCurrentCharacter ? character.url : undefined
+            url: isCurrentCharacter ? character.url : undefined,
+            uploadState: isCurrentCharacter ? initialCharUploadState : undefined
           });
         }
       }
@@ -158,6 +178,9 @@ export default function BatchOptions({
             ? await downloadImage(item.url, item.character)
             : await uploadImage(item.url, item.character);
         updateQueueItem(index, { [stateKey]: success ? 'done' : 'failed' });
+
+        if (success && action === 'upload' && isCurrentCharacterEntry(item.character))
+          onInitialCharUploadStateChange('done');
 
         if (!success) {
           setState('failed');
@@ -203,8 +226,10 @@ export default function BatchOptions({
       updateQueueItem(index, { uploadState: 'uploading' });
       const success = await uploadImage(item.url, item.character);
       updateQueueItem(index, { uploadState: success ? 'done' : 'failed' });
+      if (success && isCurrentCharacterEntry(item.character))
+        onInitialCharUploadStateChange('done');
     },
-    [updateQueueItem]
+    [updateQueueItem, isCurrentCharacterEntry, onInitialCharUploadStateChange]
   );
 
   if (isLoading) return null;
