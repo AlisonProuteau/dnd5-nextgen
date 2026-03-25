@@ -78,7 +78,9 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
     const baseAction = {
       type: data.type,
       name: data.name.trim(),
-      description: data.description?.trim() || undefined,
+      description: data.isRitual
+        ? 'Ritual Cast' + (data.description && '\n' + data.description.trim())
+        : data.description?.trim() || undefined,
       value: data.value,
       valueUnit: data.valueUnit?.trim() || undefined,
       auto: false,

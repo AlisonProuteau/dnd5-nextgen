@@ -229,7 +229,7 @@ export const getSellingPrice = (
 
   if (sellAtFullPrice) return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
 
-  // TODO: Currenly only have MagicItems, could add other categories later
+  // TODO-blocked: Currenly only have MagicItems, could add other categories later
   switch (equipmentCategoryType) {
     case EquipmentCategoryType.TradeGoods:
     case EquipmentCategoryType.Gem:

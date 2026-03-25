@@ -97,25 +97,27 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
   };
 
-  const handleCastSpell = async (spell: Spell, slotLevel?: number) => {
+  const handleCastSpell = async (spell: Spell, slotLevel?: number | 'ritual') => {
     if (!character.id || spell.level === 0 || !slotLevel) return;
 
-    const newUsedSlots = {
-      ...usedSlots,
-      [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
-    };
+    let success = slotLevel === 'ritual' ? true : false;
+    if (!success) {
+      const newUsedSlots = {
+        ...usedSlots,
+        [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
+      };
+      if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
+        setUsedSlots(newUsedSlots);
+        success = await firebaseCrud.update(
+          character.id,
+          { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
+          false
+        );
+      } else toast.error(`No spell slots of level ${slotLevel} available`);
+    }
 
-    if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
-      setUsedSlots(newUsedSlots);
-      const success = await firebaseCrud.update(
-        character.id,
-        { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
-        false
-      );
-
-      if (success)
-        await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
-    } else toast.error(`No spell slots of level ${slotLevel} available`);
+    if (success)
+      await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
   };
 
   const shouldLearn = useMemo(

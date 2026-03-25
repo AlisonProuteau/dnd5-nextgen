@@ -81,14 +81,16 @@ export const getDeathSavesActionRecordData = (
 
 export const getSpellActionRecordData = (
   spell: Spell,
-  slotLevel: number
+  slotLevel: number | 'ritual'
 ): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'> => {
-  return {
-    name: spell.name,
-    description: slotLevel !== spell.level ? `Upcast from lvl${spell.level} spell` : undefined,
-    value: slotLevel,
-    valueUnit: 'slot lvl'
-  };
+  return slotLevel === 'ritual'
+    ? { name: spell.name, description: 'Ritual Cast' }
+    : {
+        name: spell.name,
+        description: slotLevel !== spell.level ? `Upcast from lvl${spell.level} spell` : undefined,
+        value: slotLevel,
+        valueUnit: 'slot lvl'
+      };
 };
 
 export const formatActionRecord = (

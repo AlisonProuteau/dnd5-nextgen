@@ -3,6 +3,7 @@ import { Controller, useForm } from 'react-hook-form';
 import {
   Box,
   Button,
+  Checkbox,
   Chip,
   CircularProgress,
   Dialog,
@@ -10,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   InputLabel,
   ListSubheader,
   MenuItem,
@@ -18,9 +20,10 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { omit, uniqBy } from 'lodash';
-import { getFeature, getTrait } from '@api/ressources';
+import { getClassInfo, getFeature, getTrait } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
 import { formatUsageLabelText, getUsageTimes, getUsageType, getUsageTypeLabel } from '@utils/index';
+import { Classes } from '@representations/character/class.representation';
 import { Usage } from '@representations/common.representation';
 import { ActionRecordType, Character } from '@representations/user.representation';
 
@@ -40,6 +43,7 @@ export interface ActionRecordFormData {
   valueUnit?: string;
   equipmentIndex?: string;
   slotLevel?: number;
+  isRitual?: boolean;
   usage?: Usage;
 }
 
@@ -51,7 +55,8 @@ const DEFAULT_FORM_VALUES: ActionRecordFormData = {
   value: undefined,
   valueUnit: '',
   equipmentIndex: undefined,
-  slotLevel: undefined
+  slotLevel: undefined,
+  isRitual: false
 };
 
 interface ActionRecordFormProps {
@@ -62,7 +67,6 @@ interface ActionRecordFormProps {
   character: Character;
 }
 
-// TODO: add ritual checkbox for spells and people who can cast them + hide spells if they can't cast
 export function ActionRecordForm({
   open,
   onClose,
@@ -72,7 +76,18 @@ export function ActionRecordForm({
 }: ActionRecordFormProps) {
   const { control, handleSubmit, watch, reset, setValue, clearErrors, formState } =
     useForm<ActionRecordFormData>({ mode: 'onTouched', defaultValues: DEFAULT_FORM_VALUES });
-  const [type, sourceIndex] = watch(['type', 'sourceIndex']);
+  const [type, sourceIndex, isRitual] = watch(['type', 'sourceIndex', 'isRitual']);
+
+  const { data: canCastRitual } = useQuery({
+    queryKey: ['fetchClassInfo', character.version, character?.class.index],
+    queryFn: async () =>
+      character
+        ? ((await getClassInfo(character.version, character.class.index)) as Classes | null)
+        : null,
+    enabled: !!character,
+    select: (classInfo) =>
+      classInfo?.spellcasting?.info.some(({ name }) => name === 'Ritual Casting') ?? false
+  });
 
   const { data: trait, isFetching: isTraitFetching } = useQuery({
     queryKey: ['fetchTrait', character.version, sourceIndex],
@@ -101,7 +116,11 @@ export function ActionRecordForm({
   const spells = useMemo(() => {
     const known = character.knownSpells ?? [];
     const prepared = character.preparedSpells ?? [];
-    return uniqBy([...known, ...prepared], 'index').sort((a, b) => a.level - b.level);
+    return (
+      (uniqBy([...prepared, ...known], 'index').sort(
+        (a, b) => a.level - b.level
+      ) as Character['knownSpells']) || []
+    );
   }, [character.knownSpells, character.preparedSpells]);
 
   useEffect(() => {
@@ -205,7 +224,25 @@ export function ActionRecordForm({
                   </FormControl>
                 )}
               />
-              {(spells.find((s) => s.index === sourceIndex)?.level ?? 0) > 0 && (
+              {canCastRitual && !!spells.find((s) => s.index === sourceIndex)?.ritual && (
+                <Controller
+                  name="isRitual"
+                  control={control}
+                  render={({ field }) => (
+                    <FormControlLabel
+                      label="Cast as Ritual (+10 min, no slot)"
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={!!field.value}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                        />
+                      }
+                    />
+                  )}
+                />
+              )}
+              {(spells.find((s) => s.index === sourceIndex)?.level ?? 0) > 0 && !isRitual && (
                 <Typography variant="caption" color="text.secondary" textAlign="center">
                   Slot consumption isn't tracked here — head to the Spells page to expend a slot.
                 </Typography>

@@ -5,7 +5,7 @@ import type { Spell } from '@representations/abilities/magic.representation';
 interface CastSpellMenuProps {
   spell: Spell;
   availableSlots?: Record<string, number>;
-  handleCastSpell?: (spell: Spell, slotLevel?: number) => void;
+  handleCastSpell?: (spell: Spell, slotLevel?: number | 'ritual') => void;
   canCastRitual?: boolean;
 }
 
@@ -80,7 +80,13 @@ export function CastSpellMenu({
                   </Box>
                 </MenuItem>
               ) : (
-                <MenuItem key="ritual" onClick={() => setMenuAnchor(null)}>
+                <MenuItem
+                  key="ritual"
+                  onClick={() => {
+                    handleCastSpell(spell, 'ritual');
+                    setMenuAnchor(null);
+                  }}
+                >
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     <Typography>Ritual Cast</Typography>
                     <Typography variant="caption" color="primary">
