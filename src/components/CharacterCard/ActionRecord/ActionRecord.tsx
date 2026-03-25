@@ -1,7 +1,9 @@
-import { Fragment, useEffect, useState } from 'react';
-import { Add } from '@mui/icons-material';
+import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Add, Clear } from '@mui/icons-material';
 import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui/material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQuery } from '@tanstack/react-query';
+import { type Dayjs } from 'dayjs';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
@@ -31,10 +33,11 @@ interface ActionRecordProps {
   character: Character;
 }
 
-// TODO: Add date picker to filter by date range
 export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) {
   const { user } = useAuth();
   const [filter, setFilter] = useState<FilterType | 'all'>('all');
+  const [dateFrom, setDateFrom] = useState<Dayjs | null>(null);
+  const [dateTo, setDateTo] = useState<Dayjs | null>(null);
   const { isOn: isFormOpen, turnOn: openForm, turnOff: closeForm } = useToggle(false);
 
   const {
@@ -61,6 +64,19 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
   useEffect(() => {
     if (!isOpen) refetchRecords();
   }, [isOpen]);
+
+  const filteredRecords = useMemo(() => {
+    let result = records?.flat().filter(Boolean) ?? [];
+    if (dateFrom?.isValid()) {
+      const from = dateFrom.startOf('day').toDate();
+      result = result.filter((r) => r.createdAt >= from);
+    }
+    if (dateTo?.isValid()) {
+      const to = dateTo.endOf('day').toDate();
+      result = result.filter((r) => r.createdAt <= to);
+    }
+    return result;
+  }, [records, dateFrom, dateTo]);
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
     if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
@@ -151,7 +167,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
               </IconButton>
             </Box>
 
-            <Box display="flex" gap={0.75} flexWrap="wrap">
+            <Box display="flex" gap={0.75} flexWrap="wrap" justifyContent="center">
               {FILTERS.map(({ value, label }) => (
                 <Chip
                   key={value}
@@ -164,10 +180,40 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
                 />
               ))}
             </Box>
+
+            <Box display="flex" gap={1} alignItems="center" mt={2}>
+              <DatePicker
+                label="From"
+                value={dateFrom}
+                onChange={setDateFrom}
+                maxDate={dateTo ?? undefined}
+                disableFuture
+                slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+              />
+              <DatePicker
+                label="To"
+                value={dateTo}
+                onChange={setDateTo}
+                minDate={dateFrom ?? undefined}
+                disableFuture
+                slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+              />
+              {(dateFrom || dateTo) && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    setDateFrom(null);
+                    setDateTo(null);
+                  }}
+                >
+                  <Clear fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
           </Box>
 
           <ActionRecordList
-            records={records?.flat().filter(Boolean) ?? []}
+            records={filteredRecords}
             onDelete={handleRemove}
             onEditDescription={async (id: string, description: string) =>
               await updateAction(id, { description: description.trim() || undefined })

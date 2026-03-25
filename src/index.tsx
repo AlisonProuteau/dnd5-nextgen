@@ -4,6 +4,8 @@ import { toast, Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { App } from './App';
 import { AuthProvider } from './providers/AuthProvider';
@@ -40,13 +42,15 @@ root.render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={darkTheme}>
-        <Toaster />
-        <CssBaseline />
-        <Router>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </Router>
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <Toaster />
+          <CssBaseline />
+          <Router>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </Router>
+        </LocalizationProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>
