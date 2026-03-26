@@ -230,6 +230,7 @@ export function ActionRecordForm({
                   control={control}
                   render={({ field }) => (
                     <FormControlLabel
+                      data-testid="ritual-checkbox"
                       label="Cast as Ritual (+10 min, no slot)"
                       control={
                         <Checkbox

@@ -183,24 +183,41 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
             <Box display="flex" gap={1} alignItems="center" mt={2}>
               <DatePicker
+                disableFuture
+                closeOnSelect
                 label="From"
                 value={dateFrom}
                 onChange={setDateFrom}
                 maxDate={dateTo ?? undefined}
-                disableFuture
-                slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+                format="DD/MM/YYYY"
+                views={['year', 'month', 'day']}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    id: 'dateFilterFrom'
+                  }
+                }}
               />
               <DatePicker
+                disableFuture
+                closeOnSelect
                 label="To"
                 value={dateTo}
                 onChange={setDateTo}
                 minDate={dateFrom ?? undefined}
-                disableFuture
-                slotProps={{ textField: { size: 'small', sx: { flex: 1 } } }}
+                format="DD/MM/YYYY"
+                views={['year', 'month', 'day']}
+                slotProps={{
+                  textField: {
+                    size: 'small',
+                    id: 'dateFilterTo'
+                  }
+                }}
               />
               {(dateFrom || dateTo) && (
                 <IconButton
                   size="small"
+                  data-testid="date-filter-clear"
                   onClick={() => {
                     setDateFrom(null);
                     setDateTo(null);

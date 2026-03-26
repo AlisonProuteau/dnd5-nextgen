@@ -91,16 +91,15 @@ export const formatDates = (data: any) => {
   const formattedData = { ...data };
 
   if ('createdAt' in data && data.createdAt) {
-    formattedData.createdAt =
-      data.createdAt instanceof Date
-        ? data.createdAt
-        : (data.createdAt as unknown as Timestamp).toDate();
+    if (data.createdAt instanceof Date) formattedData.createdAt = data.createdAt;
+    else if (data.createdAt instanceof Timestamp) formattedData.createdAt = data.createdAt.toDate();
+    else formattedData.createdAt = new Date(data.createdAt);
   }
+
   if ('updatedAt' in data && data.updatedAt) {
-    formattedData.updatedAt =
-      data.updatedAt instanceof Date
-        ? data.updatedAt
-        : (data.updatedAt as unknown as Timestamp).toDate();
+    if (data.updatedAt instanceof Date) formattedData.updatedAt = data.updatedAt;
+    else if (data.updatedAt instanceof Timestamp) formattedData.updatedAt = data.updatedAt.toDate();
+    else formattedData.updatedAt = new Date(data.updatedAt);
   }
 
   return formattedData;

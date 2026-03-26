@@ -1,3 +1,4 @@
+import * as dayjs from 'dayjs';
 import { characters } from 'cypress/support/mocks/characterList';
 
 describe('Character Action Record End-to-End', () => {
@@ -21,7 +22,7 @@ describe('Character Action Record End-to-End', () => {
       { index: 'shield', name: 'Shield', level: 1 },
       { index: 'sleep', name: 'Sleep', level: 1 },
       { index: 'burning-hands', name: 'Burning Hands', level: 1 },
-      { index: 'detect-magic', name: 'Detect Magic', level: 1 },
+      { index: 'detect-magic', name: 'Detect Magic', level: 1, ritual: true },
       { index: 'mage-armor', name: 'Mage Armor', level: 1 },
       { index: 'thunderwave', name: 'Thunderwave', level: 1 },
       { index: 'misty-step', name: 'Misty Step', level: 2 },
@@ -61,144 +62,38 @@ describe('Character Action Record End-to-End', () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}`)
   );
 
-  it('should handle custom record CRUD with equipment link, inline description editing, and persistence', () => {
+  it('should handle feature/trait/spell records with usage tracking, type switching, and filters', () => {
+    cy.callFirestore(
+      'set',
+      `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}/actionRecords/past-custom-record`,
+      {
+        id: 'past-custom-record',
+        type: 'custom',
+        name: 'Past Session Notes',
+        auto: false,
+        createdAt: new Date('2020-06-15')
+      }
+    );
+
     cy.visit('/');
     cy.waitForLoading();
     cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
-
-    // Test: Open drawer, verify empty states and closing
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
-      'contain.text',
-      'Nothing to show yet'
-    );
 
-    cy.getButton('Close').click();
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('not.exist');
-
-    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('be.visible');
+    // Test: Escape closes the drawer; Add Record form can also be dismissed with Escape
     cy.press('Escape');
     cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('not.exist');
-
-    // Test: Cancel Add Record form
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId('add-action-record').click();
+    cy.getByRole('dialog', 'Add Action Record').should('be.visible');
+    cy.press('Escape');
+    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('be.visible');
     cy.getByTestId('add-action-record').click();
     cy.getByRole('dialog', 'Add Action Record').should('be.visible');
     cy.getButton('Cancel').click();
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('be.visible');
-
-    cy.getByTestId('add-action-record').click();
-    cy.getByRole('dialog', 'Add Action Record').should('be.visible');
-    cy.press('Escape');
-    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('be.visible');
-
-    // Test: Add Record button is disabled until Name is filled
-    cy.getByTestId('add-action-record').click();
-    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
-      cy.wrap($dialog).getButton('Add Record').should('be.disabled');
-      cy.get('#name').type('x').blur();
-      cy.wrap($dialog).getButton('Add Record').should('be.enabled');
-      cy.get('#name').clear().blur();
-      cy.wrap($dialog).getButton('Add Record').should('be.disabled');
-      cy.wrap($dialog).getButton('Cancel').click();
-    });
-
-    // Test: Add a minimal custom record (name only)
-    cy.getByTestId('add-action-record').click();
-    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
-      cy.get('#name').type('Shove Attack');
-      cy.wrap($dialog).getButton('Add Record').click();
-    });
-    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 1).should('contain.text', 'Shove Attack');
-    cy.getByTestId('record-item-').first().should('not.contain.text', 'auto');
-    cy.getByTestId('record-item-').first().getByTestId('record-delete').should('exist');
-
-    // Test: Edit description inline on a record with no existing description
-    cy.getByTestId('record-item-').first().getByTestId('record-edit').click();
-    cy.getByTestId('record-item-')
-      .first()
-      .find('textarea')
-      .first()
-      .type('Added via edit{ctrl+enter}');
-    cy.getByTestId('record-item-').first().should('contain.text', 'Added via edit');
-
-    // Test: Add a full custom record with value, unit, equipment link, and description
-    cy.getByTestId('add-action-record').click();
-    cy.getByRole('dialog', 'Add Action Record').within(() => {
-      cy.get('#name').type('Quarterstaff Attack');
-      cy.get('#value').type('6');
-      cy.get('#valueUnit').type('dmg');
-      cy.get('#description').type('Hit the goblin scout');
-    });
-    cy.selectOption('#equipment-select', 'Quarterstaff');
-    cy.getByRole('dialog', 'Add Action Record').getButton('Add Record').click();
-    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-
-    cy.getByTestId('record-item-').should('have.length', 2);
-    cy.getByTestId('record-item-')
-      .filter(':contains("Quarterstaff Attack")')
-      .as('editRecord')
-      .should('contain.text', '+6 dmg')
-      .and('contain.text', 'Hit the goblin scout')
-      .and('contain.text', 'Quarterstaff');
-
-    // Test: Edit description with cancel and save
-    cy.get('@editRecord').getByTestId('record-edit').click();
-    cy.get('@editRecord').find('textarea').first().clear().type('Updated description');
-    cy.get('@editRecord').getByTestId('record-edit').click();
-    cy.get('@editRecord').should('contain.text', 'Updated description');
-    cy.get('@editRecord').should('not.contain.text', 'Hit the goblin scout');
-
-    cy.get('@editRecord').getByTestId('record-edit').click();
-    cy.get('@editRecord').find('textarea').first().clear().type('This should not save');
-    cy.press('Escape');
-    cy.get('@editRecord').should('not.contain.text', 'This should not save');
-    cy.get('@editRecord').should('contain.text', 'Updated description');
-
-    cy.get('@editRecord').getByTestId('record-edit').click();
-    cy.get('@editRecord').find('textarea').first().clear().type('Saved via keyboard{ctrl+enter}');
-    cy.get('@editRecord').should('contain.text', 'Saved via keyboard');
-    cy.get('@editRecord').should('not.contain.text', 'Updated description');
-
-    // Test: Delete record
-    cy.getByTestId('record-item-', { selector: ':contains("Shove Attack")' })
-      .getByTestId('record-delete')
-      .click();
-    cy.getByTestId('record-item-').should('have.length', 1);
-
-    // Test: Persist across reload
-    cy.reload();
-    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-')
-      .should('have.length', 1)
-      .should('contain.text', 'Quarterstaff Attack');
-    cy.getByTestId('record-item-').first().should('contain.text', 'Saved via keyboard');
-
-    // Test: Clear description
-    cy.getByTestId('record-item-').first().getByTestId('record-edit').click();
-    cy.getByTestId('record-item-').first().find('textarea').first().clear();
-    cy.getByTestId('record-item-').first().getByTestId('record-edit').click();
-    cy.getByTestId('record-item-').first().should('not.contain.text', 'Saved via keyboard');
-
-    // Test: Delete remaining record → returns to empty state
-    cy.getByTestId('record-item-').first().getByTestId('record-delete').click();
-    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
-      'contain.text',
-      'Nothing to show yet'
-    );
-  });
-
-  it('should handle feature/trait/spell records with usage tracking, type switching, and filters', () => {
-    cy.visit('/');
-    cy.waitForLoading();
-    cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
-    cy.getByTestId('character-container').should('be.visible');
-    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
 
     // Test: Add a Feature record (Arcane Recovery)
     cy.getByTestId('add-action-record').click();
@@ -215,7 +110,7 @@ describe('Character Action Record End-to-End', () => {
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
     cy.getByTestId('record-item-')
-      .should('have.length', 1)
+      .should('have.length', 2)
       .should('contain.text', 'Arcane Recovery');
 
     cy.getButton('Close').click();
@@ -238,7 +133,7 @@ describe('Character Action Record End-to-End', () => {
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
     cy.getByTestId('record-item-')
-      .should('have.length', 2)
+      .should('have.length', 3)
       .should('contain.text', 'Infernal Legacy');
 
     cy.getByTestId('add-action-record').click();
@@ -252,7 +147,7 @@ describe('Character Action Record End-to-End', () => {
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
     cy.getByTestId('record-item-')
-      .should('have.length', 3)
+      .should('have.length', 4)
       .should('contain.text', 'Hellish Resistance');
 
     cy.getButton('Close').click();
@@ -273,29 +168,99 @@ describe('Character Action Record End-to-End', () => {
       cy.wrap($dialog).getButton('Add Record').should('be.enabled').click();
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 4).should('contain.text', 'Fire Bolt');
+    cy.getByTestId('record-item-').should('have.length', 5).should('contain.text', 'Fire Bolt');
 
-    // Test: Add a leveled Spell record (Magic Missile)
+    // Test: Add a leveled non-ritual Spell record (Magic Missile)
     cy.getByTestId('add-action-record').click();
     cy.getByRole('dialog', 'Add Action Record').getByRole('button', 'Spell').click();
     cy.selectOption('#source-select', 'Magic Missile');
     cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
+      cy.wrap($dialog).getByTestId('ritual-checkbox').should('not.exist');
       cy.wrap($dialog).should('contain.text', "Slot consumption isn't tracked here");
       cy.wrap($dialog).getButton('Add Record').should('be.enabled').click();
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 5).should('contain.text', 'Magic Missile');
+    cy.getByTestId('record-item-').should('have.length', 6).should('contain.text', 'Magic Missile');
     cy.getByTestId('record-item-')
       .filter(':contains("Magic Missile")')
       .should('not.contain.text', 'slot lvl');
 
-    // Test: Add a custom record
+    // Test: Ritual spell (Detect Magic)
     cy.getByTestId('add-action-record').click();
+    cy.getByRole('dialog', 'Add Action Record').getByRole('button', 'Spell').click();
+    cy.selectOption('#source-select', 'Detect Magic');
     cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
-      cy.get('#name').type('Custom Action');
+      cy.wrap($dialog).getByTestId('ritual-checkbox').should('be.visible');
+      cy.wrap($dialog).should('contain.text', "Slot consumption isn't tracked here");
+    });
+    cy.getByRole('dialog', 'Add Action Record').getByTestId('ritual-checkbox').click();
+    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
+      cy.wrap($dialog).should('not.contain.text', "Slot consumption isn't tracked here");
       cy.wrap($dialog).getButton('Add Record').click();
     });
-    cy.getByTestId('record-item-').should('have.length', 6);
+    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
+    cy.getByTestId('record-item-').should('have.length', 7).and('contain.text', 'Detect Magic');
+    cy.getByTestId('record-item-')
+      .filter(':contains("Detect Magic")')
+      .should('contain.text', 'Ritual Cast');
+
+    // Test: Same ritual spell unchecked — no "Ritual Cast" in description
+    cy.getByTestId('add-action-record').click();
+    cy.getByRole('dialog', 'Add Action Record').getByRole('button', 'Spell').click();
+    cy.selectOption('#source-select', 'Detect Magic');
+    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
+      cy.wrap($dialog).getByTestId('ritual-checkbox').should('be.visible');
+      cy.wrap($dialog).getButton('Add Record').click();
+    });
+    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
+    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('record-item-')
+      .filter(':contains("Detect Magic")')
+      .first()
+      .should('not.contain.text', 'Ritual Cast');
+
+    // Test: Add a full custom record
+    cy.getByTestId('add-action-record').click();
+    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
+      cy.wrap($dialog).getButton('Add Record').should('be.disabled');
+      cy.get('#name').type('x').blur();
+      cy.wrap($dialog).getButton('Add Record').should('be.enabled');
+      cy.get('#name').clear().blur();
+      cy.wrap($dialog).getButton('Add Record').should('be.disabled');
+      cy.get('#name').type('Custom Action');
+      cy.get('#value').type('6');
+      cy.get('#valueUnit').type('dmg');
+      cy.get('#description').type('Hit the goblin scout');
+    });
+    cy.selectOption('#equipment-select', 'Quarterstaff');
+    cy.getByRole('dialog', 'Add Action Record').getButton('Add Record').click();
+    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
+    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId('record-item-')
+      .filter(':contains("Custom Action")')
+      .as('customRecord')
+      .should('not.contain.text', 'auto')
+      .and('contain.text', '+6 dmg')
+      .and('contain.text', 'Hit the goblin scout')
+      .and('contain.text', 'Quarterstaff');
+    cy.get('@customRecord').getByTestId('record-delete').should('exist');
+
+    // Test: Inline edit: save via click, save via keyboard, clear description
+    cy.get('@customRecord').getByTestId('record-edit').click();
+    cy.get('@customRecord').find('textarea').first().clear().type('Updated description');
+    cy.get('@customRecord').getByTestId('record-edit').click();
+    cy.get('@customRecord')
+      .should('contain.text', 'Updated description')
+      .and('not.contain.text', 'Hit the goblin scout');
+
+    cy.get('@customRecord').getByTestId('record-edit').click();
+    cy.get('@customRecord').find('textarea').first().clear().type('Saved via keyboard{ctrl+enter}');
+    cy.get('@customRecord').should('contain.text', 'Saved via keyboard');
+
+    cy.get('@customRecord').getByTestId('record-edit').click();
+    cy.get('@customRecord').find('textarea').first().clear();
+    cy.get('@customRecord').getByTestId('record-edit').click();
+    cy.get('@customRecord').should('not.contain.text', 'Saved via keyboard');
 
     // Test: Type switching resets the source and name fields
     cy.getByTestId('add-action-record').click();
@@ -308,6 +273,11 @@ describe('Character Action Record End-to-End', () => {
       cy.get('#name').should('have.value', '');
       cy.wrap($dialog).getButton('Cancel').click();
     });
+
+    // Test: Records persist across page reload
+    cy.reload();
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId('record-item-').should('have.length', 9);
 
     // Test: Filter
     cy.getByRole('button', 'Features').click();
@@ -322,32 +292,36 @@ describe('Character Action Record End-to-End', () => {
       .should('contain.text', 'Hellish Resistance');
 
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 2);
+    cy.getByTestId('record-item-').should('have.length', 4);
     cy.getByTestId('record-item-').should('contain.text', 'Fire Bolt');
     cy.getByTestId('record-item-').should('contain.text', 'Magic Missile');
+    cy.getByTestId('record-item-').should('contain.text', 'Detect Magic');
 
     cy.getByRole('button', 'Custom').click();
-    cy.getByTestId('record-item-').should('have.length', 1).should('contain.text', 'Custom Action');
+    cy.getByTestId('record-item-')
+      .should('have.length', 2)
+      .and('contain.text', 'Custom Action')
+      .and('contain.text', 'Past Session Notes');
 
     // Test: All filter restores full list
     cy.getByRole('button', 'All').click();
-    cy.getByTestId('record-item-').should('have.length', 6);
+    cy.getByTestId('record-item-').should('have.length', 9);
 
     // Test: Active filter doesn't reset to All when drawer is closed and reopened
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 2);
+    cy.getByTestId('record-item-').should('have.length', 4);
     cy.getButton('Close').click();
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 2);
+    cy.getByTestId('record-item-').should('have.length', 4);
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 6);
+    cy.getByTestId('record-item-').should('have.length', 9);
 
     // Test: Deleting the Feature record decrements the resource usage counter
     cy.getByTestId('record-item-')
       .filter(':contains("Arcane Recovery")')
       .getByTestId('record-delete')
       .click();
-    cy.getByTestId('record-item-').should('have.length', 5);
+    cy.getByTestId('record-item-').should('have.length', 8);
 
     // Test: Active filter with no matching records shows empty state
     cy.getByRole('button', 'Features').click();
@@ -356,7 +330,35 @@ describe('Character Action Record End-to-End', () => {
       'Nothing to show yet'
     );
 
+    // Test: Date range filter
+    cy.getByRole('button', 'All').click();
+    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('date-filter-clear').should('not.exist');
+
+    cy.get('#dateFilterTo').parent().type('01012000');
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
+      'contain.text',
+      'Nothing to show yet'
+    );
+    cy.getByTestId('date-filter-clear').should('be.visible');
+    cy.getByTestId('date-filter-clear').click();
+
+    cy.get('#dateFilterTo').parent().type('31122025');
+    cy.getByTestId('record-item-')
+      .should('have.length', 1)
+      .and('contain.text', 'Past Session Notes');
+    cy.getByTestId('date-filter-clear').click();
+    cy.getByTestId('record-item-').should('have.length', 8);
+
+    cy.get('#dateFilterFrom').parent().type(dayjs().format('DDMMYYYY'));
+    cy.getByTestId('record-item-')
+      .should('have.length', 7)
+      .and('not.contain.text', 'Past Session Notes');
+    cy.getByTestId('date-filter-clear').click();
+    cy.getByTestId('record-item-').should('have.length', 8);
+
     cy.getButton('Close').click();
+    cy.clickUntilStep('characteristics');
     cy.getByTestId('feature-name-arcane-recovery')
       .getButton(/^USE/)
       .should('be.enabled')
@@ -368,6 +370,15 @@ describe('Character Action Record End-to-End', () => {
     cy.waitForLoading();
     cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Drawer shows empty state when no records exist
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
+      'contain.text',
+      'Nothing to show yet'
+    );
+    cy.getButton('Close').click();
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('not.exist');
 
     // Test: Health damage
     cy.getByTestId(`health-${actionRecordChar.id}`).click();
@@ -564,6 +575,14 @@ describe('Character Action Record End-to-End', () => {
         cy.wrap($el).getByTestId('record-edit').click();
         cy.wrap($el).should('contain.text', 'Saved by Relentless Endurance!');
       });
+
+    // Test: Escape discards unsaved inline edit changes
+    cy.getByTestId('record-item-').first().getByTestId('record-edit').click();
+    cy.getByTestId('record-item-').first().find('textarea').first().type('Should not save this');
+    cy.press('Escape');
+    cy.getByTestId('record-item-').first().should('not.contain.text', 'Should not save this');
+    cy.getByTestId('record-item-').first().should('contain.text', 'Saved by Relentless Endurance!');
+
     cy.getButton('Close').click();
 
     // Test: Override Hit Points
