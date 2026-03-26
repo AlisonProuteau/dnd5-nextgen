@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo } from 'react';
+import { Fragment, useCallback, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import {
   Box,
@@ -18,11 +18,19 @@ import {
   Select,
   Typography
 } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
+import { useQueries, useQuery } from '@tanstack/react-query';
 import { omit, uniqBy } from 'lodash';
 import { getClassInfo, getFeature, getTrait } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
-import { formatUsageLabelText, getUsageTimes, getUsageType, getUsageTypeLabel } from '@utils/index';
+import {
+  createQueryCombiner,
+  formatUsageLabelText,
+  getRelatedFeatures,
+  getUsageTimes,
+  getUsageType,
+  getUsageTypeLabel
+} from '@utils/index';
+import { Feature } from '@representations/abilities/feature.representation';
 import { Classes } from '@representations/character/class.representation';
 import { Usage } from '@representations/common.representation';
 import { ActionRecordType, Character } from '@representations/user.representation';
@@ -103,14 +111,29 @@ export function ActionRecordForm({
     enabled: !!sourceIndex && type === 'feature' && open
   });
 
+  const selectedResource = useMemo(() => trait ?? feature, [trait, feature]);
+
+  const { data: fullFeatures } = useQueries({
+    queries:
+      uniqBy(character.features, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled:
+          !!index && (selectedResource ? getRelatedFeatures([selectedResource]).length > 0 : false)
+      })) || [],
+    combine: useCallback(createQueryCombiner<Feature>(), [])
+  });
+
   const usageInfo = useMemo(() => {
-    const selectedResource = trait ?? feature;
     if (!selectedResource?.usage) return null;
     const max = getUsageTimes(selectedResource.usage, character);
-    const current = character.resourceUsages?.[selectedResource.index]?.current ?? 0;
-    const usageType = getUsageType(selectedResource.usage, []);
-    const label = getUsageTypeLabel(usageType);
-    return { current, max: max === Infinity ? undefined : max, label };
+
+    const current = character.resourceUsages?.[selectedResource.index];
+    const label = getUsageTypeLabel(
+      current?.usage ?? getUsageType(selectedResource.usage, fullFeatures)
+    );
+
+    return { current: current?.current ?? 0, max: max === Infinity ? undefined : max, label };
   }, [trait, feature, character]);
 
   const spells = useMemo(() => {
@@ -147,7 +170,7 @@ export function ActionRecordForm({
   }, [open, reset]);
 
   const handleFormSubmit = handleSubmit(async (data) => {
-    await onSubmit({ ...data, name: data.name.trim(), usage: (trait ?? feature)?.usage });
+    await onSubmit({ ...data, name: data.name.trim(), usage: selectedResource?.usage });
   });
 
   const availableTypes = useMemo(() => {
