@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { Box, List, Typography } from '@mui/material';
+import { Fragment, useMemo } from 'react';
+import { Box, Button, List, Typography } from '@mui/material';
+import { Dayjs } from 'dayjs';
 import { Loader } from '@shared/Loader';
 import { ScrollableContainer } from '@shared/ScrollableContainer';
 import { groupByDay } from '@utils/date.utils';
@@ -13,6 +14,8 @@ interface ActionRecordListProps {
   onDelete: (id: string) => void;
   onEditDescription: (id: string, description: string) => Promise<boolean>;
   filter: FilterType;
+  dateFrom: Dayjs | null;
+  dateTo: Dayjs | null;
   isLoading?: boolean;
 }
 
@@ -21,16 +24,31 @@ export function ActionRecordList({
   onDelete,
   onEditDescription,
   filter,
+  dateFrom,
+  dateTo,
   isLoading
 }: ActionRecordListProps) {
-  const recordsByDay = useMemo(
-    () => groupByDay(filter === 'all' ? records : records.filter((r) => r.type === filter)),
-    [filter, records]
-  );
+  const filteredRecords = useMemo(() => {
+    const from = dateFrom?.isValid() ? dateFrom?.startOf('day').toDate() : undefined;
+    const to = dateTo?.isValid() ? dateTo?.endOf('day').toDate() : undefined;
+
+    return records.filter((r) => {
+      if (from && r.createdAt < from) return false;
+      if (to && r.createdAt > to) return false;
+      if (filter !== 'all' && r.type !== filter) return false;
+
+      return true;
+    });
+  }, [records, dateFrom, dateTo, filter]);
+
+  const clearAllRecords = async () => {
+    if (!filteredRecords) return;
+    for (const record of filteredRecords) onDelete(record.id);
+  };
 
   return isLoading ? (
     <Loader />
-  ) : recordsByDay.length === 0 ? (
+  ) : filteredRecords.length === 0 ? (
     <Typography
       variant="body2"
       color="text.secondary"
@@ -43,28 +61,45 @@ export function ActionRecordList({
       Your actions will be tracked here as you play, or log your own at any time.
     </Typography>
   ) : (
-    <ScrollableContainer>
-      {recordsByDay.map(([day, dayRecords]) => (
-        <Box key={day}>
-          <Box>
-            <Typography variant="overline" color="text.secondary">
-              {day}
-            </Typography>
-          </Box>
+    <Fragment>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mt={-1.5}>
+        <Typography variant="subtitle2" color="text.secondary">
+          {filteredRecords.length} record{filteredRecords.length > 1 ? 's' : ''}
+        </Typography>
+        <Button
+          data-testid="clear-all-records"
+          color="error"
+          onClick={clearAllRecords}
+          disabled={!filteredRecords?.length}
+          size="small"
+        >
+          Clear All
+        </Button>
+      </Box>
 
-          <List disablePadding dense>
-            {dayRecords.map((record, i) => (
-              <RecordItem
-                key={record.id}
-                record={record}
-                onDelete={onDelete}
-                onEditDescription={onEditDescription}
-                showDivider={i < dayRecords.length - 1}
-              />
-            ))}
-          </List>
-        </Box>
-      ))}
-    </ScrollableContainer>
+      <ScrollableContainer>
+        {groupByDay(filteredRecords).map(([day, dayRecords]) => (
+          <Box key={day}>
+            <Box>
+              <Typography variant="overline" color="text.secondary">
+                {day}
+              </Typography>
+            </Box>
+
+            <List disablePadding dense>
+              {dayRecords.map((record, i) => (
+                <RecordItem
+                  key={record.id}
+                  record={record}
+                  onDelete={onDelete}
+                  onEditDescription={onEditDescription}
+                  showDivider={i < dayRecords.length - 1}
+                />
+              ))}
+            </List>
+          </Box>
+        ))}
+      </ScrollableContainer>
+    </Fragment>
   );
 }

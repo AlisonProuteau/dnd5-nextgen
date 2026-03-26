@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { Add, Clear } from '@mui/icons-material';
 import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -58,25 +58,12 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
       (user?.uid ? await getActionRecords(user.uid, character.id) : null)?.sort(
         (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
       ),
-    enabled: !!user?.uid && !!character.id && isOpen
+    enabled: !!user?.uid && !!character.id
   });
 
   useEffect(() => {
     if (!isOpen) refetchRecords();
   }, [isOpen]);
-
-  const filteredRecords = useMemo(() => {
-    let result = records?.flat().filter(Boolean) ?? [];
-    if (dateFrom?.isValid()) {
-      const from = dateFrom.startOf('day').toDate();
-      result = result.filter((r) => r.createdAt >= from);
-    }
-    if (dateTo?.isValid()) {
-      const to = dateTo.endOf('day').toDate();
-      result = result.filter((r) => r.createdAt <= to);
-    }
-    return result;
-  }, [records, dateFrom, dateTo]);
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
     if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
@@ -230,12 +217,14 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
           </Box>
 
           <ActionRecordList
-            records={filteredRecords}
+            records={records ?? []}
             onDelete={handleRemove}
             onEditDescription={async (id: string, description: string) =>
               await updateAction(id, { description: description.trim() || undefined })
             }
             filter={filter}
+            dateFrom={dateFrom}
+            dateTo={dateTo}
             isLoading={isFetching}
           />
 

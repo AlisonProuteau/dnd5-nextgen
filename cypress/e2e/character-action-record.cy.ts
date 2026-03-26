@@ -356,6 +356,19 @@ describe('Character Action Record End-to-End', () => {
       .and('not.contain.text', 'Past Session Notes');
     cy.getByTestId('date-filter-clear').click();
     cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId(`action-record-drawer`).should('contain.text', '8 records');
+
+    // Test: Clear All
+    cy.getByRole('button', 'Custom').click();
+    cy.getByTestId('record-item-').should('have.length', 2);
+    cy.getByTestId(`action-record-drawer`).should('contain.text', '2 records');
+    cy.getByTestId('clear-all-records').click();
+    cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
+    cy.getByRole('button', 'All').click();
+    cy.getByTestId('record-item-').should('have.length', 6);
+    cy.getByTestId(`action-record-drawer`).should('contain.text', '6 records');
+    cy.getByTestId('clear-all-records').click();
+    cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
 
     cy.getButton('Close').click();
     cy.clickUntilStep('characteristics');
@@ -622,7 +635,7 @@ describe('Character Action Record End-to-End', () => {
       .and('contain.text', 'failure');
     cy.getByTestId('record-item-').eq(1).should('contain.text', 'Took Damage');
 
-    // Test: Failure incremented twice without closing the dialog
+    // Test: Failure incremented twice in the same dialog session
     cy.getButton('Close').click();
     cy.getByTestId(`health-${actionRecordChar.id}`).click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
@@ -633,7 +646,7 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('status', 'Health Updated').should('be.visible');
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 11);
+    cy.getByTestId('record-item-').should('have.length', 10);
     cy.getByTestId('record-item-')
       .eq(0)
       .should('contain.text', 'Death Save')
@@ -642,11 +655,7 @@ describe('Character Action Record End-to-End', () => {
       .eq(1)
       .should('contain.text', 'Death Save')
       .and('contain.text', 'failure');
-    cy.getByTestId('record-item-')
-      .eq(2)
-      .should('contain.text', 'Death Save')
-      .and('contain.text', 'failure');
-    cy.getByTestId('record-item-').eq(3).should('contain.text', 'Took Damage');
+    cy.getByTestId('record-item-').eq(2).should('contain.text', 'Took Damage');
 
     // Test: Success and failure changed in the same session
     cy.getButton('Close').click();
@@ -659,7 +668,7 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('status', 'Health Updated').should('be.visible');
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 13);
+    cy.getByTestId('record-item-').should('have.length', 12);
     cy.getByTestId('record-item-')
       .eq(0)
       .should('contain.text', 'Death Save')
@@ -679,7 +688,7 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('status', 'Health Updated').should('be.visible');
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 14);
+    cy.getByTestId('record-item-').should('have.length', 13);
     cy.getByTestId('record-item-').eq(0).should('contain.text', 'Healed');
 
     // Test: Cancel discards the entire backlog – no new records logged
@@ -691,9 +700,9 @@ describe('Character Action Record End-to-End', () => {
       cy.wrap($dialog).getButton('Cancel').click();
     });
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 14);
+    cy.getByTestId('record-item-').should('have.length', 13);
 
-    // Test: Reset button clears the backlog – saving after reset produces no new records
+    // Test: Reset button logs a "Reset Health" summary record
     cy.getButton('Close').click();
     cy.getByTestId(`health-${actionRecordChar.id}`).click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
@@ -706,5 +715,13 @@ describe('Character Action Record End-to-End', () => {
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
     cy.getByTestId('record-item-').should('have.length', 14);
+    cy.getByTestId('record-item-')
+      .eq(0)
+      .should('contain.text', 'Reset Health')
+      .and('contain.text', 'Current HP: 3 -> 8')
+      .and('contain.text', 'Reset Racial Ability uses')
+      .and('contain.text', 'Pending Logs:')
+      .and('contain.text', 'Took Damage: -3 HP')
+      .and('contain.text', 'Death Save: 2 failure');
   });
 });

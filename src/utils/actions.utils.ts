@@ -79,6 +79,48 @@ export const getDeathSavesActionRecordData = (
   };
 };
 
+type HealthDataType = {
+  current: number;
+  temporary: number;
+  deathSaves: {
+    successes: number;
+    failures: number;
+    usedSaves: number;
+  };
+};
+export const getResetHealthActionRecordData = (
+  currentHealth: number,
+  previousData: HealthDataType,
+  pendingLogs: Omit<ActionRecord, 'id' | 'createdAt'>[]
+): Pick<ActionRecord, 'name' | 'description'> | undefined => {
+  const changes = [
+    previousData.current !== currentHealth &&
+      `Current HP: ${previousData.current} -> ${currentHealth}`,
+    previousData.temporary !== 0 && `Temporary HP: ${previousData.temporary} -> 0`,
+    previousData.deathSaves.successes !== 0 &&
+      `Death Saves Successes: ${previousData.deathSaves.successes} -> 0`,
+    previousData.deathSaves.failures !== 0 &&
+      `Death Saves Failures: ${previousData.deathSaves.failures} -> 0`,
+    previousData.deathSaves.usedSaves !== 0 && 'Reset Racial Ability uses'
+  ].filter(Boolean) as string[];
+
+  const healthLogs = pendingLogs
+    .filter(({ type }) => type === 'health')
+    .map(
+      (log) =>
+        `\t${log.name}: ${log.value} ${log.valueUnit}${log.description ? ` (${log.description})` : ''}`
+    );
+
+  return changes.length || healthLogs.length
+    ? {
+        name: 'Reset Health',
+        description: changes
+          .concat(changes.length && healthLogs.length ? [''] : [], ['Pending Logs:', ...healthLogs])
+          .join('\n')
+      }
+    : undefined;
+};
+
 export const getSpellActionRecordData = (
   spell: Spell,
   slotLevel: number | 'ritual'
