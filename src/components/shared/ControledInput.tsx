@@ -53,7 +53,9 @@ export function ControledInput({
           <OutlinedInput
             {...field}
             {...props}
-            value={!hiddenValues?.includes(field.value) && field.value ? field.value : ''}
+            value={
+              !hiddenValues?.includes(field.value) && field.value !== undefined ? field.value : ''
+            }
             autoComplete={props.autoComplete ?? props.id}
             onChange={(e) =>
               onChange ? onChange(e, e.target.value) : field.onChange(e.target.value)

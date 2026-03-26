@@ -338,7 +338,8 @@ Cypress.Commands.add(
   (step: string, type: 'previous' | 'next' = 'next', i = 1) => {
     cy.getByTestId(`${type}-step`).click();
     return cy.getByTestId('-section', { type: 'contains' }).then((el) => {
-      const currentLabel = el.attr('data-testId')?.replace('-section', '') || '';
+      const currentLabel =
+        (el.attr('data-testid') ?? el.attr('data-testId'))?.replace('-section', '') || '';
       const maxReached = i >= 6;
 
       if (maxReached && currentLabel !== step)

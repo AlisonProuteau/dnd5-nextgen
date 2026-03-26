@@ -109,17 +109,20 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
   const handleRemove = async (id: string) => {
     const success = await removeAction(id);
 
-    const sourceIndex = records?.flat().find((r) => r?.id === id)?.sourceIndex;
-    if (success && sourceIndex) {
-      const existing = character.resourceUsages?.[sourceIndex];
-      if (existing) {
-        await characterCrud.update(character.id, {
-          [`resourceUsages.${sourceIndex}`]: {
-            ...existing,
-            current: Math.max(0, existing.current - 1)
-          }
-        });
-      }
+    const record = records?.flat().find((r) => r?.id === id);
+    const existing = character.resourceUsages?.[record?.sourceIndex || ''];
+    if (
+      success &&
+      (record?.type === 'feature' || record?.type === 'trait') &&
+      record?.sourceIndex &&
+      existing
+    ) {
+      await characterCrud.update(character.id, {
+        [`resourceUsages.${record.sourceIndex}`]: {
+          ...existing,
+          current: Math.max(0, existing.current - 1)
+        }
+      });
     }
   };
 

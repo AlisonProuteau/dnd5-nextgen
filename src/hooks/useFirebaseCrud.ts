@@ -128,6 +128,11 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     try {
       const docRef = doc(database, path, id);
       const cleanData = stripUndefined(data) as T;
+      if (!cleanData || Object.keys(cleanData).length === 0) {
+        toast.error('No valid fields to update');
+        return false;
+      }
+
       DEV_MODE
         ? await asyncCallWithTimeout(updateDoc(docRef, cleanData), TIMEOUT)
         : await updateDoc(docRef, cleanData);
