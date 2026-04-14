@@ -134,7 +134,7 @@ export function ActionRecordForm({
     );
 
     return { current: current?.current ?? 0, max: max === Infinity ? undefined : max, label };
-  }, [trait, feature, character]);
+  }, [selectedResource, character, fullFeatures]);
 
   const spells = useMemo(() => {
     const known = character.knownSpells ?? [];

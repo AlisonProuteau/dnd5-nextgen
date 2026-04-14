@@ -246,21 +246,31 @@ describe('Character Action Record End-to-End', () => {
     cy.get('@customRecord').getByTestId('record-delete').should('exist');
 
     // Test: Inline edit: save via click, save via keyboard, clear description
-    cy.get('@customRecord').getByTestId('record-edit').click();
-    cy.get('@customRecord').find('textarea').first().clear().type('Updated description');
-    cy.get('@customRecord').getByTestId('record-edit').click();
-    cy.get('@customRecord')
-      .should('contain.text', 'Updated description')
-      .and('not.contain.text', 'Hit the goblin scout');
+    cy.get('@customRecord').within(($record) => {
+      cy.wrap($record).getByTestId('record-edit').click();
+      cy.wrap($record).getByTestId('record-edit').should('not.exist');
+      cy.wrap($record).find('textarea').first().clear().type('Updated description');
+      cy.wrap($record).getByTestId('record-save').click();
+      cy.wrap($record).getByTestId('record-save').should('not.exist');
+      cy.wrap($record)
+        .should('contain.text', 'Updated description')
+        .and('not.contain.text', 'Hit the goblin scout');
 
-    cy.get('@customRecord').getByTestId('record-edit').click();
-    cy.get('@customRecord').find('textarea').first().clear().type('Saved via keyboard{ctrl+enter}');
-    cy.get('@customRecord').should('contain.text', 'Saved via keyboard');
+      cy.wrap($record).getByTestId('record-edit').click();
+      cy.wrap($record)
+        .find('textarea')
+        .first()
+        .clear()
+        .type('Saved via keyboard')
+        .type('{ctrl+enter}');
+      cy.wrap($record).getByTestId('record-save').should('not.exist');
+      cy.wrap($record).should('contain.text', 'Saved via keyboard');
 
-    cy.get('@customRecord').getByTestId('record-edit').click();
-    cy.get('@customRecord').find('textarea').first().clear();
-    cy.get('@customRecord').getByTestId('record-edit').click();
-    cy.get('@customRecord').should('not.contain.text', 'Saved via keyboard');
+      cy.wrap($record).getByTestId('record-edit').click();
+      cy.wrap($record).find('textarea').first().clear();
+      cy.wrap($record).getByTestId('record-save').click();
+      cy.wrap($record).should('not.contain.text', 'Saved via keyboard');
+    });
 
     // Test: Type switching resets the source and name fields
     cy.getByTestId('add-action-record').click();

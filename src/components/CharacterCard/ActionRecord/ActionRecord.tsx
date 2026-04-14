@@ -2,13 +2,15 @@ import { Fragment, useEffect, useState } from 'react';
 import { Add, Clear } from '@mui/icons-material';
 import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Dayjs } from 'dayjs';
+import { getFeature } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { getUsageType } from '@utils/index';
+import { getRelatedFeatures, getUsageType } from '@utils/index';
+import { Feature } from '@representations/abilities/feature.representation';
 import type {
   Character,
   ActionRecordType as FilterType
@@ -35,6 +37,7 @@ interface ActionRecordProps {
 
 export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterType | 'all'>('all');
   const [dateFrom, setDateFrom] = useState<Dayjs | null>(null);
   const [dateTo, setDateTo] = useState<Dayjs | null>(null);
@@ -68,7 +71,18 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
   const handleAddCustom = async (data: ActionRecordFormData) => {
     if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
       const current = character.resourceUsages?.[data.sourceIndex]?.current ?? 0;
-      const usageType = getUsageType(data.usage, []);
+      const fullFeatures: Feature[] = (
+        await Promise.all(
+          getRelatedFeatures([data]).map((index) =>
+            queryClient.fetchQuery({
+              queryKey: ['fetchFeature', character.version, index],
+              queryFn: async () => await getFeature(character.version || 'Legacy', index)
+            })
+          )
+        )
+      ).filter((f): f is Feature => !!f);
+
+      const usageType = getUsageType(data.usage, fullFeatures);
       await characterCrud.update(character.id, {
         [`resourceUsages.${data.sourceIndex}`]: {
           type: data.type,
@@ -223,7 +237,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
             records={records ?? []}
             onDelete={handleRemove}
             onEditDescription={async (id: string, description: string) =>
-              await updateAction(id, { description: description.trim() || undefined })
+              await updateAction(id, { description: description.trim() || null })
             }
             filter={filter}
             dateFrom={dateFrom}

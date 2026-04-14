@@ -53,6 +53,11 @@ export function HealthManager({
     turnOn: openConfirmDialog,
     turnOff: closeConfirmDialog
   } = useToggle(false);
+  const {
+    isOn: isPreOverrideDialogOpen,
+    turnOn: openPreOverrideDialog,
+    turnOff: closePreOverrideDialog
+  } = useToggle(false);
   const [health, setHealth] = useState({
     current: character.health?.current ?? character.hit_points ?? 0,
     temporary: character.health?.temporary || 0,
@@ -123,13 +128,15 @@ export function HealthManager({
     ]
   );
 
+  const resetHealth = useCallback(() => {
+    setHealth(initialHealth);
+    setOverrideHitPoints(false);
+    pendingLogs.current = [];
+  }, [initialHealth]);
+
   useEffect(() => {
-    if (isHealthDialogOpen) {
-      setHealth(initialHealth);
-      setOverrideHitPoints(false);
-      pendingLogs.current = [];
-    }
-  }, [isHealthDialogOpen, initialHealth]);
+    if (isHealthDialogOpen) resetHealth();
+  }, [isHealthDialogOpen, resetHealth]);
 
   useEffect(() => {
     if (
@@ -235,7 +242,7 @@ export function HealthManager({
     );
 
     if (success) for (const log of pendingLogs.current) await logAction(log);
-    closeHealthDialog();
+    return success;
   };
 
   return (
@@ -268,7 +275,11 @@ export function HealthManager({
                 <Checkbox
                   sx={{ padding: 0, paddingRight: 0.25 }}
                   checked={overrideHitPoints}
-                  onChange={(_, checked) => setOverrideHitPoints(checked)}
+                  onChange={(_, checked) =>
+                    checked && !isEqual(initialHealth, health)
+                      ? openPreOverrideDialog()
+                      : setOverrideHitPoints(checked)
+                  }
                 />
               }
             />
@@ -427,7 +438,10 @@ export function HealthManager({
                 (overrideHitPoints &&
                   (health.current === 0 || health.current === character.hit_points))
               }
-              onClick={onSave}
+              onClick={async () => {
+                await onSave();
+                closeHealthDialog();
+              }}
             >
               {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
             </Button>
@@ -437,7 +451,7 @@ export function HealthManager({
       </Dialog>
 
       <Dialog open={isConfirmDialogOpen} onClose={closeConfirmDialog}>
-        <Box display="flex" flexDirection="column" p={3} gap={2}>
+        <Box display="flex" flexDirection="column" p={3} gap={2} m={1}>
           <Typography variant="h6">Leave without saving your changes?</Typography>
           <Box display="flex" justifyContent="flex-end" gap={2}>
             <Button
@@ -449,6 +463,43 @@ export function HealthManager({
               Yes
             </Button>
             <Button onClick={closeConfirmDialog}>No</Button>
+          </Box>
+        </Box>
+      </Dialog>
+
+      <Dialog open={isPreOverrideDialogOpen} onClose={closePreOverrideDialog} sx={{ m: 2 }}>
+        <Box display="flex" flexDirection="column" p={3} gap={2}>
+          <Typography variant="h6">Unsaved Changes</Typography>
+          <Typography variant="body2">
+            Save or discard your unsaved changes before permanently modifying your character's hit
+            points.
+            <br />
+            <Typography variant="caption" color="warning.main">
+              Discarded changes and action records cannot be recovered.
+            </Typography>
+          </Typography>
+
+          <Box display="flex" justifyContent="flex-end" gap={2}>
+            <Button
+              onClick={async () => {
+                await onSave();
+                setOverrideHitPoints(true);
+                closePreOverrideDialog();
+              }}
+              disabled={firebaseCrud.isLoading}
+            >
+              {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
+            </Button>
+            <Button
+              onClick={() => {
+                resetHealth();
+                setOverrideHitPoints(true);
+                closePreOverrideDialog();
+              }}
+            >
+              Discard
+            </Button>
+            <Button onClick={closePreOverrideDialog}>Cancel</Button>
           </Box>
         </Box>
       </Dialog>

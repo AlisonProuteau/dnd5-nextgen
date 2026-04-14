@@ -21,6 +21,7 @@ import {
   Typography
 } from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
+import { Loader } from '@shared/Loader';
 import { formatDate } from '@utils/date.utils';
 import type { ActionRecord, ActionRecordType } from '@representations/user.representation';
 
@@ -41,13 +42,17 @@ interface RecordItemProps {
 }
 
 export function RecordItem({ record, onDelete, onEditDescription, showDivider }: RecordItemProps) {
+  const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setEditing] = useState(false);
   const [description, setDescription] = useState(record.description ?? '');
 
   const onEditSave = async (id: string) => {
+    setIsSaving(true);
     if (record.description !== description) await onEditDescription(id, description);
     setEditing(false);
+    setIsSaving(false);
   };
+
   const onEditCancel = () => {
     setDescription(record.description ?? '');
     setEditing(false);
@@ -74,18 +79,24 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
         slotProps={{ root: { style: { paddingRight: !record.auto ? '72px' : '48px' } } }}
         secondaryAction={
           <Box display="flex" gap={0.25}>
-            <IconButton
-              size="small"
-              edge="end"
-              data-testid="record-edit"
-              onClick={() => (isEditing ? onEditSave(record.id) : setEditing(true))}
-            >
-              {isEditing ? (
-                <CheckCircle fontSize="small" color="primary" />
-              ) : (
-                <Edit fontSize="small" />
-              )}
-            </IconButton>
+            {isSaving ? (
+              <Loader />
+            ) : (
+              <IconButton
+                size="small"
+                edge="end"
+                data-testid={`record-${isEditing ? 'save' : 'edit'}`}
+                onClick={() => (isEditing ? onEditSave(record.id) : setEditing(true))}
+                disabled={isSaving}
+              >
+                {isEditing ? (
+                  <CheckCircle fontSize="small" color="primary" />
+                ) : (
+                  <Edit fontSize="small" />
+                )}
+              </IconButton>
+            )}
+
             {!record.auto && (
               <IconButton
                 size="small"

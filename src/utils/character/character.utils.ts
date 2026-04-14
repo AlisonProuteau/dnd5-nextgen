@@ -390,7 +390,7 @@ export const getUsageType = (
   return getUsageType(relatedFeatureUsage, features, allRelatedFeatures);
 };
 
-export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
+export const getRelatedFeatures = (resources: Pick<Feature | Trait, 'usage'>[]) => {
   const usages =
     resources?.flatMap(({ usage }) => usage).filter((usage): usage is Usage => !!usage) || [];
   const relatedFeatures = usages

@@ -94,7 +94,7 @@ export interface ActionRecord {
   id: string;
   type: ActionRecordType;
   name: string;
-  description?: string;
+  description?: string | null;
   value?: number;
   valueUnit?: string;
   equipment?: DefaultRepresentation;
