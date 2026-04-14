@@ -115,7 +115,8 @@ export const getResetHealthActionRecordData = (
     ? {
         name: 'Reset Health',
         description: changes
-          .concat(changes.length && healthLogs.length ? [''] : [], ['Pending Logs:', ...healthLogs])
+          .concat(changes.length && healthLogs.length ? [''] : [])
+          .concat(healthLogs.length ? ['Pending Logs:', ...healthLogs] : [])
           .join('\n')
       }
     : undefined;

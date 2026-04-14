@@ -4,14 +4,13 @@ import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Dayjs } from 'dayjs';
-import { increment } from 'firebase/firestore';
 import { getFeature } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
-import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { getRelatedFeatures, getUsageType } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
+import type { UsageTypes } from '@representations/common.representation';
 import type {
   Character,
   ActionRecordType as FilterType
@@ -51,10 +50,6 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
     isLoading: isActioning,
     refetchRecords
   } = useActionRecord(character.id);
-  const characterCrud = useFirebaseCrud({
-    collectionPath: 'users/{userId}/characters',
-    invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
-  });
 
   const { data: records, isFetching } = useQuery({
     queryKey: ['fetchActionRecords', user?.uid, character.id],
@@ -70,6 +65,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
   }, [isOpen]);
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
+    let resourceUsageMeta: { usage: UsageTypes | UsageTypes[] } | undefined;
     if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
       const fullFeatures: Feature[] = (
         await Promise.all(
@@ -81,13 +77,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
           )
         )
       ).filter((f): f is Feature => !!f);
-
-      const usageType = getUsageType(data.usage, fullFeatures);
-      await characterCrud.update(character.id, {
-        [`resourceUsages.${data.sourceIndex}.type`]: data.type,
-        [`resourceUsages.${data.sourceIndex}.usage`]: usageType,
-        [`resourceUsages.${data.sourceIndex}.current`]: increment(1)
-      });
+      resourceUsageMeta = { usage: getUsageType(data.usage, fullFeatures) };
     }
 
     const baseAction = {
@@ -113,25 +103,10 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
             ...baseAction,
             equipment: { index: equipment.index, name: equipment.name }
           }
-        : baseAction
+        : baseAction,
+      resourceUsageMeta
     );
     closeForm();
-  };
-
-  const handleRemove = async (id: string) => {
-    const success = await removeAction(id);
-
-    const record = records?.flat().find((r) => r?.id === id);
-    if (
-      success &&
-      (record?.type === 'feature' || record?.type === 'trait') &&
-      record?.sourceIndex &&
-      character.resourceUsages?.[record.sourceIndex]
-    ) {
-      await characterCrud.update(character.id, {
-        [`resourceUsages.${record.sourceIndex}.current`]: increment(-1)
-      });
-    }
   };
 
   return (
@@ -229,7 +204,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
           <ActionRecordList
             records={records ?? []}
-            onDelete={handleRemove}
+            onDelete={removeAction}
             onEditDescription={async (id: string, description: string) =>
               await updateAction(id, { description: description.trim() || null })
             }

@@ -11,7 +11,7 @@ type FilterType = ActionRecordType | 'all';
 
 interface ActionRecordListProps {
   records: ActionRecord[];
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<boolean>;
   onEditDescription: (id: string, description: string) => Promise<boolean>;
   filter: FilterType;
   dateFrom: Dayjs | null;

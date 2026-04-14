@@ -37,7 +37,7 @@ export const TYPE_CONFIG_ICON: Record<ActionRecordType, ReactNode> = {
 interface RecordItemProps {
   record: ActionRecord;
   onEditDescription: (id: string, description: string) => Promise<boolean>;
-  onDelete: (id: string) => Promise<void>;
+  onDelete: (id: string) => Promise<boolean>;
   showDivider: boolean;
 }
 

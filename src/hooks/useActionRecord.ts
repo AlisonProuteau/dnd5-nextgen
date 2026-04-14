@@ -1,7 +1,11 @@
 import { useCallback, useMemo } from 'react';
+import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
+import type { UsageTypes } from '@representations/common.representation';
 import type { ActionRecord } from '@representations/user.representation';
+import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 import { useFirebaseCrud } from './useFirebaseCrud';
 
@@ -18,6 +22,11 @@ export const useActionRecord = (characterId: string) => {
 
   const queryKey = useMemo(
     () => ['fetchActionRecords', user?.uid, characterId],
+    [user?.uid, characterId]
+  );
+
+  const characterQueryKey = useMemo(
+    () => ['fetchCharacter', user?.uid, characterId],
     [user?.uid, characterId]
   );
 
@@ -42,14 +51,36 @@ export const useActionRecord = (characterId: string) => {
   };
 
   const logAction = useCallback(
-    async (record: Omit<ActionRecord, 'id' | 'createdAt'>) => {
+    async (
+      record: Omit<ActionRecord, 'id' | 'createdAt'>,
+      resourceUsageMeta?: { usage: UsageTypes | UsageTypes[] }
+    ) => {
       const formatted = formatActionRecord(record);
       const id = await firebaseCrud.create(formatted, false);
-      if (id) optimiticUpdateRecord((old) => [{ ...formatted, id } as ActionRecord, ...old]);
-
+      if (id) {
+        optimiticUpdateRecord((old) => [{ ...formatted, id } as ActionRecord, ...old]);
+        if (
+          (record.type === 'feature' || record.type === 'trait') &&
+          record.sourceIndex &&
+          user?.uid &&
+          resourceUsageMeta
+        ) {
+          try {
+            await updateDoc(doc(database, `users/${user.uid}/characters`, characterId), {
+              [`resourceUsages.${record.sourceIndex}.type`]: record.type,
+              [`resourceUsages.${record.sourceIndex}.usage`]: resourceUsageMeta.usage,
+              [`resourceUsages.${record.sourceIndex}.current`]: increment(1)
+            });
+            await queryClient.invalidateQueries({ queryKey: characterQueryKey });
+          } catch (error) {
+            toast.error(`Update failed: 
+              ${(error as Error).message}`);
+          }
+        }
+      }
       return id;
     },
-    [firebaseCrud]
+    [firebaseCrud, user?.uid, characterQueryKey]
   );
 
   const updateAction = useCallback(
@@ -65,10 +96,39 @@ export const useActionRecord = (characterId: string) => {
   const removeAction = useCallback(
     async (id: string) => {
       const success = await firebaseCrud.remove(id, false);
-      if (success) optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
+      if (success) {
+        optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
+
+        const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
+        if (
+          (record?.type === 'feature' || record?.type === 'trait') &&
+          record?.sourceIndex &&
+          user?.uid
+        ) {
+          try {
+            const charDocRef = doc(database, `users/${user.uid}/characters`, characterId);
+            await runTransaction(database, async (transaction) => {
+              const snap = await transaction.get(charDocRef);
+              if (!snap.exists()) return;
+
+              const current: number =
+                snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
+              if (current <= 0) return;
+
+              transaction.update(charDocRef, {
+                [`resourceUsages.${record.sourceIndex}.current`]: current - 1
+              });
+            });
+            await queryClient.invalidateQueries({ queryKey: characterQueryKey });
+          } catch (error) {
+            toast.error(`Update failed: 
+            ${(error as Error).message}`);
+          }
+        }
+      }
       return success;
     },
-    [firebaseCrud]
+    [firebaseCrud, user?.uid, queryKey, characterQueryKey]
   );
 
   return {
