@@ -4,6 +4,7 @@ import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Dayjs } from 'dayjs';
+import { increment } from 'firebase/firestore';
 import { getFeature } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
@@ -70,7 +71,6 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
     if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
-      const current = character.resourceUsages?.[data.sourceIndex]?.current ?? 0;
       const fullFeatures: Feature[] = (
         await Promise.all(
           getRelatedFeatures([data]).map((index) =>
@@ -84,11 +84,9 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
       const usageType = getUsageType(data.usage, fullFeatures);
       await characterCrud.update(character.id, {
-        [`resourceUsages.${data.sourceIndex}`]: {
-          type: data.type,
-          usage: usageType,
-          current: current + 1
-        }
+        [`resourceUsages.${data.sourceIndex}.type`]: data.type,
+        [`resourceUsages.${data.sourceIndex}.usage`]: usageType,
+        [`resourceUsages.${data.sourceIndex}.current`]: increment(1)
       });
     }
 
@@ -124,18 +122,14 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
     const success = await removeAction(id);
 
     const record = records?.flat().find((r) => r?.id === id);
-    const existing = character.resourceUsages?.[record?.sourceIndex || ''];
     if (
       success &&
       (record?.type === 'feature' || record?.type === 'trait') &&
       record?.sourceIndex &&
-      existing
+      character.resourceUsages?.[record.sourceIndex]
     ) {
       await characterCrud.update(character.id, {
-        [`resourceUsages.${record.sourceIndex}`]: {
-          ...existing,
-          current: Math.max(0, existing.current - 1)
-        }
+        [`resourceUsages.${record.sourceIndex}.current`]: increment(-1)
       });
     }
   };

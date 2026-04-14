@@ -439,8 +439,8 @@ export function HealthManager({
                   (health.current === 0 || health.current === character.hit_points))
               }
               onClick={async () => {
-                await onSave();
-                closeHealthDialog();
+                const success = await onSave();
+                if (success) closeHealthDialog();
               }}
             >
               {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
@@ -482,9 +482,11 @@ export function HealthManager({
           <Box display="flex" justifyContent="flex-end" gap={2}>
             <Button
               onClick={async () => {
-                await onSave();
-                setOverrideHitPoints(true);
-                closePreOverrideDialog();
+                const success = await onSave();
+                if (success) {
+                  setOverrideHitPoints(true);
+                  closePreOverrideDialog();
+                }
               }}
               disabled={firebaseCrud.isLoading}
             >

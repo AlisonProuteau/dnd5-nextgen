@@ -107,12 +107,12 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
       };
       if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
-        setUsedSlots(newUsedSlots);
         success = await firebaseCrud.update(
           character.id,
           { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
           false
         );
+        if (success) setUsedSlots(newUsedSlots);
       } else toast.error(`No spell slots of level ${slotLevel} available`);
     }
 
