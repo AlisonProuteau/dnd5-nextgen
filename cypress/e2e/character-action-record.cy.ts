@@ -595,16 +595,22 @@ describe('Character Action Record End-to-End', () => {
       .within(($el) => {
         cy.wrap($el).getByTestId('record-edit').click();
         cy.wrap($el).find('textarea').first().type('Saved by Relentless Endurance!');
-        cy.wrap($el).getByTestId('record-edit').click();
+        cy.wrap($el).getByTestId('record-save').click();
         cy.wrap($el).should('contain.text', 'Saved by Relentless Endurance!');
       });
 
     // Test: Escape discards unsaved inline edit changes
-    cy.getByTestId('record-item-').first().getByTestId('record-edit').click();
-    cy.getByTestId('record-item-').first().find('textarea').first().type('Should not save this');
-    cy.press('Escape');
-    cy.getByTestId('record-item-').first().should('not.contain.text', 'Should not save this');
-    cy.getByTestId('record-item-').first().should('contain.text', 'Saved by Relentless Endurance!');
+    cy.getByTestId('record-item-')
+      .first()
+      .within(($el) => {
+        cy.wrap($el).getByTestId('record-edit').click();
+        cy.wrap($el).getByTestId('record-save').should('be.visible');
+        cy.wrap($el).find('textarea').first().type('Should not save this');
+        cy.press('Escape');
+        cy.wrap($el).getByTestId('record-save').should('not.exist');
+        cy.wrap($el).should('not.contain.text', 'Should not save this');
+        cy.wrap($el).should('contain.text', 'Saved by Relentless Endurance!');
+      });
 
     cy.getButton('Close').click();
 
