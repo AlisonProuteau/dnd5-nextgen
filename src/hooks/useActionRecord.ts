@@ -95,11 +95,10 @@ export const useActionRecord = (characterId: string) => {
 
   const removeAction = useCallback(
     async (id: string) => {
+      const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
       const success = await firebaseCrud.remove(id, false);
       if (success) {
         optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
-
-        const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
         if (
           (record?.type === 'feature' || record?.type === 'trait') &&
           record?.sourceIndex &&
