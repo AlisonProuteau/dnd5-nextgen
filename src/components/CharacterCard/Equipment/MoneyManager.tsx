@@ -3,9 +3,11 @@ import { Controller, useForm } from 'react-hook-form';
 import { CoinsIcon } from '@assets';
 import { Box, Button, Dialog, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
+import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
+import { formatActionRecord, getMoneyActionRecordData } from '@utils/actions.utils';
 import { remainingMoneyInCopper, updatePurse } from '@utils/character/character.utils';
 import { getCoinColor } from '@utils/ui/ui.utils';
 import {
@@ -38,6 +40,7 @@ export function MoneyManager({
   });
   const money = watch();
 
+  const { logAction } = useActionRecord(characterId);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', characterId],
@@ -48,7 +51,11 @@ export function MoneyManager({
 
   const onSubmit = async (changes: MoneyObjectType) => {
     const updatedPurse = updatePurse(currentAmount, changes, additionalCurrencies);
-    await firebaseCrud.update(characterId, { money: updatedPurse });
+    const success = await firebaseCrud.update(characterId, { money: updatedPurse });
+
+    const actionRecordData = getMoneyActionRecordData(changes, currentAmount, updatedPurse);
+    if (success && actionRecordData) await logAction(formatActionRecord('money', actionRecordData));
+
     closeMoneyDialog();
   };
 

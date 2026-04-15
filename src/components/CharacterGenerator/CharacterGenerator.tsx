@@ -1,8 +1,8 @@
-/** Component parially Vibe coded using Gemini and ChatGPT */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { type ActionState } from '@utils/ui/generatedImages.utils';
 import BatchOptions from './components/BatchOptions';
 import CharacterForm from './components/CharacterForm';
 import PortraitDisplay from './components/PortraitDisplay';
@@ -13,6 +13,9 @@ export default function CharacterGenerator() {
   const [character, setCharacter] = useState<CharacterDetails | null>(null);
   const [prompt, setPrompt] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [initialCharUploadState, setInitialCharUploadState] = useState<ActionState>('idle');
+
+  useEffect(() => setInitialCharUploadState('idle'), [character]);
 
   return (
     <Container maxWidth="md">
@@ -25,9 +28,21 @@ export default function CharacterGenerator() {
           setIsLoading={setIsLoading}
           setCharacter={setCharacter}
         />
-        <PortraitDisplay character={character} isLoading={isLoading} />
+        <PortraitDisplay
+          character={character}
+          isLoading={isLoading}
+          uploadState={initialCharUploadState}
+          onUploadStateChange={setInitialCharUploadState}
+        />
         {prompt && <PromptDisplay prompt={prompt} />}
-        {character && <BatchOptions character={character} isLoading={isLoading} />}
+        {character && (
+          <BatchOptions
+            character={character}
+            isLoading={isLoading}
+            initialCharUploadState={initialCharUploadState}
+            onInitialCharUploadStateChange={setInitialCharUploadState}
+          />
+        )}
       </Box>
     </Container>
   );

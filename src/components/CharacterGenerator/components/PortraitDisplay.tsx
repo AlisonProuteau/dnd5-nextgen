@@ -6,12 +6,15 @@ import ActionButton from './ActionButton';
 
 export default function PortraitDisplay({
   isLoading,
-  character
+  character,
+  uploadState,
+  onUploadStateChange
 }: {
   isLoading: boolean;
   character: CharacterDetails | null;
+  uploadState: ActionState;
+  onUploadStateChange: (state: ActionState) => void;
 }) {
-  const [uploadState, setUploadState] = useState<ActionState>('idle');
   const [downloadState, setDownloadState] = useState<ActionState>('idle');
 
   const handleDownload = async () => {
@@ -21,7 +24,7 @@ export default function PortraitDisplay({
 
   const handleUpload = async () => {
     if (!character?.url) return;
-    await uploadImage(character.url, character, setUploadState);
+    await uploadImage(character.url, character, onUploadStateChange);
   };
 
   if (isLoading) {

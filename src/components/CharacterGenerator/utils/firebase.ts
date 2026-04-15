@@ -1,14 +1,8 @@
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
+import { stripUndefined } from '@utils/index';
 import { database, storage } from 'src/firebase';
 import type { CharacterDetails } from './character';
-
-// Remove undefined/null values from object
-const cleanObject = <T extends Record<string, any>>(obj: T): Partial<T> => {
-  return Object.fromEntries(
-    Object.entries(obj).filter(([_, value]) => value !== undefined && value !== null)
-  ) as Partial<T>;
-};
 
 export function startFirebaseUpload(base64Url: string, character: CharacterDetails) {
   const filename = `${character.class}-${character.race}-${character.gender}_${Date.now()}.png`;
@@ -22,7 +16,7 @@ export function startFirebaseUpload(base64Url: string, character: CharacterDetai
 export async function saveUploadMetadata(downloadUrl: string, character: CharacterDetails) {
   await addDoc(collection(database, 'images'), {
     url: downloadUrl,
-    character: cleanObject(character),
+    character: stripUndefined(character),
     createdAt: Timestamp.now()
   });
 }

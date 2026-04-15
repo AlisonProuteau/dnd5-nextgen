@@ -229,7 +229,7 @@ export const getSellingPrice = (
 
   if (sellAtFullPrice) return consolidateCoins({ cp: itemCostCopper }, additionalCurrencies);
 
-  // TODO: Currenly only have MagicItems, could add other categories later
+  // TODO-blocked: Currenly only have MagicItems, could add other categories later
   switch (equipmentCategoryType) {
     case EquipmentCategoryType.TradeGoods:
     case EquipmentCategoryType.Gem:
@@ -390,7 +390,7 @@ export const getUsageType = (
   return getUsageType(relatedFeatureUsage, features, allRelatedFeatures);
 };
 
-export const getRelatedFeatures = (resources: (Feature | Trait)[]) => {
+export const getRelatedFeatures = (resources: Pick<Feature | Trait, 'usage'>[]) => {
   const usages =
     resources?.flatMap(({ usage }) => usage).filter((usage): usage is Usage => !!usage) || [];
   const relatedFeatures = usages
@@ -437,5 +437,10 @@ export const formatUsageLabel = (
   const usageType = getUsageType(active, features);
   const used = character.resourceUsages?.[index]?.current ?? 0;
 
-  return `${used}/${getUsageTimes(active, character)} (${getUsageTypeLabel(usageType)})`;
+  return formatUsageLabelText(used, getUsageTimes(active, character), getUsageTypeLabel(usageType));
 };
+
+export const formatUsageLabelText = (used: number, max?: number, resetLabel?: string) =>
+  max
+    ? `${used}/${max}${resetLabel ? ` (${resetLabel})` : ''}`
+    : `${used}${resetLabel ? ` (${resetLabel})` : ''}`;

@@ -56,8 +56,12 @@ describe('Character Health Management End-to-End', () => {
       cy.get('#temporaryHealth').clear().type('-').blur().should('not.have.value', '-'); // Min 0
       cy.get('#temporaryHealth').clear().type('5').blur();
       cy.get('#currentHealth').should('be.disabled');
-      cy.wrap($dialog).getButton('Save').click();
+      cy.wrap($dialog).click();
+      cy.press('Escape');
     });
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Save').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+    cy.getByRole('dialog', 'Manage Health').should('not.exist');
     cy.getByRole('status', 'Health Updated').should('be.visible');
     cy.getByTestId('hit-points').should('contain.text', '15');
 
@@ -138,11 +142,12 @@ describe('Character Health Management End-to-End', () => {
     cy.getByRole('dialog', 'Manage Health').get('#currentHealth').clear().type('8').blur();
     cy.getByRole('dialog', 'Manage Health').click();
     cy.press('Escape');
-    cy.getByRole('dialog', 'Leave without saving your changes?').should('exist');
-    cy.getButton('No').click();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Cancel').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
     cy.getByRole('dialog', 'Manage Health').should('exist');
     cy.press('Escape');
-    cy.getButton('Yes').click();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Discard').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
     cy.getByRole('dialog', 'Manage Health').should('not.exist');
     cy.getByTestId('hit-points').should('contain.text', '5');
 
@@ -159,10 +164,8 @@ describe('Character Health Management End-to-End', () => {
 
     cy.getByTestId('hit-points').should('contain.text', '11');
     cy.getByTestId(`health-${healthTestChar.id}`).click();
-    cy.getByRole('dialog', 'Manage Health').within(() => {
-      cy.get('#currentHealth').should('have.value', '8');
-      cy.get('#temporaryHealth').should('have.value', '3');
-    });
+    cy.get('#currentHealth').should('have.value', '8');
+    cy.get('#temporaryHealth').should('have.value', '3');
   });
 
   it('should handle override hit points and relentless endurance workflows', function () {
@@ -225,21 +228,23 @@ describe('Character Health Management End-to-End', () => {
 
     // Test: Override with higher value keeps damage occured
     cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
-    cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
-      cy.get('#currentHealth').should('have.value', '5');
-      cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
+    cy.get('#currentHealth').should('have.value', '5');
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
 
-      cy.get('#currentHealth').clear().type('20').blur();
-      cy.wrap($dialog).getButton('Save').click();
-    });
+    cy.get('#currentHealth').clear().type('20').blur();
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').uncheck();
+
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Save').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
     cy.getByRole('status', 'Health Updated').should('be.visible');
     cy.getByTestId('hit-points').should('contain.text', '10');
 
     // Test: Override below current caps health to 1
-    cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
       cy.get('#currentHealth').should('have.value', '10');
       cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
+      cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
 
       cy.get('#currentHealth').clear().type('3').blur();
       cy.wrap($dialog).getButton('Save').click();
@@ -250,12 +255,31 @@ describe('Character Health Management End-to-End', () => {
     cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
       cy.get('#currentHealth').should('have.value', '1').clear().type('10').blur();
+      cy.get('#currentHealth').should('have.value', '3');
       cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
-      cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').uncheck();
+      cy.getByRole('dialog', 'Unsaved Changes').getButton('Cancel').click();
+      cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+      cy.contains('Override Hit Points')
+        .parent()
+        .find('input[type="checkbox"]')
+        .should('not.be.checked');
 
       cy.get('#currentHealth').should('have.value', '3');
       cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
-      cy.get('#currentHealth').clear().type('10').blur();
+      cy.getByRole('dialog', 'Unsaved Changes').getButton('Discard').click();
+      cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+      cy.contains('Override Hit Points')
+        .parent()
+        .find('input[type="checkbox"]')
+        .should('be.checked');
+      cy.get('#currentHealth').should('have.value', '1');
+
+      cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').uncheck();
+      cy.get('#currentHealth').should('have.value', '1');
+
+      cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
+      cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+      cy.get('#currentHealth').should('have.value', 1).clear().type('10').blur();
       cy.wrap($dialog).getButton('Save').click();
     });
 
@@ -319,7 +343,36 @@ describe('Character Health Management End-to-End', () => {
         'contain.text',
         "Your character's racial ability has been used and won't trigger again"
       );
+      cy.wrap($dialog).getButton('Cancel').click();
     });
+
+    // Test: Pre-override dialog save
+    cy.getByTestId(`health-${relentlessChar.id}`).click();
+    cy.get('#currentHealth').clear().type('7').blur();
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Save').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+    cy.getByRole('status', 'Health Updated').should('be.visible');
+    cy.get('#currentHealth').should('have.value', '7');
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').should('be.checked');
+
+    // Test: Post-override dialog cancel
+    cy.get('#currentHealth').clear().type('12').blur();
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').uncheck();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Cancel').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').should('be.checked');
+    cy.get('#currentHealth').should('have.value', '12');
+
+    // Test: Post-override dialog discard
+    cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').uncheck();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Discard').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+    cy.contains('Override Hit Points')
+      .parent()
+      .find('input[type="checkbox"]')
+      .should('not.be.checked');
+    cy.get('#currentHealth').should('have.value', '7');
   });
 
   it('should recalculate hit points when constitution modifier changes', function () {
@@ -414,11 +467,9 @@ describe('Character Health Management End-to-End', () => {
     cy.getByTestId('hit-points').should('contain.text', '0');
 
     cy.getByTestId(`health-${conTestChar.id}`).click();
-    cy.getByRole('dialog', 'Manage Health').within(() => {
-      cy.get('#currentHealth').should('have.value', '0');
-      cy.get('#deathSaveSuccesses').should('be.visible');
-      cy.getByTestId('reset-health-button').click();
-      cy.get('#currentHealth').should('have.value', conTestChar.hit_points.toString());
-    });
+    cy.get('#currentHealth').should('have.value', '0');
+    cy.get('#deathSaveSuccesses').should('be.visible');
+    cy.getByTestId('reset-health-button').click();
+    cy.get('#currentHealth').should('have.value', conTestChar.hit_points.toString());
   });
 });

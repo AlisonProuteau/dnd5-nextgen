@@ -224,22 +224,14 @@ export function ContactForm() {
                 )}
               />
               {(!area || area === AppArea.OTHER || !isAppArea) && (
-                <Controller
-                  name="area"
+                <ControledInput
+                  required
+                  id="area"
+                  label="Area"
+                  hiddenValues={[AppArea.OTHER]}
+                  data-testid="area-input"
                   control={control}
                   rules={{ required: 'Required' }}
-                  render={({ field }) => (
-                    <ControledInput
-                      required
-                      id="area"
-                      label="Area"
-                      {...field}
-                      value={field.value === AppArea.OTHER ? '' : field.value}
-                      hasError={!!errors.area}
-                      errorMessage={getAllValidationErrors(errors.area)}
-                      data-testid="area-input"
-                    />
-                  )}
                 />
               )}
             </FormControl>
@@ -337,22 +329,15 @@ export function ContactForm() {
                 )}
               />
               {(!requestArea || requestArea === RequestArea.OTHER || !isRequestArea) && (
-                <Controller
-                  name="requestArea"
+                <ControledInput
+                  required
+                  id="requestArea"
+                  label="Area"
+                  hiddenValues={[RequestArea.OTHER]}
                   control={control}
                   rules={{ required: 'Required' }}
-                  render={({ field }) => (
-                    <ControledInput
-                      required
-                      id="requestArea"
-                      label="Area"
-                      {...field}
-                      value={field.value === RequestArea.OTHER ? '' : field.value}
-                      hasError={!!errors.requestArea}
-                      errorMessage={getAllValidationErrors(errors.requestArea)}
-                      data-testid="requestArea-input"
-                    />
-                  )}
+                  errorMessage={getAllValidationErrors(errors.requestArea)}
+                  data-testid="requestArea-input"
                 />
               )}
               {requestArea === RequestArea.CONTENT && (

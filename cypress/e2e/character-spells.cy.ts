@@ -154,8 +154,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     cy.getByTestId(`character-card-${charID}`).click();
     cy.getByTestId('stats-section').should('be.visible');
     cy.get('.MuiMobileStepper-dot').should('have.length', 5);
-    cy.getByTestId('previous-step').click();
-    cy.getByTestId('spells-section').should('be.visible');
+    cy.clickUntilStep('spells', 'previous');
 
     // Test: Search functionality in All Spells view
     cy.getButton('Spellbook').next().click();
@@ -307,8 +306,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         cy.getByTestId(`character-card-${charID}`).click();
         cy.getByTestId('stats-section').should('be.visible');
         cy.get('.MuiMobileStepper-dot').should('have.length', 5);
-        cy.getByTestId('previous-step').click();
-        cy.getByTestId('spells-section').should('be.visible');
+        cy.clickUntilStep('spells', 'previous');
 
         if (learnNum > 0) {
           cy.getButton(/Learn spells/).should('be.enabled');
@@ -773,7 +771,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         cy.reload();
         cy.getByTestId('stats-section').should('be.visible');
         cy.get('.MuiMobileStepper-dot').should('have.length', 5);
-        cy.getByTestId('previous-step').click();
+        cy.clickUntilStep('spells', 'previous');
         cy.getByTestId('spell-slots').within(($el) => {
           cy.wrap($el).should(
             'contain.text',

@@ -137,7 +137,7 @@ describe(`Character Sheet End-to-End`, () => {
     });
 
     // Test: Traits & Features section
-    clickUntilStep('characteristics');
+    cy.clickUntilStep('characteristics');
     cy.getByTestId('proficiencies-section').should(
       'contain.text',
       delfyData.proficiencies.map((p) => p.name).join(', ')
@@ -180,8 +180,7 @@ describe(`Character Sheet End-to-End`, () => {
       });
 
     // Test: Equipment section
-    clickUntilStep('equipment');
-    cy.getByTestId('equipment-section-header').should('be.visible');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('money-display').within(($purse) => {
       cy.wrap($purse).getByTestId('gp').should('be.visible');
       cy.wrap($purse).getByTestId('sp').should('be.visible');
@@ -283,7 +282,7 @@ describe(`Character Sheet End-to-End`, () => {
       });
 
     // Test: Description section
-    clickUntilStep('description');
+    cy.clickUntilStep('description');
     cy.getByTestId('description-sex-')
       .should('contain.text', 'Sex')
       .should('have.attr', 'data-testid', 'description-sex-F');
@@ -507,7 +506,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('description-bonds').should('include.text', delfyData.bonds![0]);
 
     // Test: Spell section
-    clickUntilStep('spells');
+    cy.clickUntilStep('spells');
 
     // Test: Next goes back to beginning
     cy.getByTestId('next-step').click();
@@ -552,7 +551,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`notes-drawer-${delfyData.id}`).within(($el) => {
       cy.wrap($el).should('contain.text', 'No notes yet');
 
-      cy.wrap($el).getByTestId('add-note').click();
+      cy.wrap($el).getByTestId('add-note').first().click();
       cy.wrap($el).getButton('Save').should('be.disabled');
       cy.get('#content').clear().blur();
       cy.wrap($el).getButton('Save').should('be.disabled');
@@ -618,15 +617,15 @@ describe(`Character Sheet End-to-End`, () => {
 
       // Test: Pin notes
       cy.selectCardAction({ text: 'E2E test note - edited' }, 'Pin');
-      cy.wrap($el)
-        .getByTestId('note-card-')
-        .first()
-        .should('contain.text', 'E2E test note - edited');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'E2E test note - edited');
 
       cy.selectCardAction({ text: 'Note to delete' }, 'Pin');
-      cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to delete');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       cy.selectCardAction({ text: 'Note to archive' }, 'Pin');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to archive');
+
+      cy.getByRole('tab', 'Pinned').click();
       cy.wrap($el)
         .getByTestId('note-card-')
         .first()
@@ -636,20 +635,24 @@ describe(`Character Sheet End-to-End`, () => {
 
       // Test: Unpin note
       cy.selectCardAction({ text: 'Note to delete' }, 'Unpin');
-      cy.wrap($el).getByTestId('note-card-').first().should('not.contain.text', 'Note to delete');
+      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       // Test: Delete note
+      cy.getByRole('tab', 'Notes').click();
       cy.selectCardAction({ text: 'Note to delete' }, 'Delete');
       cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to delete');
 
       // Test: Archive note
+      cy.getByRole('tab', 'Pinned').click();
       cy.selectCardAction({ text: 'Note to archive' }, 'Archive');
       cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Note to archive');
+
+      cy.getByRole('tab', 'Notes').click();
       cy.selectCardAction({ text: 'Second note to archive' }, 'Archive');
-      cy.wrap($el).getByTestId('note-card-').should('not.contain.text', 'Second note to archive');
+      cy.wrap($el).getByTestId('note-card-').should('not.exist');
 
       // Test: View archived notes
-      cy.wrap($el).getByTestId('archive-toggle').click();
+      cy.getByRole('tab', 'Archived').click();
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'E2E test note - edited');
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to delete');
       cy.wrap($el).getByTestId('note-card-').should('contain.text', 'Note to archive');
@@ -661,7 +664,8 @@ describe(`Character Sheet End-to-End`, () => {
       cy.selectCardAction({ text: 'Note to archive' }, 'Restore');
       cy.wrap($el).getByTestId('notes-list').should('not.contain.text', 'Note to archive');
 
-      cy.wrap($el).getByTestId('archive-toggle').click();
+      // "Note to archive" was pinned before archiving, so it restores to Pinned tab
+      cy.getByRole('tab', 'Pinned').click();
       cy.wrap($el).getByTestId('note-card-').first().should('contain.text', 'Note to archive');
     });
 
@@ -678,7 +682,7 @@ describe(`Character Sheet End-to-End`, () => {
 
     // Test: Initial state with armor equipped by default
     cy.getByTestId('armor-class').should('contain.text', 13);
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('inventory-weight').should('contain.text', 14);
     cy.getByTestId('-equip', { type: 'contains' }).should('have.length', 1);
     cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
@@ -686,24 +690,24 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Unequip armor - AC & weight should update
     cy.getByTestId('equipment-item-leather-armor-equip').click();
     cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Unequipped');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 12);
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('inventory-weight').should('contain.text', 4);
 
     // Test: Re-equip armor - AC & weight should update back
     cy.getByTestId('equipment-item-leather-armor-equip').click();
     cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 13);
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('inventory-weight').should('contain.text', 14);
 
     // Test: Equipment state persists across page refresh
     cy.reload();
     cy.getByTestId('character-container').should('be.visible');
     cy.getByTestId('armor-class').should('contain.text', 13);
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
 
     // Test: Strength requirement warnings
@@ -712,7 +716,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`character-card-${devyData.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
     cy.getByTestId('armor-class').should('contain.text', 18);
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
 
     // Test: Should show weight warning for Chain mail
     cy.getByTestId('equipment-item-chain-mail', { type: 'exact' }).within(($el) => {
@@ -733,23 +737,23 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Shield can be equipped/unequipped independently
     cy.getByTestId('equipment-item-shield-equip').click();
     cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Unequipped');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 16);
 
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('equipment-item-shield-equip').click();
     cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Equipped');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 18);
 
     // Test: Unequip chain mail - still shows warning when unequipped
-    clickUntilStep('equipment');
+    cy.clickUntilStep('equipment');
     cy.getByTestId('equipment-item-chain-mail-equip').click();
     cy.getByTestId('equipment-item-chain-mail-equip').should('contain.text', 'Unequipped');
     cy.getByTestId('equipment-item-chain-mail', { type: 'exact' })
       .getByTestId('strength-requirement-warning')
       .should('be.visible');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 14);
   });
 
@@ -769,7 +773,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`character-card-${usageTestChar.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
 
-    clickUntilStep('characteristics');
+    cy.clickUntilStep('characteristics');
 
     // Test: Pre-seeded arcane-recovery is already at max (1/1) and disabled
     cy.getByTestId('feature-name-arcane-recovery')
@@ -804,7 +808,7 @@ describe(`Character Sheet End-to-End`, () => {
     // Test: Both entries persist after reload
     cy.reload();
     cy.getByTestId('character-container').should('be.visible');
-    clickUntilStep('characteristics');
+    cy.clickUntilStep('characteristics');
 
     cy.getByTestId('trait-name-infernal-legacy')
       .getButton(/^USE/)
@@ -834,7 +838,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId(`delete-${deleteTestCharacter.id}`).should('be.visible');
     cy.getByTestId('next-step').click();
     cy.getByTestId(`delete-${deleteTestCharacter.id}`).should('not.exist');
-    clickUntilStep('stats', 'previous');
+    cy.clickUntilStep('stats', 'previous');
 
     // Test: Cancel delete via Cancel button
     cy.getByTestId(`delete-${deleteTestCharacter.id}`).click();
@@ -869,20 +873,4 @@ describe(`Character Sheet End-to-End`, () => {
       `users/${Cypress.testUser.uid}/characters/${deleteTestCharacter.id}`
     ).should('be.null');
   });
-
-  const clickUntilStep = (
-    step: string,
-    type: 'previous' | 'next' = 'next',
-    i = 1
-  ): Cypress.Chainable<JQuery<HTMLElement>> => {
-    cy.getByTestId(`${type}-step`).click();
-    return cy.getByTestId('-section', { type: 'contains' }).then((el) => {
-      const currentLabel = el.attr('data-testId')?.replace('-section', '') || '';
-      const maxReached = i >= 6;
-
-      if (maxReached && currentLabel !== step)
-        expect(currentLabel).contains(step, 'Step not found in 10 clicks');
-      return currentLabel === step || maxReached ? cy.wrap(el) : clickUntilStep(step, type, i + 1);
-    });
-  };
 });

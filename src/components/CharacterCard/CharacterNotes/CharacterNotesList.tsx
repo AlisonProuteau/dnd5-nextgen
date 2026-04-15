@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArchiveOutlined,
   Delete,
@@ -8,11 +8,13 @@ import {
   PushPinOutlined,
   Restore
 } from '@mui/icons-material';
-import { Box, Card, CardContent, IconButton, Typography } from '@mui/material';
-import type { Timestamp } from 'firebase/firestore';
-import { groupBy } from 'lodash';
+import { Box, Card, CardContent, IconButton, Tab, Tabs, Typography } from '@mui/material';
+import { ScrollableContainer } from '@shared/ScrollableContainer';
 import SpeedDialButton from '@shared/SpeedDialButton';
+import { formatDateDisplay, groupByDay } from '@utils/date.utils';
 import type { CharacterNote } from '@representations/user.representation';
+
+type NoteTab = 'notes' | 'pinned' | 'archived';
 
 interface CharacterNotesListProps {
   characterNotes: CharacterNote[];
@@ -20,7 +22,6 @@ interface CharacterNotesListProps {
   setNote: (note: Partial<CharacterNote>) => void;
   setEditMode: (edit: boolean) => void;
   isLoading?: boolean;
-  showArchived?: boolean;
 }
 
 export function CharacterNotesList({
@@ -28,51 +29,44 @@ export function CharacterNotesList({
   updateNote,
   setNote,
   setEditMode,
-  isLoading,
-  showArchived = false
+  isLoading
 }: CharacterNotesListProps) {
-  const formatNoteDates = (note: CharacterNote) => {
-    const createdAtFormatted =
-      note.createdAt instanceof Date
-        ? note.createdAt
-        : (note.createdAt as unknown as Timestamp).toDate();
-    const updatedAtFormatted = note.updatedAt
-      ? note.updatedAt instanceof Date
-        ? note.updatedAt
-        : (note.updatedAt as unknown as Timestamp).toDate()
-      : undefined;
+  const [tab, setTab] = useState<NoteTab>('notes');
 
-    return note.updatedAt
-      ? {
-          ...note,
-          createdAt: createdAtFormatted,
-          updatedAt: updatedAtFormatted
-        }
-      : { ...note, createdAt: createdAtFormatted };
-  };
+  const activeNotes = useMemo(
+    () =>
+      characterNotes
+        .filter((n) => !n.archived && !n.pinned)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    [characterNotes]
+  );
+  const pinnedNotes = useMemo(
+    () =>
+      characterNotes
+        .filter((n) => !n.archived && !!n.pinned)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    [characterNotes]
+  );
+  const archivedNotes = useMemo(
+    () =>
+      characterNotes
+        .filter((n) => !!n.archived)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
+    [characterNotes]
+  );
 
-  const formatCharacterNotes = (
-    notes: CharacterNote[],
-    archived: boolean = false
-  ): [CharacterNote[] | undefined, CharacterNote[] | undefined] => {
-    const formattedNotes = notes
-      .filter((note) => (note.archived || false) === archived)
-      .map(formatNoteDates);
-    if (archived)
-      return [
-        undefined,
-        formattedNotes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      ];
+  const currentNotes = useMemo(
+    () => (tab === 'pinned' ? pinnedNotes : tab === 'archived' ? archivedNotes : activeNotes),
+    [tab, pinnedNotes, archivedNotes, activeNotes]
+  );
 
-    const pinnedNotes = formattedNotes
-      .filter((note) => note.pinned)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    const unpinnedNotes = formattedNotes
-      .filter((note) => !note.pinned)
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  useEffect(() => {
+    if ((tab === 'pinned' || tab === 'archived') && !currentNotes.length) setTab('notes');
+  }, [currentNotes.length, tab]);
 
-    return [pinnedNotes, unpinnedNotes];
-  };
+  const pinNote = async (id: string, pinned: boolean) => updateNote(id, { pinned });
+  const archiveNote = async (id: string, archived: boolean) => updateNote(id, { archived });
+  const deleteNote = async (id: string) => updateNote(id, {}, true);
 
   const noteActions = (note: CharacterNote) => [
     {
@@ -113,95 +107,78 @@ export function CharacterNotesList({
     }
   ];
 
-  const pinNote = async (id: string, pinned: boolean) => updateNote(id, { pinned });
-  const archiveNote = async (id: string, archived: boolean) => updateNote(id, { archived });
-  const deleteNote = async (id: string) => updateNote(id, {}, true);
+  return (
+    <Box display="flex" flexDirection="column" height="100%">
+      <Tabs value={tab} onChange={(_, v) => setTab(v)} variant="fullWidth" sx={{ mb: 1 }}>
+        <Tab label="Notes" value="notes" />
+        {!!pinnedNotes.length && <Tab label={`Pinned (${pinnedNotes.length})`} value="pinned" />}
+        {!!archivedNotes.length && (
+          <Tab label={`Archived (${archivedNotes.length})`} value="archived" />
+        )}
+      </Tabs>
 
-  return characterNotes?.filter(({ archived }) => (archived || false) === showArchived)?.length ? (
-    <Box display="flex" flexDirection="column" gap={1} overflow="visible" data-testid="notes-list">
-      {formatCharacterNotes(characterNotes, showArchived).map((noteList, free) => (
-        <Box
-          key={free ? 'unpinned' : 'pinned'}
-          sx={{
-            borderBottom: free || !noteList?.length ? '' : '1px solid',
-            borderColor: 'divider'
-          }}
-          paddingBottom={1}
-        >
-          {Object.entries(
-            groupBy(noteList, ({ createdAt }) =>
-              createdAt.toLocaleDateString(navigator.language, {
-                month: 'long',
-                year: 'numeric'
-              })
-            )
-          ).map(([date, datedNotes]) => (
-            <Fragment key={`${!free ? 'pinned' : 'unpinned'}-notes-${date}`}>
-              <Typography textTransform="capitalize">{date}</Typography>
-              {datedNotes?.map((note) => (
-                <Card
-                  key={note.id}
-                  elevation={note.pinned ? 1 : 5}
-                  data-testid={`note-card-${note.id}`}
+      <ScrollableContainer flex={1}>
+        {currentNotes.length ? (
+          <Box display="flex" flexDirection="column" gap={1} data-testid="notes-list">
+            {groupByDay(currentNotes).map(([date, datedNotes]) => (
+              <Box key={`${tab}-notes-${date}`}>
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.5, fontSize: '0.68rem', letterSpacing: 1 }}
                 >
-                  <Box
-                    position="relative"
-                    sx={{ float: 'right', marginRight: 1 }}
-                    height="100%"
-                    width="100%"
-                  >
-                    <SpeedDialButton
-                      ariaLabel="SpeedDial basic example"
-                      sx={{
-                        position: 'absolute',
-                        right: 0
-                      }}
-                      direction="left"
-                      actions={noteActions(note)}
-                      disabled={isLoading}
-                      data-testid={`note-actions-${note.id}`}
-                    />
-                  </Box>
-                  <CardContent>
-                    <Typography variant="caption" color="text.secondary">
-                      {note.createdAt.toLocaleDateString(navigator.language, {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </Typography>
-                    {note.updatedAt ? (
+                  {date}
+                </Typography>
+                {datedNotes.map((note) => (
+                  <Card key={note.id} elevation={5} data-testid={`note-card-${note.id}`}>
+                    <Box
+                      position="relative"
+                      sx={{ float: 'right', marginRight: 1 }}
+                      height="100%"
+                      width="100%"
+                    >
+                      <SpeedDialButton
+                        ariaLabel="note actions"
+                        sx={{ position: 'absolute', right: 0 }}
+                        direction="left"
+                        actions={noteActions(note)}
+                        disabled={isLoading}
+                        data-testid={`note-actions-${note.id}`}
+                      />
+                    </Box>
+                    <CardContent>
                       <Typography variant="caption" color="text.secondary">
-                        {` (last edit ${note.updatedAt.toLocaleDateString(navigator.language, {
-                          day: '2-digit',
-                          month: 'short',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })})`}
+                        {formatDateDisplay(note.createdAt, 'minute')}
                       </Typography>
-                    ) : null}
-                    <Typography data-testid={`note-content-${note.id}`}>{note.content}</Typography>
-                  </CardContent>
-                </Card>
-              ))}
-            </Fragment>
-          ))}
-        </Box>
-      ))}
-    </Box>
-  ) : (
-    <Box height="100%" alignContent="center" textAlign="center">
-      <Typography color={'text.secondary'}>No notes yet</Typography>
-      <IconButton
-        onClick={() => {
-          setNote({});
-          setEditMode(true);
-        }}
-        data-testid="add-note"
-      >
-        <NoteAdd fontSize="large" />
-      </IconButton>
+                      {note.updatedAt ? (
+                        <Typography variant="caption" color="text.secondary">
+                          {` (last edit ${formatDateDisplay(note.updatedAt, 'minute')})`}
+                        </Typography>
+                      ) : null}
+                      <Typography data-testid={`note-content-${note.id}`}>
+                        {note.content}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                ))}
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <Box alignContent="center" textAlign="center" pt={4}>
+            <Typography color="text.secondary">No notes yet</Typography>
+            <IconButton
+              onClick={() => {
+                setNote({});
+                setEditMode(true);
+              }}
+              data-testid="add-note"
+            >
+              <NoteAdd fontSize="large" />
+            </IconButton>
+          </Box>
+        )}
+      </ScrollableContainer>
     </Box>
   );
 }
