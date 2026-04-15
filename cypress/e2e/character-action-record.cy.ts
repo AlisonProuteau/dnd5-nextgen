@@ -422,7 +422,7 @@ describe('Character Action Record End-to-End', () => {
     cy.getByTestId('record-item-')
       .first()
       .within(($el) => {
-        cy.wrap($el).getByTestId('record-delete').should('not.exist');
+        cy.wrap($el).getByTestId('record-delete').should('exist');
         cy.wrap($el).getByTestId('record-edit').should('exist');
       });
 
@@ -547,6 +547,33 @@ describe('Character Action Record End-to-End', () => {
       .and('contain.text', 'auto');
     cy.getButton('Close').click();
 
+    // Test: Delete auto-logged spell records
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId('record-item-').should('have.length', 2);
+    cy.getByTestId('record-item-')
+      .filter(':contains("+2 slot lvl")')
+      .getByTestId('record-delete')
+      .click();
+    cy.getByTestId('record-item-').should('have.length', 1);
+    cy.getButton('Close').click();
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '2 of 2');
+
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId('record-item-')
+      .filter(':contains("+1 slot lvl")')
+      .getByTestId('record-delete')
+      .click();
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
+      'contain.text',
+      'Nothing to show yet'
+    );
+    cy.getButton('Close').click();
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
+    cy.getByTestId('spell-slots').getButton('Rest').should('not.exist');
+
     // Test: Clicking USE on a trait
     cy.clickUntilStep('characteristics');
     cy.getByTestId('trait-name-infernal-legacy').getButton(/^USE/).click();
@@ -558,9 +585,9 @@ describe('Character Action Record End-to-End', () => {
       .first()
       .should('contain.text', 'Infernal Legacy')
       .and('contain.text', 'auto');
-
-    // Test: Clicking USE on a feature – auto-logs a 'feature' record
     cy.getButton('Close').click();
+
+    // Test: Clicking USE on a feature
     cy.getByTestId('feature-name-arcane-recovery').getButton(/^USE/).click();
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
@@ -571,8 +598,19 @@ describe('Character Action Record End-to-End', () => {
       .should('contain.text', 'Arcane Recovery')
       .and('contain.text', 'auto');
 
-    // Test: Relentless Endurance
+    // Test: Delete auto-logged feature record
+    cy.getByTestId('record-delete').click();
+    cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
+      'contain.text',
+      'Nothing to show yet'
+    );
     cy.getButton('Close').click();
+    cy.getByTestId('feature-name-arcane-recovery')
+      .getButton(/^USE/)
+      .should('be.enabled')
+      .and('contain.text', '0/1');
+
+    // Test: Relentless Endurance
     cy.getByTestId(`health-${actionRecordChar.id}`).click();
     cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
       cy.get('#currentHealth').clear().type('0');
@@ -589,7 +627,20 @@ describe('Character Action Record End-to-End', () => {
       .should('contain.text', 'Relentless Endurance')
       .and('contain.text', 'auto');
 
+    // Test: Delete auto-logged trait record
+    cy.getByTestId('record-item-', { selector: ':contains("Infernal")' })
+      .getByTestId('record-delete')
+      .click();
+
+    cy.getByTestId('record-item-').should('have.length', 1);
+    cy.getButton('Close').click();
+    cy.getByTestId('trait-name-infernal-legacy')
+      .getButton(/^USE/)
+      .should('be.enabled')
+      .and('contain.text', '0/1');
+
     // Test: Editing an auto-logged record's description
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
     cy.getByTestId('record-item-')
       .first()
       .within(($el) => {
@@ -631,7 +682,7 @@ describe('Character Action Record End-to-End', () => {
       .and('contain.text', 'Initial: 6')
       .and('contain.text', 'Final: 8')
       .and('contain.text', 'auto');
-    cy.getByTestId('record-item-').first().getByTestId('record-delete').should('not.exist');
+    cy.getByTestId('record-item-').first().getByTestId('record-delete').should('exist');
 
     // Test: Death saves – HP drop and first failure in same session
     cy.getButton('Close').click();
