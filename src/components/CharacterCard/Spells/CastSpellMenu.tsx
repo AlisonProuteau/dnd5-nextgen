@@ -7,13 +7,15 @@ interface CastSpellMenuProps {
   availableSlots?: Record<string, number>;
   handleCastSpell?: (spell: Spell, slotLevel?: number | 'ritual') => void;
   canCastRitual?: boolean;
+  disabled?: boolean;
 }
 
 export function CastSpellMenu({
   spell,
   availableSlots = {},
   handleCastSpell = () => undefined,
-  canCastRitual = false
+  canCastRitual = false,
+  disabled = false
 }: CastSpellMenuProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -46,7 +48,7 @@ export function CastSpellMenu({
         fullWidth
         key={`cast-spell-${spell.index}`}
         data-testid={`cast-spell-${spell.index}`}
-        disabled={castDisabled}
+        disabled={castDisabled || disabled}
         onClick={(e) => {
           if (availableSlotLevels.length > 1) setMenuAnchor(e.currentTarget);
           else handleCastSpell(spell, availableSlotLevels[0]);

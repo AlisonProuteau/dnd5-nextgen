@@ -61,7 +61,7 @@ export const getMoneyActionRecordData = (
 
   return {
     name: differenceLabel,
-    description: `Initial Amount: ${formatMoneyForDisplay(currentAmount, false)}\nFinal Amount: ${formatMoneyForDisplay(previousAmount, false)}`
+    description: `Initial Amount: ${formatMoneyForDisplay(currentAmount, false) ?? '0'}\nFinal Amount: ${formatMoneyForDisplay(previousAmount, false) ?? '0'}`
   };
 };
 

@@ -31,12 +31,15 @@ export const useActionRecord = (characterId: string) => {
     [user?.uid, characterId]
   );
 
-  const optimiticUpdateRecord = (updater: (old: ActionRecord[]) => ActionRecord[]) => {
-    if (user?.uid && characterId)
-      queryClient.setQueryData(queryKey, (old: ActionRecord[] | null | undefined) =>
-        updater(old ?? [])
-      );
-  };
+  const optimiticUpdateRecord = useCallback(
+    (updater: (old: ActionRecord[]) => ActionRecord[]) => {
+      if (user?.uid && characterId)
+        queryClient.setQueryData(queryKey, (old: ActionRecord[] | null | undefined) =>
+          updater(old ?? [])
+        );
+    },
+    [user?.uid, characterId, queryClient, queryKey]
+  );
   const invalidateRecords = () => queryClient.invalidateQueries({ queryKey: queryKey });
   const refetchRecords = () => queryClient.refetchQueries({ queryKey: queryKey });
 
@@ -78,7 +81,7 @@ export const useActionRecord = (characterId: string) => {
       }
       return id;
     },
-    [firebaseCrud, user?.uid, characterQueryKey]
+    [firebaseCrud, user?.uid, characterId, queryClient, characterQueryKey, optimiticUpdateRecord]
   );
 
   const updateAction = useCallback(
@@ -88,7 +91,7 @@ export const useActionRecord = (characterId: string) => {
         optimiticUpdateRecord((old) => old.map((r) => (r.id === id ? { ...r, ...data } : r)));
       return success;
     },
-    [firebaseCrud]
+    [firebaseCrud, optimiticUpdateRecord]
   );
 
   const removeAction = useCallback(
@@ -131,7 +134,15 @@ export const useActionRecord = (characterId: string) => {
       }
       return success;
     },
-    [firebaseCrud, user?.uid, queryKey, characterQueryKey]
+    [
+      firebaseCrud,
+      user?.uid,
+      characterId,
+      queryClient,
+      queryKey,
+      characterQueryKey,
+      optimiticUpdateRecord
+    ]
   );
 
   return {

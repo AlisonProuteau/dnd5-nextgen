@@ -147,7 +147,10 @@ export function HealthManager({
     ) {
       const healData = getHealthActionRecordData(1, 0);
       if (healData) addOrUpdatePendingLog(healData, 'health');
-      if (autoSaveTrait) pendingLogs.current.push(formatActionRecord('trait', autoSaveTrait));
+      if (autoSaveTrait)
+        pendingLogs.current.push(
+          formatActionRecord('trait', { ...autoSaveTrait, sourceIndex: autoSaveTrait.index })
+        );
 
       setHealth((prev) => ({
         ...prev,

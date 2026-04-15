@@ -16,6 +16,7 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { increment } from 'firebase/firestore';
 import { isEqual, max } from 'lodash';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
@@ -95,19 +96,18 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const handleCastSpell = async (spell: Spell, slotLevel?: number | 'ritual') => {
     if (!character.id || spell.level === 0 || !slotLevel) return;
 
-    let success = slotLevel === 'ritual' ? true : false;
+    let success = slotLevel === 'ritual';
     if (!success) {
-      const newUsedSlots = {
-        ...character.usedSpellSlots,
-        [slotLevel.toString()]: (character.usedSpellSlots?.[slotLevel.toString()] || 0) + 1
-      };
-      if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
+      if (
+        (character.usedSpellSlots?.[slotLevel.toString()] ?? 0) <
+        (slotInfo.slots[slotLevel.toString()] ?? 0)
+      )
         success = await firebaseCrud.update(
           character.id,
-          { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
+          { [`usedSpellSlots.${slotLevel}`]: increment(1) },
           false
         );
-      } else toast.error(`No spell slots of level ${slotLevel} available`);
+      else toast.error(`No spell slots of level ${slotLevel} available`);
     }
 
     if (success)
@@ -200,6 +200,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                   onClick?.();
                 }}
                 canCastRitual={character.ritualCaster}
+                disabled={firebaseCrud.isLoading}
               />
             )}
           />
