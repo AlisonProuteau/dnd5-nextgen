@@ -56,8 +56,12 @@ describe('Character Health Management End-to-End', () => {
       cy.get('#temporaryHealth').clear().type('-').blur().should('not.have.value', '-'); // Min 0
       cy.get('#temporaryHealth').clear().type('5').blur();
       cy.get('#currentHealth').should('be.disabled');
-      cy.wrap($dialog).getButton('Save').click();
+      cy.wrap($dialog).click();
+      cy.press('Escape');
     });
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Save').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
+    cy.getByRole('dialog', 'Manage Health').should('not.exist');
     cy.getByRole('status', 'Health Updated').should('be.visible');
     cy.getByTestId('hit-points').should('contain.text', '15');
 
@@ -138,11 +142,12 @@ describe('Character Health Management End-to-End', () => {
     cy.getByRole('dialog', 'Manage Health').get('#currentHealth').clear().type('8').blur();
     cy.getByRole('dialog', 'Manage Health').click();
     cy.press('Escape');
-    cy.getByRole('dialog', 'Leave without saving your changes?').should('exist');
-    cy.getButton('No').click();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Cancel').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
     cy.getByRole('dialog', 'Manage Health').should('exist');
     cy.press('Escape');
-    cy.getButton('Yes').click();
+    cy.getByRole('dialog', 'Unsaved Changes').getButton('Discard').click();
+    cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
     cy.getByRole('dialog', 'Manage Health').should('not.exist');
     cy.getByTestId('hit-points').should('contain.text', '5');
 

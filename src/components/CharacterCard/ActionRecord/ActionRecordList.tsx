@@ -1,4 +1,4 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { Box, Button, List, Typography } from '@mui/material';
 import { Dayjs } from 'dayjs';
 import { Loader } from '@shared/Loader';
@@ -28,6 +28,8 @@ export function ActionRecordList({
   dateTo,
   isLoading
 }: ActionRecordListProps) {
+  const [isClearing, setIsClearing] = useState(false);
+
   const filteredRecords = useMemo(() => {
     const from = dateFrom?.isValid() ? dateFrom?.startOf('day').toDate() : undefined;
     const to = dateTo?.isValid() ? dateTo?.endOf('day').toDate() : undefined;
@@ -43,10 +45,12 @@ export function ActionRecordList({
 
   const clearAllRecords = async () => {
     if (!filteredRecords) return;
+    setIsClearing(true);
     for (const record of filteredRecords) await onDelete(record.id);
+    setIsClearing(false);
   };
 
-  return isLoading ? (
+  return isLoading || isClearing ? (
     <Loader />
   ) : filteredRecords.length === 0 ? (
     <Typography

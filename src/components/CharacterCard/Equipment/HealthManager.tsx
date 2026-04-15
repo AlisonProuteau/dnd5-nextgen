@@ -54,9 +54,9 @@ export function HealthManager({
     turnOff: closeConfirmDialog
   } = useToggle(false);
   const {
-    isOn: isPreOverrideDialogOpen,
-    turnOn: openPreOverrideDialog,
-    turnOff: closePreOverrideDialog
+    isOn: isConfirmOverrideDialogOpen,
+    turnOn: openConfirmOverrideDialog,
+    turnOff: closeConfirmOverrideDialog
   } = useToggle(false);
   const [health, setHealth] = useState({
     current: character.health?.current ?? character.hit_points ?? 0,
@@ -182,19 +182,20 @@ export function HealthManager({
       latestHealthChange.name !== data.name
     )
       pendingLogs.current.push(formatActionRecord(type, data));
-    else if (replace) {
+    else {
       pendingLogs.current.pop();
-      pendingLogs.current.push(formatActionRecord(type, data));
-    } else {
-      pendingLogs.current.pop();
-      pendingLogs.current.push({
-        ...latestHealthChange,
-        value: (latestHealthChange.value ?? 0) + (data.value ?? 0),
-        description:
-          latestHealthChange.description && data.description
-            ? latestHealthChange.description + '\n' + data.description
-            : latestHealthChange.description || data.description
-      });
+      pendingLogs.current.push(
+        replace
+          ? formatActionRecord(type, data)
+          : {
+              ...latestHealthChange,
+              value: (latestHealthChange.value ?? 0) + (data.value ?? 0),
+              description:
+                latestHealthChange.description && data.description
+                  ? latestHealthChange.description + '\n' + data.description
+                  : latestHealthChange.description || data.description
+            }
+      );
     }
   };
 
@@ -284,7 +285,7 @@ export function HealthManager({
                   checked={overrideHitPoints}
                   onChange={(_, checked) =>
                     !isEqual(initialHealth, health)
-                      ? openPreOverrideDialog()
+                      ? openConfirmOverrideDialog()
                       : setOverrideHitPoints(checked)
                   }
                 />
@@ -457,58 +458,69 @@ export function HealthManager({
         </Box>
       </Dialog>
 
-      <Dialog open={isConfirmDialogOpen} onClose={closeConfirmDialog}>
-        <Box display="flex" flexDirection="column" p={3} gap={2} m={1}>
-          <Typography variant="h6">Leave without saving your changes?</Typography>
-          <Box display="flex" justifyContent="flex-end" gap={2}>
-            <Button
-              onClick={() => {
-                closeConfirmDialog();
-                closeHealthDialog();
-              }}
-            >
-              Yes
-            </Button>
-            <Button onClick={closeConfirmDialog}>No</Button>
-          </Box>
-        </Box>
-      </Dialog>
-
-      <Dialog open={isPreOverrideDialogOpen} onClose={closePreOverrideDialog} sx={{ m: 2 }}>
+      <Dialog
+        open={isConfirmDialogOpen || isConfirmOverrideDialogOpen}
+        onClose={isConfirmOverrideDialogOpen ? closeConfirmOverrideDialog : closeConfirmDialog}
+        sx={{ m: 2 }}
+        maxWidth="xs"
+      >
         <Box display="flex" flexDirection="column" p={3} gap={2}>
           <Typography variant="h6">Unsaved Changes</Typography>
+
           <Typography variant="body2">
-            Save or discard your unsaved changes before permanently modifying your character's hit
-            points.
-            <br />
-            <Typography variant="caption" color="warning.main">
-              Discarded changes and action records cannot be recovered.
-            </Typography>
+            <Fragment>
+              Save or discard your unsaved changes
+              {isConfirmOverrideDialogOpen
+                ? " before permanently modifying your character's hit points."
+                : ''}
+              <br />
+              <Typography variant="caption" color="warning.main">
+                Discarded changes and action records cannot be recovered.
+              </Typography>
+            </Fragment>
           </Typography>
 
-          <Box display="flex" justifyContent="flex-end" gap={2}>
+          <Box display="flex" justifyContent="flex-end" gap={2} flexWrap="wrap">
             <Button
               onClick={async () => {
                 const success = await onSave();
                 if (success) {
-                  setOverrideHitPoints(!overrideHitPoints);
-                  closePreOverrideDialog();
+                  if (isConfirmOverrideDialogOpen) {
+                    setOverrideHitPoints(!overrideHitPoints);
+                    closeConfirmOverrideDialog();
+                  } else {
+                    closeConfirmDialog();
+                    closeHealthDialog();
+                  }
                 }
               }}
               disabled={firebaseCrud.isLoading}
             >
               {firebaseCrud.isLoading ? <Loader data-testid="loading" /> : 'Save'}
             </Button>
+
             <Button
               onClick={() => {
-                resetHealth();
-                setOverrideHitPoints(!overrideHitPoints);
-                closePreOverrideDialog();
+                if (isConfirmOverrideDialogOpen) {
+                  resetHealth();
+                  setOverrideHitPoints(!overrideHitPoints);
+                  closeConfirmOverrideDialog();
+                } else {
+                  closeConfirmDialog();
+                  closeHealthDialog();
+                }
               }}
             >
               Discard
             </Button>
-            <Button onClick={closePreOverrideDialog}>Cancel</Button>
+
+            <Button
+              onClick={
+                isConfirmOverrideDialogOpen ? closeConfirmOverrideDialog : closeConfirmDialog
+              }
+            >
+              Cancel
+            </Button>
           </Box>
         </Box>
       </Dialog>

@@ -53,6 +53,12 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
     setIsSaving(false);
   };
 
+  const onActionDelete = async (id: string) => {
+    setIsSaving(true);
+    await onDelete(id);
+    setIsSaving(false);
+  };
+
   const onEditCancel = () => {
     setDescription(record.description ?? '');
     setEditing(false);
@@ -105,11 +111,7 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
                   size="small"
                   edge="end"
                   data-testid="record-delete"
-                  onClick={async () => {
-                    setIsSaving(true);
-                    await onDelete(record.id);
-                    setIsSaving(false);
-                  }}
+                  onClick={async () => await onActionDelete(record.id)}
                   disabled={isSaving}
                 >
                   <Delete fontSize="small" />

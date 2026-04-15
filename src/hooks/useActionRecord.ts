@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
+import { formatDateType } from '@utils/date.utils';
 import type { UsageTypes } from '@representations/common.representation';
 import type { ActionRecord } from '@representations/user.representation';
 import { database } from 'src/firebase';
@@ -42,12 +43,9 @@ export const useActionRecord = (characterId: string) => {
   const formatActionRecord = (
     record: Omit<ActionRecord, 'id' | 'createdAt'> & { createdAt?: Date }
   ): Omit<ActionRecord, 'id'> => {
-    const setDate: Date | string = record.createdAt ? record.createdAt : new Date();
+    const createdAt: Date = formatDateType(record.createdAt ?? new Date()) ?? new Date();
 
-    return {
-      ...record,
-      createdAt: setDate instanceof Date ? setDate : new Date(setDate)
-    };
+    return { ...record, createdAt };
   };
 
   const logAction = useCallback(
