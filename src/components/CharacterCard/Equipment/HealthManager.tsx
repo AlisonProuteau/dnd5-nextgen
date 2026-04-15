@@ -171,7 +171,8 @@ export function HealthManager({
 
   const addOrUpdatePendingLog = (
     data: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'>,
-    type: ActionRecordType
+    type: ActionRecordType,
+    replace = false
   ) => {
     const latestHealthChange = pendingLogs.current.at(-1);
     if (
@@ -181,7 +182,10 @@ export function HealthManager({
       latestHealthChange.name !== data.name
     )
       pendingLogs.current.push(formatActionRecord(type, data));
-    else {
+    else if (replace) {
+      pendingLogs.current.pop();
+      pendingLogs.current.push(formatActionRecord(type, data));
+    } else {
       pendingLogs.current.pop();
       pendingLogs.current.push({
         ...latestHealthChange,
@@ -202,7 +206,7 @@ export function HealthManager({
       overrideHitPoints ? (character.hit_points ?? 0) : health.current,
       overrideHitPoints
     );
-    if (record) addOrUpdatePendingLog(record, 'health');
+    if (record) addOrUpdatePendingLog(record, 'health', overrideHitPoints);
 
     setHealth((prev) => ({
       ...prev,
@@ -241,7 +245,10 @@ export function HealthManager({
       overrideHitPoints ? { ...updateData, hit_points: health.current || 1 } : updateData
     );
 
-    if (success) for (const log of pendingLogs.current) await logAction(log);
+    if (success) {
+      for (const log of pendingLogs.current) await logAction(log);
+      pendingLogs.current = [];
+    }
     return success;
   };
 
@@ -276,7 +283,7 @@ export function HealthManager({
                   sx={{ padding: 0, paddingRight: 0.25 }}
                   checked={overrideHitPoints}
                   onChange={(_, checked) =>
-                    checked && !isEqual(initialHealth, health)
+                    !isEqual(initialHealth, health)
                       ? openPreOverrideDialog()
                       : setOverrideHitPoints(checked)
                   }
@@ -484,7 +491,7 @@ export function HealthManager({
               onClick={async () => {
                 const success = await onSave();
                 if (success) {
-                  setOverrideHitPoints(true);
+                  setOverrideHitPoints(!overrideHitPoints);
                   closePreOverrideDialog();
                 }
               }}
@@ -495,7 +502,7 @@ export function HealthManager({
             <Button
               onClick={() => {
                 resetHealth();
-                setOverrideHitPoints(true);
+                setOverrideHitPoints(!overrideHitPoints);
                 closePreOverrideDialog();
               }}
             >
