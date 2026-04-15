@@ -125,11 +125,12 @@ export const getResetHealthActionRecordData = (
 export const getSpellActionRecordData = (
   spell: Spell,
   slotLevel: number | 'ritual'
-): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'> => {
+): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'> => {
   return slotLevel === 'ritual'
-    ? { name: spell.name, description: 'Ritual Cast' }
+    ? { name: spell.name, sourceIndex: spell.index, description: 'Ritual Cast' }
     : {
         name: spell.name,
+        sourceIndex: spell.index,
         description: slotLevel !== spell.level ? `Upcast from lvl${spell.level} spell` : undefined,
         value: slotLevel,
         valueUnit: 'slot lvl'
@@ -138,12 +139,12 @@ export const getSpellActionRecordData = (
 
 export const formatActionRecord = (
   type: ActionRecordType,
-  ressource: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit'>,
+  ressource: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'>,
   auto = true
 ): Omit<ActionRecord, 'id'> => {
   const createdAt = new Date();
   if (type === 'trait' || type === 'feature')
-    return { auto, type, name: ressource.name, createdAt };
+    return { auto, type, name: ressource.name, sourceIndex: ressource.sourceIndex, createdAt };
   if (type === 'custom') return { auto, type, createdAt, ...ressource };
 
   return { auto, type, createdAt, ...ressource };
