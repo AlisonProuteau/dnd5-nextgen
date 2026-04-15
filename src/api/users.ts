@@ -1,7 +1,7 @@
 import toast from 'react-hot-toast';
 import { updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { formatDates, get, getAll } from '@utils/api.utils';
+import { formatFirestoreDates, get, getAll } from '@utils/api.utils';
 import { type Version, VERSIONS } from '@utils/constants/versions.constants';
 import type {
   ActionRecord,
@@ -62,7 +62,7 @@ export const getCharacterNotes = async (
 ): Promise<CharacterNote[] | undefined> =>
   (
     await getAll('All character notes', `users/${userId}/characters/${characterId}/notes`)
-  ).results.map(formatDates);
+  ).results.map(formatFirestoreDates);
 
 export const getCharacter = async (
   userId: string,
@@ -84,4 +84,4 @@ export const getActionRecords = async (
 ): Promise<ActionRecord[] | undefined> =>
   (
     await getAll('All action records', `users/${userId}/characters/${characterId}/actionRecords`)
-  ).results?.map(formatDates);
+  ).results?.map(formatFirestoreDates);

@@ -9,12 +9,12 @@ import {
   orderBy,
   query,
   type QueryFilterConstraint,
-  Timestamp,
   where,
   type WhereFilterOp
 } from 'firebase/firestore';
 import { mapValues } from 'lodash';
 import { database } from 'src/firebase';
+import { formatDateType } from './date.utils';
 
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
@@ -87,20 +87,14 @@ export const stripUndefined = <T extends Record<string, unknown>>(obj: T): Parti
 export const formatUndefined = <T extends Record<string, unknown>>(obj: T): T =>
   mapValues(obj, (v) => (v === undefined || v === '' ? null : v)) as T;
 
-export const formatDates = (data: any) => {
+export const formatFirestoreDates = (data: any) => {
   const formattedData = { ...data };
 
-  if ('createdAt' in data && data.createdAt) {
-    if (data.createdAt instanceof Date) formattedData.createdAt = data.createdAt;
-    else if (data.createdAt instanceof Timestamp) formattedData.createdAt = data.createdAt.toDate();
-    else formattedData.createdAt = new Date(data.createdAt);
-  }
+  if ('createdAt' in data && data.createdAt)
+    formattedData.createdAt = formatDateType(data.createdAt);
 
-  if ('updatedAt' in data && data.updatedAt) {
-    if (data.updatedAt instanceof Date) formattedData.updatedAt = data.updatedAt;
-    else if (data.updatedAt instanceof Timestamp) formattedData.updatedAt = data.updatedAt.toDate();
-    else formattedData.updatedAt = new Date(data.updatedAt);
-  }
+  if ('updatedAt' in data && data.updatedAt)
+    formattedData.updatedAt = formatDateType(data.updatedAt);
 
   return formattedData;
 };

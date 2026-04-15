@@ -22,7 +22,7 @@ import {
 } from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
 import { Loader } from '@shared/Loader';
-import { formatDate } from '@utils/date.utils';
+import { formatDateDisplay } from '@utils/date.utils';
 import type { ActionRecord, ActionRecordType } from '@representations/user.representation';
 
 export const TYPE_CONFIG_ICON: Record<ActionRecordType, ReactNode> = {
@@ -176,7 +176,7 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
                 </Typography>
               )}
               <Typography variant="caption" color="text.disabled">
-                {formatDate(record.createdAt, 'minute')}
+                {formatDateDisplay(record.createdAt, 'minute')}
               </Typography>
             </Box>
           }

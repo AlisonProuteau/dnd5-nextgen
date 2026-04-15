@@ -11,7 +11,7 @@ import {
 import { Box, Card, CardContent, IconButton, Tab, Tabs, Typography } from '@mui/material';
 import { ScrollableContainer } from '@shared/ScrollableContainer';
 import SpeedDialButton from '@shared/SpeedDialButton';
-import { formatDate, groupByDay } from '@utils/date.utils';
+import { formatDateDisplay, groupByDay } from '@utils/date.utils';
 import type { CharacterNote } from '@representations/user.representation';
 
 type NoteTab = 'notes' | 'pinned' | 'archived';
@@ -55,15 +55,14 @@ export function CharacterNotesList({
     [characterNotes]
   );
 
-  useEffect(() => {
-    if (tab === 'pinned' && !pinnedNotes.length) setTab('notes');
-    else if (tab === 'archived' && !archivedNotes.length) setTab('notes');
-  }, [pinnedNotes.length, archivedNotes.length, tab]);
-
   const currentNotes = useMemo(
     () => (tab === 'pinned' ? pinnedNotes : tab === 'archived' ? archivedNotes : activeNotes),
     [tab, pinnedNotes, archivedNotes, activeNotes]
   );
+
+  useEffect(() => {
+    if ((tab === 'pinned' || tab === 'archived') && !currentNotes.length) setTab('notes');
+  }, [currentNotes.length, tab]);
 
   const pinNote = async (id: string, pinned: boolean) => updateNote(id, { pinned });
   const archiveNote = async (id: string, archived: boolean) => updateNote(id, { archived });
@@ -149,11 +148,11 @@ export function CharacterNotesList({
                     </Box>
                     <CardContent>
                       <Typography variant="caption" color="text.secondary">
-                        {formatDate(note.createdAt, 'minute')}
+                        {formatDateDisplay(note.createdAt, 'minute')}
                       </Typography>
                       {note.updatedAt ? (
                         <Typography variant="caption" color="text.secondary">
-                          {` (last edit ${formatDate(note.updatedAt, 'minute')})`}
+                          {` (last edit ${formatDateDisplay(note.updatedAt, 'minute')})`}
                         </Typography>
                       ) : null}
                       <Typography data-testid={`note-content-${note.id}`}>
