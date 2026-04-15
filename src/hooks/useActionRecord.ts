@@ -97,25 +97,31 @@ export const useActionRecord = (characterId: string) => {
       const success = await firebaseCrud.remove(id, false);
       if (success) {
         optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
-        if (
-          (record?.type === 'feature' || record?.type === 'trait') &&
-          record?.sourceIndex &&
-          user?.uid
-        ) {
+        if (record?.sourceIndex && user?.uid) {
           try {
             const charDocRef = doc(database, `users/${user.uid}/characters`, characterId);
             await runTransaction(database, async (transaction) => {
               const snap = await transaction.get(charDocRef);
               if (!snap.exists()) return;
 
-              const current: number =
-                snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
-              if (current <= 0) return;
+              if (record?.type === 'feature' || record?.type === 'trait') {
+                const current: number =
+                  snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
+                if (current <= 0) return;
 
-              transaction.update(charDocRef, {
-                [`resourceUsages.${record.sourceIndex}.current`]: current - 1
-              });
+                transaction.update(charDocRef, {
+                  [`resourceUsages.${record.sourceIndex}.current`]: current - 1
+                });
+              } else if (record?.type === 'spell' && typeof record.value === 'number') {
+                const current: number = snap.data()?.usedSpellSlots?.[record.value] ?? 0;
+                if (current <= 0) return;
+
+                transaction.update(charDocRef, {
+                  [`usedSpellSlots.${record.value}`]: current - 1
+                });
+              }
             });
+
             await queryClient.invalidateQueries({ queryKey: characterQueryKey });
           } catch (error) {
             toast.error(`Update failed: 

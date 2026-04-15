@@ -43,7 +43,7 @@ export function ActionRecordList({
     });
   }, [records, dateFrom, dateTo, filter]);
 
-  const clearAllRecords = async () => {
+  const clearAll = async () => {
     if (!filteredRecords) return;
     setIsClearing(true);
     for (const record of filteredRecords) await onDelete(record.id);
@@ -73,7 +73,7 @@ export function ActionRecordList({
         <Button
           data-testid="clear-all-records"
           color="error"
-          onClick={clearAllRecords}
+          onClick={clearAll}
           disabled={!filteredRecords?.length}
           size="small"
         >

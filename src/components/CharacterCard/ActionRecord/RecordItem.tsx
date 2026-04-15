@@ -85,7 +85,7 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
         slotProps={{ root: { style: { paddingRight: !record.auto ? '72px' : '48px' } } }}
         secondaryAction={
           <Box display="flex" gap={0.25}>
-            {isSaving ? (
+            {isSaving && isEditing ? (
               <Loader />
             ) : (
               <IconButton
@@ -103,20 +103,19 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
               </IconButton>
             )}
 
-            {!record.auto &&
-              (isSaving ? (
-                <Loader />
-              ) : (
-                <IconButton
-                  size="small"
-                  edge="end"
-                  data-testid="record-delete"
-                  onClick={async () => await onActionDelete(record.id)}
-                  disabled={isSaving}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              ))}
+            {isSaving && !isEditing ? (
+              <Loader />
+            ) : (
+              <IconButton
+                size="small"
+                edge="end"
+                data-testid="record-delete"
+                onClick={async () => await onActionDelete(record.id)}
+                disabled={isSaving}
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         }
       >

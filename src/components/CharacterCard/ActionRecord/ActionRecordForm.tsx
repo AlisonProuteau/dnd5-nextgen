@@ -169,9 +169,10 @@ export function ActionRecordForm({
     if (!open) reset();
   }, [open, reset]);
 
-  const handleFormSubmit = handleSubmit(async (data) => {
-    await onSubmit({ ...data, name: data.name.trim(), usage: selectedResource?.usage });
-  });
+  const handleFormSubmit = handleSubmit(
+    async (data) =>
+      await onSubmit({ ...data, name: data.name.trim(), usage: selectedResource?.usage })
+  );
 
   const availableTypes = useMemo(() => {
     const omitted = [

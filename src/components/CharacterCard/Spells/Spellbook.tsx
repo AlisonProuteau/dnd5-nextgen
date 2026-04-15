@@ -43,9 +43,6 @@ interface SpellbookProps {
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
-  const [usedSlots, setUsedSlots] = useState<Record<string, number>>(
-    character.usedSpellSlots || {}
-  );
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
@@ -92,8 +89,6 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
   const handleRestoreAll = async () => {
     if (!character.id) return;
-
-    setUsedSlots({});
     await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
   };
 
@@ -103,8 +98,8 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     let success = slotLevel === 'ritual' ? true : false;
     if (!success) {
       const newUsedSlots = {
-        ...usedSlots,
-        [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
+        ...character.usedSpellSlots,
+        [slotLevel.toString()]: (character.usedSpellSlots?.[slotLevel.toString()] || 0) + 1
       };
       if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
         success = await firebaseCrud.update(
@@ -112,7 +107,6 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
           false
         );
-        if (success) setUsedSlots(newUsedSlots);
       } else toast.error(`No spell slots of level ${slotLevel} available`);
     }
 
@@ -142,13 +136,13 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     () =>
       Object.entries(slotInfo.slots).reduce(
         (acc, [level, total]) => {
-          const used = usedSlots[level] || 0;
+          const used = character.usedSpellSlots?.[level] || 0;
           acc[level] = Math.max(total - used, 0);
           return acc;
         },
         {} as Record<string, number>
       ),
-    [slotInfo.slots, usedSlots]
+    [slotInfo.slots, character.usedSpellSlots]
   );
 
   const characterInfo = useMemo(() => {
@@ -176,7 +170,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           {Object.values(slotInfo.slots).length ? (
             <SpellSlots
               slots={slotInfo.slots}
-              usedSlots={usedSlots}
+              usedSlots={character.usedSpellSlots || {}}
               onRestoreAll={handleRestoreAll}
               disabled={firebaseCrud.isLoading}
             />
