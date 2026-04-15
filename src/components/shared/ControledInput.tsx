@@ -13,7 +13,7 @@ import {
 interface ControledInputProps {
   onChange?: (
     event: ChangeEvent<HTMLTextAreaElement | HTMLInputElement, Element>,
-    value: string | boolean | undefined
+    value: string | number | boolean | undefined
   ) => void;
   errorMessage?: string[];
   sx?: SxProps<Theme>;
@@ -57,9 +57,15 @@ export function ControledInput({
               !hiddenValues?.includes(field.value) && field.value !== undefined ? field.value : ''
             }
             autoComplete={props.autoComplete ?? props.id}
-            onChange={(e) =>
-              onChange ? onChange(e, e.target.value) : field.onChange(e.target.value)
-            }
+            onChange={(e) => {
+              const coerced =
+                props.type === 'number'
+                  ? e.target.value === ''
+                    ? undefined
+                    : Number(e.target.value)
+                  : e.target.value;
+              onChange ? onChange(e, coerced) : field.onChange(coerced);
+            }}
           />
           {(!!fieldState.error || hasError) &&
             (errorMessage?.length
