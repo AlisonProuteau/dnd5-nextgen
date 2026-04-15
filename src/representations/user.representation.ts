@@ -89,6 +89,20 @@ export interface CharacterNote {
   archived?: boolean;
 }
 
+export type ActionRecordType = 'spell' | 'feature' | 'trait' | 'health' | 'money' | 'custom';
+export interface ActionRecord {
+  id: string;
+  type: ActionRecordType;
+  name: string;
+  description?: string | null;
+  value?: number;
+  valueUnit?: string;
+  equipment?: DefaultRepresentation;
+  sourceIndex?: string;
+  createdAt: Date;
+  auto?: boolean;
+}
+
 export type UserData = {
   identifier: string;
   admin?: boolean;

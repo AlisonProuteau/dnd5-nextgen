@@ -12,7 +12,9 @@ import {
   where,
   type WhereFilterOp
 } from 'firebase/firestore';
+import { mapValues } from 'lodash';
 import { database } from 'src/firebase';
+import { formatDateType } from './date.utils';
 
 const myHeaders = new Headers();
 myHeaders.append('Accept', 'application/json');
@@ -70,3 +72,29 @@ export async function get(name: string, path: string, index: string): Promise<an
 
   return res.data() ?? null;
 }
+
+/**
+ * Remove undefined values from an objec.
+ * Used primarily to prevent Firestore from rejecting writes due to undefined values, while still allowing optional fields to be omitted from the object.
+ */
+export const stripUndefined = <T extends Record<string, unknown>>(obj: T): Partial<T> =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined)) as Partial<T>;
+
+/**
+ * Convert undefined or empty string values to null in an object.
+ * This is useful for Firestore updates where we want to explicitly unset a field.
+ */
+export const formatUndefined = <T extends Record<string, unknown>>(obj: T): T =>
+  mapValues(obj, (v) => (v === undefined || v === '' ? null : v)) as T;
+
+export const formatFirestoreDates = (data: any) => {
+  const formattedData = { ...data };
+
+  if ('createdAt' in data && data.createdAt)
+    formattedData.createdAt = formatDateType(data.createdAt);
+
+  if ('updatedAt' in data && data.updatedAt)
+    formattedData.updatedAt = formatDateType(data.updatedAt);
+
+  return formattedData;
+};

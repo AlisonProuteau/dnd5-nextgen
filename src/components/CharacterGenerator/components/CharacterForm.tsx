@@ -8,9 +8,9 @@ import {
   MenuItem,
   Paper,
   Select,
-  TextField,
   Typography
 } from '@mui/material';
+import { ControledInput } from '@shared/ControledInput';
 import type { CharacterDetails } from '../utils/character';
 import {
   buildPrompt,
@@ -119,19 +119,13 @@ export default function CharacterForm({
           </Grid>
         ))}
         <Grid size={{ xs: 12 }}>
-          <Controller
-            name="refinement"
+          <ControledInput
+            fullWidth
+            multiline
+            minRows={2}
+            id="refinement"
             control={control}
-            render={({ field }) => (
-              <TextField
-                label="Refinement"
-                id="Refinement"
-                fullWidth
-                multiline
-                minRows={2}
-                {...field}
-              />
-            )}
+            label="Refinement"
           />
         </Grid>
         <Grid size={{ xs: 12 }}>

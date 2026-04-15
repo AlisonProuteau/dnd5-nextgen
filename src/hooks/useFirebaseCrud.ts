@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { collection, deleteDoc, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { stripUndefined } from '@utils/api.utils';
 import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 
@@ -25,9 +26,10 @@ export interface UseFirebaseCrudOptions {
 
 export interface UseFirebaseCrudReturn<T> {
   isLoading: boolean;
-  create: (data: Partial<T> & any) => Promise<string | null>;
-  update: (id: string, data: Partial<T>, notify?: boolean) => Promise<void>;
-  remove: (id: string) => Promise<void>;
+  create: (data: Partial<T> & any, notify?: boolean) => Promise<string | null>;
+  update: (id: string, data: Partial<T>, notify?: boolean) => Promise<boolean>;
+  remove: (id: string, notify?: boolean) => Promise<boolean>;
+  invalidatedQueryKey: string[] | undefined;
 }
 
 export const useFirebaseCrud = <T extends Record<string, any>>(
@@ -57,8 +59,15 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return { state: newState };
   };
 
-  const queryKeyWithUserId = (key: string[], uid: string): string[] =>
-    key.indexOf('{userId}') === -1 ? [...key, uid] : key.map((k) => (k === '{userId}' ? uid : k));
+  const queryKeyWithUserId = useMemo(
+    () =>
+      invalidateQueryKey && user?.uid
+        ? invalidateQueryKey.indexOf('{userId}') === -1
+          ? [...invalidateQueryKey, user.uid]
+          : invalidateQueryKey.map((k) => (k === '{userId}' ? user.uid : k))
+        : undefined,
+    [invalidateQueryKey, user?.uid]
+  );
 
   const asyncCallWithTimeout = async (asyncPromise: Promise<any>, timeLimit: number) => {
     // Create a promise that rejects if the time limit is reached
@@ -73,7 +82,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     return Promise.race([asyncPromise, timeoutPromise]);
   };
 
-  const create = async (data: Partial<T>): Promise<string | null> => {
+  const create = async (data: Partial<T>, notify = true): Promise<string | null> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
       return null;
@@ -83,24 +92,21 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     try {
       const newDocRef = doc(collection(database, path));
       const documentData = {
-        ...data,
+        ...stripUndefined(data as Record<string, unknown>),
         id: newDocRef.id
       } as unknown as T;
       DEV_MODE
         ? await asyncCallWithTimeout(setDoc(newDocRef, documentData), TIMEOUT)
         : await setDoc(newDocRef, documentData);
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.create)
         navigate(
           redirect.create.path.replace('{id}', newDocRef.id),
           stateWithId(newDocRef.id, redirect.create.state)
         );
 
-      toast.success(successMessages.create || 'Created successfully');
+      notify && toast.success(successMessages.create || 'Created successfully');
       return newDocRef.id;
     } catch (error) {
       toast.error(`Create failed:
@@ -111,23 +117,28 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     }
   };
 
-  const update = async (id: string, data: Partial<T>, notify = true): Promise<void> => {
+  const update = async (id: string, data: Partial<T>, notify = true): Promise<boolean> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
-      return;
+      return false;
     }
 
     setIsLoading(true);
+    let success = false;
     try {
       const docRef = doc(database, path, id);
-      DEV_MODE
-        ? await asyncCallWithTimeout(updateDoc(docRef, data as unknown as T), TIMEOUT)
-        : await updateDoc(docRef, data as unknown as T);
+      const cleanData = stripUndefined(data) as T;
+      if (!cleanData || Object.keys(cleanData).length === 0) {
+        toast.error('No valid fields to update');
+        return false;
+      }
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      DEV_MODE
+        ? await asyncCallWithTimeout(updateDoc(docRef, cleanData), TIMEOUT)
+        : await updateDoc(docRef, cleanData);
+      success = true;
+
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.update)
         navigate(redirect.update.path.replace('{id}', id), stateWithId(id, redirect.update.state));
 
@@ -137,33 +148,34 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
         ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
+      return success;
     }
   };
 
-  const remove = async (id: string): Promise<void> => {
+  const remove = async (id: string, notify = true): Promise<boolean> => {
     if (!user?.uid) {
       toast.error('User not authenticated');
-      return;
+      return false;
     }
 
     setIsLoading(true);
+    let success = false;
     try {
       const docRef = doc(database, path, id);
 
       DEV_MODE ? await asyncCallWithTimeout(deleteDoc(docRef), TIMEOUT) : await deleteDoc(docRef);
+      success = true;
 
-      if (invalidateQueryKey)
-        await queryClient.invalidateQueries({
-          queryKey: queryKeyWithUserId(invalidateQueryKey, user.uid)
-        });
+      if (queryKeyWithUserId) await queryClient.invalidateQueries({ queryKey: queryKeyWithUserId });
       if (redirect.delete) navigate(redirect.delete.path, { state: redirect.delete.state });
 
-      toast.success(successMessages.delete || 'Deleted successfully');
+      notify && toast.success(successMessages.delete || 'Deleted successfully');
     } catch (error) {
       toast.error(`Delete failed:
         ${(error as Error).message}`);
     } finally {
       setIsLoading(false);
+      return success;
     }
   };
 
@@ -171,6 +183,7 @@ export const useFirebaseCrud = <T extends Record<string, any>>(
     isLoading,
     create,
     update,
-    remove
+    remove,
+    invalidatedQueryKey: queryKeyWithUserId
   };
 };

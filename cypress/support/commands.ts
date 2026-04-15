@@ -77,7 +77,7 @@ declare global {
        * Gets a button by its text content (supports chaining).
        * @param text - Button text or RegExp.
        * @returns Chainable<JQuery<HTMLButtonElement>>
-       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+       * @description Use `cy.wrap($el).getButton(...)` when scoping inside a `within()` block.
        */
       getButton(text: string | RegExp, selector?: string): Chainable<JQuery<HTMLButtonElement>>;
 
@@ -86,7 +86,7 @@ declare global {
        * @param role - ARIA role.
        * @param name - Optional accessible name.
        * @returns Chainable<JQuery<HTMLElement>>
-       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+       * @description Use `cy.wrap($el).getByRole(...)` when scoping inside a `within()` block.
        */
       getByRole(role: string, name?: string): Chainable<JQuery<HTMLElement>>;
 
@@ -95,7 +95,7 @@ declare global {
        * @param testId - The data-testid value.
        * @param options - Selector and type options.
        * @returns Chainable<JQuery<HTMLElement>>
-       * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+       * @description Use `cy.wrap($el).getByTestId(...)` when scoping inside a `within()` block.
        */
       getByTestId(
         testId: string,
@@ -107,6 +107,15 @@ declare global {
        * @returns Chainable<JQuery<HTMLElement>>
        */
       shouldBeSelected(): Chainable<JQuery<HTMLElement>>;
+
+      /**
+       * Clicks the previous/next step button until the target step section is active.
+       * Useful for multi-step character sheet navigation.
+       * @param step - The data-testid step name (without '-section' suffix).
+       * @param type - Direction: 'previous' or 'next' (default: 'next').
+       * @returns Chainable resolving to the active section element.
+       */
+      clickUntilStep(step: string, type?: 'previous' | 'next'): Chainable<JQuery<HTMLElement>>;
     }
   }
 }
@@ -246,7 +255,7 @@ Cypress.Commands.add('waitForLoading', () => {
 /**
  * Cypress command: getByRole
  * Gets an element by ARIA role and optional accessible name. Supports chaining.
- * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+ * @description Use `cy.wrap($el).getByRole(...)` when scoping inside a `within()` block.
  */
 Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
   const nextCommand: Cypress.Command = (this as any)['attributes'].next;
@@ -267,7 +276,7 @@ Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
 /**
  * Cypress command: getByTestId
  * Gets an element by data-testid, with selector and type options. Supports chaining.
- * @description WARNING: Doesn't work from "within" due to Cypress limitations.
+ * @description Use `cy.wrap($el).getByTestId(...)` when scoping inside a `within()` block.
  */
 Cypress.Commands.addQuery(
   'getByTestId',
@@ -319,6 +328,29 @@ Cypress.Commands.addQuery('getButton', function (text: string | RegExp, selector
     return res;
   };
 });
+
+/**
+ * Cypress command: clickUntilStep
+ * Navigates a multi-step character sheet by clicking previous/next until the target step is active.
+ */
+Cypress.Commands.add(
+  'clickUntilStep',
+  (step: string, type: 'previous' | 'next' = 'next', i = 1) => {
+    cy.getByTestId(`${type}-step`).click();
+    return cy.getByTestId('-section', { type: 'contains' }).then((el) => {
+      const currentLabel =
+        (el.attr('data-testid') ?? el.attr('data-testId'))?.replace('-section', '') || '';
+      const maxReached = i >= 6;
+
+      if (maxReached && currentLabel !== step)
+        expect(currentLabel).contains(step, 'Step not found in 6 clicks');
+      return currentLabel === step || maxReached
+        ? cy.wrap(el)
+        : // @ts-ignore
+          cy.clickUntilStep(step, type, i + 1);
+    });
+  }
+);
 
 /**
  * Cypress command: shouldBeSelected

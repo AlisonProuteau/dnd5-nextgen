@@ -39,3 +39,11 @@ export const getGenderIcon = (genderIndex: GenderIndexes) => {
       return OtherIcon;
   }
 };
+
+export enum CurrencyLabels {
+  ep = 'Electrum Pieces',
+  pp = 'Platinum Pieces',
+  gp = 'Gold Pieces',
+  sp = 'Silver Pieces',
+  cp = 'Copper Pieces'
+}

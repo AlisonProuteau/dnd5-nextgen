@@ -141,7 +141,7 @@ export function CharacterContainer() {
             }
           />
 
-          <Box {...swipeHandlers}>
+          <Box {...swipeHandlers} minHeight="70vh">
             {activeStep === 0 && <Stats character={character} />}
             {activeStep === 1 && <Characteristics character={character} />}
             {activeStep === 2 && <Equipments character={character} />}

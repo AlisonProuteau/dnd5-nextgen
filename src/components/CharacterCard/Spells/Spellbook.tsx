@@ -16,9 +16,12 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { increment } from 'firebase/firestore';
 import { isEqual, max } from 'lodash';
+import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
+import { formatActionRecord, getSpellActionRecordData } from '@utils/actions.utils';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -41,13 +44,11 @@ interface SpellbookProps {
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
-  const [usedSlots, setUsedSlots] = useState<Record<string, number>>(
-    character.usedSpellSlots || {}
-  );
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
 
+  const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
     collectionPath: 'users/{userId}/characters',
     successMessages: {
@@ -89,27 +90,28 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
 
   const handleRestoreAll = async () => {
     if (!character.id) return;
-
-    setUsedSlots({});
     await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
   };
 
-  const handleCastSpell = async (spell: Spell, slotLevel?: number) => {
+  const handleCastSpell = async (spell: Spell, slotLevel?: number | 'ritual') => {
     if (!character.id || spell.level === 0 || !slotLevel) return;
 
-    const newUsedSlots = {
-      ...usedSlots,
-      [slotLevel.toString()]: (usedSlots[slotLevel.toString()] || 0) + 1
-    };
+    let success = slotLevel === 'ritual';
+    if (!success) {
+      if (
+        (character.usedSpellSlots?.[slotLevel.toString()] ?? 0) <
+        (slotInfo.slots[slotLevel.toString()] ?? 0)
+      )
+        success = await firebaseCrud.update(
+          character.id,
+          { [`usedSpellSlots.${slotLevel}`]: increment(1) },
+          false
+        );
+      else toast.error(`No spell slots of level ${slotLevel} available`);
+    }
 
-    if (newUsedSlots[slotLevel.toString()] <= slotInfo.slots[slotLevel.toString()]) {
-      setUsedSlots(newUsedSlots);
-      await firebaseCrud.update(
-        character.id,
-        { [`usedSpellSlots.${slotLevel}`]: newUsedSlots[slotLevel.toString()] },
-        false
-      );
-    } else toast.error(`No spell slots of level ${slotLevel} available`);
+    if (success)
+      await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
   };
 
   const shouldLearn = useMemo(
@@ -134,13 +136,13 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     () =>
       Object.entries(slotInfo.slots).reduce(
         (acc, [level, total]) => {
-          const used = usedSlots[level] || 0;
+          const used = character.usedSpellSlots?.[level] || 0;
           acc[level] = Math.max(total - used, 0);
           return acc;
         },
         {} as Record<string, number>
       ),
-    [slotInfo.slots, usedSlots]
+    [slotInfo.slots, character.usedSpellSlots]
   );
 
   const characterInfo = useMemo(() => {
@@ -168,7 +170,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           {Object.values(slotInfo.slots).length ? (
             <SpellSlots
               slots={slotInfo.slots}
-              usedSlots={usedSlots}
+              usedSlots={character.usedSpellSlots || {}}
               onRestoreAll={handleRestoreAll}
               disabled={firebaseCrud.isLoading}
             />
@@ -198,6 +200,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                   onClick?.();
                 }}
                 canCastRitual={character.ritualCaster}
+                disabled={firebaseCrud.isLoading}
               />
             )}
           />
