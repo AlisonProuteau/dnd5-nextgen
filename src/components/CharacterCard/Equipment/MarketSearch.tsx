@@ -5,6 +5,7 @@ import { getAllEquipment, getAllMagicItems, getEquipmentCategories } from '@api/
 import { ControledInput } from '@shared/ControledInput';
 import { FilterSelect } from '@shared/FilterSelect';
 import { Loader } from '@shared/Loader';
+import { toKey } from '@utils/index';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -83,15 +84,7 @@ export function MarketSearch({
     )
       return [];
     return allEquipment.filter(({ name }) => name.toLowerCase().includes(search.toLowerCase()));
-  }, [
-    search,
-    selectedCategory,
-    isEquipmentListLoading,
-    allEquipment
-      ?.map(({ index }) => index)
-      .sort((a, b) => a.localeCompare(b))
-      .join(', ')
-  ]);
+  }, [search, selectedCategory, isEquipmentListLoading, toKey(allEquipment)]);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
