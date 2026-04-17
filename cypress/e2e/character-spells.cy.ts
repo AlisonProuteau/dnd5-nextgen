@@ -284,6 +284,240 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       .should('not.contain.text', 'No spells to display')
       .getByTestId('cast-spell-')
       .should('not.exist');
+
+    // Test: Temporary Spells — add via manage dialog
+    const tempSpell = { index: 'hold-person', name: 'Hold Person' };
+    cy.getByTestId('spells-section').contains('Temporary Spells').click();
+    cy.getByTestId('spells-section').getButton('Manage').click();
+    cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
+
+    cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
+      cy.get('#search').type('hold');
+      cy.wrap($dialog)
+        .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+        .click();
+      cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).should('exist');
+      cy.wrap($dialog)
+        .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+        .should('not.exist');
+
+      // Test: toggle off then back on
+      cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).click();
+      cy.wrap($dialog)
+        .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+        .click();
+      cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).should('exist');
+
+      cy.wrap($dialog).getButton('Close').click();
+    });
+    cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+
+    // Test: Spell appears in Temporary Spells section
+    cy.getByTestId('spells-section')
+      .getByTestId(`view-spell-item-${tempSpell.index}`)
+      .should('be.visible')
+      .and('contain.text', tempSpell.name);
+
+    // Test: Cast the temporary spell — direct cast (only 1 level-2 slot, no upcast possible)
+    cy.getByTestId(`cast-spell-${tempSpell.index}`).should('be.enabled').click();
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
+    cy.getButton('Rest').should('be.visible');
+
+    // Test: Persistence — temporary spell survives a reload
+    cy.reload();
+    cy.waitForLoading();
+    cy.getByTestId('stats-section').should('be.visible');
+    cy.clickUntilStep('spells', 'previous');
+    cy.getByTestId('spells-section').contains('Temporary Spells').click();
+    cy.getByTestId('spells-section')
+      .getByTestId(`view-spell-item-${tempSpell.index}`)
+      .should('be.visible');
+
+    // Test: Remove via manage dialog
+    cy.getByTestId('spells-section').getButton('Manage').click();
+    cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
+      cy.wrap($dialog)
+        .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+        .should('exist')
+        .click();
+      cy.wrap($dialog)
+        .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+        .should('not.exist');
+      cy.wrap($dialog).getButton('Close').click();
+    });
+    cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+    cy.getByTestId('spells-section')
+      .getByTestId(`view-spell-item-${tempSpell.index}`)
+      .should('not.exist');
+
+    // Test: Empty state — prompt shown, no results
+    cy.getByTestId('spells-section').getButton('Manage').click();
+    cy.getByRole('dialog', 'Temporary Spells')
+      .contains('Search by name or apply a filter')
+      .should('be.visible');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('not.exist');
+
+    // Test: Min level filter
+    cy.selectOption('#level-min', 'Level 2');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn)
+          .parent()
+          .invoke('text')
+          .should('not.match', /Cantrip|Lv 1[ ·]/);
+      });
+    cy.get('#level-max').click();
+    cy.get('[role="option"]').each(($el) =>
+      cy
+        .wrap($el)
+        .should(
+          !$el.text().includes('Level 2') ? 'have.attr' : 'not.have.attr',
+          'aria-disabled',
+          'true'
+        )
+    );
+    cy.press('Escape');
+    cy.selectOption('#level-min', 'Cantrip');
+
+    //Test: Max level filter
+    cy.getByRole('button', 'Ritual').click(); // necessary for query
+    cy.selectOption('#level-max', 'Level 1');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn)
+          .parent()
+          .invoke('text')
+          .should('not.match', /Lv 2[ ·]/);
+      });
+    cy.get('#level-min').click();
+    cy.get('[role="option"]').each(($el) =>
+      cy
+        .wrap($el)
+        .should(
+          $el.text().includes('Level 2') ? 'have.attr' : 'not.have.attr',
+          'aria-disabled',
+          'true'
+        )
+    );
+    cy.press('Escape');
+    cy.getByRole('button', 'Ritual').click();
+    cy.selectOption('#level-max', 'Level 2');
+
+    // Test: School filter
+    cy.selectOption('#school', 'Evocation');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn).parent().invoke('text').should('contain', 'Evocation');
+      });
+    cy.selectOption('#school', 'Any');
+
+    // Test: Ritual chip
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn).parent().invoke('text').should('contain', 'Ritual');
+      });
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+
+    // Test: Concentration chip
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn).parent().invoke('text').should('contain', 'Con');
+      });
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+
+    // Test: Class filter
+    cy.selectOption('#class', 'Wizard');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .its('length')
+      .then((wizardCount: unknown) => {
+        cy.selectOption('#class', 'Cleric');
+        cy.getByRole('dialog', 'Temporary Spells')
+          .getByTestId('search-spell-item-')
+          .should('have.length.greaterThan', 0)
+          .its('length')
+          .as('clericCount', { type: 'static' })
+          .should('not.eq', wizardCount as number);
+      });
+    cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('be.visible');
+
+    // Test: Subclass filter
+    cy.selectOption('#subclass', 'Life');
+    cy.get('@clericCount').then((clericCount: unknown) =>
+      cy
+        .getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .should('have.length.lessThan', clericCount as number)
+    );
+
+    // Test: Updating class clears the subclass dropdown
+    cy.selectOption('#class', 'Wizard');
+    cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('have.value', '');
+    cy.selectOption('#class', 'Any');
+    cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('not.exist');
+
+    // Test: Combination — Min level 1 + School Evocation
+    cy.selectOption('#level-min', 'Level 1');
+    cy.selectOption('#school', 'Evocation');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn)
+          .parent()
+          .invoke('text')
+          .should('not.contain', 'Cantrip')
+          .and('contain', 'Evocation');
+      });
+    cy.selectOption('#level-min', 'Cantrip');
+    cy.selectOption('#school', 'Any');
+
+    // Test: Combination — Class (Wizard) + Concentration
+    cy.selectOption('#class', 'Wizard');
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn).parent().invoke('text').should('contain', 'Con');
+      });
+    cy.selectOption('#class', 'Any');
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+
+    // Test: Combination — Name + Ritual
+    cy.getByRole('dialog', 'Temporary Spells').find('#search').type('detect');
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-')
+      .should('have.length.greaterThan', 0)
+      .each(($btn) => {
+        cy.wrap($btn)
+          .parent()
+          .invoke('text')
+          .should('match', /detect/i)
+          .and('contain', 'Ritual');
+      });
+    cy.getByRole('dialog', 'Temporary Spells').find('#search').clear();
+    cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+
+    cy.getByRole('dialog', 'Temporary Spells').getButton('Close').click();
+    cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
   });
 
   spellcastingClasses.map(

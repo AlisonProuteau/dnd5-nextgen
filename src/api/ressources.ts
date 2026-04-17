@@ -1,7 +1,11 @@
 import { get, getAll, type QueryObject } from '@utils/api.utils';
 import type { Version } from '@utils/constants/versions.constants';
 import type { Feature } from '@representations/abilities/feature.representation';
-import type { MagicItem, Spell } from '@representations/abilities/magic.representation';
+import type {
+  MagicItem,
+  Spell,
+  SpellFilters
+} from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { AbilityScore, Proficiency } from '@representations/campaign/adventure.representation';
 import type {
@@ -192,22 +196,50 @@ export async function getSpellsForClass(
   return { count: allSpells.length, results: allSpells };
 }
 
+export async function getMagicSchools(
+  version: Version
+): Promise<{ count: number; results: { index: string; name: string }[] }> {
+  return getAll('Magic Schools', formatPath('magic-schools', version));
+}
+
 export async function getMatchingSpells(
   version: Version,
-  maxLevel?: number
+  filters?: SpellFilters
 ): Promise<{ count: number; results: Spell[] }> {
-  return getAll('Spells', formatPath('spells', version), [
-    {
-      fieldPath: 'level',
-      opStr: '>',
-      value: 0
-    },
-    {
-      fieldPath: 'level',
-      opStr: '<=',
-      value: maxLevel
-    }
-  ]);
+  const queries: QueryObject[] = [
+    { fieldPath: 'level', opStr: '>=', value: filters?.minLevel ?? 0 }
+  ];
+
+  if (filters?.maxLevel !== undefined)
+    queries.push({ fieldPath: 'level', opStr: '<=', value: filters.maxLevel });
+
+  if (filters?.school)
+    queries.push({ fieldPath: 'school.index', opStr: '==', value: filters.school });
+
+  if (filters?.ritual !== undefined)
+    queries.push({ fieldPath: 'ritual', opStr: '==', value: filters.ritual });
+
+  if (filters?.concentration !== undefined)
+    queries.push({ fieldPath: 'concentration', opStr: '==', value: filters.concentration });
+
+  if (filters?.classFilter && filters?.subclassFilter)
+    queries.push({
+      fieldPath: 'subclasses',
+      opStr: 'array-contains',
+      value: filters.subclassFilter
+    });
+  else if (filters?.classFilter)
+    queries.push({ fieldPath: 'classes', opStr: 'array-contains', value: filters.classFilter });
+
+  if (filters?.racial !== undefined)
+    queries.push({ fieldPath: 'racial', opStr: '==', value: filters.racial });
+
+  const spells = (
+    (await getAll('Spells', formatPath('spells', version), queries)).results as Spell[]
+  ).filter(({ classes }) =>
+    filters?.classFilter && filters?.subclassFilter ? classes.includes(filters.classFilter) : true
+  );
+  return { count: spells.length, results: spells };
 }
 
 export async function getSpell(version: Version, index: string): Promise<Spell | null> {

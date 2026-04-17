@@ -137,12 +137,13 @@ export function ActionRecordForm({
   const spells = useMemo(() => {
     const known = character.knownSpells ?? [];
     const prepared = character.preparedSpells ?? [];
+    const temporary = character.temporarySpells ?? [];
     return (
-      (uniqBy([...prepared, ...known], 'index').sort(
+      (uniqBy([...known, ...prepared, ...temporary], 'index').sort(
         (a, b) => a.level - b.level
       ) as Character['knownSpells']) || []
     );
-  }, [character.knownSpells, character.preparedSpells]);
+  }, [character.knownSpells, character.preparedSpells, character.temporarySpells]);
 
   useEffect(() => {
     if (!sourceIndex) return;
@@ -221,7 +222,16 @@ export function ActionRecordForm({
                         .filter((s) => s.level === 0)
                         .map((s) => (
                           <MenuItem key={s.index} value={s.index}>
-                            {s.name}
+                            <Box display="flex" flex={1} justifyContent="space-between" gap={1}>
+                              {s.name}
+                              {character.temporarySpells?.find((ts) => ts.index === s.index) ? (
+                                <Chip
+                                  label="Temp"
+                                  size="small"
+                                  sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
+                                />
+                              ) : null}
+                            </Box>
                           </MenuItem>
                         ))
                     ]}
@@ -233,10 +243,20 @@ export function ActionRecordForm({
                           <MenuItem key={s.index} value={s.index}>
                             <Box display="flex" flex={1} justifyContent="space-between" gap={1}>
                               {s.name}
-                              <Chip
-                                label={`Lv ${s.level}`}
-                                sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
-                              />
+                              <Box>
+                                {character.temporarySpells?.find((ts) => ts.index === s.index) ? (
+                                  <Chip
+                                    label="Temp"
+                                    size="small"
+                                    sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
+                                  />
+                                ) : null}
+                                <Chip
+                                  label={`Lv ${s.level}`}
+                                  size="small"
+                                  sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
+                                />
+                              </Box>
                             </Box>
                           </MenuItem>
                         ))

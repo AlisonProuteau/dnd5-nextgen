@@ -48,3 +48,14 @@ export type MagicSchool = {
   index: string;
   name: string;
 };
+
+export interface SpellFilters {
+  minLevel?: number;
+  maxLevel?: number;
+  school?: string;
+  ritual?: boolean;
+  concentration?: boolean;
+  classFilter?: string;
+  subclassFilter?: string;
+  racial?: boolean;
+}

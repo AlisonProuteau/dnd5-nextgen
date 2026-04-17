@@ -44,9 +44,11 @@ interface SpellbookProps {
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
+  const [temporarySpells, setTemporarySpells] = useState(character.temporarySpells || []);
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
+  const { isOn: isAddTempOpen, turnOn: openAddTemp, turnOff: closeAddTemp } = useToggle();
 
   const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
@@ -91,6 +93,12 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const handleRestoreAll = async () => {
     if (!character.id) return;
     await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
+  };
+
+  const saveTemporarySpells = async () => {
+    closeAddTemp();
+    if (character.id && !isEqual(character.temporarySpells, temporarySpells))
+      await firebaseCrud.update(character.id, { temporarySpells }, false);
   };
 
   const handleCastSpell = async (spell: Spell, slotLevel?: number | 'ritual') => {
@@ -204,6 +212,52 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               />
             )}
           />
+
+          <Accordion sx={{ '&:before': { display: 'none' } }} elevation={0} disableGutters>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                <Typography variant="subtitle2">Temporary Spells</Typography>
+              </Divider>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                sx={{ position: 'relative', top: '-20px', height: '15px' }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  fontWeight="normal"
+                  display="block"
+                  textAlign="center"
+                >
+                  Spells granted by traits, features or gameplay, castable regardless of your
+                  prepare or learn limits.
+                </Typography>
+                <Button onClick={openAddTemp} size="small" disabled={firebaseCrud.isLoading}>
+                  Manage
+                </Button>
+              </Box>
+              {temporarySpells.length > 0 && (
+                <SpellList
+                  characterInfo={characterInfo}
+                  additionalSpellList={temporarySpells}
+                  spellListOnly={true}
+                  hideLevels
+                  actions={(spell) => (
+                    <CastSpellMenu
+                      spell={spell}
+                      availableSlots={availableSlots}
+                      handleCastSpell={handleCastSpell}
+                      disabled={firebaseCrud.isLoading}
+                    />
+                  )}
+                />
+              )}
+            </AccordionDetails>
+          </Accordion>
 
           {character.class.index === 'wizard' &&
             knownSpells.filter(({ level }) => level > 0).length && (
@@ -426,6 +480,42 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           >
             Close
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        fullWidth
+        maxWidth="lg"
+        open={isAddTempOpen}
+        onClose={saveTemporarySpells}
+        PaperProps={{ elevation: 0 }}
+        slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+      >
+        <DialogTitle>Temporary Spells</DialogTitle>
+        <DialogContent>
+          {isAddTempOpen && (
+            <SpellSearch
+              classIndex=""
+              maxLevel={max(slotLevels)}
+              selectedSpells={temporarySpells}
+              excludeSpells={[...knownSpells, ...preparedSpells]}
+              onSelect={(spell, remove = false) => {
+                if (remove === temporarySpells.some(({ index }) => index === spell.index)) {
+                  remove
+                    ? setTemporarySpells((prev) =>
+                        prev.filter(({ index }) => index !== spell.index)
+                      )
+                    : setTemporarySpells((prev) => [
+                        ...prev,
+                        { index: spell.index, name: spell.name, level: spell.level }
+                      ]);
+                }
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={saveTemporarySpells}>Close</Button>
         </DialogActions>
       </Dialog>
     </Fragment>
