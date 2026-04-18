@@ -20,9 +20,9 @@ import { NumberInput } from '@shared/NumberInput';
 import { TooltipButton } from '@shared/TooltipButton';
 import {
   formatActionRecord,
-  getDeathSavesActionRecordData,
-  getHealthActionRecordData,
-  getResetHealthActionRecordData
+  formatDeathSavesRecord,
+  formatHealthRecord,
+  formatResetHealthRecord
 } from '@utils/actions.utils';
 import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
@@ -145,7 +145,7 @@ export function HealthManager({
       health.deathSaves.usedSaves < autoSaveTraitUsageMax &&
       !overrideHitPoints
     ) {
-      const healData = getHealthActionRecordData(1, 0);
+      const healData = formatHealthRecord(1, 0);
       if (healData) addOrUpdatePendingLog(healData, 'health');
       if (autoSaveTrait)
         pendingLogs.current.push(
@@ -205,7 +205,7 @@ export function HealthManager({
   const onCurrentHealthChange = (value: number | null) => {
     if (value === null) return;
 
-    const record = getHealthActionRecordData(
+    const record = formatHealthRecord(
       value,
       overrideHitPoints ? (character.hit_points ?? 0) : health.current,
       overrideHitPoints
@@ -318,7 +318,7 @@ export function HealthManager({
               value={health.temporary}
               onChange={(_, value) => {
                 if (value === null) return;
-                const record = getHealthActionRecordData(value, health.temporary, false, true);
+                const record = formatHealthRecord(value, health.temporary, false, true);
                 if (record) addOrUpdatePendingLog(record, 'health');
                 setHealth((prev) => ({ ...prev, temporary: value }));
               }}
@@ -358,7 +358,7 @@ export function HealthManager({
                     value={health.deathSaves.successes}
                     onChange={(_, value) => {
                       if (value === null) return;
-                      const record = getDeathSavesActionRecordData(
+                      const record = formatDeathSavesRecord(
                         value,
                         health.deathSaves.successes,
                         'success'
@@ -380,7 +380,7 @@ export function HealthManager({
                     value={health.deathSaves.failures}
                     onChange={(_, value) => {
                       if (value === null) return;
-                      const record = getDeathSavesActionRecordData(
+                      const record = formatDeathSavesRecord(
                         value,
                         health.deathSaves.failures,
                         'failure'
@@ -419,7 +419,7 @@ export function HealthManager({
                   temporary: 0,
                   deathSaves: { successes: 0, failures: 0, usedSaves: 0 }
                 };
-                const record = getResetHealthActionRecordData(data.current, initialHealth, [
+                const record = formatResetHealthRecord(data.current, initialHealth, [
                   ...pendingLogs.current
                 ]);
                 pendingLogs.current = [];

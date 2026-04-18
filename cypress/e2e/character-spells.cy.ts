@@ -977,7 +977,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           .getByTestId(`cast-spell-`)
           .each(($btn) => cy.wrap($btn).should('be.disabled'));
 
-        // Test: Long Rest - Restore all spell slots
+        // Test: Long Rest - Recover all spell slots
         cy.getByTestId('spell-slots').getButton('Rest').should('be.visible').click();
         cy.getByTestId('spell-slots').within(($el) => {
           cy.wrap($el).should(

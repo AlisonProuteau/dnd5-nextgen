@@ -4,7 +4,7 @@ import { MoneyObjectType, MoneyUnitType } from '@representations/campaign/equipm
 import { ActionRecord, ActionRecordType } from '@representations/user.representation';
 import { CurrencyLabels } from './ui/ui.utils';
 
-export const getHealthActionRecordData = (
+export const formatHealthRecord = (
   current: number,
   previous: number,
   overrideHitPoints = false,
@@ -51,7 +51,7 @@ const formatMoneyForDisplay = (
   return parts.length > 0 ? parts : undefined;
 };
 
-export const getMoneyActionRecordData = (
+export const formatMoneyRecord = (
   changes: Record<string, number>,
   currentAmount: Record<string, number>,
   previousAmount: Record<string, number>
@@ -65,7 +65,7 @@ export const getMoneyActionRecordData = (
   };
 };
 
-export const getDeathSavesActionRecordData = (
+export const formatDeathSavesRecord = (
   current: number,
   previous: number,
   unit: 'success' | 'failure'
@@ -88,7 +88,7 @@ type HealthDataType = {
     usedSaves: number;
   };
 };
-export const getResetHealthActionRecordData = (
+export const formatResetHealthRecord = (
   currentHealth: number,
   previousData: HealthDataType,
   pendingLogs: Omit<ActionRecord, 'id' | 'createdAt'>[]
@@ -122,7 +122,7 @@ export const getResetHealthActionRecordData = (
     : undefined;
 };
 
-export const getSpellActionRecordData = (
+export const formatSpellRecord = (
   spell: Spell,
   slotLevel: number | 'ritual'
 ): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'> => {
@@ -135,6 +135,17 @@ export const getSpellActionRecordData = (
         value: slotLevel,
         valueUnit: 'slot lvl'
       };
+};
+
+export const formatRestoreSpellSlotsRecord = (
+  recovery: Record<string, number>
+): Pick<ActionRecord, 'name' | 'description'> => {
+  return {
+    name: 'Spell Slots Restored',
+    description: Object.entries(recovery)
+      .map(([level, total]) => `Level ${level}: ${total} slot${total > 1 ? 's' : ''}`)
+      .join('\n')
+  };
 };
 
 export const formatActionRecord = (

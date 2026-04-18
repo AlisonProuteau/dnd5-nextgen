@@ -95,7 +95,7 @@ export const useActionRecord = (characterId: string) => {
   );
 
   const removeAction = useCallback(
-    async (id: string) => {
+    async (id: string, invalidate: boolean = true) => {
       const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
       const success = await firebaseCrud.remove(id, false);
       if (success) {
@@ -125,7 +125,7 @@ export const useActionRecord = (characterId: string) => {
               }
             });
 
-            await queryClient.invalidateQueries({ queryKey: characterQueryKey });
+            if (invalidate) await queryClient.invalidateQueries({ queryKey: characterQueryKey });
           } catch (error) {
             toast.error(`Update failed: 
             ${(error as Error).message}`);

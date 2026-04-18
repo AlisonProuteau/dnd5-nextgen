@@ -21,7 +21,7 @@ import { isEqual, max } from 'lodash';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { formatActionRecord, getSpellActionRecordData } from '@utils/actions.utils';
+import { formatActionRecord, formatSpellRecord } from '@utils/actions.utils';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
@@ -90,11 +90,6 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     await firebaseCrud.update(character.id, { preparedSpells });
   };
 
-  const handleRestoreAll = async () => {
-    if (!character.id) return;
-    await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
-  };
-
   const saveTemporarySpells = async () => {
     closeAddTemp();
     if (character.id && !isEqual(character.temporarySpells, temporarySpells))
@@ -118,8 +113,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       else toast.error(`No spell slots of level ${slotLevel} available`);
     }
 
-    if (success)
-      await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
+    if (success) await logAction(formatActionRecord('spell', formatSpellRecord(spell, slotLevel)));
   };
 
   const shouldLearn = useMemo(
@@ -177,9 +171,9 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         <Fragment>
           {Object.values(slotInfo.slots).length ? (
             <SpellSlots
+              characterId={character.id}
               slots={slotInfo.slots}
               usedSlots={character.usedSpellSlots || {}}
-              onRestoreAll={handleRestoreAll}
               disabled={firebaseCrud.isLoading}
             />
           ) : null}
