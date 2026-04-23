@@ -85,7 +85,7 @@ it('should validate class selection');
 Tests import character data directly from mocks:
 
 ```javascript
-import { characters } from 'cypress/support/mocks/characterList';
+import { characters } from '../support/mocks/characterList';
 const characterData = characters.find(({ name }) => name === 'Delfy')!;
 ```
 

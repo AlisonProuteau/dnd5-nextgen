@@ -1,5 +1,5 @@
-import * as dayjs from 'dayjs';
-import { characters } from 'cypress/support/mocks/characterList';
+import dayjs from 'dayjs';
+import { characters } from '../support/mocks/characterList';
 
 describe('Character Action Record End-to-End', () => {
   const tillyData = characters.find(({ name }) => name === 'Tilly')!;
