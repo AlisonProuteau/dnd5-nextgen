@@ -2,25 +2,36 @@ import { BladeIcon, ShieldIcon } from '@assets';
 import { CheckCircle, CircleOutlined, InfoOutlined, Warning } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
 import { TooltipButton } from '@shared/TooltipButton';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
+import { UsageTypes } from '@representations/common.representation';
+import { UsageDisplay } from '../Characteristics/UsageDisplay';
 
 interface EquipmentListItemProps {
   equipment: (Equipment | MagicItem) & { count?: number; equipped: boolean };
   onClick?: (equipment: Equipment | MagicItem) => void;
   onToggleEquip?: (equipment: Equipment | MagicItem) => void;
+  usage?: {
+    type: 'feature' | 'trait' | 'spell' | 'other';
+    usage: UsageTypes | UsageTypes[];
+    current: number;
+  };
   canEquip?: boolean;
   moreInfo?: boolean;
   hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
+  features?: Feature[];
 }
 
 export function EquipmentListItem({
   equipment,
   onClick,
   onToggleEquip,
+  usage,
   canEquip = true,
   moreInfo = true,
-  hasRequiredStrength = () => true
+  hasRequiredStrength = () => true,
+  features = []
 }: EquipmentListItemProps) {
   const getCount = (count?: number, quantity?: number): string => {
     if (count && count > 1) return count.toString();
@@ -38,17 +49,17 @@ export function EquipmentListItem({
       alignItems="center"
     >
       <Box display="flex" flexDirection="column">
-        <Box>
+        <Box display="flex" alignItems="center" gap={1}>
           {onClick && (
             <IconButton
               onClick={() => onClick(equipment)}
               data-testid={`equipment-item-${equipment.index}-info`}
-              sx={{ paddingLeft: 0 }}
+              sx={{ paddingX: 0 }}
             >
               <InfoOutlined color="info" fontSize="small" />
             </IconButton>
           )}
-          <Typography display="inline-block" sx={{ verticalAlign: 'middle' }}>
+          <Typography>
             {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
           </Typography>
           {!hasRequiredStrength(equipment) && (
@@ -56,11 +67,16 @@ export function EquipmentListItem({
               <Warning
                 color="warning"
                 fontSize="small"
-                sx={{ verticalAlign: 'middle', marginX: 1 }}
                 data-testid="strength-requirement-warning"
               />
             </TooltipButton>
           )}
+          <UsageDisplay
+            type="equipment"
+            character={usage ? { resourceUsages: { [equipment.index]: usage } } : {}}
+            resource={equipment}
+            fullFeatureList={features}
+          />
         </Box>
 
         {moreInfo && 'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (

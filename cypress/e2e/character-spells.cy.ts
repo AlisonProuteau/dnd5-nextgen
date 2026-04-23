@@ -1,4 +1,5 @@
-import { characters } from 'cypress/support/mocks/characterList';
+import { uniqBy } from 'lodash';
+import { characters } from '../support/mocks/characterList';
 
 // TODO-blocked: Add leveling when implemented
 describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
@@ -14,7 +15,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
       level1Spell: { index: 'unseen-servant', name: 'Unseen Servant', ritual: true },
       level2Spell: { index: 'invisibility', name: 'Invisibility', ritual: true },
-      expectedSlots: { '1': 2, '2': 0 }
+      expectedSlots: { '1': 2, '2': 0 },
+      features: [{ index: 'arcane-recovery', name: 'Arcane Recovery' }]
     },
     {
       classData: { index: 'cleric', name: 'Cleric' },
@@ -34,7 +36,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
       level1Spell: { index: 'charm-person', name: 'Charm Person' },
       level2Spell: { index: 'moonbeam', name: 'Moonbeam' },
-      expectedSlots: { '1': 2, '2': 0 }
+      expectedSlots: { '1': 2, '2': 0 },
+      features: [{ index: 'natural-recovery', name: 'Natural Recovery' }]
     },
     {
       classData: { index: 'bard', name: 'Bard' },
@@ -72,12 +75,13 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
   before(() => {
     characters.forEach((char) => {
       const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
-      if (
-        spellcastingClasses.some(({ classData }) => classData.index === char.class.index) ||
-        char.class.index === 'barbarian'
-      )
+      const current = spellcastingClasses.find(
+        ({ classData }) => classData.index === char.class.index
+      );
+      if (current || char.class.index === 'barbarian')
         cy.createTestCharacter(Cypress.testUser.uid, id, {
           ...char,
+          features: uniqBy([...(current?.features || []), ...(char.features || [])], 'index'),
           id,
           name: `Test ${char.class.name} ${isMobile ? 'Mobile' : 'Desktop'}`,
           version: 'Legacy'
@@ -144,6 +148,10 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         { index: 'acid-splash', name: 'Acid Splash', level: 0 },
         { index: 'chill-touch', name: 'Chill Touch', level: 0 },
         { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+      ],
+      equipments: [
+        ...(charData.equipments ?? []),
+        { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
       ],
       usedSpellSlots: undefined
     });
@@ -321,7 +329,101 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     // Test: Cast the temporary spell — direct cast (only 1 level-2 slot, no upcast possible)
     cy.getByTestId(`cast-spell-${tempSpell.index}`).should('be.enabled').click();
     cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
-    cy.getButton('Rest').should('be.visible');
+    cy.getButton(/Recover/).should('have.length', 2);
+
+    // Test: Cancel and ESC both dismiss the dialog without changes
+    cy.getByTestId('short-rest-restore').click();
+    cy.getByRole('dialog', 'Recover Spell Slots').getButton('Cancel').click();
+    cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+
+    cy.getByTestId('short-rest-restore').click();
+    cy.press('Escape');
+    cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+
+    // Test: Dialog — Arcane Recovery
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+    cy.getByTestId('short-rest-restore').click();
+    cy.getByRole('dialog', 'Recover Spell Slots').within(($dialog) => {
+      cy.wrap($dialog)
+        .contains('label', 'Pearl of Power')
+        .find('input[type="radio"]')
+        .should('be.checked');
+      cy.wrap($dialog)
+        .should('contain.text', 'Select 1 spell slot to recover.')
+        .and('contain.text', 'only recover spell slots up to level 1');
+
+      cy.wrap($dialog).contains('label', 'Arcane Recovery').click();
+      cy.wrap($dialog)
+        .contains('label', 'Arcane Recovery')
+        .find('input[type="radio"]')
+        .should('be.checked');
+      cy.wrap($dialog)
+        .contains('label', 'Pearl of Power')
+        .find('input[type="radio"]')
+        .should('not.be.checked');
+
+      cy.wrap($dialog)
+        .should('contain.text', 'Select spell slots to recover (total level must be 2 or less).')
+        .and('contain.text', 'only recover spell slots up to level 5');
+      cy.wrap($dialog).contains('Level 1').should('be.visible');
+      cy.wrap($dialog).contains('Level 2').should('be.visible');
+      cy.wrap($dialog).getButton('Recover').should('be.disabled');
+
+      // TEST: Validation
+      cy.get('#recover-1-increment').click();
+      cy.get('#recover-1').should('have.value', '1');
+      cy.get('#recover-1-increment').should('be.disabled');
+      cy.get('#recover-2-increment').should('be.disabled');
+      cy.wrap($dialog).getButton('Recover').should('be.enabled');
+
+      cy.get('#recover-1-decrement').click();
+      cy.get('#recover-2-increment').click();
+      cy.get('#recover-2').should('have.value', '1');
+      cy.get('#recover-1-increment').should('be.disabled');
+      cy.get('#recover-2-increment').should('be.disabled');
+      cy.wrap($dialog).getButton('Recover').should('be.enabled');
+
+      // Test: Confirm recovery
+      cy.wrap($dialog).getButton('Recover').click();
+    });
+    cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+    cy.getByRole('status', 'Spells slots updated').should('be.visible');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+    cy.getByTestId('short-rest-restore').should('be.visible').and('not.be.disabled');
+
+    // Test: Pearl of Power recovery
+    cy.getByTestId('short-rest-restore').click();
+    cy.getByRole('dialog', 'Recover Spell Slots').within(($dialog) => {
+      cy.wrap($dialog)
+        .contains('label', 'Pearl of Power')
+        .find('input[type="radio"]')
+        .should('be.checked');
+      cy.wrap($dialog)
+        .should('contain.text', 'Select 1 spell slot to recover.')
+        .and('contain.text', 'only recover spell slots up to level 1');
+
+      cy.wrap($dialog).contains('Level 1').should('be.visible');
+      cy.wrap($dialog).contains('Level 2').should('not.exist');
+      cy.wrap($dialog).getButton('Recover').should('be.disabled');
+
+      cy.get('#recover-1-increment').click();
+      cy.get('#recover-1').should('have.value', '1');
+      cy.get('#recover-1-increment').should('be.disabled');
+      cy.wrap($dialog).getButton('Recover').should('be.enabled').click();
+    });
+    cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+    cy.getByRole('status', 'Spells slots updated').should('be.visible');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+    cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
+    cy.getByTestId('short-rest-restore').should('not.exist');
+
+    // Test: Full Recover restores all slots and hides both recovery buttons
+    cy.getButton('Full Recover').click();
+    cy.getByRole('status', 'Spells slots updated').should('be.visible');
+    cy.getByTestId('spell-slots').should('contain.text', '4 of 4').and('contain.text', '2 of 2');
+    cy.getByTestId('short-rest-restore').should('not.exist');
 
     // Test: Persistence — temporary spell survives a reload
     cy.reload();
@@ -358,6 +460,13 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     cy.getByRole('dialog', 'Temporary Spells')
       .getByTestId('search-spell-item-')
       .should('not.exist');
+
+    // Test: Known/prepared spells are excluded from temp spell search
+    cy.getByRole('dialog', 'Temporary Spells').find('#search').type('alarm');
+    cy.getByRole('dialog', 'Temporary Spells')
+      .getByTestId('search-spell-item-alarm', { type: 'exact' })
+      .should('not.exist');
+    cy.getByRole('dialog', 'Temporary Spells').find('#search').clear();
 
     // Test: Min level filter
     cy.selectOption('#level-min', 'Level 2');
@@ -918,7 +1027,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
               cy.contains(`${total} of ${total}`).should('be.visible');
             }
           });
-          cy.getButton('Rest').should('not.exist');
+          cy.getButton(/Recover/).should('not.exist');
         });
 
         // Test: Cantrips should not have Cast button (cantrips don't consume slots)
@@ -954,7 +1063,10 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           'contain.text',
           ['Level 1', `${expectedSlots[1] - 1} of ${expectedSlots[1]}`].join('')
         );
-        cy.get('button').contains('Rest').should('be.visible');
+        cy.getButton(/Recover/).should(
+          'have.length',
+          ['wizard', 'druid'].includes(classData.index) ? 2 : 1
+        );
 
         // Test: Consume all remaining level 1 slots
         cy.wrap(Array(expectedSlots[1] - 1)).each(() => {
@@ -977,14 +1089,16 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
           .getByTestId(`cast-spell-`)
           .each(($btn) => cy.wrap($btn).should('be.disabled'));
 
-        // Test: Long Rest - Recover all spell slots
-        cy.getByTestId('spell-slots').getButton('Rest').should('be.visible').click();
+        // Test: Recover all spell slots
+        cy.getByTestId('spell-slots').getButton('Full Recover').click();
         cy.getByTestId('spell-slots').within(($el) => {
           cy.wrap($el).should(
             'contain.text',
             ['Level 1', `${expectedSlots[1]} of ${expectedSlots[1]}`].join('')
           );
-          cy.wrap($el).getButton('Rest').should('not.exist');
+          cy.wrap($el)
+            .getButton(/Recover/)
+            .should('not.exist');
         });
         cy.getByTestId(`cast-spell-${level1Spell.index}`).should('be.enabled');
 
@@ -1011,12 +1125,14 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
             'contain.text',
             ['Level 1', `${expectedSlots[1] - 1} of ${expectedSlots[1]}`].join('')
           );
-          cy.wrap($el).getButton('Rest').should('be.visible');
+          cy.wrap($el)
+            .getButton(/Recover/)
+            .should('be.visible');
         });
 
         // Test: Ritual casting doesn't consume a spell slot
         if (level1Spell.ritual) {
-          cy.getByTestId('spell-slots').getButton('Rest').click();
+          cy.getByTestId('spell-slots').getButton('Full Recover').click();
           cy.getByTestId('spell-slots').should(
             'contain.text',
             ['Level 1', `${expectedSlots[1]} of ${expectedSlots[1]}`].join('')

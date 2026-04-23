@@ -20,7 +20,6 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 # TODO
 
 - [ ] Side Effects Prep
-  - [ ] Add partial regain spell slots
   - [ ] Add Status Effect UI
 - [ ] Add Rest UI
   - Clear and clear all should handle rest

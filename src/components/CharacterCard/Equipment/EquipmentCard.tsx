@@ -73,7 +73,11 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
-        <DialogContentText textAlign="justify">{selectedEquipment.desc}</DialogContentText>
+        {selectedEquipment.desc?.map((d, i) => (
+          <DialogContentText key={`desc-${i}`} textAlign="justify">
+            {d}
+          </DialogContentText>
+        ))}
         {'armor_class' in selectedEquipment && selectedEquipment.armor_class && (
           <EquipmentLine
             label="Armor Class"

@@ -171,9 +171,8 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         <Fragment>
           {Object.values(slotInfo.slots).length ? (
             <SpellSlots
-              characterId={character.id}
+              character={character}
               slots={slotInfo.slots}
-              usedSlots={character.usedSpellSlots || {}}
               disabled={firebaseCrud.isLoading}
             />
           ) : null}

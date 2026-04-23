@@ -150,7 +150,7 @@ export const formatRestoreSpellSlotsRecord = (
 
 export const formatActionRecord = (
   type: ActionRecordType,
-  ressource: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'>,
+  ressource: Omit<ActionRecord, 'id' | 'type' | 'createdAt'>,
   auto = true
 ): Omit<ActionRecord, 'id'> => {
   const createdAt = new Date();

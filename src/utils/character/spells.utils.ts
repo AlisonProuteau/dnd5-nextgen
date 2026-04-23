@@ -99,3 +99,14 @@ export const getDamageMinMax = (
   if (charLevel) return getSlotMinMax(damage.damage_at_character_level, [charLevel]);
   else return getSlotMinMax(damage.damage_at_slot_level || damage.damage_at_character_level);
 };
+
+export const buildSpellSlotUpdates = (
+  recovery: Record<string, number>,
+  usedSpellSlots: Record<string, number> | undefined
+): Record<string, number | null> =>
+  Object.fromEntries(
+    Object.entries(recovery).map(([level, count]) => [
+      `usedSpellSlots.${level}`,
+      Math.max((usedSpellSlots?.[level] ?? 0) - count, 0) || null
+    ])
+  );

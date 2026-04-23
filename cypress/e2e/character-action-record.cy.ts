@@ -572,7 +572,9 @@ describe('Character Action Record End-to-End', () => {
     );
     cy.getButton('Close').click();
     cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
-    cy.getByTestId('spell-slots').getButton('Rest').should('not.exist');
+    cy.getByTestId('spell-slots')
+      .getButton(/Recover/)
+      .should('not.exist');
 
     // Test: Clicking USE on a trait
     cy.clickUntilStep('characteristics');

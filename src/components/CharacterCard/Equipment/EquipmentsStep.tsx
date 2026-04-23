@@ -3,16 +3,18 @@ import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
 import { type Dictionary, flatten, groupBy, uniqBy } from 'lodash';
-import { getEquipment, getMagicItem } from '@api/ressources';
+import { getEquipment, getFeature, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
 import {
   formatEquipmentForDisplay,
   getArmorClass,
+  getRelatedFeatures,
   hasRequiredStrength
 } from '@utils/character/character.utils';
 import { createQueryCombiner } from '@utils/query.utils';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
@@ -57,6 +59,16 @@ export function Equipments({ character }: DefaultProps) {
       ),
       [character.equipments]
     )
+  });
+
+  const { data: features } = useQueries({
+    queries:
+      uniqBy(character.features, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character.version, index],
+        queryFn: async () => await getFeature(character.version || 'Legacy', index),
+        enabled: !!index && getRelatedFeatures(Object.values(equipmentList ?? {}).flat()).length > 0
+      })) || [],
+    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 
   const equipmentListString = useMemo(
@@ -184,6 +196,8 @@ export function Equipments({ character }: DefaultProps) {
                   hasRequiredStrength={(equipment) =>
                     hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
                   }
+                  usage={character.resourceUsages?.[e.index]}
+                  features={features}
                 />
               ))}
             </CardContent>
