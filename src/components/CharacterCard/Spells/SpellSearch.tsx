@@ -1,8 +1,3 @@
-import { Fragment, useMemo, useState } from 'react';
-import { Separator } from '@base-ui/react';
-import { Box, Chip, Typography } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
-import { mapValues } from 'lodash';
 import {
   getAllClasses,
   getAllSubclasses,
@@ -11,13 +6,17 @@ import {
   getSpellsForClass
 } from '@api/ressources';
 import { useToggle } from '@hooks/useToggle';
-import { ControledInput } from '@shared/ControledInput';
-import { FilterSelect } from '@shared/FilterSelect';
-import { Loader } from '@shared/Loader';
-import { toKey } from '@utils/index';
+import { Box, Chip, Divider, Typography } from '@mui/material';
 import { SpellFilters } from '@representations/abilities/magic.representation';
 import type { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
+import { ControledInput } from '@shared/ControledInput';
+import { FilterSelect } from '@shared/FilterSelect';
+import { Loader } from '@shared/Loader';
+import { useQuery } from '@tanstack/react-query';
+import { toKey } from '@utils/index';
+import { mapValues } from 'lodash';
+import { Fragment, useMemo, useState } from 'react';
 import { useAuth } from 'src/providers/AuthProvider';
 import { SpellSearchRow } from './SpellSearchRow';
 
@@ -290,15 +289,7 @@ export function SpellSearch({
         ))}
 
         {selectedSpells.length > 0 && spells.length > 0 && (
-          <Separator
-            orientation="horizontal"
-            css={{
-              height: '1px',
-              width: '100%',
-              backgroundColor: 'rgba(255,255,255,0.25)',
-              margin: '6px 0'
-            }}
-          />
+          <Divider sx={{ backgroundColor: 'rgba(255,255,255,0.25)', margin: '6px 0' }} />
         )}
 
         {!spellsFetching &&

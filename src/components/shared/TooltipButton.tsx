@@ -1,10 +1,19 @@
-import { ReactNode } from 'react';
-import { Box, ClickAwayListener, IconButton, SxProps, Tooltip, TooltipProps } from '@mui/material';
+import { Fragment, ReactNode } from 'react';
+import {
+  Backdrop,
+  Box,
+  ClickAwayListener,
+  IconButton,
+  SxProps,
+  Tooltip,
+  TooltipProps
+} from '@mui/material';
 import { useToggle } from '@hooks/useToggle';
 
 export function TooltipButton({
   children,
   sx,
+  title,
   ...props
 }: {
   sx?: SxProps;
@@ -12,15 +21,18 @@ export function TooltipButton({
 } & Omit<TooltipProps, 'children' | 'open' | 'onClose' | 'disableTouchListener'>) {
   const { isOn: isOpen, turnOn: open, turnOff: close } = useToggle(false);
 
-  return (
+  return title ? (
     <ClickAwayListener onClickAway={close}>
       <Box sx={sx} display="inline-block">
-        <Tooltip arrow open={isOpen} disableTouchListener onClose={close} {...props}>
+        <Backdrop invisible open={isOpen} onClick={close} />
+        <Tooltip title={title} arrow open={isOpen} disableTouchListener onClose={close} {...props}>
           <IconButton onClick={open} sx={{ padding: 0 }} onMouseEnter={open} onMouseLeave={close}>
             {children}
           </IconButton>
         </Tooltip>
       </Box>
     </ClickAwayListener>
+  ) : (
+    <Fragment>{children}</Fragment>
   );
 }

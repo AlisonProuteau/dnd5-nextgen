@@ -10,6 +10,7 @@ interface CustomNumberInputProps {
   addDisabled?: boolean;
   removeDisabled?: boolean;
   compact?: boolean;
+  disableBackground?: boolean;
   onChange?: (event: Event, value: number | null) => void;
   buttonsHidden?: boolean;
 }
@@ -22,6 +23,7 @@ export const NumberInput = forwardRef(function CustomNumberInput(
     removeDisabled,
     onChange,
     compact = false,
+    disableBackground = false,
     buttonsHidden = false,
     ...props
   }: CustomNumberInputProps & NumberFieldRootProps,
@@ -59,18 +61,25 @@ export const NumberInput = forwardRef(function CustomNumberInput(
               as={NumberField.Decrement}
               disabled={removeDisabled}
               compact={compact}
+              disableBackground={disableBackground}
               position="left"
               id={`${id}-decrement`}
             >
               <Remove fontSize="small" />
             </StyledButton>
           )}
-          <StyledInput as={NumberField.Input} compact={compact} id={id} />
+          <StyledInput
+            as={NumberField.Input}
+            compact={compact}
+            disableBackground={disableBackground}
+            id={id}
+          />
           {buttonsHidden ? null : (
             <StyledButton
               as={NumberField.Increment}
               disabled={addDisabled}
               compact={compact}
+              disableBackground={disableBackground}
               position="right"
               id={`${id}-increment`}
             >
@@ -89,101 +98,107 @@ const StyledGroup = styled('div')(() => ({
   alignItems: 'center'
 }));
 
-const StyledInput = styled('input')<{ compact?: boolean }>(({ theme, compact }) => ({
-  boxSizing: 'border-box',
-  fontSize: '0.875rem',
-  fontFamily: 'inherit',
-  fontWeight: 400,
-  lineHeight: 1.375,
-  color: theme.palette.text.primary,
-  background: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.divider}`,
-  borderRadius: 6,
-  margin: compact ? '0 3px' : '0 6px',
-  padding: compact ? '3px 5px' : '8px 10px',
-  outline: 0,
-  minWidth: 0,
-  width: compact ? '2.5rem' : '4rem',
-  textAlign: 'center',
-  boxShadow:
-    theme.palette.mode === 'dark'
-      ? '0 1px 2px rgba(0, 0, 0, 0.3)'
-      : '0 1px 2px rgba(0, 0, 0, 0.05)',
-
-  '&:hover': {
-    borderColor: theme.palette.primary.light
-  },
-
-  '&:focus': {
-    borderColor: theme.palette.primary.main,
-    boxShadow: `0 0 0 2px ${theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.25)' : 'rgba(25, 118, 210, 0.25)'}`
-  },
-
-  '&:focus-visible': {
-    outline: 0
-  },
-
-  '&:disabled': {
-    cursor: 'not-allowed',
-    opacity: 0.4,
-    background: theme.palette.action.disabledBackground,
-    color: theme.palette.text.disabled
-  }
-}));
-
-const StyledButton = styled('button')<{ compact?: boolean; position: 'left' | 'right' }>(
-  ({ theme, compact, position }) => ({
-    fontFamily: 'inherit',
-    fontSize: '0.875rem',
+const StyledInput = styled('input')<{ compact?: boolean; disableBackground?: boolean }>(
+  ({ theme, compact, disableBackground }) => ({
     boxSizing: 'border-box',
-    lineHeight: 1.5,
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: 999,
-    background: theme.palette.background.default,
+    fontSize: '0.875rem',
+    fontFamily: 'inherit',
+    fontWeight: 400,
+    lineHeight: 1.375,
     color: theme.palette.text.primary,
-    width: compact ? 24 : 32,
-    height: compact ? 24 : 32,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 0,
+    background: disableBackground ? 'transparent' : theme.palette.background.paper,
+    border: disableBackground ? 'none' : `1px solid ${theme.palette.divider}`,
+    borderRadius: 6,
+    margin: compact ? '0 3px' : '0 6px',
+    padding: compact ? '3px 5px' : '8px 10px',
     outline: 0,
-    padding: 0,
-    cursor: 'pointer',
-    transition: 'all 150ms ease',
-    boxShadow:
-      theme.palette.mode === 'dark'
+    minWidth: 0,
+    width: compact ? '2.5rem' : '4rem',
+    textAlign: 'center',
+    boxShadow: disableBackground
+      ? 'none'
+      : theme.palette.mode === 'dark'
         ? '0 1px 2px rgba(0, 0, 0, 0.3)'
         : '0 1px 2px rgba(0, 0, 0, 0.05)',
 
-    ...(position === 'right' && {
-      order: 1
-    }),
-
-    '&:hover:not(:disabled)': {
-      background: theme.palette.action.hover,
-      borderColor: theme.palette.primary.light,
-      boxShadow:
-        theme.palette.mode === 'dark'
-          ? '0 2px 4px rgba(0, 0, 0, 0.4)'
-          : '0 2px 4px rgba(0, 0, 0, 0.1)'
+    '&:hover': {
+      borderColor: theme.palette.primary.light
     },
 
-    '&:active:not(:disabled)': {
-      background: theme.palette.action.selected
+    '&:focus': {
+      borderColor: theme.palette.primary.main,
+      boxShadow: `0 0 0 2px ${theme.palette.mode === 'dark' ? 'rgba(144, 202, 249, 0.25)' : 'rgba(25, 118, 210, 0.25)'}`
     },
 
     '&:focus-visible': {
-      outline: 0,
-      borderColor: theme.palette.primary.main
+      outline: 0
     },
 
     '&:disabled': {
       cursor: 'not-allowed',
       opacity: 0.4,
       background: theme.palette.action.disabledBackground,
-      color: theme.palette.text.disabled,
-      boxShadow: 'none'
+      color: theme.palette.text.disabled
     }
   })
 );
+
+const StyledButton = styled('button')<{
+  compact?: boolean;
+  disableBackground?: boolean;
+  position: 'left' | 'right';
+}>(({ theme, compact, disableBackground, position }) => ({
+  fontFamily: 'inherit',
+  fontSize: '0.875rem',
+  boxSizing: 'border-box',
+  lineHeight: 1.5,
+  border: disableBackground ? 'none' : `1px solid ${theme.palette.divider}`,
+  borderRadius: 999,
+  background: disableBackground ? 'transparent' : theme.palette.background.default,
+  color: theme.palette.text.primary,
+  width: compact ? 24 : 32,
+  height: compact ? 24 : 32,
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  margin: 0,
+  outline: 0,
+  padding: 0,
+  cursor: 'pointer',
+  transition: 'all 150ms ease',
+  boxShadow: disableBackground
+    ? 'none'
+    : theme.palette.mode === 'dark'
+      ? '0 1px 2px rgba(0, 0, 0, 0.3)'
+      : '0 1px 2px rgba(0, 0, 0, 0.05)',
+
+  ...(position === 'right' && {
+    order: 1
+  }),
+
+  '&:hover:not(:disabled)': {
+    background: theme.palette.action.hover,
+    borderColor: theme.palette.primary.light,
+    boxShadow:
+      theme.palette.mode === 'dark'
+        ? '0 2px 4px rgba(0, 0, 0, 0.4)'
+        : '0 2px 4px rgba(0, 0, 0, 0.1)'
+  },
+
+  '&:active:not(:disabled)': {
+    background: theme.palette.action.selected
+  },
+
+  '&:focus-visible': {
+    outline: 0,
+    borderColor: theme.palette.primary.main
+  },
+
+  '&:disabled': {
+    cursor: 'not-allowed',
+    opacity: 0.4,
+    background: theme.palette.action.disabledBackground,
+    color: theme.palette.text.disabled,
+    boxShadow: 'none'
+  }
+}));
