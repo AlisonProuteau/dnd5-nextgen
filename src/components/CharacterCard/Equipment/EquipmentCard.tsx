@@ -19,7 +19,7 @@ import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { MoneyDisplay } from './MoneyDisplay';
+import { MoneyDisplay } from '../Money/MoneyDisplay';
 
 interface EquipmentCardProps {
   selectedEquipment: Equipment | MagicItem;

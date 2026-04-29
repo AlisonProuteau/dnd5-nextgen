@@ -11,8 +11,8 @@ import {
   type MoneyObjectType,
   StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
-import { EquipmentCard } from './EquipmentCard';
-import { EquipmentListItem } from './EquipmentListItem';
+import { EquipmentCard } from '../Equipment/EquipmentCard';
+import { EquipmentListItem } from '../Equipment/EquipmentListItem';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketItemProps {

@@ -19,10 +19,10 @@ import type { MagicItem } from '@representations/abilities/magic.representation'
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import type { DefaultProps } from 'src/pages/Header';
+import { Market } from '../Money/Market';
+import { MoneyDisplay } from '../Money/MoneyDisplay';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentListItem } from './EquipmentListItem';
-import { Market } from './Market';
-import { MoneyDisplay } from './MoneyDisplay';
 
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
