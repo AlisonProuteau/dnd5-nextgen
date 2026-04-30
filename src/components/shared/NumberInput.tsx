@@ -10,7 +10,7 @@ interface CustomNumberInputProps {
   addDisabled?: boolean;
   removeDisabled?: boolean;
   compact?: boolean;
-  disableBackground?: boolean;
+  disablebackground?: boolean;
   onChange?: (event: Event, value: number | null) => void;
   buttonsHidden?: boolean;
 }
@@ -23,7 +23,7 @@ export const NumberInput = forwardRef(function CustomNumberInput(
     removeDisabled,
     onChange,
     compact = false,
-    disableBackground = false,
+    disablebackground = false,
     buttonsHidden = false,
     ...props
   }: CustomNumberInputProps & NumberFieldRootProps,
@@ -61,7 +61,7 @@ export const NumberInput = forwardRef(function CustomNumberInput(
               as={NumberField.Decrement}
               disabled={removeDisabled}
               compact={compact}
-              disableBackground={disableBackground}
+              disablebackground={disablebackground}
               position="left"
               id={`${id}-decrement`}
             >
@@ -71,7 +71,7 @@ export const NumberInput = forwardRef(function CustomNumberInput(
           <StyledInput
             as={NumberField.Input}
             compact={compact}
-            disableBackground={disableBackground}
+            disablebackground={disablebackground}
             id={id}
           />
           {buttonsHidden ? null : (
@@ -79,7 +79,7 @@ export const NumberInput = forwardRef(function CustomNumberInput(
               as={NumberField.Increment}
               disabled={addDisabled}
               compact={compact}
-              disableBackground={disableBackground}
+              disablebackground={disablebackground}
               position="right"
               id={`${id}-increment`}
             >
@@ -98,16 +98,16 @@ const StyledGroup = styled('div')(() => ({
   alignItems: 'center'
 }));
 
-const StyledInput = styled('input')<{ compact?: boolean; disableBackground?: boolean }>(
-  ({ theme, compact, disableBackground }) => ({
+const StyledInput = styled('input')<{ compact?: boolean; disablebackground?: boolean }>(
+  ({ theme, compact, disablebackground }) => ({
     boxSizing: 'border-box',
     fontSize: '0.875rem',
     fontFamily: 'inherit',
     fontWeight: 400,
     lineHeight: 1.375,
     color: theme.palette.text.primary,
-    background: disableBackground ? 'transparent' : theme.palette.background.paper,
-    border: disableBackground ? 'none' : `1px solid ${theme.palette.divider}`,
+    background: disablebackground ? 'transparent' : theme.palette.background.paper,
+    border: disablebackground ? 'none' : `1px solid ${theme.palette.divider}`,
     borderRadius: 6,
     margin: compact ? '0 3px' : '0 6px',
     padding: compact ? '3px 5px' : '8px 10px',
@@ -115,7 +115,7 @@ const StyledInput = styled('input')<{ compact?: boolean; disableBackground?: boo
     minWidth: 0,
     width: compact ? '2.5rem' : '4rem',
     textAlign: 'center',
-    boxShadow: disableBackground
+    boxShadow: disablebackground
       ? 'none'
       : theme.palette.mode === 'dark'
         ? '0 1px 2px rgba(0, 0, 0, 0.3)'
@@ -137,7 +137,7 @@ const StyledInput = styled('input')<{ compact?: boolean; disableBackground?: boo
     '&:disabled': {
       cursor: 'not-allowed',
       opacity: 0.4,
-      background: theme.palette.action.disabledBackground,
+      background: disablebackground ? 'transparent' : theme.palette.action.disabledBackground,
       color: theme.palette.text.disabled
     }
   })
@@ -145,16 +145,16 @@ const StyledInput = styled('input')<{ compact?: boolean; disableBackground?: boo
 
 const StyledButton = styled('button')<{
   compact?: boolean;
-  disableBackground?: boolean;
+  disablebackground?: boolean;
   position: 'left' | 'right';
-}>(({ theme, compact, disableBackground, position }) => ({
+}>(({ theme, compact, disablebackground, position }) => ({
   fontFamily: 'inherit',
   fontSize: '0.875rem',
   boxSizing: 'border-box',
   lineHeight: 1.5,
-  border: disableBackground ? 'none' : `1px solid ${theme.palette.divider}`,
+  border: disablebackground ? 'none' : `1px solid ${theme.palette.divider}`,
   borderRadius: 999,
-  background: disableBackground ? 'transparent' : theme.palette.background.default,
+  background: disablebackground ? 'transparent' : theme.palette.background.default,
   color: theme.palette.text.primary,
   width: compact ? 24 : 32,
   height: compact ? 24 : 32,
@@ -166,7 +166,7 @@ const StyledButton = styled('button')<{
   padding: 0,
   cursor: 'pointer',
   transition: 'all 150ms ease',
-  boxShadow: disableBackground
+  boxShadow: disablebackground
     ? 'none'
     : theme.palette.mode === 'dark'
       ? '0 1px 2px rgba(0, 0, 0, 0.3)'
@@ -197,7 +197,7 @@ const StyledButton = styled('button')<{
   '&:disabled': {
     cursor: 'not-allowed',
     opacity: 0.4,
-    background: theme.palette.action.disabledBackground,
+    background: disablebackground ? 'transparent' : theme.palette.action.disabledBackground,
     color: theme.palette.text.disabled,
     boxShadow: 'none'
   }

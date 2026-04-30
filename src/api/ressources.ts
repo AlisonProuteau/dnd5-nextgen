@@ -7,7 +7,11 @@ import type {
   SpellFilters
 } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
-import type { AbilityScore, Proficiency } from '@representations/campaign/adventure.representation';
+import type {
+  AbilityScore,
+  Condition,
+  Proficiency
+} from '@representations/campaign/adventure.representation';
 import type {
   Equipment,
   EquipmentCategory,
@@ -429,4 +433,15 @@ export async function getAllAbilities(version: Version): Promise<{
   results: AbilityScore[];
 }> {
   return getAll('All Abilities', formatPath('ability-scores', version));
+}
+
+export async function getCondition(version: Version, index: string): Promise<Condition | null> {
+  return get('Condition', formatPath('conditions', version), index);
+}
+
+export async function getConditions(version: Version): Promise<{
+  count: number;
+  results: Condition[];
+}> {
+  return getAll('All Conditions', formatPath('conditions', version));
 }

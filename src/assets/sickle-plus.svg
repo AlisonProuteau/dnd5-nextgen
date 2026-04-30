@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg fill="#000000" width="800px" height="800px" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <title>sickle</title>
+  <path d="M7.115 22.099c-1.22 0.113-1.701 0.78-1.84 1.613l3.399 3.258 0.049 0.051 0.002-0.002 0.457 0.438c1.137-0.105 1.801-0.646 1.676-1.653l-3.742-3.705zM1.897 27.785c-1.044 1.685 0.918 3.818 3.189 2.786l3.188-3.113-2.8-2.931-3.577 3.259zM16.071 1.569c22.036 17.276 1.057 25.515-5.482 18.298l-2.626 2.392 2.72 2.847 0.133-0.129c13.593 12.203 33.42-15.301 5.257-23.409z"/>
+  <text style="font-family: Arial, sans-serif; font-size: 13.4px; paint-order: stroke; stroke: rgb(0, 0, 0); stroke-linecap: round; stroke-linejoin: round; stroke-width: 2px; white-space: pre;" x="5.968" y="12.434" transform="matrix(1.817397, 0, 0, 1.786761, -9.874173, -5.865332)">+</text>
+</svg>

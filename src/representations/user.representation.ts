@@ -64,6 +64,7 @@ export type Character = CharacterFormData & {
   usedSpellSlots?: Record<string, number>;
   version: Version;
   money?: MoneyObjectType;
+  conditions?: (DefaultRepresentation & { level?: number })[];
   health?: {
     current: number;
     temporary?: number;

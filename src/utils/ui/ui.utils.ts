@@ -53,3 +53,5 @@ export const toKey = (arr?: { index: string }[] | null) =>
     ?.map(({ index }) => index)
     .sort()
     .join(',');
+
+export const DESCRIPTION_CHAR_LIMIT = 120;
