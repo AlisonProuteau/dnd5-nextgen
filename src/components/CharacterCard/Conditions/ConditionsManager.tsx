@@ -18,7 +18,9 @@ import { Loader } from '@shared/Loader';
 import type { Condition } from '@representations/campaign/adventure.representation';
 import type { Character } from '@representations/user.representation';
 import { ControledInput } from 'src/components/shared/ControledInput';
+import { useActionRecord } from 'src/hooks';
 import { DefaultRepresentation } from 'src/representations/common.representation';
+import { formatActionRecord, formatConditionRecord } from 'src/utils/actions.utils';
 import { ActiveCondition } from './ActiveCondition';
 import { ConditionCard } from './ConditionCard';
 
@@ -43,6 +45,7 @@ export function ConditionsManager({ character, isOpen, onClose }: ConditionsMana
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id],
     successMessages: { update: 'Conditions Updated' }
   });
+  const { logAction } = useActionRecord(character.id);
 
   const { data: conditions, isLoading: isLoadingConditions } = useQuery({
     queryKey: ['fetchConditions', character.version],
@@ -94,7 +97,15 @@ export function ConditionsManager({ character, isOpen, onClose }: ConditionsMana
       conditions: selected.filter((s) => !pendingRemovals.some(({ index }) => index === s.index))
     });
 
-    if (success) onClose();
+    if (success) {
+      onClose();
+      await logAction(
+        formatActionRecord(
+          'custom',
+          formatConditionRecord(character.conditions, selected, pendingRemovals)
+        )
+      );
+    }
   };
 
   return (
@@ -177,9 +188,7 @@ export function ConditionsManager({ character, isOpen, onClose }: ConditionsMana
                         isDisabled={
                           !!character.conditions?.some((s) => s.index === condition.index)
                         }
-                        selectedLevel={
-                          character.conditions?.find((s) => s.index === condition.index)?.level
-                        }
+                        selectedLevel={selected?.find((s) => s.index === condition.index)?.level}
                         onToggle={toggleAdd}
                       />
                     ))}
