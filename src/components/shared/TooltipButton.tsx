@@ -1,4 +1,4 @@
-import { Fragment, ReactNode } from 'react';
+import { Fragment, ReactNode, useEffect } from 'react';
 import { Backdrop, Box, ClickAwayListener, IconButton, Tooltip, TooltipProps } from '@mui/material';
 import { useToggle } from '@hooks/useToggle';
 
@@ -24,6 +24,16 @@ export function TooltipButton({
     unpin();
     unfocus();
   };
+
+  useEffect(() => {
+    if (!isHovered && !isPinned) return;
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.code === 'Escape') close();
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [isHovered, isPinned]);
 
   return title ? (
     <ClickAwayListener onClickAway={close}>

@@ -41,6 +41,7 @@ describe('Character Action Record End-to-End', () => {
       { index: 'misty-step', name: 'Misty Step', level: 2 },
       { index: 'scorching-ray', name: 'Scorching Ray', level: 2 }
     ],
+    temporarySpells: [{ index: 'hold-person', name: 'Hold Person', level: 2 }],
     ...defaultCharData
   };
 
@@ -186,6 +187,21 @@ describe('Character Action Record End-to-End', () => {
       .filter(':contains("Magic Missile")')
       .should('not.contain.text', 'slot lvl');
 
+    // Test: Temporary spell — appears in source select with "Temp" label and can be recorded
+    cy.getByTestId('add-action-record').click();
+    cy.getByRole('dialog', 'Add Action Record').getByRole('button', 'Spell').click();
+    cy.get('#source-select').click();
+    cy.get('[role="option"]')
+      .filter(':contains("Hold Person")')
+      .should('contain.text', 'Temp')
+      .click();
+    cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
+      cy.wrap($dialog).should('contain.text', "Slot consumption isn't tracked here");
+      cy.wrap($dialog).getButton('Add Record').should('be.enabled').click();
+    });
+    cy.getByRole('dialog', 'Add Action Record').should('not.exist');
+    cy.getByTestId('record-item-').should('have.length', 7).should('contain.text', 'Hold Person');
+
     // Test: Ritual spell (Detect Magic)
     cy.getByTestId('add-action-record').click();
     cy.getByRole('dialog', 'Add Action Record').getByRole('button', 'Spell').click();
@@ -200,7 +216,7 @@ describe('Character Action Record End-to-End', () => {
       cy.wrap($dialog).getButton('Add Record').click();
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 7).and('contain.text', 'Detect Magic');
+    cy.getByTestId('record-item-').should('have.length', 8).and('contain.text', 'Detect Magic');
     cy.getByTestId('record-item-')
       .filter(':contains("Detect Magic")')
       .should('contain.text', 'Ritual Cast');
@@ -214,7 +230,7 @@ describe('Character Action Record End-to-End', () => {
       cy.wrap($dialog).getButton('Add Record').click();
     });
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('record-item-').should('have.length', 9);
     cy.getByTestId('record-item-')
       .filter(':contains("Detect Magic")')
       .first()
@@ -236,7 +252,7 @@ describe('Character Action Record End-to-End', () => {
     cy.selectOption('#equipment-select', 'Quarterstaff');
     cy.getByRole('dialog', 'Add Action Record').getButton('Add Record').click();
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
-    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId('record-item-').should('have.length', 10);
     cy.getByTestId('record-item-')
       .filter(':contains("Custom Action")')
       .as('customRecord')
@@ -288,7 +304,7 @@ describe('Character Action Record End-to-End', () => {
     // Test: Records persist across page reload
     cy.reload();
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId('record-item-').should('have.length', 10);
 
     // Test: Filter
     cy.getByRole('button', 'Features').click();
@@ -303,9 +319,10 @@ describe('Character Action Record End-to-End', () => {
       .should('contain.text', 'Hellish Resistance');
 
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 4);
+    cy.getByTestId('record-item-').should('have.length', 5);
     cy.getByTestId('record-item-').should('contain.text', 'Fire Bolt');
     cy.getByTestId('record-item-').should('contain.text', 'Magic Missile');
+    cy.getByTestId('record-item-').should('contain.text', 'Hold Person');
     cy.getByTestId('record-item-').should('contain.text', 'Detect Magic');
 
     cy.getByRole('button', 'Custom').click();
@@ -316,23 +333,23 @@ describe('Character Action Record End-to-End', () => {
 
     // Test: All filter restores full list
     cy.getByRole('button', 'All').click();
-    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId('record-item-').should('have.length', 10);
 
     // Test: Active filter doesn't reset to All when drawer is closed and reopened
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 4);
+    cy.getByTestId('record-item-').should('have.length', 5);
     cy.getButton('Close').click();
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-    cy.getByTestId('record-item-').should('have.length', 4);
+    cy.getByTestId('record-item-').should('have.length', 5);
     cy.getByRole('button', 'Spells').click();
-    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId('record-item-').should('have.length', 10);
 
     // Test: Deleting the Feature record decrements the resource usage counter
     cy.getByTestId('record-item-')
       .filter(':contains("Arcane Recovery")')
       .getByTestId('record-delete')
       .click();
-    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('record-item-').should('have.length', 9);
 
     // Test: Active filter with no matching records shows empty state
     cy.getByRole('button', 'Features').click();
@@ -343,7 +360,7 @@ describe('Character Action Record End-to-End', () => {
 
     // Test: Date range filter
     cy.getByRole('button', 'All').click();
-    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('record-item-').should('have.length', 9);
     cy.getByTestId('date-filter-clear').should('not.exist');
 
     cy.get('#dateFilterTo').parent().type('01012000');
@@ -359,15 +376,15 @@ describe('Character Action Record End-to-End', () => {
       .should('have.length', 1)
       .and('contain.text', 'Past Session Notes');
     cy.getByTestId('date-filter-clear').click();
-    cy.getByTestId('record-item-').should('have.length', 8);
+    cy.getByTestId('record-item-').should('have.length', 9);
 
     cy.get('#dateFilterFrom').parent().type(dayjs().format('DDMMYYYY'));
     cy.getByTestId('record-item-')
-      .should('have.length', 7)
+      .should('have.length', 8)
       .and('not.contain.text', 'Past Session Notes');
     cy.getByTestId('date-filter-clear').click();
-    cy.getByTestId('record-item-').should('have.length', 8);
-    cy.getByTestId(`action-record-drawer`).should('contain.text', '8 records');
+    cy.getByTestId('record-item-').should('have.length', 9);
+    cy.getByTestId(`action-record-drawer`).should('contain.text', '9 records');
 
     // Test: Clear All
     cy.getByRole('button', 'Custom').click();
@@ -376,8 +393,8 @@ describe('Character Action Record End-to-End', () => {
     cy.getByTestId('clear-all-records').click();
     cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
     cy.getByRole('button', 'All').click();
-    cy.getByTestId('record-item-').should('have.length', 6);
-    cy.getByTestId(`action-record-drawer`).should('contain.text', '6 records');
+    cy.getByTestId('record-item-').should('have.length', 7);
+    cy.getByTestId(`action-record-drawer`).should('contain.text', '7 records');
     cy.getByTestId('clear-all-records').click();
     cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
 
