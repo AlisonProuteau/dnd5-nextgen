@@ -70,12 +70,13 @@ export function ActiveCondition({
             color="secondary"
             variant={onRemove || onLevelChange ? 'outlined' : 'filled'}
             sx={{ opacity: isPendingRemoval ? 0.45 : 1 }}
+            data-testid={`condition-chip-${condition.index}`}
           />
         </TooltipButton>
 
         {maxLevel && onLevelChange && (
           <NumberInput
-            id={`exhaustion-level-${condition.index}`}
+            id={`condition-level-${condition.index}`}
             min={1}
             max={maxLevel}
             value={condition.level ?? 1}

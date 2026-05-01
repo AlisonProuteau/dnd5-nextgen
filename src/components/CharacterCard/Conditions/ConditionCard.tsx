@@ -39,9 +39,19 @@ export function ConditionCard({
         opacity: isDisabled ? 0.5 : 1
       }}
     >
-      <CardActionArea onClick={() => onToggle(condition)} disabled={isDisabled}>
+      <CardActionArea
+        data-testid={`condition-card-${condition.index}`}
+        onClick={() => onToggle(condition)}
+        disabled={isDisabled}
+        aria-selected={isSelected}
+      >
         <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+            data-testid={`condition-label-${condition.index}`}
+          >
             <Typography variant="body2" fontWeight={isSelected ? 600 : 400}>
               {condition.name}
             </Typography>
