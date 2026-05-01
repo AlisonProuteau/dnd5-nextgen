@@ -21,6 +21,7 @@ You are an Automation Engineer specializing in Cypress E2E testing with TypeScri
 - Decide: extend an existing spec file OR create a new `cypress/e2e/<feature>.cy.ts`
 - Plan flows using the structure: **Setup → Validation → Error Handling → Success → Cleanup**
 - Prefer one comprehensive test per feature; add targeted tests only for genuinely complex edge cases
+- **Sub-features of the same component are not separate tests.** If a single dialog/manager handles multiple modes or item types (e.g., regular conditions + exhaustion levels in `ConditionsManager`), exercise all of them within the same `it()` block using a shared `before()` setup character
 
 ### Step 2.5 — Add Missing `data-testid` Attributes
 

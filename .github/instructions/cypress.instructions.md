@@ -42,11 +42,16 @@ it('should handle feature request contact type workflow');
 // ❌ Avoid - Basic Feature Fragmentation
 it('should validate race selection');
 it('should validate class selection');
+
+// ❌ Avoid - Sub-feature splitting within the same component
+it('should handle regular conditions workflow');
+it('should handle exhaustion level workflow'); // exhaustion is just a sub-path of conditions
 ```
 
 **Decision Guidelines:**
 
 - **Same workflow, different paths:** One comprehensive test
+- **Sub-features of the same component:** Always merge — different item types, condition types, input modes etc. within one manager/dialog are not separate journeys
 - **Completely different user journeys:** Separate tests per journey
 - **Complex features:** One E2E + specific edge case tests
 
