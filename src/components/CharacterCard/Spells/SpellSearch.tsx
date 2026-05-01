@@ -1,3 +1,7 @@
+import { Fragment, useMemo, useState } from 'react';
+import { Box, Chip, Divider, Typography } from '@mui/material';
+import { useQuery } from '@tanstack/react-query';
+import { mapValues } from 'lodash';
 import {
   getAllClasses,
   getAllSubclasses,
@@ -6,17 +10,13 @@ import {
   getSpellsForClass
 } from '@api/ressources';
 import { useToggle } from '@hooks/useToggle';
-import { Box, Chip, Divider, Typography } from '@mui/material';
-import { SpellFilters } from '@representations/abilities/magic.representation';
-import type { Character } from '@representations/user.representation';
-import type { TypeFromArray } from '@representations/utils.representation';
 import { ControledInput } from '@shared/ControledInput';
 import { FilterSelect } from '@shared/FilterSelect';
 import { Loader } from '@shared/Loader';
-import { useQuery } from '@tanstack/react-query';
 import { toKey } from '@utils/index';
-import { mapValues } from 'lodash';
-import { Fragment, useMemo, useState } from 'react';
+import { SpellFilters } from '@representations/abilities/magic.representation';
+import type { Character } from '@representations/user.representation';
+import type { TypeFromArray } from '@representations/utils.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { SpellSearchRow } from './SpellSearchRow';
 
