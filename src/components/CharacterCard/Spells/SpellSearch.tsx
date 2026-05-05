@@ -88,13 +88,7 @@ export function SpellSearch({
   );
 
   const { data: allSpells, isFetching: spellsFetching } = useQuery({
-    queryKey: [
-      'fetchAllSpells',
-      version,
-      ...Object.entries(mapValues(filters, (v) => (!v ? undefined : v)))
-        .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-        .flatMap(([, v]) => v)
-    ],
+    queryKey: ['fetchAllSpells', version, mapValues(filters, (v) => (!v ? undefined : v))],
     queryFn: async () =>
       version
         ? (
