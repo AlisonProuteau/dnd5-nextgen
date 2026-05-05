@@ -3,18 +3,12 @@ import { WeightIcon } from '@assets';
 import { Box, Button, Card, CardContent, Dialog, Typography } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
 import { type Dictionary, flatten, groupBy, uniqBy } from 'lodash';
-import { getEquipment, getFeature, getMagicItem } from '@api/ressources';
+import { getEquipment, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import {
-  formatEquipmentForDisplay,
-  getArmorClass,
-  getRelatedFeatures,
-  hasRequiredStrength
-} from '@utils/character/character.utils';
+import { formatEquipmentForDisplay, getArmorClass } from '@utils/character/character.utils';
 import { createQueryCombiner } from '@utils/query.utils';
-import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
@@ -38,12 +32,8 @@ export function Equipments({ character }: DefaultProps) {
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character.version, index],
         queryFn: async () => {
-          let item: Equipment | MagicItem | null = await getEquipment(character.version, index);
-          if (!item) {
-            item = await getMagicItem(character.version, index);
-          }
-
-          return item;
+          const item = await getEquipment(character.version, index);
+          return item ? item : await getMagicItem(character.version, index);
         },
         enabled: !!index
       })) || [],
@@ -59,16 +49,6 @@ export function Equipments({ character }: DefaultProps) {
       ),
       [character.equipments]
     )
-  });
-
-  const { data: features } = useQueries({
-    queries:
-      uniqBy(character.features, 'index')?.map(({ index }) => ({
-        queryKey: ['fetchFeature', character.version, index],
-        queryFn: async () => await getFeature(character.version || 'Legacy', index),
-        enabled: !!index && getRelatedFeatures(Object.values(equipmentList ?? {}).flat()).length > 0
-      })) || [],
-    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 
   const equipmentListString = useMemo(
@@ -187,17 +167,14 @@ export function Equipments({ character }: DefaultProps) {
                 <EquipmentListItem
                   key={e.index}
                   equipment={e}
+                  character={character}
                   onClick={(equipment) => {
                     setSelectedEquipment(equipment);
                     openDialog();
                   }}
                   onToggleEquip={toggleEquip}
                   canEquip={!firebaseCrud.isLoading}
-                  hasRequiredStrength={(equipment) =>
-                    hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
-                  }
-                  usage={character.resourceUsages?.[e.index]}
-                  features={features}
+                  showUsage={true}
                 />
               ))}
             </CardContent>

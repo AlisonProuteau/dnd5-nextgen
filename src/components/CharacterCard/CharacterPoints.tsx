@@ -70,15 +70,8 @@ export function CharacterPoints({
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character?.version, index],
         queryFn: async () => {
-          let item: Equipment | MagicItem | null = await getEquipment(
-            character?.version || 'Legacy',
-            index
-          );
-          if (!item) {
-            item = await getMagicItem(character?.version || 'Legacy', index);
-          }
-
-          return item;
+          const item = await getEquipment(character?.version || 'Legacy', index);
+          return item ? item : await getMagicItem(character?.version || 'Legacy', index);
         },
         enabled: !!index && !!character
       })) || [],

@@ -27,15 +27,13 @@ interface MarketSearchProps {
     customPrice?: MoneyObjectType
   ) => Promise<void>;
   disableAction?: boolean;
-  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
 export function MarketSearch({
   isFreeMode = false,
   canBuy = () => false,
   onBuy = async () => {},
-  disableAction = false,
-  hasRequiredStrength = () => true
+  disableAction = false
 }: MarketSearchProps = {}) {
   const { version } = useAuth();
   const [search, setSearch] = useState('');
@@ -161,7 +159,6 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
-                  hasRequiredStrength={hasRequiredStrength}
                 />
               ) : (
                 <MarketItem
@@ -172,7 +169,6 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
-                  hasRequiredStrength={hasRequiredStrength}
                 />
               )
             )}
