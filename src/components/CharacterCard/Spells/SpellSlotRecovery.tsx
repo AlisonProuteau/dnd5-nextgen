@@ -1,28 +1,12 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import { AutorenewOutlined } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  FormControlLabel,
-  FormLabel,
-  IconButton,
-  Radio,
-  RadioGroup,
-  Tooltip,
-  Typography
-} from '@mui/material';
+import { Box, IconButton, Tooltip, Typography } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getFeature, getMagicItem } from '@api/ressources';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { NumberInput } from '@shared/NumberInput';
 import { formatActionRecord, formatRestoreSpellSlotsRecord } from '@utils/actions.utils';
 import {
   buildSpellSlotUpdates,
@@ -33,6 +17,7 @@ import {
 } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
 import { Character } from '@representations/user.representation';
+import { SpellPartialRecoveryDialog } from './SpellPartialRecoveryDialog';
 
 const RECOVERY_FEATURES = ['arcane-recovery', 'natural-recovery'];
 
@@ -44,8 +29,6 @@ interface SpellSlotRecoveryProps {
 export function SpellSlotRecovery({ character, disabled = false }: SpellSlotRecoveryProps) {
   const { isOn: recoveryOpen, turnOn: openRecovery, turnOff: closeRecovery } = useToggle(false);
   const [recovered, setRecovered] = useState<Record<string, number>>({});
-  const [featureEnabled, setFeatureEnabled] = useState(false);
-  const [itemEnabled, setItemEnabled] = useState(false);
 
   const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
@@ -56,20 +39,11 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
   });
 
-  const charRecoveryItem = useMemo(
-    () => character.equipments?.find(({ index }) => index === 'pearl-of-power'),
-    [character.equipments]
-  );
   const { data: recoveryItem } = useQuery({
     queryKey: ['fetchEquipment', character.version, 'pearl-of-power'],
     queryFn: async () => await getMagicItem(character.version, 'pearl-of-power'),
-    enabled: !!charRecoveryItem
+    enabled: !!character.equipments?.find(({ index }) => index === 'pearl-of-power')
   });
-
-  const canRecoverWithItem = useMemo(
-    () => canUseResource(recoveryItem, character),
-    [recoveryItem, character.resourceUsages]
-  );
 
   const charRecoveryFeature = useMemo(
     () => character.features?.find(({ index }) => RECOVERY_FEATURES.includes(index)),
@@ -84,97 +58,24 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
     enabled: !!charRecoveryFeature
   });
 
-  const canRecoverWithFeature = useMemo(
-    () => canUseResource(recoveryFeature, character),
-    [recoveryFeature, character.resourceUsages]
-  );
-
-  const hasRelatedFeatures = getRelatedFeatures([recoveryFeature, recoveryItem]).length > 0;
-  const combineFn = useMemo(() => createQueryCombiner<Feature>(), []);
   const { data: fullFeatureList } = useQueries({
     queries:
       uniqBy(character.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', character.version, index],
         queryFn: async () => await getFeature(character.version || 'Legacy', index),
-        enabled: !!index && hasRelatedFeatures
+        enabled:
+          !!index &&
+          !!(recoveryFeature || recoveryItem) &&
+          getRelatedFeatures([recoveryFeature, recoveryItem]).length > 0
       })) || [],
-    combine: combineFn
+    combine: useCallback(createQueryCombiner<Feature>(), [])
   });
 
-  const maximums = useMemo(() => {
-    const slotAmount = canRecoverWithItem && itemEnabled ? 1 : undefined;
-    const combinedLevels =
-      canRecoverWithFeature && featureEnabled ? Math.ceil(character.level / 2) : undefined;
-
-    let level = 0;
-    if (canRecoverWithItem && itemEnabled)
-      level =
-        Object.entries(character.usedSpellSlots || {}).reduce((max, [level, used]) => {
-          if (used < 1) return max;
-
-          return Math.max(max, parseInt(level));
-        }, 0) - 1 || 0;
-    else if (
-      canRecoverWithFeature &&
-      featureEnabled &&
-      recoveryFeature?.index === 'arcane-recovery'
-    )
-      level = 5;
-
-    return { level, combinedLevels, slotAmount };
-  }, [
-    canRecoverWithItem,
-    itemEnabled,
-    canRecoverWithFeature,
-    featureEnabled,
-    character.level,
-    character.usedSpellSlots,
-    recoveryFeature?.index
-  ]);
-
-  const { totalLevelAmount, totalSlots } = useMemo(
-    () =>
-      Object.entries(recovered).reduce(
-        (acc, [level, amount]) => ({
-          totalLevelAmount: acc.totalLevelAmount + parseInt(level) * amount,
-          totalSlots: acc.totalSlots + amount
-        }),
-        { totalLevelAmount: 0, totalSlots: 0 }
-      ),
-    [recovered]
-  );
-
-  const recoverableLevels = useMemo(
-    () =>
-      Object.entries(character.usedSpellSlots || {})
-        .filter(
-          ([level, used]) => used > 0 && (!maximums.level || parseInt(level) <= maximums.level)
-        )
-        .map(([level, used]) => ({ level: parseInt(level), used }))
-        .sort((a, b) => a.level - b.level),
-    [character.usedSpellSlots, maximums.level]
-  );
-
-  useEffect(() => {
-    if (!recoveryOpen) return;
-
-    if (!canRecoverWithFeature && featureEnabled) setFeatureEnabled(false);
-    if (!canRecoverWithItem && itemEnabled) setItemEnabled(false);
-
-    if (!featureEnabled && !itemEnabled) {
-      if (canRecoverWithItem) setItemEnabled(true);
-      else if (canRecoverWithFeature) setFeatureEnabled(true);
-    }
-  }, [featureEnabled, itemEnabled, canRecoverWithFeature, canRecoverWithItem, recoveryOpen]);
-
-  const handleClose = () => {
-    closeRecovery();
-    setRecovered({});
-    setFeatureEnabled(false);
-    setItemEnabled(false);
-  };
-
-  const handleRestore = async (fullRecovery: boolean = false) => {
+  const handleRestore = async (
+    fullRecovery: boolean = false,
+    itemEnabled: boolean = false,
+    featureEnabled: boolean = false
+  ) => {
     if (!character.id) return;
 
     const recovery = fullRecovery
@@ -187,37 +88,33 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
     );
 
     if (success) {
+      const canUseFeature = canUseResource(recoveryFeature, character) && featureEnabled;
+      const canUseItem = canUseResource(recoveryItem, character) && itemEnabled;
+
       const resource =
-        !fullRecovery && canRecoverWithItem && itemEnabled && recoveryItem?.usage
+        !fullRecovery && canUseItem && itemEnabled && recoveryItem?.usage
           ? { equipment: recoveryItem, usage: getUsageType(recoveryItem.usage, fullFeatureList) }
           : undefined;
 
+      const formattedRecovery = formatRestoreSpellSlotsRecord(recovery);
       await logAction(
-        formatActionRecord('spell', {
-          ...formatRestoreSpellSlotsRecord(recovery),
-          equipment: resource?.equipment
-        }),
+        formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment }),
         resource ? { usage: resource.usage } : undefined
       );
 
-      if (!fullRecovery) {
-        if (canRecoverWithFeature && featureEnabled && recoveryFeature?.usage)
-          await logAction(
-            formatActionRecord('feature', {
-              ...recoveryFeature,
-              sourceIndex: recoveryFeature.index
-            }),
-            { usage: getUsageType(recoveryFeature.usage, fullFeatureList) }
-          );
-      }
+      if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage)
+        await logAction(
+          formatActionRecord('feature', { ...recoveryFeature, sourceIndex: recoveryFeature.index }),
+          { usage: getUsageType(recoveryFeature.usage, fullFeatureList) }
+        );
 
-      handleClose();
+      closeRecovery();
     }
   };
 
   return (
     <Box display="flex" gap={0.25} flexWrap="wrap" justifyContent="center">
-      {(canRecoverWithFeature || canRecoverWithItem) && recoverableLevels.length > 0 ? (
+      {canUseResource(recoveryFeature, character) || canUseResource(recoveryItem, character) ? (
         <Fragment>
           <IconButton
             size="small"
@@ -230,107 +127,22 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
             <Typography variant="caption">Partial Recover</Typography>
           </IconButton>
 
-          <Dialog open={recoveryOpen} onClose={handleClose} fullWidth maxWidth="xs">
-            <DialogTitle>Recover Spell Slots</DialogTitle>
-            <DialogContent>
-              <Box display="flex" flexDirection="column" gap={2} mb={2}>
-                <FormControl>
-                  <FormLabel>Recovery Method</FormLabel>
-                  <RadioGroup
-                    value={featureEnabled ? 'feature' : itemEnabled ? 'item' : ''}
-                    onChange={(_, v) => {
-                      setFeatureEnabled(v === 'feature');
-                      setItemEnabled(v === 'item');
-                    }}
-                  >
-                    {canRecoverWithFeature && charRecoveryFeature && (
-                      <FormControlLabel
-                        value="feature"
-                        control={<Radio />}
-                        label={charRecoveryFeature.name}
-                      />
-                    )}
-                    {canRecoverWithItem && charRecoveryItem && (
-                      <FormControlLabel
-                        value="item"
-                        control={<Radio />}
-                        label={charRecoveryItem.name}
-                      />
-                    )}
-                  </RadioGroup>
-                </FormControl>
-              </Box>
-              {recoverableLevels.length === 0 || (!featureEnabled && !itemEnabled) ? (
-                <Typography variant="body2" color="text.secondary" mt={2}>
-                  No used spell slots eligible for recovery.
-                </Typography>
-              ) : (
-                <Fragment>
-                  <Box display="flex" flexDirection="column" mb={2}>
-                    <Typography variant="body2" color="text.secondary">
-                      Select {maximums.slotAmount ? maximums.slotAmount + ' ' : ''}spell slot
-                      {maximums.slotAmount === 1 ? '' : 's'} to recover
-                      {maximums.combinedLevels
-                        ? ` (total level must be ${maximums.combinedLevels} or less).`
-                        : '.'}
-                    </Typography>
-                    {maximums.level ? (
-                      <Typography variant="caption" color="text.secondary">
-                        You can only recover spell slots up to level {maximums.level}.
-                      </Typography>
-                    ) : null}
-                  </Box>
-
-                  <Box display="flex" flexDirection="column" gap={1} mt={1}>
-                    {recoverableLevels.map(({ level, used }) => (
-                      <NumberInput
-                        id={`recover-${level}`}
-                        label={
-                          <Fragment>
-                            Level {level}{' '}
-                            <Typography component="span" variant="caption" color="text.secondary">
-                              ({used} used)
-                            </Typography>
-                          </Fragment>
-                        }
-                        min={0}
-                        max={used}
-                        value={recovered[level] ?? 0}
-                        onChange={(_, value) =>
-                          value !== null && setRecovered((prev) => ({ ...prev, [level]: value }))
-                        }
-                        disabled={firebaseCrud.isLoading || disabled}
-                        addDisabled={
-                          (!!maximums.combinedLevels &&
-                            maximums.combinedLevels - (totalLevelAmount + level) < 0) ||
-                          (!!maximums.slotAmount && totalSlots >= maximums.slotAmount)
-                        }
-                      />
-                    ))}
-                  </Box>
-                </Fragment>
-              )}
-            </DialogContent>
-
-            <DialogActions>
-              <Button onClick={handleClose} disabled={firebaseCrud.isLoading || disabled}>
-                Cancel
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() => handleRestore(false)}
-                disabled={
-                  !Object.values(recovered).some((v) => v > 0) ||
-                  (maximums.combinedLevels && totalLevelAmount > maximums.combinedLevels) ||
-                  (maximums.slotAmount && totalSlots > maximums.slotAmount) ||
-                  firebaseCrud.isLoading ||
-                  disabled
-                }
-              >
-                Recover
-              </Button>
-            </DialogActions>
-          </Dialog>
+          <SpellPartialRecoveryDialog
+            character={character}
+            recovered={recovered}
+            setRecovered={setRecovered}
+            recoveryOpen={recoveryOpen}
+            closeRecovery={closeRecovery}
+            canRecoverWithFeature={canUseResource(recoveryFeature, character)}
+            canRecoverWithItem={canUseResource(recoveryItem, character)}
+            recoveryFeature={recoveryFeature ?? undefined}
+            recoveryItem={recoveryItem ?? undefined}
+            handleRestore={(itemEnabled, featureEnabled) =>
+              handleRestore(false, itemEnabled, featureEnabled)
+            }
+            disabled={disabled}
+            isLoading={firebaseCrud.isLoading}
+          />
         </Fragment>
       ) : null}
 
