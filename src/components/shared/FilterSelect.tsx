@@ -17,8 +17,8 @@ interface FilterOption {
 interface FilterSelectProps extends Omit<FormControlProps, 'onChange' | 'children'> {
   id: string;
   label?: string;
-  value: SelectProps['value'];
-  onChange: (v: any) => void;
+  value: FilterOption['value'];
+  onChange: (v: FilterOption['value']) => void;
   options?: FilterOption[];
   children?: ReactNode;
   selectSx?: SelectProps['sx'];

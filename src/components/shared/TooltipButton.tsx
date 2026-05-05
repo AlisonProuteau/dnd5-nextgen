@@ -54,7 +54,7 @@ export function TooltipButton({
             })}
             onClick={() => (isPinned ? close() : pin())}
             onMouseEnter={focus}
-            onMouseLeave={close}
+            onMouseLeave={unfocus}
           >
             {children}
           </IconButton>

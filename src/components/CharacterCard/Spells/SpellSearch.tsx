@@ -198,8 +198,8 @@ export function SpellSearch({
         <FilterSelect
           id="level-min"
           label="Min level"
-          value={filters.minLevel}
-          onChange={(v) => setFilterData({ minLevel: v })}
+          value={filters.minLevel ?? ''}
+          onChange={(v) => setFilterData({ minLevel: v === '' ? undefined : Number(v) })}
           options={[
             ...levelOptions.map((option) => ({
               value: option,
@@ -212,8 +212,8 @@ export function SpellSearch({
         <FilterSelect
           id="level-max"
           label="Max level"
-          value={filters.maxLevel}
-          onChange={(v) => setFilterData({ maxLevel: v })}
+          value={filters.maxLevel ?? ''}
+          onChange={(v) => setFilterData({ maxLevel: v === '' ? undefined : Number(v) })}
           options={[
             ...(maxLevel === undefined ? [{ value: '', label: 'Any' }] : []),
             ...levelOptions.map((option) => ({
@@ -227,9 +227,9 @@ export function SpellSearch({
         <FilterSelect
           id="class"
           label="Class"
-          value={filters.classFilter}
+          value={filters.classFilter as string}
           onChange={(v) => {
-            setFilterData({ classFilter: v, subclassFilter: '' });
+            setFilterData({ classFilter: v as string, subclassFilter: '' });
           }}
           options={[
             { value: '', label: 'Any' },
@@ -241,8 +241,8 @@ export function SpellSearch({
           <FilterSelect
             id="subclass"
             label="Subclass"
-            value={filters.subclassFilter}
-            onChange={(v) => setFilterData({ subclassFilter: v })}
+            value={filters.subclassFilter as string}
+            onChange={(v) => setFilterData({ subclassFilter: v as string })}
             options={[
               { value: '', label: 'Any' },
               ...allSubclasses.map((s) => ({ value: s.index, label: s.name }))
@@ -253,8 +253,8 @@ export function SpellSearch({
         <FilterSelect
           id="school"
           label="School"
-          value={filters.school}
-          onChange={(v) => setFilterData({ school: v })}
+          value={filters.school as string}
+          onChange={(v) => setFilterData({ school: v as string })}
           options={[
             { value: '', label: 'Any' },
             ...allSchools.map((s) => ({ value: s.index, label: s.name }))

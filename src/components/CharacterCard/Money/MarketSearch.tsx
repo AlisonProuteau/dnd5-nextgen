@@ -99,7 +99,7 @@ export function MarketSearch({
               label="Category"
               onChange={(value) => {
                 setSelectedSubCategory('all');
-                setSelectedCategory(value);
+                setSelectedCategory(value as string);
               }}
               options={equipmentCategories.map((cat) => ({
                 value: cat.index,
@@ -115,7 +115,7 @@ export function MarketSearch({
                 sx={{ width: '100%', marginTop: 2 }}
                 value={selectedSubCategory ?? 'all'}
                 label="Sub-Category"
-                onChange={setSelectedSubCategory}
+                onChange={(value) => setSelectedSubCategory(value as string)}
                 options={[
                   { value: 'all', label: 'All' },
                   ...equipmentCategories

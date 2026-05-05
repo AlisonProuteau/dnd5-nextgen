@@ -149,11 +149,13 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         { index: 'chill-touch', name: 'Chill Touch', level: 0 },
         { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
       ],
+      temporarySpells: [],
       equipments: [
         ...(charData.equipments ?? []),
         { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
       ],
-      usedSpellSlots: undefined
+      usedSpellSlots: undefined,
+      resourceUsages: undefined
     });
 
     cy.visit('/');
