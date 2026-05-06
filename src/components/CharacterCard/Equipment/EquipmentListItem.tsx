@@ -4,13 +4,14 @@ import { CheckCircle, CircleOutlined, InfoOutlined, Warning } from '@mui/icons-m
 import { Box, IconButton, Typography } from '@mui/material';
 import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
+import { getFeature } from '@api/ressources';
 import { TooltipButton } from '@shared/TooltipButton';
+import { getRelatedFeatures, hasRequiredStrength } from '@utils/character/character.utils';
+import { createQueryCombiner } from '@utils/query.utils';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
-import { getFeature } from 'src/api/ressources';
-import { Feature } from 'src/representations/abilities/feature.representation';
-import { Character } from 'src/representations/user.representation';
-import { createQueryCombiner, getRelatedFeatures, hasRequiredStrength } from 'src/utils';
+import { Character } from '@representations/user.representation';
 import { UsageDisplay } from '../Characteristics/UsageDisplay';
 
 interface EquipmentListItemProps {

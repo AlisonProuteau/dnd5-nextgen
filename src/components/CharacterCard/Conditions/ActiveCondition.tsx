@@ -3,10 +3,10 @@ import { Remove, Undo } from '@mui/icons-material';
 import { Box, Chip, IconButton, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getCondition } from '@api/ressources';
-import { NumberInput } from 'src/components/shared/NumberInput';
-import { TooltipButton } from 'src/components/shared/TooltipButton';
+import { NumberInput } from '@shared/NumberInput';
+import { TooltipButton } from '@shared/TooltipButton';
+import { DefaultRepresentation } from '@representations/common.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { DefaultRepresentation } from 'src/representations/common.representation';
 
 interface ActiveConditionProps {
   condition: DefaultRepresentation & { level?: number };

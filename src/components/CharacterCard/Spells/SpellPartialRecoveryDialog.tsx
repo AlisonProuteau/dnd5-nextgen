@@ -13,12 +13,12 @@ import {
   RadioGroup,
   Typography
 } from '@mui/material';
+import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { Feature } from '@representations/abilities/feature.representation';
-import { Loader } from 'src/components/shared/Loader';
-import { MagicItem } from 'src/representations/abilities/magic.representation';
-import { Equipment } from 'src/representations/campaign/equipment.representation';
-import { Character } from 'src/representations/user.representation';
+import { MagicItem } from '@representations/abilities/magic.representation';
+import { Equipment } from '@representations/campaign/equipment.representation';
+import { Character } from '@representations/user.representation';
 
 const RECOVERY_FEATURES = ['arcane-recovery', 'natural-recovery'];
 

@@ -10,8 +10,8 @@ import {
   IconButton,
   Typography
 } from '@mui/material';
+import { DESCRIPTION_CHAR_LIMIT } from '@utils/ui/ui.utils';
 import type { Condition } from '@representations/campaign/adventure.representation';
-import { DESCRIPTION_CHAR_LIMIT } from 'src/utils';
 
 interface ConditionCardProps {
   condition: Condition;

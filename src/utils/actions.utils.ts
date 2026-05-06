@@ -1,8 +1,8 @@
 import { transform } from 'lodash';
 import { Spell } from '@representations/abilities/magic.representation';
 import { MoneyObjectType, MoneyUnitType } from '@representations/campaign/equipment.representation';
+import { DefaultRepresentation } from '@representations/common.representation';
 import { ActionRecord, ActionRecordType, Character } from '@representations/user.representation';
-import { DefaultRepresentation } from 'src/representations/common.representation';
 import { CurrencyLabels } from './ui/ui.utils';
 
 export const formatHealthRecord = (
