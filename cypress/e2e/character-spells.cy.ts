@@ -427,6 +427,15 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     cy.getByTestId('spell-slots').should('contain.text', '4 of 4').and('contain.text', '2 of 2');
     cy.getByTestId('short-rest-restore').should('not.exist');
 
+    // Test: Action record is updated with actual changes
+    cy.getByTestId(`action-record-${charID}`).click();
+    cy.getByRole('button', 'Spells').click();
+    cy.getByTestId('record-item-')
+      .filter(':contains("Spell Slots Restored")')
+      .should('contain.text', 'Level 2: 1 slot')
+      .and('not.contain.text', 'Level 1');
+    cy.getButton('Close').click();
+
     // Test: Persistence — temporary spell survives a reload
     cy.reload();
     cy.waitForLoading();

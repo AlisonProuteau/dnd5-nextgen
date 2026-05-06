@@ -144,6 +144,7 @@ export const formatRestoreSpellSlotsRecord = (
   return {
     name: 'Spell Slots Restored',
     description: Object.entries(recovery)
+      .filter(([, amount]) => amount > 0)
       .map(([level, total]) => `Level ${level}: ${total} slot${total > 1 ? 's' : ''}`)
       .join('\n')
   };

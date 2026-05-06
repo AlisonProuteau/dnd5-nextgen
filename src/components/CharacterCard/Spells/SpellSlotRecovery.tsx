@@ -78,10 +78,7 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
   ) => {
     if (!character.id) return;
 
-    const recovery = fullRecovery
-      ? character.usedSpellSlots || {}
-      : Object.fromEntries(Object.entries(recovered).filter(([, v]) => v > 0));
-
+    const recovery = fullRecovery ? character.usedSpellSlots || {} : recovered;
     const success = await firebaseCrud.update(
       character.id,
       buildSpellSlotUpdates(recovery, character.usedSpellSlots)

@@ -88,7 +88,11 @@ export function SpellSearch({
   );
 
   const { data: allSpells, isFetching: spellsFetching } = useQuery({
-    queryKey: ['fetchAllSpells', version, mapValues(filters, (v) => (!v ? undefined : v))],
+    queryKey: [
+      'fetchAllSpells',
+      version,
+      mapValues(filters, (v) => (v === '' || v === false ? undefined : v))
+    ],
     queryFn: async () =>
       version
         ? (
