@@ -1,4 +1,4 @@
-import { characters } from 'cypress/support/mocks/characterList';
+import { characters } from '../support/mocks/characterList';
 
 describe('Character Money Management End-to-End', () => {
   const characterData = characters.find(({ name }) => name === 'Delfy')!;

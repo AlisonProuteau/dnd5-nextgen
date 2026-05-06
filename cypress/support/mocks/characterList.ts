@@ -1,4 +1,4 @@
-import type { Character } from 'src/representations/user.representation';
+import type { Character } from '@representations/user.representation';
 
 export const characters: Character[] = [
   {

@@ -17,7 +17,6 @@ import {
   buyItem,
   type EquipmentCategoryType,
   getSellingPrice,
-  hasRequiredStrength,
   remainingMoneyInCopper,
   sellItem
 } from '@utils/character/character.utils';
@@ -205,9 +204,6 @@ export function Market({ character, purse, ownedEquipment, closeMarket }: Market
             canBuy={canBuy}
             onBuy={onBuy}
             disableAction={firebaseCrud.isLoading}
-            hasRequiredStrength={(equipment) =>
-              hasRequiredStrength(character.abilityScores.str?.score || 0, equipment)
-            }
           />
         )}
       </DialogContent>

@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
+import { deleteField, doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { formatDateType } from '@utils/date.utils';
 import type { UsageTypes } from '@representations/common.representation';
@@ -60,22 +60,24 @@ export const useActionRecord = (characterId: string) => {
       const id = await firebaseCrud.create(formatted, false);
       if (id) {
         optimiticUpdateRecord((old) => [{ ...formatted, id } as ActionRecord, ...old]);
-        if (
-          (record.type === 'feature' || record.type === 'trait') &&
-          record.sourceIndex &&
-          user?.uid &&
-          resourceUsageMeta
-        ) {
-          try {
-            await updateDoc(doc(database, `users/${user.uid}/characters`, characterId), {
-              [`resourceUsages.${record.sourceIndex}.type`]: record.type,
-              [`resourceUsages.${record.sourceIndex}.usage`]: resourceUsageMeta.usage,
-              [`resourceUsages.${record.sourceIndex}.current`]: increment(1)
-            });
-            await queryClient.invalidateQueries({ queryKey: characterQueryKey });
-          } catch (error) {
-            toast.error(`Update failed: 
+        if (user?.uid && resourceUsageMeta) {
+          const recordIndex =
+            record.type === 'feature' || record.type === 'trait'
+              ? record.sourceIndex
+              : record.equipment?.index;
+          if (recordIndex) {
+            try {
+              await updateDoc(doc(database, `users/${user.uid}/characters`, characterId), {
+                [`resourceUsages.${recordIndex}.type`]:
+                  record.type === 'feature' || record.type === 'trait' ? record.type : 'other',
+                [`resourceUsages.${recordIndex}.usage`]: resourceUsageMeta.usage,
+                [`resourceUsages.${recordIndex}.current`]: increment(1)
+              });
+              await queryClient.invalidateQueries({ queryKey: characterQueryKey });
+            } catch (error) {
+              toast.error(`Update failed: 
               ${(error as Error).message}`);
+            }
           }
         }
       }
@@ -95,12 +97,12 @@ export const useActionRecord = (characterId: string) => {
   );
 
   const removeAction = useCallback(
-    async (id: string) => {
+    async (id: string, invalidate: boolean = true) => {
       const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
       const success = await firebaseCrud.remove(id, false);
       if (success) {
         optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
-        if (record?.sourceIndex && user?.uid) {
+        if (user?.uid && (record?.sourceIndex || record?.equipment?.index)) {
           try {
             const charDocRef = doc(database, `users/${user.uid}/characters`, characterId);
             await runTransaction(database, async (transaction) => {
@@ -110,22 +112,44 @@ export const useActionRecord = (characterId: string) => {
               if (record?.type === 'feature' || record?.type === 'trait') {
                 const current: number =
                   snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
-                if (current <= 0) return;
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`resourceUsages.${record.sourceIndex}`]:
+                      current - 1 === 0
+                        ? deleteField()
+                        : {
+                            ...snap.data()?.resourceUsages?.[record.sourceIndex!],
+                            current: current - 1
+                          }
+                  });
+              }
 
-                transaction.update(charDocRef, {
-                  [`resourceUsages.${record.sourceIndex}.current`]: current - 1
-                });
-              } else if (record?.type === 'spell' && typeof record.value === 'number') {
+              if (record?.type === 'spell' && typeof record.value === 'number') {
                 const current: number = snap.data()?.usedSpellSlots?.[record.value] ?? 0;
-                if (current <= 0) return;
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`usedSpellSlots.${record.value}`]:
+                      current - 1 === 0 ? deleteField() : current - 1
+                  });
+              }
 
-                transaction.update(charDocRef, {
-                  [`usedSpellSlots.${record.value}`]: current - 1
-                });
+              if (record?.equipment?.index) {
+                const current: number =
+                  snap.data()?.resourceUsages?.[record.equipment.index]?.current ?? 0;
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`resourceUsages.${record.equipment.index}`]:
+                      current - 1 === 0
+                        ? deleteField()
+                        : {
+                            ...snap.data()?.resourceUsages?.[record.equipment.index],
+                            current: current - 1
+                          }
+                  });
               }
             });
 
-            await queryClient.invalidateQueries({ queryKey: characterQueryKey });
+            if (invalidate) await queryClient.invalidateQueries({ queryKey: characterQueryKey });
           } catch (error) {
             toast.error(`Update failed: 
             ${(error as Error).message}`);

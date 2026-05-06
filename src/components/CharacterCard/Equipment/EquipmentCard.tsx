@@ -19,7 +19,7 @@ import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment, WeaponProperty } from '@representations/campaign/equipment.representation';
 import { useAuth } from 'src/providers/AuthProvider';
-import { MoneyDisplay } from './MoneyDisplay';
+import { MoneyDisplay } from '../Money/MoneyDisplay';
 
 interface EquipmentCardProps {
   selectedEquipment: Equipment | MagicItem;
@@ -73,7 +73,11 @@ export function EquipmentCard({ selectedEquipment }: EquipmentCardProps) {
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', flexDirection: 'column' }}>
-        <DialogContentText textAlign="justify">{selectedEquipment.desc}</DialogContentText>
+        {selectedEquipment.desc?.map((d, i) => (
+          <DialogContentText key={`desc-${i}`} textAlign="justify">
+            {d}
+          </DialogContentText>
+        ))}
         {'armor_class' in selectedEquipment && selectedEquipment.armor_class && (
           <EquipmentLine
             label="Armor Class"

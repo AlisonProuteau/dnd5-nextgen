@@ -47,3 +47,11 @@ export enum CurrencyLabels {
   sp = 'Silver Pieces',
   cp = 'Copper Pieces'
 }
+
+export const toKey = (arr?: { index: string }[] | null) =>
+  (arr ?? undefined)
+    ?.map(({ index }) => index)
+    .sort()
+    .join(',');
+
+export const DESCRIPTION_CHAR_LIMIT = 120;

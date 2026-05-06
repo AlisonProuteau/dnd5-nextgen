@@ -28,6 +28,7 @@ import {
   mapDataForForm,
   mapFeatures
 } from '@utils/character/creation.utils';
+import { toKey } from '@utils/index';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Level } from '@representations/campaign/level.representation';
@@ -154,7 +155,7 @@ export function CharacterClassForm({
       setSelectedProficiencies(newProficiencies);
       toast('Something changed in your class');
     }
-  }, [proficiencies.map(({ index }) => index).join(', ')]);
+  }, [toKey(proficiencies)]);
 
   useEffect(() => {
     if (classes) {

@@ -30,7 +30,7 @@ export default defineConfig({
 
       on('task', {
         clearDownloadsFolder() {
-          const downloadsPath = config.downloadsFolder || 'cypress/downloads';
+          const downloadsPath = config.downloadsFolder || '../downloads';
           console.info('Clearing downloads folder:', downloadsPath);
           fs.rmSync(downloadsPath, { recursive: true, force: true });
           return null;

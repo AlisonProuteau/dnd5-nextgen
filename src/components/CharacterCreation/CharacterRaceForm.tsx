@@ -22,6 +22,7 @@ import {
   mapDataForForm,
   mapTraits
 } from '@utils/character/creation.utils';
+import { toKey } from '@utils/index';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { Subclass } from '@representations/character/class.representation';
@@ -116,7 +117,7 @@ export function CharacterRaceForm({
       setSelectedProficiencies(newProficiencies);
       toast('Something changed in your race');
     }
-  }, [proficiencies.map(({ index }) => index).join(', ')]);
+  }, [toKey(proficiencies)]);
 
   useEffect(() => {
     const newLanguages = selectedLanguages.filter(
@@ -127,7 +128,7 @@ export function CharacterRaceForm({
       setSelectedLanguages(newLanguages);
       toast('Something changed in your race');
     }
-  }, [languages.map(({ index }) => index).join(', ')]);
+  }, [toKey(languages)]);
 
   useEffect(() => {
     if (races) {

@@ -16,16 +16,19 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { useQuery } from '@tanstack/react-query';
 import { increment } from 'firebase/firestore';
 import { isEqual, max } from 'lodash';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { formatActionRecord, getSpellActionRecordData } from '@utils/actions.utils';
+import { formatActionRecord, formatSpellRecord } from '@utils/actions.utils';
 import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
+import { getSpellsForClass } from 'src/api/ressources';
+import { Loader } from 'src/components/shared/Loader';
 import { CastSpellMenu } from './CastSpellMenu';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
@@ -44,9 +47,11 @@ interface SpellbookProps {
 export function Spellbook({ character, slotInfo }: SpellbookProps) {
   const [knownSpells, setKnownSpells] = useState(character.knownSpells || []);
   const [preparedSpells, setPreparedSpells] = useState(character.preparedSpells || []);
+  const [temporarySpells, setTemporarySpells] = useState(character.temporarySpells || []);
   const { isOn: isLearnOpen, turnOn: openLearn, turnOff: closeLearn } = useToggle();
   const { isOn: isPrepareOpen, turnOn: openPrepare, turnOff: closePrepare } = useToggle();
   const { isOn: isAddOpen, turnOn: openAdd, turnOff: closeAdd } = useToggle();
+  const { isOn: isAddTempOpen, turnOn: openAddTemp, turnOff: closeAddTemp } = useToggle();
 
   const { logAction } = useActionRecord(character.id);
   const firebaseCrud = useFirebaseCrud({
@@ -55,6 +60,21 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       update: 'Spells saved successfully'
     },
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
+  });
+
+  const { data: classSpells = [], isFetching: classSpellsFetching } = useQuery({
+    queryKey: ['fetchCharacterSpells', character.class.index, character.subclass?.index],
+    queryFn: async () =>
+      character.class.index
+        ? (
+            await getSpellsForClass(
+              characterInfo.version,
+              character.class.index,
+              character.subclass?.index
+            )
+          ).results
+        : [],
+    enabled: !!character.class.index && isLearnOpen && character.class.index === 'wizard'
   });
 
   const updateKnownSpellsWithCascade = async () => {
@@ -88,9 +108,10 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
     await firebaseCrud.update(character.id, { preparedSpells });
   };
 
-  const handleRestoreAll = async () => {
-    if (!character.id) return;
-    await firebaseCrud.update(character.id, { usedSpellSlots: {} }, false);
+  const saveTemporarySpells = async () => {
+    closeAddTemp();
+    if (character.id && !isEqual(character.temporarySpells, temporarySpells))
+      await firebaseCrud.update(character.id, { temporarySpells }, false);
   };
 
   const handleCastSpell = async (spell: Spell, slotLevel?: number | 'ritual') => {
@@ -110,8 +131,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       else toast.error(`No spell slots of level ${slotLevel} available`);
     }
 
-    if (success)
-      await logAction(formatActionRecord('spell', getSpellActionRecordData(spell, slotLevel)));
+    if (success) await logAction(formatActionRecord('spell', formatSpellRecord(spell, slotLevel)));
   };
 
   const shouldLearn = useMemo(
@@ -169,9 +189,8 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
         <Fragment>
           {Object.values(slotInfo.slots).length ? (
             <SpellSlots
+              character={character}
               slots={slotInfo.slots}
-              usedSlots={character.usedSpellSlots || {}}
-              onRestoreAll={handleRestoreAll}
               disabled={firebaseCrud.isLoading}
             />
           ) : null}
@@ -204,6 +223,52 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               />
             )}
           />
+
+          <Accordion sx={{ '&:before': { display: 'none' } }} elevation={0} disableGutters>
+            <AccordionSummary expandIcon={<ExpandMore />}>
+              <Divider component="div" role="presentation" variant="middle" sx={{ flex: 1 }}>
+                <Typography variant="subtitle2">Temporary Spells</Typography>
+              </Divider>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                sx={{ position: 'relative', top: '-20px', height: '15px' }}
+              >
+                <Typography
+                  variant="subtitle2"
+                  color="text.secondary"
+                  fontWeight="normal"
+                  display="block"
+                  textAlign="center"
+                >
+                  Spells granted by traits, features or gameplay, castable regardless of your
+                  prepare or learn limits.
+                </Typography>
+                <Button onClick={openAddTemp} size="small" disabled={firebaseCrud.isLoading}>
+                  Manage
+                </Button>
+              </Box>
+              {temporarySpells.length > 0 && (
+                <SpellList
+                  characterInfo={characterInfo}
+                  additionalSpellList={temporarySpells}
+                  spellListOnly={true}
+                  hideLevels
+                  actions={(spell) => (
+                    <CastSpellMenu
+                      spell={spell}
+                      availableSlots={availableSlots}
+                      handleCastSpell={handleCastSpell}
+                      disabled={firebaseCrud.isLoading}
+                    />
+                  )}
+                />
+              )}
+            </AccordionDetails>
+          </Accordion>
 
           {character.class.index === 'wizard' &&
             knownSpells.filter(({ level }) => level > 0).length && (
@@ -331,9 +396,9 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           )}
         </DialogContent>
         <DialogActions>
-          {isLearnOpen && character.class.index === 'wizard' && (
-            <Button onClick={openAdd}>More spells</Button>
-          )}
+          {isLearnOpen &&
+            character.class.index === 'wizard' &&
+            (classSpellsFetching ? <Loader /> : <Button onClick={openAdd}>More spells</Button>)}
           <Button
             onClick={
               isLearnOpen
@@ -402,6 +467,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               subclassIndex={character.subclass?.index}
               maxLevel={max(slotLevels)}
               selectedSpells={knownSpells.filter(({ added }) => added)}
+              excludeSpells={classSpells}
               onSelect={(spell, remove = false) => {
                 if (
                   remove ===
@@ -426,6 +492,42 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           >
             Close
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        fullWidth
+        maxWidth="lg"
+        open={isAddTempOpen}
+        onClose={saveTemporarySpells}
+        PaperProps={{ elevation: 0 }}
+        slotProps={{ backdrop: { sx: { backgroundColor: 'rgba(50, 50, 50, 0.85)' } } }}
+      >
+        <DialogTitle>Temporary Spells</DialogTitle>
+        <DialogContent>
+          {isAddTempOpen && (
+            <SpellSearch
+              classIndex=""
+              maxLevel={max(slotLevels)}
+              selectedSpells={temporarySpells}
+              excludeSpells={[...knownSpells, ...preparedSpells]}
+              onSelect={(spell, remove = false) => {
+                if (remove === temporarySpells.some(({ index }) => index === spell.index)) {
+                  remove
+                    ? setTemporarySpells((prev) =>
+                        prev.filter(({ index }) => index !== spell.index)
+                      )
+                    : setTemporarySpells((prev) => [
+                        ...prev,
+                        { index: spell.index, name: spell.name, level: spell.level }
+                      ]);
+                }
+              }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={saveTemporarySpells}>Close</Button>
         </DialogActions>
       </Dialog>
     </Fragment>

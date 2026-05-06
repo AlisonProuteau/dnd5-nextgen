@@ -1,5 +1,5 @@
-import { characters } from 'cypress/support/mocks/characterList';
-import { Character } from 'src/representations/user.representation';
+import { Character } from '@representations/user.representation';
+import { characters } from '../support/mocks/characterList';
 
 describe(`Character Sheet End-to-End`, () => {
   const delfyData = characters.find(({ name }) => name === 'Delfy')!;

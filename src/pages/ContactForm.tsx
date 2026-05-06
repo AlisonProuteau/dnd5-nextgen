@@ -16,6 +16,7 @@ import { getUserCharacters } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
+import { FilterSelect } from '@shared/FilterSelect';
 import { FullPageLoader } from '@shared/Loader';
 import type { Version } from '@utils/constants/versions.constants';
 import { getAllValidationErrors } from '@utils/form.utils';
@@ -100,7 +101,13 @@ export function ContactForm() {
   });
 
   // Only watch fields needed for conditional rendering
-  const [type, area, requestArea] = watch(['type', 'area', 'requestArea']);
+  const [type, area, requestArea, severity, character] = watch([
+    'type',
+    'area',
+    'requestArea',
+    'severity',
+    'character'
+  ]);
 
   const firebaseCrud = useFirebaseCrud<FormData>({
     collectionPath: 'tickets',
@@ -144,60 +151,38 @@ export function ContactForm() {
   return (
     <Container maxWidth="xs">
       <form onSubmit={handleSubmit(onSubmit)} onReset={() => reset()} data-testid="contact-form">
-        <FormControl margin="dense" fullWidth required data-testid="type-form">
-          <InputLabel htmlFor="type">Contact Type</InputLabel>
-          <Controller
-            name="type"
-            control={control}
-            rules={{ required: 'Required' }}
-            render={({ field }) => (
-              <Select
-                id="type"
-                label="Contact Type"
-                {...field}
-                onChange={(e) => {
-                  field.onChange(e);
-                  const newType = e.target.value as ContactType;
-                  if (newType === ContactType.BUG || type === ContactType.BUG) {
-                    setValue('message', undefined);
-                  }
-                  clearErrors();
-                }}
-              >
-                {Object.values(ContactType).map((contactType) => (
-                  <MenuItem key={contactType} value={contactType}>
-                    {contactType}
-                  </MenuItem>
-                ))}
-              </Select>
-            )}
-          />
-        </FormControl>
+        <FilterSelect
+          id="type"
+          margin="dense"
+          fullWidth
+          required
+          data-testid="type-form"
+          label="Contact Type"
+          value={type || ''}
+          onChange={(v) => {
+            const newType = v as ContactType;
+            if (newType === ContactType.BUG || type === ContactType.BUG) {
+              setValue('message', undefined);
+            }
+            setValue('type', newType);
+            clearErrors();
+          }}
+          options={Object.values(ContactType).map((t) => ({ value: t, label: t }))}
+        />
 
         {type === ContactType.BUG && (
           <Fragment>
-            <FormControl margin="dense" fullWidth required data-testid="severity-form">
-              <InputLabel htmlFor="severity">Severity</InputLabel>
-              <Controller
-                name="severity"
-                control={control}
-                rules={{ required: 'Required' }}
-                render={({ field }) => (
-                  <Select
-                    id="severity"
-                    label="Severity"
-                    {...field}
-                    value={field.value || BugSeverity.MEDIUM}
-                  >
-                    {Object.values(BugSeverity).map((bugSeverity) => (
-                      <MenuItem key={bugSeverity} value={bugSeverity}>
-                        {bugSeverity}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                )}
-              />
-            </FormControl>
+            <FilterSelect
+              id="severity"
+              margin="dense"
+              fullWidth
+              required
+              data-testid="severity-form"
+              label="Severity"
+              value={severity || BugSeverity.MEDIUM}
+              onChange={(v) => setValue('severity', v as BugSeverity)}
+              options={Object.values(BugSeverity).map((s) => ({ value: s, label: s }))}
+            />
             <FormControl margin="dense" fullWidth required data-testid="area-form">
               <InputLabel htmlFor="area">Area</InputLabel>
               <Controller
@@ -260,22 +245,19 @@ export function ContactForm() {
               characters?.length &&
               area &&
               ![AppArea.NAV, AppArea.AUTH].includes(area as AppArea) && (
-                <FormControl margin="dense" fullWidth data-testid="character-form">
-                  <InputLabel htmlFor="character">Character</InputLabel>
-                  <Controller
-                    name="character"
-                    control={control}
-                    render={({ field }) => (
-                      <Select id="character" label="Character" {...field} value={field.value || ''}>
-                        {characters.map((char) => (
-                          <MenuItem key={`character-${char.id}`} value={char.id}>
-                            {char.name} - {char.race?.name} {char.class?.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    )}
-                  />
-                </FormControl>
+                <FilterSelect
+                  id="character"
+                  data-testid="character-form"
+                  margin="dense"
+                  fullWidth
+                  label="Character"
+                  value={character || ''}
+                  onChange={(v) => setValue('character', v as string)}
+                  options={characters.map((char) => ({
+                    value: char.id,
+                    label: `${char.name} - ${char.race?.name} ${char.class?.name}`
+                  }))}
+                />
               )}
             <FormControlLabel
               sx={{ marginX: 0 }}

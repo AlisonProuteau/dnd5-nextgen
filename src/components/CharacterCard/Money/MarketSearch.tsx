@@ -1,9 +1,11 @@
 import { Fragment, useMemo, useState } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { getAllEquipment, getAllMagicItems, getEquipmentCategories } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
+import { FilterSelect } from '@shared/FilterSelect';
 import { Loader } from '@shared/Loader';
+import { toKey } from '@utils/index';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,
@@ -25,15 +27,13 @@ interface MarketSearchProps {
     customPrice?: MoneyObjectType
   ) => Promise<void>;
   disableAction?: boolean;
-  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
 export function MarketSearch({
   isFreeMode = false,
   canBuy = () => false,
   onBuy = async () => {},
-  disableAction = false,
-  hasRequiredStrength = () => true
+  disableAction = false
 }: MarketSearchProps = {}) {
   const { version } = useAuth();
   const [search, setSearch] = useState('');
@@ -82,61 +82,45 @@ export function MarketSearch({
     )
       return [];
     return allEquipment.filter(({ name }) => name.toLowerCase().includes(search.toLowerCase()));
-  }, [
-    search,
-    selectedCategory,
-    isEquipmentListLoading,
-    allEquipment
-      ?.map(({ index }) => index)
-      .sort((a, b) => a.localeCompare(b))
-      .join(', ')
-  ]);
+  }, [search, selectedCategory, isEquipmentListLoading, toKey(allEquipment)]);
 
   return (
     <Box display="flex" flexDirection="column" height="100%">
       <Box paddingY={1}>
         {!isEquipmentCategoriesLoading && equipmentCategories?.length ? (
           <Fragment>
-            <FormControl fullWidth>
-              <InputLabel htmlFor="equipmentCategory">Category</InputLabel>
-              <Select
-                id="equipmentCategory"
-                value={selectedCategory ?? 'all'}
-                label="Category"
-                onChange={(event) => {
-                  setSelectedSubCategory('all');
-                  setSelectedCategory(event.target.value);
-                }}
-              >
-                {equipmentCategories.map((cat) => (
-                  <MenuItem key={cat.index} id={cat.index} value={cat.index}>
-                    {cat.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <FilterSelect
+              id="equipmentCategory"
+              fullWidth
+              sx={{ width: '100%' }}
+              value={selectedCategory ?? 'all'}
+              label="Category"
+              onChange={(value) => {
+                setSelectedSubCategory('all');
+                setSelectedCategory(value as string);
+              }}
+              options={equipmentCategories.map((cat) => ({
+                value: cat.index,
+                label: cat.name
+              }))}
+            />
 
             {equipmentCategories.find(({ index }) => index === selectedCategory)?.subcategories
               ?.length ? (
-              <FormControl fullWidth sx={{ marginTop: 2 }}>
-                <InputLabel htmlFor="equipmentSubcategory">Sub-Category</InputLabel>
-                <Select
-                  id="equipmentSubcategory"
-                  value={selectedSubCategory ?? 'all'}
-                  label="Sub-Category"
-                  onChange={(event) => setSelectedSubCategory(event.target.value)}
-                >
-                  {[
-                    { index: 'all', name: 'All' },
-                    ...equipmentCategories.find(({ index }) => index === selectedCategory)!
-                      .subcategories
-                  ].map((cat) => (
-                    <MenuItem key={cat.index} id={cat.index} value={cat.index}>
-                      {cat.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <FilterSelect
+                id="equipmentSubcategory"
+                fullWidth
+                sx={{ width: '100%', marginTop: 2 }}
+                value={selectedSubCategory ?? 'all'}
+                label="Sub-Category"
+                onChange={(value) => setSelectedSubCategory(value as string)}
+                options={[
+                  { value: 'all', label: 'All' },
+                  ...equipmentCategories
+                    .find(({ index }) => index === selectedCategory)!
+                    .subcategories.map((cat) => ({ value: cat.index, label: cat.name }))
+                ]}
+              />
             ) : null}
           </Fragment>
         ) : null}
@@ -175,7 +159,6 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
-                  hasRequiredStrength={hasRequiredStrength}
                 />
               ) : (
                 <MarketItem
@@ -186,7 +169,6 @@ export function MarketSearch({
                   canBuy={canBuy}
                   onAction={onBuy}
                   disableAction={disableAction}
-                  hasRequiredStrength={hasRequiredStrength}
                 />
               )
             )}

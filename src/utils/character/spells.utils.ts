@@ -1,3 +1,4 @@
+import { deleteField, FieldValue } from 'firebase/firestore';
 import { max, uniq, uniqBy } from 'lodash';
 import type { ActionDamage } from '@representations/campaign/adventure.representation';
 import type { Subclass } from '@representations/character/class.representation';
@@ -99,3 +100,14 @@ export const getDamageMinMax = (
   if (charLevel) return getSlotMinMax(damage.damage_at_character_level, [charLevel]);
   else return getSlotMinMax(damage.damage_at_slot_level || damage.damage_at_character_level);
 };
+
+export const buildSpellSlotUpdates = (
+  recovery: Record<string, number>,
+  usedSpellSlots: Record<string, number> | undefined
+): Record<string, number | FieldValue> =>
+  Object.fromEntries(
+    Object.entries(recovery).map(([level, count]) => {
+      const remaining = Math.max((usedSpellSlots?.[level] ?? 0) - count, 0);
+      return [`usedSpellSlots.${level}`, !remaining ? deleteField() : remaining];
+    })
+  );

@@ -4,7 +4,7 @@ import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type Dayjs } from 'dayjs';
-import { getFeature } from '@api/ressources';
+import { getEquipment, getFeature, getMagicItem } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useToggle } from '@hooks/useToggle';
@@ -66,10 +66,20 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
     let resourceUsageMeta: { usage: UsageTypes | UsageTypes[] } | undefined;
-    if ((data.type === 'feature' || data.type === 'trait') && data?.usage && data.sourceIndex) {
+    const item = data.equipmentIndex
+      ? await queryClient.fetchQuery({
+          queryKey: ['fetchEquipment', character.version, data.equipmentIndex],
+          queryFn: async () => {
+            const item = await getEquipment(character.version, data.equipmentIndex ?? '');
+            return item ? item : await getMagicItem(character.version, data.equipmentIndex ?? '');
+          }
+        })
+      : undefined;
+
+    if (data?.usage || item?.usage) {
       const fullFeatures: Feature[] = (
         await Promise.all(
-          getRelatedFeatures([data]).map((index) =>
+          getRelatedFeatures([data, item]).map((index) =>
             queryClient.fetchQuery({
               queryKey: ['fetchFeature', character.version, index],
               queryFn: async () => await getFeature(character.version || 'Legacy', index)
@@ -77,7 +87,10 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
           )
         )
       ).filter((f): f is Feature => !!f);
-      resourceUsageMeta = { usage: getUsageType(data.usage, fullFeatures) };
+
+      if (data?.usage && (data.type === 'feature' || data.type === 'trait') && data.sourceIndex)
+        resourceUsageMeta = { usage: getUsageType(data.usage, fullFeatures) };
+      else if (item?.usage) resourceUsageMeta = { usage: getUsageType(item.usage, fullFeatures) };
     }
 
     const baseAction = {

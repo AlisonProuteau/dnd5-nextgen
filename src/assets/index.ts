@@ -24,6 +24,7 @@ export { default as PrepareIcon } from './prepare.svg?react';
 export { default as ProficiencyIcon } from './proficiency.svg?react';
 export { default as RangeIcon } from './range.svg?react';
 export { default as ShieldIcon } from './shield.svg?react';
+export { default as SicklePlusIcon } from './sickle-plus.svg?react';
 export { default as SpeedIcon } from './speed.svg?react';
 export { default as SpellbookIcon } from './spellbook.svg?react';
 export { default as TimeIcon } from './time.svg?react';

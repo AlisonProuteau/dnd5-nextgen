@@ -7,7 +7,7 @@ import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
-import { formatActionRecord, getMoneyActionRecordData } from '@utils/actions.utils';
+import { formatActionRecord, formatMoneyRecord } from '@utils/actions.utils';
 import { remainingMoneyInCopper, updatePurse } from '@utils/character/character.utils';
 import { getCoinColor } from '@utils/ui/ui.utils';
 import {
@@ -53,7 +53,7 @@ export function MoneyManager({
     const updatedPurse = updatePurse(currentAmount, changes, additionalCurrencies);
     const success = await firebaseCrud.update(characterId, { money: updatedPurse });
 
-    const actionRecordData = getMoneyActionRecordData(changes, currentAmount, updatedPurse);
+    const actionRecordData = formatMoneyRecord(changes, currentAmount, updatedPurse);
     if (success && actionRecordData) await logAction(formatActionRecord('money', actionRecordData));
 
     closeMoneyDialog();

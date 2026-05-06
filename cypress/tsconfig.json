@@ -2,15 +2,18 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "lib": ["dom", "esnext"],
     "types": ["node", "cypress"],
     "jsx": "react-jsx",
     "strict": true,
-    "baseUrl": "..",
-    "resolveJsonModule": true
-  },
-  "esModuleInterop": true,
-  "skipLibCheck": true,
-  "forceConsistentCasingInFileNames": true
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@representations/*": ["../src/representations/*"]
+    }
+  }
 }

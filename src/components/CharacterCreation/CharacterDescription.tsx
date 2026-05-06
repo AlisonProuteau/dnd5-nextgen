@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Box, Button, FormControl, InputLabel, MenuItem, Select } from '@mui/material';
+import { Box, Button } from '@mui/material';
 import { ControledInput } from '@shared/ControledInput';
+import { FilterSelect } from '@shared/FilterSelect';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { CharacterFormData } from '@representations/user.representation';
 
@@ -78,30 +79,19 @@ export function CharacterDescription({
             setFormData?.({ age });
           }}
         />
-        <FormControl margin="dense" sx={{ width: '100px' }}>
-          <InputLabel htmlFor="sex">Sex</InputLabel>
-          <Select
-            fullWidth
-            id="sex"
-            label="Sex"
-            value={localFormData?.sex?.index ?? 'O'}
-            onChange={({ target }) => {
-              const sex = genderInstances.find(({ index }) => index === target.value);
-              setLocalFormData((prev) => ({ ...prev, sex }));
-              setFormData?.({ sex });
-            }}
-          >
-            {genderInstances.map((currentSex: DefaultRepresentation) => (
-              <MenuItem
-                key={`sex-${currentSex.index}`}
-                id={currentSex.index}
-                value={currentSex.index}
-              >
-                {currentSex.name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <FilterSelect
+          id="sex"
+          margin="dense"
+          sx={{ width: '100px' }}
+          label="Sex"
+          value={localFormData?.sex?.index ?? 'O'}
+          onChange={(v) => {
+            const sex = genderInstances.find(({ index }) => index === v);
+            setLocalFormData((prev) => ({ ...prev, sex }));
+            setFormData?.({ sex });
+          }}
+          options={genderInstances.map((s) => ({ value: s.index, label: s.name }))}
+        />
         <ControledInput
           fullWidth
           multiline

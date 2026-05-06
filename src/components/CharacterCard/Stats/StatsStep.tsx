@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SpeedIcon } from '@assets';
+import { ArmorIcon, HitPointsIcon, ProficiencyIcon, SicklePlusIcon, SpeedIcon } from '@assets';
 import { Delete, EditAttributes } from '@mui/icons-material';
 import {
   Button,
@@ -7,6 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
@@ -21,11 +22,18 @@ import type { DefaultRepresentation } from '@representations/common.representati
 import type { DefaultProps } from 'src/pages/Header';
 import { useAuth } from 'src/providers/AuthProvider';
 import { CharacterPoints } from '../CharacterPoints';
+import { ActiveCondition } from '../Conditions/ActiveCondition';
+import { ConditionsManager } from '../Conditions/ConditionsManager';
 import { AbilityComponent } from './AbilityComponent';
 
 export function Stats({ character }: DefaultProps) {
   const { isOn: isPointsOpen, turnOn: openPoints, turnOff: closePoints } = useToggle(false);
   const { isOn: isDeleteOpen, turnOn: openDelete, turnOff: closeDelete } = useToggle(false);
+  const {
+    isOn: isConditionsOpen,
+    turnOn: openConditions,
+    turnOff: closeConditions
+  } = useToggle(false);
   const { version } = useAuth();
 
   const firebaseCrud = useFirebaseCrud({
@@ -97,6 +105,25 @@ export function Stats({ character }: DefaultProps) {
           testid="proficiency-bonus"
         />
       </Box>
+
+      <Box display="flex" justifyContent="center" alignItems="center" gap={1} flexWrap="wrap">
+        {character.conditions?.map((condition) => (
+          <ActiveCondition key={`condition-chip-${condition.index}`} condition={condition} />
+        ))}
+        <IconButton
+          data-testid={`conditions-${character.id}`}
+          size="small"
+          onClick={openConditions}
+          color="info"
+        >
+          <SicklePlusIcon height="23px" width="23px" fill="currentColor" />
+        </IconButton>
+      </Box>
+      <ConditionsManager
+        character={character}
+        isOpen={isConditionsOpen}
+        onClose={closeConditions}
+      />
 
       {abilities?.length ? (
         <Box display="grid" rowGap="10px" justifyContent="center">

@@ -1,4 +1,4 @@
-import type { DefaultRepresentation } from '../common.representation';
+import type { DefaultRepresentation, Usage } from '../common.representation';
 import type { Damage } from './adventure.representation';
 
 type ArmorClass = {
@@ -47,7 +47,7 @@ type TwoHandedDamage = {
 export type Equipment = {
   index: string;
   name: string;
-  desc: string[];
+  desc?: string[];
   cost: Cost;
   equipment_category: DefaultRepresentation;
   armor_category?: DefaultRepresentation;
@@ -71,6 +71,7 @@ export type Equipment = {
   weapon_category?: DefaultRepresentation;
   weapon_range?: DefaultRepresentation;
   weight?: number;
+  usage?: Usage;
 };
 
 export type WeaponProperty = {

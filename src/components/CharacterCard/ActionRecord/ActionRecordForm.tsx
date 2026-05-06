@@ -10,18 +10,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   FormControlLabel,
-  InputLabel,
   ListSubheader,
   MenuItem,
-  Select,
   Typography
 } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { omit, uniqBy } from 'lodash';
 import { getClassInfo, getFeature, getTrait } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
+import { FilterSelect } from '@shared/FilterSelect';
 import {
   createQueryCombiner,
   formatUsageLabelText,
@@ -139,12 +137,13 @@ export function ActionRecordForm({
   const spells = useMemo(() => {
     const known = character.knownSpells ?? [];
     const prepared = character.preparedSpells ?? [];
+    const temporary = character.temporarySpells ?? [];
     return (
-      (uniqBy([...prepared, ...known], 'index').sort(
+      (uniqBy([...known, ...prepared, ...temporary], 'index').sort(
         (a, b) => a.level - b.level
       ) as Character['knownSpells']) || []
     );
-  }, [character.knownSpells, character.preparedSpells]);
+  }, [character.knownSpells, character.preparedSpells, character.temporarySpells]);
 
   useEffect(() => {
     if (!sourceIndex) return;
@@ -209,43 +208,60 @@ export function ActionRecordForm({
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => (
-                  <FormControl fullWidth size="small" required>
-                    <InputLabel>{ACTION_RECORD_TYPES[type]?.label}</InputLabel>
-                    <Select
-                      id="source-select"
-                      label={ACTION_RECORD_TYPES[type]?.label}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    >
-                      {spells.filter((s) => s.level === 0).length > 0 && [
-                        <ListSubheader key="cantrip-header">Cantrips</ListSubheader>,
-                        ...spells
-                          .filter((s) => s.level === 0)
-                          .map((s) => (
-                            <MenuItem key={s.index} value={s.index}>
+                  <FilterSelect
+                    id="source-select"
+                    fullWidth
+                    required
+                    label={ACTION_RECORD_TYPES[type]?.label}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                  >
+                    {spells.filter((s) => s.level === 0).length > 0 && [
+                      <ListSubheader key="cantrip-header">Cantrips</ListSubheader>,
+                      ...spells
+                        .filter((s) => s.level === 0)
+                        .map((s) => (
+                          <MenuItem key={s.index} value={s.index}>
+                            <Box display="flex" flex={1} justifyContent="space-between" gap={1}>
                               {s.name}
-                            </MenuItem>
-                          ))
-                      ]}
-                      {spells.filter((s) => s.level > 0).length > 0 && [
-                        <ListSubheader key="levelled-header">Spells</ListSubheader>,
-                        ...spells
-                          .filter((s) => s.level > 0)
-                          .map((s) => (
-                            <MenuItem key={s.index} value={s.index}>
-                              <Box display="flex" flex={1} justifyContent="space-between" gap={1}>
-                                {s.name}
+                              {character.temporarySpells?.find((ts) => ts.index === s.index) ? (
+                                <Chip
+                                  label="Temp"
+                                  size="small"
+                                  sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
+                                />
+                              ) : null}
+                            </Box>
+                          </MenuItem>
+                        ))
+                    ]}
+                    {spells.filter((s) => s.level > 0).length > 0 && [
+                      <ListSubheader key="levelled-header">Spells</ListSubheader>,
+                      ...spells
+                        .filter((s) => s.level > 0)
+                        .map((s) => (
+                          <MenuItem key={s.index} value={s.index}>
+                            <Box display="flex" flex={1} justifyContent="space-between" gap={1}>
+                              {s.name}
+                              <Box>
+                                {character.temporarySpells?.find((ts) => ts.index === s.index) ? (
+                                  <Chip
+                                    label="Temp"
+                                    size="small"
+                                    sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
+                                  />
+                                ) : null}
                                 <Chip
                                   label={`Lv ${s.level}`}
                                   size="small"
                                   sx={{ ml: 1, height: 16, fontSize: '0.65rem' }}
                                 />
                               </Box>
-                            </MenuItem>
-                          ))
-                      ]}
-                    </Select>
-                  </FormControl>
+                            </Box>
+                          </MenuItem>
+                        ))
+                    ]}
+                  </FilterSelect>
                 )}
               />
               {canCastRitual && !!spells.find((s) => s.index === sourceIndex)?.ritual && (
@@ -282,21 +298,20 @@ export function ActionRecordForm({
                 control={control}
                 rules={{ required: true }}
                 render={({ field }) => (
-                  <FormControl fullWidth size="small" required>
-                    <InputLabel>{ACTION_RECORD_TYPES[type]?.label}</InputLabel>
-                    <Select
-                      id="source-select"
-                      label={ACTION_RECORD_TYPES[type]?.label}
-                      value={field.value ?? ''}
-                      onChange={field.onChange}
-                    >
-                      {(type === 'feature' ? character.features : character.traits)?.map((item) => (
-                        <MenuItem key={item.index} value={item.index}>
-                          {item.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <FilterSelect
+                    id="source-select"
+                    fullWidth
+                    required
+                    label={ACTION_RECORD_TYPES[type]?.label}
+                    value={field.value ?? ''}
+                    onChange={field.onChange}
+                    options={(type === 'feature' ? character.features : character.traits)?.map(
+                      (item) => ({
+                        value: item.index,
+                        label: item.name
+                      })
+                    )}
+                  />
                 )}
               />
               {sourceIndex &&
@@ -362,24 +377,17 @@ export function ActionRecordForm({
                   name="equipmentIndex"
                   control={control}
                   render={({ field }) => (
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Equipment (optional)</InputLabel>
-                      <Select
-                        id="equipment-select"
-                        label="Equipment (optional)"
-                        value={field.value ?? ''}
-                        onChange={(e) => field.onChange(e.target.value || undefined)}
-                      >
-                        <MenuItem value="">
-                          <em>None</em>
-                        </MenuItem>
-                        {character.equipments.map((eq) => (
-                          <MenuItem key={eq.index} value={eq.index}>
-                            {eq.name}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                    <FilterSelect
+                      id="equipment-select"
+                      fullWidth
+                      label="Equipment (optional)"
+                      value={field.value ?? ''}
+                      onChange={(v) => field.onChange(v || undefined)}
+                      options={[{ index: '', name: 'None' }, ...character.equipments].map((eq) => ({
+                        value: eq.index,
+                        label: eq.name
+                      }))}
+                    />
                   )}
                 />
               )}
