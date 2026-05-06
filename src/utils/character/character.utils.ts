@@ -377,7 +377,7 @@ export const canUseResource = (
   resource: Pick<Feature | Trait | Equipment | MagicItem, 'index' | 'usage'> | null | undefined,
   character: Character
 ): boolean => {
-  if (!resource) return false;
+  if (!resource?.usage) return false;
   const max = resource.usage ? getUsageTimes(resource.usage, character) : 0;
 
   return character.resourceUsages?.[resource.index]

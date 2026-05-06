@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
+import { deleteField, doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { formatDateType } from '@utils/date.utils';
 import type { UsageTypes } from '@representations/common.representation';
@@ -112,26 +112,30 @@ export const useActionRecord = (characterId: string) => {
               if (record?.type === 'feature' || record?.type === 'trait') {
                 const current: number =
                   snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
-                if (current <= 0) return;
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`resourceUsages.${record.sourceIndex}.current`]:
+                      current - 1 === 0 ? deleteField() : current - 1
+                  });
+              }
 
-                transaction.update(charDocRef, {
-                  [`resourceUsages.${record.sourceIndex}.current`]: current - 1
-                });
-              } else if (record?.type === 'spell' && typeof record.value === 'number') {
+              if (record?.type === 'spell' && typeof record.value === 'number') {
                 const current: number = snap.data()?.usedSpellSlots?.[record.value] ?? 0;
-                if (current <= 0) return;
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`usedSpellSlots.${record.value}`]:
+                      current - 1 === 0 ? deleteField() : current - 1
+                  });
+              }
 
-                transaction.update(charDocRef, {
-                  [`usedSpellSlots.${record.value}`]: current - 1
-                });
-              } else if (record.equipment) {
+              if (record?.equipment?.index) {
                 const current: number =
                   snap.data()?.resourceUsages?.[record.equipment.index]?.current ?? 0;
-                if (current <= 0) return;
-
-                transaction.update(charDocRef, {
-                  [`resourceUsages.${record.equipment.index}.current`]: current - 1
-                });
+                if (current > 0)
+                  transaction.update(charDocRef, {
+                    [`resourceUsages.${record.equipment.index}.current`]:
+                      current - 1 === 0 ? deleteField() : current - 1
+                  });
               }
             });
 
