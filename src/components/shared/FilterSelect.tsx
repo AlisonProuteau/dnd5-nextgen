@@ -36,7 +36,7 @@ export function FilterSelect({
 }: FilterSelectProps) {
   return (
     <FormControl size="small" {...formControlProps}>
-      {label && <InputLabel>{label}</InputLabel>}
+      {label && <InputLabel htmlFor={id}>{label}</InputLabel>}
       <Select
         id={id}
         label={label}

@@ -114,8 +114,13 @@ export const useActionRecord = (characterId: string) => {
                   snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
                 if (current > 0)
                   transaction.update(charDocRef, {
-                    [`resourceUsages.${record.sourceIndex}.current`]:
-                      current - 1 === 0 ? deleteField() : current - 1
+                    [`resourceUsages.${record.sourceIndex}`]:
+                      current - 1 === 0
+                        ? deleteField()
+                        : {
+                            ...snap.data()?.resourceUsages?.[record.sourceIndex!],
+                            current: current - 1
+                          }
                   });
               }
 
@@ -133,8 +138,13 @@ export const useActionRecord = (characterId: string) => {
                   snap.data()?.resourceUsages?.[record.equipment.index]?.current ?? 0;
                 if (current > 0)
                   transaction.update(charDocRef, {
-                    [`resourceUsages.${record.equipment.index}.current`]:
-                      current - 1 === 0 ? deleteField() : current - 1
+                    [`resourceUsages.${record.equipment.index}`]:
+                      current - 1 === 0
+                        ? deleteField()
+                        : {
+                            ...snap.data()?.resourceUsages?.[record.equipment.index],
+                            current: current - 1
+                          }
                   });
               }
             });

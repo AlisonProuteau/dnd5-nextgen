@@ -380,9 +380,7 @@ export const canUseResource = (
   if (!resource?.usage) return false;
   const max = resource.usage ? getUsageTimes(resource.usage, character) : 0;
 
-  return character.resourceUsages?.[resource.index]
-    ? character.resourceUsages[resource.index].current < max
-    : true;
+  return (character.resourceUsages?.[resource.index]?.current ?? 0) < max;
 };
 
 export const getUsageType = (
