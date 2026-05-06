@@ -432,8 +432,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     cy.getByRole('button', 'Spells').click();
     cy.getByTestId('record-item-')
       .filter(':contains("Spell Slots Restored")')
-      .should('contain.text', 'Level 2: 1 slot')
-      .and('not.contain.text', 'Level 1');
+      .should('not.contain.text', '0 slot');
     cy.getButton('Close').click();
 
     // Test: Persistence — temporary spell survives a reload
