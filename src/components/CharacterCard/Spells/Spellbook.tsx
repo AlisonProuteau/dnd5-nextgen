@@ -16,6 +16,7 @@ import {
   Typography
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { useQuery } from '@tanstack/react-query';
 import { increment } from 'firebase/firestore';
 import { isEqual, max } from 'lodash';
 import { useActionRecord } from '@hooks/useActionRecord';
@@ -26,6 +27,8 @@ import { filterValidPreparedSpells } from '@utils/character/spells.utils';
 import type { Spell } from '@representations/abilities/magic.representation';
 import type { DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
+import { getSpellsForClass } from 'src/api/ressources';
+import { Loader } from 'src/components/shared/Loader';
 import { CastSpellMenu } from './CastSpellMenu';
 import { SpellList } from './SpellList';
 import { SpellSearch } from './SpellSearch';
@@ -57,6 +60,21 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
       update: 'Spells saved successfully'
     },
     invalidateQueryKey: ['fetchCharacter', '{userId}', character.id]
+  });
+
+  const { data: classSpells = [], isFetching: classSpellsFetching } = useQuery({
+    queryKey: ['fetchCharacterSpells', character.class.index, character.subclass?.index],
+    queryFn: async () =>
+      character.class.index
+        ? (
+            await getSpellsForClass(
+              characterInfo.version,
+              character.class.index,
+              character.subclass?.index
+            )
+          ).results
+        : [],
+    enabled: !!character.class.index && isLearnOpen && character.class.index === 'wizard'
   });
 
   const updateKnownSpellsWithCascade = async () => {
@@ -378,9 +396,9 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
           )}
         </DialogContent>
         <DialogActions>
-          {isLearnOpen && character.class.index === 'wizard' && (
-            <Button onClick={openAdd}>More spells</Button>
-          )}
+          {isLearnOpen &&
+            character.class.index === 'wizard' &&
+            (classSpellsFetching ? <Loader /> : <Button onClick={openAdd}>More spells</Button>)}
           <Button
             onClick={
               isLearnOpen
@@ -449,6 +467,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
               subclassIndex={character.subclass?.index}
               maxLevel={max(slotLevels)}
               selectedSpells={knownSpells.filter(({ added }) => added)}
+              excludeSpells={classSpells}
               onSelect={(spell, remove = false) => {
                 if (
                   remove ===

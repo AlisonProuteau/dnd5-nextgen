@@ -6,8 +6,7 @@ import {
   getAllClasses,
   getAllSubclasses,
   getMagicSchools,
-  getMatchingSpells,
-  getSpellsForClass
+  getMatchingSpells
 } from '@api/ressources';
 import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
@@ -105,29 +104,17 @@ export function SpellSearch({
     enabled: hasFilters && !!version
   });
 
-  const { data: knownSpells = [], isFetching: knownSpellsFetching } = useQuery({
-    queryKey: ['fetchCharacterSpells', version, classIndex, subclassIndex, maxLevel],
-    queryFn: async () =>
-      classIndex && version
-        ? (await getSpellsForClass(version, classIndex, subclassIndex, maxLevel)).results
-        : [],
-    enabled: !!classIndex && !!allSpells?.length && !!version
-  });
-
   const spells = useMemo(() => {
-    if (!hasFilters || !allSpells?.length || spellsFetching || knownSpellsFetching) return [];
+    if (!hasFilters || !allSpells?.length || spellsFetching) return [];
     return allSpells
       .filter(({ name }) => !search.length || name.toLowerCase().includes(search.toLowerCase()))
-      .filter(({ index }) => !knownSpells.find((known) => known.index === index))
       .filter(({ index }) => !selectedSpells.find((selected) => selected.index === index))
       .filter(({ index }) => !excludeSpells.find((ex) => ex.index === index));
   }, [
-    hasFilters || spellsFetching || knownSpellsFetching,
+    hasFilters || spellsFetching,
     search,
     spellsFetching,
-    knownSpellsFetching,
     toKey(allSpells),
-    toKey(knownSpells),
     toKey(selectedSpells),
     toKey(excludeSpells)
   ]);

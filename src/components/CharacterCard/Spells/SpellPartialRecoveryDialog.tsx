@@ -71,14 +71,16 @@ export function SpellPartialRecoveryDialog({
     const combinedLevels =
       canRecoverWithFeature && featureEnabled ? Math.ceil(character.level / 2) : undefined;
 
-    let level = 0;
+    let level: number | undefined = undefined;
     if (canRecoverWithItem && itemEnabled)
-      level =
+      level = Math.max(
         Object.entries(character.usedSpellSlots || {}).reduce((max, [level, used]) => {
           if (used < 1) return max;
 
           return Math.max(max, parseInt(level));
-        }, 0) - 1 || 0;
+        }, 0) - 1,
+        1
+      );
     else if (
       canRecoverWithFeature &&
       featureEnabled &&
@@ -101,7 +103,8 @@ export function SpellPartialRecoveryDialog({
     () =>
       Object.entries(character.usedSpellSlots || {})
         .filter(
-          ([level, used]) => used > 0 && (!maximums.level || parseInt(level) <= maximums.level)
+          ([level, used]) =>
+            used > 0 && (maximums.level === undefined || parseInt(level) <= maximums.level)
         )
         .map(([level, used]) => ({ level: parseInt(level), used }))
         .sort((a, b) => a.level - b.level),
@@ -179,7 +182,7 @@ export function SpellPartialRecoveryDialog({
                     ? ` (total level must be ${maximums.combinedLevels} or less).`
                     : '.'}
                 </Typography>
-                {maximums.level ? (
+                {maximums.level !== undefined ? (
                   <Typography variant="caption" color="text.secondary">
                     You can only recover spell slots up to level {maximums.level}.
                   </Typography>
