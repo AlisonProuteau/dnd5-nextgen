@@ -37,10 +37,7 @@ export function EquipmentListItem({
       uniqBy(character?.features, 'index')?.map(({ index }) => ({
         queryKey: ['fetchFeature', character?.version, index],
         queryFn: async () => await getFeature(character?.version || 'Legacy', index),
-        enabled:
-          !!index &&
-          !!character &&
-          getRelatedFeatures(Object.values(equipment ?? {}).flat()).length > 0
+        enabled: !!index && !!character && getRelatedFeatures([equipment]).length > 0
       })) || [],
     combine: useCallback(createQueryCombiner<Feature>(), [])
   });
