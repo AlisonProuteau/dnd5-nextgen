@@ -19,9 +19,9 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 
 # TODO
 
-- Trait/Feature Actions with dependancies
-  - Add a temporary spells section to add spells regardless of prepare/learn
-- [ ] Add partial regain spell slots
-- [ ] Add Status Effect UI
-- [ ] Add short rest UI
-- [ ] Add long rest UI
+- [ ] Add Rest UI
+  - Clear and clear all should handle rest
+    - Inactive flag for each that was rested? (Trait & Feature usage and Spell slots)
+    - Active filter in action records
+  - Short rest
+  - Long rest

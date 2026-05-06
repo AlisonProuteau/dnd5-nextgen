@@ -1,23 +1,13 @@
 import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { CasinoOutlined, SaveAltRounded } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Container,
-  Divider,
-  Fab,
-  FormControl,
-  IconButton,
-  MenuItem,
-  Select,
-  Typography
-} from '@mui/material';
+import { Box, Button, Container, Divider, Fab, IconButton, Typography } from '@mui/material';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { isEqual, omit, omitBy, uniqBy } from 'lodash';
 import { getAllAbilities, getClassInfo, getEquipment, getMagicItem } from '@api/ressources';
 import { getCharacter } from '@api/users';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
+import { FilterSelect } from '@shared/FilterSelect';
 import { FullPageLoader, Loader } from '@shared/Loader';
 import { NumberInput } from '@shared/NumberInput';
 import { SplitButton } from '@shared/SplitButton';
@@ -80,15 +70,8 @@ export function CharacterPoints({
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character?.version, index],
         queryFn: async () => {
-          let item: Equipment | MagicItem | null = await getEquipment(
-            character?.version || 'Legacy',
-            index
-          );
-          if (!item) {
-            item = await getMagicItem(character?.version || 'Legacy', index);
-          }
-
-          return item;
+          const item = await getEquipment(character?.version || 'Legacy', index);
+          return item ? item : await getMagicItem(character?.version || 'Legacy', index);
         },
         enabled: !!index && !!character
       })) || [],
@@ -272,30 +255,24 @@ export function CharacterPoints({
               [15, 14, 13, 12, 10, 8].map((score) => (
                 <Box display="flex" key={`score-${score}`} alignItems="center">
                   <NumberInput id={`ability-${score}`} value={score} readOnly />
-                  <FormControl sx={{ display: 'flex', width: 135 }}>
-                    <Select
-                      id={`ability-${score}-value`}
-                      onChange={(e) => {
-                        const previousAbility: string | undefined = Object.entries(points).find(
-                          (value) => value[1] === score
-                        )?.[0];
-                        if (previousAbility) setPoints((current) => omit(current, previousAbility));
-                        setScore(e.target.value as string, score);
-                      }}
-                      value={Object.keys(points).find((key) => points[key] === score) ?? ''}
-                      sx={{ height: '42px' }}
-                    >
-                      {abilities.map((ability) => (
-                        <MenuItem
-                          key={`points-${ability.index}`}
-                          value={ability.index}
-                          disabled={!!points[ability.index]}
-                        >
-                          {ability.full_name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+                  <FilterSelect
+                    id={`ability-${score}-value`}
+                    sx={{ display: 'flex', width: 135 }}
+                    onChange={(v) => {
+                      const previousAbility: string | undefined = Object.entries(points).find(
+                        (value) => value[1] === score
+                      )?.[0];
+                      if (previousAbility) setPoints((current) => omit(current, previousAbility));
+                      setScore(v as string, score);
+                    }}
+                    value={Object.keys(points).find((key) => points[key] === score) ?? ''}
+                    options={abilities.map((ability) => ({
+                      value: ability.index,
+                      label: ability.full_name,
+                      disabled: !!points[ability.index]
+                    }))}
+                    selectSx={{ height: '42px' }}
+                  />
                 </Box>
               ))}
             {abilityScoreMethod === 'point_cost' && (

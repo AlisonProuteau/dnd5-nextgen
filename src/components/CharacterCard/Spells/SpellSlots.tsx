@@ -1,41 +1,26 @@
-import { AutorenewOutlined, Circle } from '@mui/icons-material';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import { Circle } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
+import { Character } from '@representations/user.representation';
+import { SpellSlotRecovery } from './SpellSlotRecovery';
 
 interface SpellSlotsProps {
+  character: Character;
   slots: Record<string, number>;
-  usedSlots: Record<string, number>;
-  onRestoreAll: () => void;
   disabled?: boolean;
 }
 
-export function SpellSlots({ slots, usedSlots, onRestoreAll, disabled = false }: SpellSlotsProps) {
-  const hasUsedSlots = Object.values(usedSlots).some((used) => used > 0);
-
+export function SpellSlots({ character, slots, disabled = false }: SpellSlotsProps) {
   return (
-    <Box display="flex" flexDirection="column" gap={0.5} data-testid="spell-slots">
-      <Box sx={{ display: 'flex', justifyContent: 'center', height: 30 }}>
-        <Typography variant="subtitle1" fontWeight="bold" position="absolute">
-          Spell Slots
-        </Typography>
-
-        {/* TODO-blocked: Rest does a lot more */}
-        {hasUsedSlots && (
-          <Tooltip title="Long Rest - Restore All Slots">
-            <Box marginLeft="auto">
-              <IconButton size="small" color="primary" onClick={onRestoreAll} disabled={disabled}>
-                <AutorenewOutlined fontSize="small" />
-                <Typography variant="caption">Rest</Typography>
-              </IconButton>
-            </Box>
-          </Tooltip>
-        )}
-      </Box>
+    <Box data-testid="spell-slots" display="flex" flexDirection="column" gap={0.5}>
+      <Typography display="block" variant="subtitle1" fontWeight="bold" textAlign="center">
+        Spell Slots
+      </Typography>
 
       <Box display="flex" gap={2} flexWrap="wrap" justifyContent="center">
         {Object.entries(slots)
           .filter(([_, total]) => total > 0)
           .map(([level, total]) => {
-            const used = usedSlots[level] || 0;
+            const used = character.usedSpellSlots?.[level] || 0;
             const available = total - used;
 
             return (
@@ -59,6 +44,10 @@ export function SpellSlots({ slots, usedSlots, onRestoreAll, disabled = false }:
             );
           })}
       </Box>
+
+      {Object.values(character.usedSpellSlots || {}).some((used) => used > 0) && (
+        <SpellSlotRecovery character={character} disabled={disabled} />
+      )}
     </Box>
   );
 }

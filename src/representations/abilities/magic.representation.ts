@@ -1,5 +1,5 @@
 import type { ActionDamage, AreaOfEffect } from '../campaign/adventure.representation';
-import type { DefaultRepresentation } from '../common.representation';
+import type { DefaultRepresentation, Usage } from '../common.representation';
 
 interface DC {
   dc_success: string;
@@ -32,7 +32,7 @@ export interface Spell {
 }
 
 export type MagicItem = {
-  desc: string[];
+  desc?: string[];
   equipment_category: DefaultRepresentation;
   index: string;
   name: string;
@@ -41,6 +41,7 @@ export type MagicItem = {
   };
   variants: DefaultRepresentation[];
   variant: boolean;
+  usage?: Usage;
 };
 
 export type MagicSchool = {
@@ -48,3 +49,14 @@ export type MagicSchool = {
   index: string;
   name: string;
 };
+
+export interface SpellFilters {
+  minLevel?: number;
+  maxLevel?: number;
+  school?: string;
+  ritual?: boolean;
+  concentration?: boolean;
+  classFilter?: string;
+  subclassFilter?: string;
+  racial?: boolean;
+}

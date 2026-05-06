@@ -16,9 +16,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
-      "@assets": ["src/assets"],
+      "src/*": ["./src/*"],
+      "@assets": ["./src/assets"],
       "@api/*": ["./src/api/*"],
       "@utils/*": ["./src/utils/*"],
       "@hooks/*": ["./src/hooks/*"],

@@ -326,6 +326,11 @@ export function SpellList({
                       subheader={
                         <Typography textAlign="center" color="primary">
                           {spell.name}
+                          {hideLevels ? (
+                            <Typography variant="caption">
+                              {spell.level > 0 ? ` (lvl${spell.level})` : ' (cantrip)'}
+                            </Typography>
+                          ) : null}
                         </Typography>
                       }
                       sx={{ padding: 0, paddingTop: setSelectedSpells ? '15px' : 0 }}

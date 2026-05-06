@@ -1,10 +1,11 @@
 import { transform } from 'lodash';
 import { Spell } from '@representations/abilities/magic.representation';
 import { MoneyObjectType, MoneyUnitType } from '@representations/campaign/equipment.representation';
-import { ActionRecord, ActionRecordType } from '@representations/user.representation';
+import { DefaultRepresentation } from '@representations/common.representation';
+import { ActionRecord, ActionRecordType, Character } from '@representations/user.representation';
 import { CurrencyLabels } from './ui/ui.utils';
 
-export const getHealthActionRecordData = (
+export const formatHealthRecord = (
   current: number,
   previous: number,
   overrideHitPoints = false,
@@ -51,7 +52,7 @@ const formatMoneyForDisplay = (
   return parts.length > 0 ? parts : undefined;
 };
 
-export const getMoneyActionRecordData = (
+export const formatMoneyRecord = (
   changes: Record<string, number>,
   currentAmount: Record<string, number>,
   previousAmount: Record<string, number>
@@ -65,7 +66,7 @@ export const getMoneyActionRecordData = (
   };
 };
 
-export const getDeathSavesActionRecordData = (
+export const formatDeathSavesRecord = (
   current: number,
   previous: number,
   unit: 'success' | 'failure'
@@ -88,7 +89,7 @@ type HealthDataType = {
     usedSaves: number;
   };
 };
-export const getResetHealthActionRecordData = (
+export const formatResetHealthRecord = (
   currentHealth: number,
   previousData: HealthDataType,
   pendingLogs: Omit<ActionRecord, 'id' | 'createdAt'>[]
@@ -122,7 +123,7 @@ export const getResetHealthActionRecordData = (
     : undefined;
 };
 
-export const getSpellActionRecordData = (
+export const formatSpellRecord = (
   spell: Spell,
   slotLevel: number | 'ritual'
 ): Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'> => {
@@ -137,9 +138,48 @@ export const getSpellActionRecordData = (
       };
 };
 
+export const formatRestoreSpellSlotsRecord = (
+  recovery: Record<string, number>
+): Pick<ActionRecord, 'name' | 'description'> => {
+  return {
+    name: 'Spell Slots Restored',
+    description: Object.entries(recovery)
+      .filter(([, amount]) => amount > 0)
+      .map(([level, total]) => `Level ${level}: ${total} slot${total > 1 ? 's' : ''}`)
+      .join('\n')
+  };
+};
+
+export const formatConditionRecord = (
+  current: Character['conditions'],
+  selected: (DefaultRepresentation & { level?: number })[],
+  pendingRemovals: DefaultRepresentation[]
+): Pick<ActionRecord, 'name' | 'description'> => {
+  const removed = pendingRemovals.map(({ name }) => name);
+  let added: string[] = [];
+  let updated: string[] = [];
+  selected.forEach(({ index, name, level }) => {
+    const existing = current?.find(({ index: idx }) => idx === index);
+    if (!existing) added.push(`${name}${level ? ` (lvl ${level})` : ''}`);
+    else if (existing.level !== level && !pendingRemovals.some(({ index: i }) => i === index))
+      updated.push(`${name} (lvl ${existing.level ?? 1} → lvl ${level ?? 1})`);
+  });
+
+  return {
+    name: 'Conditions Updated',
+    description: [
+      added.length && `Added: ${added.join(', ')}`,
+      removed.length && `Removed: ${removed.join(', ')}`,
+      updated.length && `Updated: ${updated.join(', ')}`
+    ]
+      .filter(Boolean)
+      .join('\n')
+  };
+};
+
 export const formatActionRecord = (
   type: ActionRecordType,
-  ressource: Pick<ActionRecord, 'name' | 'description' | 'value' | 'valueUnit' | 'sourceIndex'>,
+  ressource: Omit<ActionRecord, 'id' | 'type' | 'createdAt'>,
   auto = true
 ): Omit<ActionRecord, 'id'> => {
   const createdAt = new Date();

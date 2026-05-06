@@ -60,9 +60,11 @@ export type Character = CharacterFormData & {
   level: number;
   knownSpells?: (DefaultRepresentation & { level: number; ritual?: boolean; added?: boolean })[];
   preparedSpells?: (DefaultRepresentation & { level: number })[];
+  temporarySpells?: (DefaultRepresentation & { level: number })[];
   usedSpellSlots?: Record<string, number>;
   version: Version;
   money?: MoneyObjectType;
+  conditions?: (DefaultRepresentation & { level?: number })[];
   health?: {
     current: number;
     temporary?: number;

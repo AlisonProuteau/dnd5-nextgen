@@ -1,26 +1,67 @@
-import { ReactNode } from 'react';
-import { Box, ClickAwayListener, IconButton, SxProps, Tooltip, TooltipProps } from '@mui/material';
+import { Fragment, ReactNode, useEffect } from 'react';
+import { Backdrop, Box, ClickAwayListener, IconButton, Tooltip, TooltipProps } from '@mui/material';
 import { useToggle } from '@hooks/useToggle';
+
+interface TooltipButtonProps extends Omit<
+  TooltipProps,
+  'children' | 'open' | 'onClose' | 'disableTouchListener'
+> {
+  block?: boolean;
+  children: ReactNode;
+}
 
 export function TooltipButton({
   children,
   sx,
+  title,
+  block = false,
   ...props
-}: {
-  sx?: SxProps;
-  children: ReactNode;
-} & Omit<TooltipProps, 'children' | 'open' | 'onClose' | 'disableTouchListener'>) {
-  const { isOn: isOpen, turnOn: open, turnOff: close } = useToggle(false);
+}: TooltipButtonProps) {
+  const { isOn: isHovered, turnOn: focus, turnOff: unfocus } = useToggle(false);
+  const { isOn: isPinned, turnOn: pin, turnOff: unpin } = useToggle(false);
 
-  return (
+  const close = () => {
+    unpin();
+    unfocus();
+  };
+
+  useEffect(() => {
+    if (!isHovered && !isPinned) return;
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' || event.code === 'Escape') close();
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [isHovered, isPinned]);
+
+  return title ? (
     <ClickAwayListener onClickAway={close}>
       <Box sx={sx} display="inline-block">
-        <Tooltip arrow open={isOpen} disableTouchListener onClose={close} {...props}>
-          <IconButton onClick={open} sx={{ padding: 0 }} onMouseEnter={open} onMouseLeave={close}>
+        {block && (
+          <Backdrop
+            invisible
+            open={isHovered || isPinned}
+            onClick={close}
+            sx={(theme) => ({ zIndex: theme.zIndex.tooltip - 1 })}
+          />
+        )}
+        <Tooltip title={title} arrow open={isHovered || isPinned} disableTouchListener {...props}>
+          <IconButton
+            sx={(theme) => ({
+              zIndex: isHovered || isPinned ? theme.zIndex.tooltip : 'auto',
+              padding: 0
+            })}
+            onClick={() => (isPinned ? close() : pin())}
+            onMouseEnter={focus}
+            onMouseLeave={unfocus}
+          >
             {children}
           </IconButton>
         </Tooltip>
       </Box>
     </ClickAwayListener>
+  ) : (
+    <Fragment>{children}</Fragment>
   );
 }

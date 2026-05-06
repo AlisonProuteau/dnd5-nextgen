@@ -3,7 +3,7 @@ import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
 import { random } from 'lodash';
-import { Character } from 'src/representations/user.representation';
+import { Character } from '@representations/user.representation';
 import { baseCharacter } from './mocks/baseCharacter';
 
 declare global {

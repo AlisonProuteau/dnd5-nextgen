@@ -11,8 +11,8 @@ import {
   type MoneyObjectType,
   StandardMoneyUnits
 } from '@representations/campaign/equipment.representation';
-import { EquipmentCard } from './EquipmentCard';
-import { EquipmentListItem } from './EquipmentListItem';
+import { EquipmentCard } from '../Equipment/EquipmentCard';
+import { EquipmentListItem } from '../Equipment/EquipmentListItem';
 import { MoneyDisplay } from './MoneyDisplay';
 
 interface MarketItemProps {
@@ -20,18 +20,17 @@ interface MarketItemProps {
   mode: 'sell' | 'buy';
   isFreeMode: boolean;
   priceDisplay?: MoneyObjectType;
-  canBuy?: (
-    item: Equipment | MagicItem,
-    quantity?: number,
-    customPrice?: MoneyObjectType
-  ) => boolean;
   onAction: (
     item: Equipment | MagicItem,
     quantity?: number,
     customPrice?: MoneyObjectType
   ) => Promise<void>;
+  canBuy?: (
+    item: Equipment | MagicItem,
+    quantity?: number,
+    customPrice?: MoneyObjectType
+  ) => boolean;
   disableAction?: boolean;
-  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
 }
 
 export function MarketItem({
@@ -41,8 +40,7 @@ export function MarketItem({
   priceDisplay,
   onAction,
   canBuy = () => false,
-  disableAction = false,
-  hasRequiredStrength = () => true
+  disableAction = false
 }: MarketItemProps) {
   const [quantity, setQuantity] = useState<number>(1);
   const [customPrice, setCustomPrice] = useState<MoneyObjectType>({});
@@ -127,7 +125,6 @@ export function MarketItem({
                 setSelectedEquipment(equipment);
                 openDialog();
               }}
-              hasRequiredStrength={hasRequiredStrength}
               moreInfo={false}
             />
 

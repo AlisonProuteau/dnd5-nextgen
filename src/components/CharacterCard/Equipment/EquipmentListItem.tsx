@@ -1,27 +1,48 @@
+import { useCallback } from 'react';
 import { BladeIcon, ShieldIcon } from '@assets';
 import { CheckCircle, CircleOutlined, InfoOutlined, Warning } from '@mui/icons-material';
 import { Box, IconButton, Typography } from '@mui/material';
+import { useQueries } from '@tanstack/react-query';
+import { uniqBy } from 'lodash';
+import { getFeature } from '@api/ressources';
 import { TooltipButton } from '@shared/TooltipButton';
+import { getRelatedFeatures, hasRequiredStrength } from '@utils/character/character.utils';
+import { createQueryCombiner } from '@utils/query.utils';
+import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
+import { Character } from '@representations/user.representation';
+import { UsageDisplay } from '../Characteristics/UsageDisplay';
 
 interface EquipmentListItemProps {
   equipment: (Equipment | MagicItem) & { count?: number; equipped: boolean };
+  character?: Pick<Character, 'abilityScores' | 'features' | 'version'>;
   onClick?: (equipment: Equipment | MagicItem) => void;
   onToggleEquip?: (equipment: Equipment | MagicItem) => void;
   canEquip?: boolean;
   moreInfo?: boolean;
-  hasRequiredStrength?: (equipment: Equipment | MagicItem) => boolean;
+  showUsage?: boolean;
 }
 
 export function EquipmentListItem({
   equipment,
+  character,
   onClick,
   onToggleEquip,
   canEquip = true,
   moreInfo = true,
-  hasRequiredStrength = () => true
+  showUsage = false
 }: EquipmentListItemProps) {
+  const { data: features } = useQueries({
+    queries:
+      uniqBy(character?.features, 'index')?.map(({ index }) => ({
+        queryKey: ['fetchFeature', character?.version, index],
+        queryFn: async () => await getFeature(character?.version || 'Legacy', index),
+        enabled: !!index && !!character && getRelatedFeatures([equipment]).length > 0
+      })) || [],
+    combine: useCallback(createQueryCombiner<Feature>(), [])
+  });
+
   const getCount = (count?: number, quantity?: number): string => {
     if (count && count > 1) return count.toString();
     if (quantity && quantity > 1) return quantity.toString();
@@ -38,29 +59,48 @@ export function EquipmentListItem({
       alignItems="center"
     >
       <Box display="flex" flexDirection="column">
-        <Box>
+        <Box display="flex" alignItems="center" gap={1}>
           {onClick && (
             <IconButton
               onClick={() => onClick(equipment)}
               data-testid={`equipment-item-${equipment.index}-info`}
-              sx={{ paddingLeft: 0 }}
+              sx={{ paddingX: 0 }}
             >
               <InfoOutlined color="info" fontSize="small" />
             </IconButton>
           )}
-          <Typography display="inline-block" sx={{ verticalAlign: 'middle' }}>
+          <Typography>
             {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
           </Typography>
-          {!hasRequiredStrength(equipment) && (
-            <TooltipButton title="Minimum strength requirement not met">
-              <Warning
-                color="warning"
-                fontSize="small"
-                sx={{ verticalAlign: 'middle', marginX: 1 }}
-                data-testid="strength-requirement-warning"
-              />
-            </TooltipButton>
-          )}
+          {character?.abilityScores
+            ? !hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment) && (
+                <TooltipButton title="Minimum strength requirement not met">
+                  <Warning
+                    color="warning"
+                    fontSize="small"
+                    data-testid="strength-requirement-warning"
+                  />
+                </TooltipButton>
+              )
+            : 'str_minimum' in equipment &&
+              equipment.str_minimum && (
+                <TooltipButton title={`Minimum strength requirement: ${equipment.str_minimum}`}>
+                  <Warning
+                    color="warning"
+                    fontSize="small"
+                    data-testid="strength-requirement-warning"
+                  />
+                </TooltipButton>
+              )}
+
+          {character && showUsage ? (
+            <UsageDisplay
+              type="equipment"
+              character={character}
+              resource={equipment}
+              fullFeatureList={features}
+            />
+          ) : null}
         </Box>
 
         {moreInfo && 'damage' in equipment && (equipment.damage || equipment.two_handed_damage) && (

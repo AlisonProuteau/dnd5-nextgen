@@ -6,8 +6,8 @@ import { button, fab } from '@utils/ui/style.utils';
 import type { Character } from '@representations/user.representation';
 import { ActionRecord } from '../ActionRecord/ActionRecord';
 import { CharacterNotes } from '../CharacterNotes/CharacterNotes';
-import { HealthManager } from '../Equipment/HealthManager';
-import { MoneyManager } from '../Equipment/MoneyManager';
+import { MoneyManager } from '../Money/MoneyManager';
+import { HealthManager } from './HealthManager';
 
 export function CharacterActionsContainer({
   character,

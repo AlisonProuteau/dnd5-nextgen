@@ -7,20 +7,16 @@ import { getEquipment, getMagicItem } from '@api/ressources';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { IconText } from '@shared/IconText';
-import {
-  formatEquipmentForDisplay,
-  getArmorClass,
-  hasRequiredStrength
-} from '@utils/character/character.utils';
+import { formatEquipmentForDisplay, getArmorClass } from '@utils/character/character.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
 import type { DefaultProps } from 'src/pages/Header';
+import { Market } from '../Money/Market';
+import { MoneyDisplay } from '../Money/MoneyDisplay';
 import { EquipmentCard } from './EquipmentCard';
 import { EquipmentListItem } from './EquipmentListItem';
-import { Market } from './Market';
-import { MoneyDisplay } from './MoneyDisplay';
 
 export function Equipments({ character }: DefaultProps) {
   const { isOn: isDialogOpen, turnOn: openDialog, turnOff: closeDialog } = useToggle(false);
@@ -36,12 +32,8 @@ export function Equipments({ character }: DefaultProps) {
       uniqBy(character?.equipments, 'index')?.map(({ index }) => ({
         queryKey: ['fetchEquipment', character.version, index],
         queryFn: async () => {
-          let item: Equipment | MagicItem | null = await getEquipment(character.version, index);
-          if (!item) {
-            item = await getMagicItem(character.version, index);
-          }
-
-          return item;
+          const item = await getEquipment(character.version, index);
+          return item ? item : await getMagicItem(character.version, index);
         },
         enabled: !!index
       })) || [],
@@ -175,15 +167,14 @@ export function Equipments({ character }: DefaultProps) {
                 <EquipmentListItem
                   key={e.index}
                   equipment={e}
+                  character={character}
                   onClick={(equipment) => {
                     setSelectedEquipment(equipment);
                     openDialog();
                   }}
                   onToggleEquip={toggleEquip}
                   canEquip={!firebaseCrud.isLoading}
-                  hasRequiredStrength={(equipment) =>
-                    hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment)
-                  }
+                  showUsage={true}
                 />
               ))}
             </CardContent>

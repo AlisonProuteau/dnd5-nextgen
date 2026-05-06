@@ -373,6 +373,16 @@ export const getUsageTimes = (
   return 1;
 };
 
+export const canUseResource = (
+  resource: Pick<Feature | Trait | Equipment | MagicItem, 'index' | 'usage'> | null | undefined,
+  character: Character
+): boolean => {
+  if (!resource?.usage) return false;
+  const max = resource.usage ? getUsageTimes(resource.usage, character) : 0;
+
+  return (character.resourceUsages?.[resource.index]?.current ?? 0) < max;
+};
+
 export const getUsageType = (
   usage: Usage,
   features: Feature[],
@@ -390,9 +400,16 @@ export const getUsageType = (
   return getUsageType(relatedFeatureUsage, features, allRelatedFeatures);
 };
 
-export const getRelatedFeatures = (resources: Pick<Feature | Trait, 'usage'>[]) => {
+export const getRelatedFeatures = (
+  resources: (Pick<Feature | Trait | Equipment | MagicItem, 'usage'> | undefined | null)[]
+) => {
   const usages =
-    resources?.flatMap(({ usage }) => usage).filter((usage): usage is Usage => !!usage) || [];
+    resources
+      ?.filter((resource): resource is Pick<Feature | Trait | Equipment | MagicItem, 'usage'> =>
+        Boolean(resource?.usage)
+      )
+      .flatMap(({ usage }) => usage)
+      .filter((usage): usage is Usage => !!usage) || [];
   const relatedFeatures = usages
     .map(({ type }) => (typeof type === 'object' && 'feature' in type ? type.feature : null))
     .filter((index): index is string => !!index);

@@ -1,7 +1,7 @@
-import { baseCharacter } from 'cypress/support/mocks/baseCharacter';
 import 'firebase/compat/auth';
 import 'firebase/compat/firestore';
 import 'firebase/compat/storage';
+import { baseCharacter } from '../support/mocks/baseCharacter';
 
 describe(`Character Points End-to-End Flow`, () => {
   beforeEach(() => {
