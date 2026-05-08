@@ -17,6 +17,7 @@ import {
 } from '@utils/index';
 import { Feature } from '@representations/abilities/feature.representation';
 import { Character } from '@representations/user.representation';
+import { formatResourceUsageIncrement } from 'src/utils/resourceUsage.utils';
 import { SpellPartialRecoveryDialog } from './SpellPartialRecoveryDialog';
 
 const RECOVERY_FEATURES = ['arcane-recovery', 'natural-recovery'];
@@ -95,15 +96,30 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
 
       const formattedRecovery = formatRestoreSpellSlotsRecord(recovery);
       await logAction(
-        formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment }),
-        resource ? { usage: resource.usage } : undefined
+        formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment })
       );
 
-      if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage)
+      if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage) {
         await logAction(
-          formatActionRecord('feature', { ...recoveryFeature, sourceIndex: recoveryFeature.index }),
-          { usage: getUsageType(recoveryFeature.usage, fullFeatureList) }
+          formatActionRecord('feature', { ...recoveryFeature, sourceIndex: recoveryFeature.index })
         );
+
+        const featureUsageUpdate = formatResourceUsageIncrement({
+          index: recoveryFeature.index,
+          usage: getUsageType(recoveryFeature.usage, fullFeatureList),
+          type: 'feature'
+        });
+        await firebaseCrud.update(character.id, featureUsageUpdate, false);
+      }
+
+      if (resource) {
+        const itemUsageUpdate = formatResourceUsageIncrement({
+          index: resource.equipment.index,
+          usage: resource.usage,
+          type: 'other'
+        });
+        await firebaseCrud.update(character.id, itemUsageUpdate, false);
+      }
 
       closeRecovery();
     }

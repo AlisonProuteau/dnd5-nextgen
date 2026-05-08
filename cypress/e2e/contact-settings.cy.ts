@@ -1,7 +1,3 @@
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage';
-
 describe(`Contact Form End-to-End`, () => {
   const isMobile = Cypress.config('viewportWidth') === 375;
   const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;

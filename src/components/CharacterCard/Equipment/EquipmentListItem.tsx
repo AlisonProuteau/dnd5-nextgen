@@ -6,7 +6,11 @@ import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getFeature } from '@api/ressources';
 import { TooltipButton } from '@shared/TooltipButton';
-import { getRelatedFeatures, hasRequiredStrength } from '@utils/character/character.utils';
+import {
+  getRelatedFeatures,
+  getUsageTimes,
+  hasRequiredStrength
+} from '@utils/character/character.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
@@ -16,7 +20,7 @@ import { UsageDisplay } from '../Characteristics/UsageDisplay';
 
 interface EquipmentListItemProps {
   equipment: (Equipment | MagicItem) & { count?: number; equipped: boolean };
-  character?: Pick<Character, 'abilityScores' | 'features' | 'version'>;
+  character?: Pick<Character, 'abilityScores' | 'features' | 'version' | 'id' | 'equipments'>;
   onClick?: (equipment: Equipment | MagicItem) => void;
   onToggleEquip?: (equipment: Equipment | MagicItem) => void;
   canEquip?: boolean;
@@ -60,38 +64,42 @@ export function EquipmentListItem({
     >
       <Box display="flex" flexDirection="column">
         <Box display="flex" alignItems="center" gap={1}>
-          {onClick && (
+          {onClick ? (
             <IconButton
               onClick={() => onClick(equipment)}
-              data-testid={`equipment-item-${equipment.index}-info`}
+              data-testid={`equipment-item-info-${equipment.index}`}
               sx={{ paddingX: 0 }}
             >
               <InfoOutlined color="info" fontSize="small" />
             </IconButton>
-          )}
+          ) : null}
           <Typography>
-            {`${getCount(equipment.count, 'quantity' in equipment ? equipment.quantity : 0)} ${equipment.name}`}
+            {`${getCount(
+              equipment.usage && getUsageTimes(equipment.usage, character ?? {}) === 1
+                ? undefined
+                : equipment.count,
+              'quantity' in equipment ? equipment.quantity : 0
+            )} ${equipment.name}`}
           </Typography>
-          {character?.abilityScores
-            ? !hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment) && (
-                <TooltipButton title="Minimum strength requirement not met">
-                  <Warning
-                    color="warning"
-                    fontSize="small"
-                    data-testid="strength-requirement-warning"
-                  />
-                </TooltipButton>
-              )
-            : 'str_minimum' in equipment &&
-              equipment.str_minimum && (
-                <TooltipButton title={`Minimum strength requirement: ${equipment.str_minimum}`}>
-                  <Warning
-                    color="warning"
-                    fontSize="small"
-                    data-testid="strength-requirement-warning"
-                  />
-                </TooltipButton>
-              )}
+          {character?.abilityScores ? (
+            !hasRequiredStrength(character.abilityScores['str']?.score || 0, equipment) ? (
+              <TooltipButton title="Minimum strength requirement not met">
+                <Warning
+                  color="warning"
+                  fontSize="small"
+                  data-testid="strength-requirement-warning"
+                />
+              </TooltipButton>
+            ) : null
+          ) : 'str_minimum' in equipment && equipment.str_minimum ? (
+            <TooltipButton title={`Minimum strength requirement: ${equipment.str_minimum}`}>
+              <Warning
+                color="warning"
+                fontSize="small"
+                data-testid="strength-requirement-warning"
+              />
+            </TooltipButton>
+          ) : null}
 
           {character && showUsage ? (
             <UsageDisplay
@@ -99,6 +107,7 @@ export function EquipmentListItem({
               character={character}
               resource={equipment}
               fullFeatureList={features}
+              count={equipment.count ?? 1}
             />
           ) : null}
         </Box>
@@ -138,7 +147,7 @@ export function EquipmentListItem({
       {equipment.equipment_category.index === 'armor' && onToggleEquip && (
         <IconButton
           onClick={() => onToggleEquip(equipment)}
-          data-testid={`equipment-item-${equipment.index}-equip`}
+          data-testid={`equipment-item-equip-${equipment.index}`}
           disabled={!canEquip}
           sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
           color="secondary"

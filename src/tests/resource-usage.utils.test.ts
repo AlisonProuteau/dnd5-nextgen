@@ -1,14 +1,24 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  formatResourceUsageIncrement,
+  formatRevertActionRecordUsage,
   formatUsageLabel,
   getRelatedFeatures,
   getUsageTimes,
   getUsageType,
   getUsageTypeLabel
-} from '@utils/character/character.utils';
+} from '@utils/resourceUsage.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
-import type { Character } from '@representations/user.representation';
+import type { ActionRecord, Character } from '@representations/user.representation';
+
+vi.mock('firebase/firestore', () => ({
+  deleteField: vi.fn(() => ({ __type: 'deleteField' })),
+  increment: vi.fn((n: number) => ({ __type: 'increment', value: n }))
+}));
+
+const DELETE_FIELD = { __type: 'deleteField' };
+const INCREMENT_1 = { __type: 'increment', value: 1 };
 
 describe('Resource Usage Functions', () => {
   const mockCharacter = {
@@ -451,6 +461,259 @@ describe('Resource Usage Functions', () => {
       expect(formatUsageLabel('ki', { type: 'short_rest', times: 'str' }, mockCharacter, [])).toBe(
         '0/3 (Short Rest)'
       );
+    });
+  });
+
+  describe('formatResourceUsageIncrement', () => {
+    it('single usage type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'action-surge',
+        usage: 'long_rest',
+        type: 'feature'
+      });
+
+      expect(result).toEqual({
+        'resourceUsages.action-surge.type': 'feature',
+        'resourceUsages.action-surge.usage': 'long_rest',
+        'resourceUsages.action-surge.current': INCREMENT_1
+      });
+    });
+
+    it('array of usage types', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'wild-shape',
+        usage: ['short_rest', 'long_rest'],
+        type: 'feature'
+      });
+
+      expect(result['resourceUsages.wild-shape.usage']).toEqual(['short_rest', 'long_rest']);
+    });
+
+    it('trait type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'relentless-endurance',
+        usage: 'long_rest',
+        type: 'trait'
+      });
+
+      expect(result['resourceUsages.relentless-endurance.type']).toBe('trait');
+    });
+
+    it('other type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'custom-resource',
+        usage: 'once',
+        type: 'other'
+      });
+
+      expect(result['resourceUsages.custom-resource.type']).toBe('other');
+      expect(result['resourceUsages.custom-resource.usage']).toBe('once');
+      expect(result['resourceUsages.custom-resource.current']).toEqual(INCREMENT_1);
+    });
+  });
+
+  describe('formatRevertActionRecordUsage', () => {
+    describe('spell type', () => {
+      const record: ActionRecord = {
+        id: 'r1',
+        type: 'spell',
+        name: 'Fireball',
+        value: 2,
+        createdAt: new Date()
+      };
+
+      it('decrements slot when current > 1', () => {
+        const result = formatRevertActionRecordUsage({ usedSpellSlots: { 2: 3 } }, record);
+        expect(result).toEqual({ 'usedSpellSlots.2': 2 });
+      });
+
+      it('deletes slot when current === 1', () => {
+        const result = formatRevertActionRecordUsage({ usedSpellSlots: { 2: 1 } }, record);
+        expect(result).toEqual({ 'usedSpellSlots.2': DELETE_FIELD });
+      });
+
+      it('returns empty object when current === 0', () => {
+        const result = formatRevertActionRecordUsage({ usedSpellSlots: { 2: 0 } }, record);
+        expect(result).toEqual({});
+      });
+
+      it('returns empty object when slot is missing', () => {
+        const result = formatRevertActionRecordUsage({ usedSpellSlots: {} }, record);
+        expect(result).toEqual({});
+      });
+    });
+
+    describe('feature type', () => {
+      const record: ActionRecord = {
+        id: 'r5',
+        type: 'feature',
+        name: 'Action Surge',
+        sourceIndex: 'action-surge',
+        createdAt: new Date()
+      };
+
+      it('decrements usage when current > 1', () => {
+        const data = {
+          resourceUsages: { 'action-surge': { type: 'feature', usage: 'short_rest', current: 2 } }
+        };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({
+          'resourceUsages.action-surge': { type: 'feature', usage: 'short_rest', current: 1 }
+        });
+      });
+
+      it('deletes resource usage when current === 1', () => {
+        const data = {
+          resourceUsages: { 'action-surge': { type: 'feature', usage: 'short_rest', current: 1 } }
+        };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({ 'resourceUsages.action-surge': DELETE_FIELD });
+      });
+
+      it('returns empty object when current === 0', () => {
+        const data = { resourceUsages: { 'action-surge': { current: 0 } } };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({});
+      });
+    });
+
+    describe('equipment type (not consumed)', () => {
+      const record: ActionRecord = {
+        id: 'r9',
+        type: 'custom',
+        name: 'Staff of Fire',
+        equipment: { index: 'staff-of-fire', name: 'Staff of Fire' },
+        createdAt: new Date()
+      };
+
+      it('decrements usage when current > 1', () => {
+        const data = { resourceUsages: { 'staff-of-fire': { current: 5 } } };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({
+          'resourceUsages.staff-of-fire': { current: 4 }
+        });
+      });
+
+      it('deletes usage when current === 1', () => {
+        const data = { resourceUsages: { 'staff-of-fire': { current: 1 } } };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({ 'resourceUsages.staff-of-fire': DELETE_FIELD });
+      });
+
+      it('returns empty object when current === 0', () => {
+        const data = { resourceUsages: { 'staff-of-fire': { current: 0 } } };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({});
+      });
+    });
+
+    describe('equipment type (consumed)', () => {
+      const record: ActionRecord = {
+        id: 'r12',
+        type: 'custom',
+        name: 'Healing Potion',
+        equipment: { index: 'healing-potion', name: 'Healing Potion', type: 'potion' },
+        consumed: true,
+        value: 1,
+        createdAt: new Date()
+      };
+
+      it('deletes usage and restores equipment count when value === 1 and item exists', () => {
+        const data = {
+          resourceUsages: {},
+          equipments: [
+            { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 2 }
+          ]
+        };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result['resourceUsages.healing-potion']).toEqual(DELETE_FIELD);
+        expect(result['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 3 }
+        ]);
+      });
+
+      it('decrements usage and restores equipment count when value > 1 and item exists', () => {
+        const data = {
+          resourceUsages: { 'healing-potion': { current: 3 } },
+          equipments: [
+            { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+          ]
+        };
+        const result = formatRevertActionRecordUsage(data, { ...record, value: 3 });
+
+        expect(result['resourceUsages.healing-potion']).toEqual({ current: 2 });
+        expect(result['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 2 }
+        ]);
+      });
+
+      it('adds item back to equipments when item no longer exists and type is known', () => {
+        const data = { resourceUsages: {}, equipments: [] };
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result['resourceUsages.healing-potion']).toEqual(DELETE_FIELD);
+        expect(result['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+        ]);
+      });
+
+      it('does not update equipments when item is missing and no type', () => {
+        const data = { resourceUsages: {}, equipments: [] };
+        const noTypeRecord: ActionRecord = {
+          ...record,
+          equipment: { index: 'mystery-item', name: 'Mystery Item' }
+        };
+        const result = formatRevertActionRecordUsage(data, noTypeRecord);
+
+        expect(result['resourceUsages.mystery-item']).toEqual(DELETE_FIELD);
+        expect(result['equipments']).toBeUndefined();
+      });
+
+      it('handles missing equipments array by treating it as empty', () => {
+        const result = formatRevertActionRecordUsage({ resourceUsages: {} }, record);
+
+        expect(result['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+        ]);
+      });
+    });
+
+    describe('unrelated types', () => {
+      it('returns empty object for health type', () => {
+        const data = {};
+        const record: ActionRecord = {
+          id: 'r17',
+          type: 'health',
+          name: 'Healed',
+          value: 10,
+          createdAt: new Date()
+        };
+
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({});
+      });
+
+      it('returns empty object for money type', () => {
+        const data = {};
+        const record: ActionRecord = {
+          id: 'r18',
+          type: 'money',
+          name: 'Bought item',
+          createdAt: new Date()
+        };
+
+        const result = formatRevertActionRecordUsage(data, record);
+
+        expect(result).toEqual({});
+      });
     });
   });
 });

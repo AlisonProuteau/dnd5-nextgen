@@ -314,13 +314,20 @@ export enum Sizes {
 
 export const ABILITIES = ['str', 'dex', 'con', 'int', 'wis', 'cha'] as const;
 type Abilities = (typeof ABILITIES)[number];
-export type UsageTypes =
+
+type DiceExpression =
+  | `${number}d${number}`
+  | `${number}d${number}${'+' | '*' | '-' | '/'}${number}`;
+
+export type BasicUsageTypes =
   | 'short_rest'
   | 'long_rest'
   | 'per_rest'
   | 'per_day'
   | 'per_week'
   | 'per_month';
+export type UsageTypes = BasicUsageTypes | `${BasicUsageTypes}_${number}` | 'once';
+
 export type Usage = {
   type: UsageTypes | UsageTypes[] | { feature: string; default: UsageTypes };
   times:
@@ -331,4 +338,5 @@ export type Usage = {
     | 'level'
     | `level${'+' | '*' | '-' | '/'}${number}`
     | 'unlimited';
+  restore?: number | DiceExpression;
 };

@@ -1,6 +1,7 @@
 import { characters } from '../support/mocks/characterList';
 
 describe('Character Equipment Market & Management End-to-End', () => {
+  const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const baseChar = characters.find(({ name }) => name === 'Willy')!;
   let characterWithEquipment: (typeof characters)[0] = {
     ...baseChar,
@@ -9,7 +10,13 @@ describe('Character Equipment Market & Management End-to-End', () => {
     abilityScores: {
       ...baseChar.abilityScores,
       dex: { ...baseChar.abilityScores.dex, score: 16, modifier: 3 }
-    }
+    },
+    equipments: [
+      ...(baseChar.equipments ?? []),
+      { index: 'acid-vial', type: 'class' as const, name: 'Acid (vial)', count: 3 },
+      { index: 'healers-kit', type: 'class' as const, name: "Healer's Kit", count: 2 },
+      { index: 'pearl-of-power', type: 'class' as const, name: 'Pearl of Power', count: 1 }
+    ]
   };
 
   beforeEach(() => {
@@ -50,15 +57,11 @@ describe('Character Equipment Market & Management End-to-End', () => {
         cy.contains(name).should('be.visible');
         cy.wrap($dialog)
           .getByTestId(`market-sell-${index}`)
-          .getByTestId(`equipment-item-${index}-info`)
+          .getByTestId(`equipment-item-info-${index}`)
           .click();
-        cy.getByRole('dialog')
-          .contains(new RegExp(`^${name}`))
-          .should('be.visible');
+        cy.getByRole('dialog', new RegExp(`^${escapeRegex(name)}`)).should('be.visible');
         cy.press('Escape');
-        cy.getByRole('dialog')
-          .contains(new RegExp(`^${name}`))
-          .should('not.exist');
+        cy.getByRole('dialog', new RegExp(`^${escapeRegex(name)}`)).should('not.exist');
       });
 
       // Test: Verify selling price is displayed and sell an item
@@ -91,7 +94,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId('equipment-item-', {
-      selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+      selector: ':not([data-testid*="-info-"],[data-testid*="-equip-"])'
     }).should('have.length', characterWithEquipment.equipments!.length - 1);
     cy.getByTestId('equipment-section-content').within(($section) => {
       cy.wrap($section).getByTestId('equipment-item-cross-light').should('not.exist');
@@ -125,36 +128,32 @@ describe('Character Equipment Market & Management End-to-End', () => {
         .as('weaponCount', { type: 'static' })
         .should('be.greaterThan', 0);
       cy.getByTestId('market-buy-')
-        .getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' })
+        .getByTestId('equipment-item-', {
+          selector: ':not([data-testid*="-info-"],[data-testid*="-equip-"])'
+        })
         .first()
         .within(($item) => {
           const itemName = $item.text().trim();
           cy.wrap($item).getByTestId(`-info`, { type: 'contains' }).click();
-          cy.getByRole('dialog')
-            .contains(new RegExp(`^${itemName}`))
-            .should('be.visible');
+          cy.getByRole('dialog', new RegExp(`^${escapeRegex(itemName)}`)).should('be.visible');
           cy.press('Escape');
-          cy.getByRole('dialog')
-            .contains(new RegExp(`^${itemName}`))
-            .should('not.exist');
+          cy.getByRole('dialog', new RegExp(`^${escapeRegex(itemName)}`)).should('not.exist');
         });
 
       // Test: Try to buy expensive item (should be disabled if insufficient funds)
       cy.selectOption('#equipmentCategory', 'Armor');
       cy.selectOption('#equipmentSubcategory', 'Heavy');
       cy.getByTestId('market-buy-')
-        .getByTestId('equipment-item-', { selector: ':not([data-testid$="-info"])' })
+        .getByTestId('equipment-item-', {
+          selector: ':not([data-testid*="-info-"],[data-testid*="-equip-"])'
+        })
         .first()
         .within(($item) => {
           const itemName = $item.text().trim();
           cy.wrap($item).getByTestId(`-info`, { type: 'contains' }).click();
-          cy.getByRole('dialog')
-            .contains(new RegExp(`^${itemName}`))
-            .should('be.visible');
+          cy.getByRole('dialog', new RegExp(`^${escapeRegex(itemName)}`)).should('be.visible');
           cy.press('Escape');
-          cy.getByRole('dialog')
-            .contains(new RegExp(`^${itemName}`))
-            .should('not.exist');
+          cy.getByRole('dialog', new RegExp(`^${escapeRegex(itemName)}`)).should('not.exist');
         });
       cy.get('#search').type('Plate');
       cy.getByTestId('market-buy-plate').within(($item) => {
@@ -269,14 +268,14 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId('equipment-item-', {
-      selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+      selector: ':not([data-testid*="-info-"],[data-testid*="-equip-"])'
     }).should('have.length', characterWithEquipment.equipments!.length + 1);
     cy.getByTestId('equipment-section-content').within(($section) =>
       cy.wrap($section).getByTestId('equipment-item-shield').should('be.visible')
     );
 
     // Test: Equip the newly bought armor and verify AC update
-    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('equipment-item-equip-shield').should('contain.text', 'Equipped');
     cy.getByTestId('previous-step').click();
     cy.getByTestId('previous-step').click();
     cy.getByTestId('stats-section').should('be.visible');
@@ -543,5 +542,65 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId(`equipment-item-crossbow-bolt`).should('contain.text', '40 Crossbow bolt');
+
+    // Test: single-use item (times:1) — each USE removes one from inventory
+    cy.getByTestId('equipment-item-acid').within(($item) => {
+      cy.wrap($item).should('contain.text', 'Acid (vial)').and('not.contain.text', '3 Acid');
+      cy.wrap($item)
+        .getByTestId('equipment-usage-button')
+        .should('contain.text', 'USE')
+        .and('contain.text', '0/3');
+
+      cy.wrap($item).getByTestId('equipment-usage-button').click();
+      cy.wrap($item).getByTestId('equipment-usage-button').should('contain.text', '0/2');
+      cy.wrap($item).getByTestId('equipment-usage-button').click();
+      cy.wrap($item).getByTestId('equipment-usage-button').should('contain.text', '0/1');
+      cy.wrap($item).getByTestId('equipment-usage-button').click();
+    });
+    cy.getByTestId('equipment-item-acid').should('not.exist');
+
+    // Test: multi-charge once-usage item — count prefix suppressed, label tracks charges per item (0/10)
+    cy.getByTestId('equipment-item-healers-kit').within(($item) => {
+      cy.wrap($item).should('contain.text', "2 Healer's Kit");
+      cy.wrap($item)
+        .getByTestId('equipment-usage-button')
+        .should('contain.text', 'USE')
+        .and('contain.text', '0/10');
+
+      for (let i = 1; i <= 9; i++) {
+        cy.wrap($item).getByTestId('equipment-usage-button').click();
+        cy.wrap($item).getByTestId('equipment-usage-button').should('contain.text', `${i}/10`);
+      }
+      cy.wrap($item).should('contain.text', '9/10');
+      cy.wrap($item).getByTestId('equipment-usage-button').click();
+      cy.wrap($item)
+        .should('contain.text', "Healer's Kit")
+        .invoke('text')
+        .should('not.match', /^\s*\d/);
+      cy.wrap($item).getByTestId('equipment-usage-button').should('contain.text', '0/10');
+    });
+
+    // Test: deleting the consuming record restores the item to inventory at max-1 charges
+    cy.getByTestId(`action-record-${characterWithEquipment.id}`).click();
+    cy.getByTestId(`action-record-drawer-${characterWithEquipment.id}`).should('be.visible');
+    cy.getByTestId('record-item-')
+      .filter(':contains("Healer\'s Kit")')
+      .first()
+      .getByTestId('record-delete')
+      .click();
+    cy.getByTestId(`action-record-drawer-${characterWithEquipment.id}`)
+      .should('be.visible')
+      .press('Escape');
+
+    cy.getByTestId('equipment-item-healers-kit').within(($item) => {
+      cy.wrap($item).should('contain.text', "2 Healer's Kit");
+      cy.wrap($item).getByTestId('equipment-usage-button').should('contain.text', '9/10');
+    });
+
+    // Test: USAGE_EXCLUSION item — read-only label, no USE button
+    cy.getByTestId('equipment-item-pearl-of-power').within(($item) => {
+      cy.wrap($item).getByTestId('equipment-usage-button').should('not.exist');
+      cy.wrap($item).should('contain.text', '0/').and('not.contain.text', 'USE');
+    });
   });
 });

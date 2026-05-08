@@ -11,7 +11,7 @@ type FilterType = ActionRecordType | 'all';
 
 interface ActionRecordListProps {
   records: ActionRecord[];
-  onDelete: (id: string, invalidate?: boolean) => Promise<boolean>;
+  onDelete: (record: ActionRecord, invalidate?: boolean) => Promise<boolean>;
   onEditDescription: (id: string, description: string) => Promise<boolean>;
   filter: FilterType;
   dateFrom: Dayjs | null;
@@ -46,11 +46,8 @@ export function ActionRecordList({
   const clearAll = async () => {
     if (!filteredRecords) return;
     setIsClearing(true);
-    for (const record of filteredRecords)
-      await onDelete(
-        record.id,
-        filteredRecords.findIndex(({ id }) => id === record.id) === filteredRecords.length - 1
-      );
+    for (let i = 0; i < filteredRecords.length; i++)
+      await onDelete(filteredRecords[i], i === filteredRecords.length - 1);
     setIsClearing(false);
   };
 

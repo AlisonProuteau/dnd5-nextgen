@@ -9,6 +9,7 @@ export * from './character/spells.utils';
 export * from './constants/versions.constants';
 export * from './form.utils';
 export * from './query.utils';
+export * from './resourceUsage.utils';
 export * from './ui/auth.utils';
 export * from './ui/generatedImages.utils';
 export * from './ui/style.utils';

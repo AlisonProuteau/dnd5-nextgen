@@ -1,6 +1,5 @@
 /// <reference types="vite/client" />
 /// <reference types="vitest/config" />
-
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, mergeConfig } from 'vite';
@@ -14,7 +13,7 @@ const viteConfig = defineConfig({
     outDir: 'build'
   },
   esbuild: {
-    pure: ['console.debug']
+    pure: process.env.FIRESTORE_EMULATOR_HOST ? [] : ['console.debug']
   },
   plugins: [
     react(),

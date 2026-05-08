@@ -99,10 +99,11 @@ export interface ActionRecord {
   description?: string | null;
   value?: number;
   valueUnit?: string;
-  equipment?: DefaultRepresentation;
+  equipment?: DefaultRepresentation & { type?: string };
   sourceIndex?: string;
   createdAt: Date;
   auto?: boolean;
+  consumed?: boolean;
 }
 
 export type UserData = {
