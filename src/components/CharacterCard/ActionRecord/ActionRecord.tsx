@@ -7,20 +7,21 @@ import { type Dayjs } from 'dayjs';
 import { getEquipment, getFeature, getMagicItem } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { getRelatedFeatures, getUsageType } from '@utils/index';
+import {
+  formatResourceUsageIncrement,
+  formatRevertActionRecordUsage,
+  getRelatedFeatures,
+  getUsageType
+} from '@utils/character/resourceUsage.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type {
   Character,
   ActionRecordType as FilterType
 } from '@representations/user.representation';
 import { ActionRecord as ActionRecordType } from '@representations/user.representation';
-import { useFirebaseCrud } from 'src/hooks';
 import { useAuth } from 'src/providers/AuthProvider';
-import {
-  formatResourceUsageIncrement,
-  formatRevertActionRecordUsage
-} from 'src/utils/resourceUsage.utils';
 import { ActionRecordForm, type ActionRecordFormData } from './ActionRecordForm';
 import { ActionRecordList } from './ActionRecordList';
 

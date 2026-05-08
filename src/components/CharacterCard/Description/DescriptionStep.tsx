@@ -10,8 +10,8 @@ import { IconText } from '@shared/IconText';
 import { type ChoiceSelection, transformFormData } from '@utils/character/creation.utils';
 import { getGenderIcon } from '@utils/ui/ui.utils';
 import type { CharacterFormData } from '@representations/user.representation';
-import { CharacterBackgroundForm } from 'src/components/CharacterCreation/CharacterBackgroundForm';
 import type { DefaultProps } from 'src/pages/Header';
+import { CharacterBackgroundForm } from '../../CharacterCreation/CharacterBackgroundForm';
 import { CharacterDescription, GenderIndexes } from '../../CharacterCreation/CharacterDescription';
 
 export function Description({ character }: DefaultProps) {

@@ -1,4 +1,5 @@
 import { omit } from 'lodash';
+import { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   AdditionalMoneyUnitType,
   Equipment,
@@ -6,7 +7,6 @@ import type {
 } from '@representations/campaign/equipment.representation';
 import { type DefaultRepresentation } from '@representations/common.representation';
 import type { Character } from '@representations/user.representation';
-import { MagicItem } from 'src/representations/abilities/magic.representation';
 
 /**
  * Calculate ability score modifier based on D&D 5e rules

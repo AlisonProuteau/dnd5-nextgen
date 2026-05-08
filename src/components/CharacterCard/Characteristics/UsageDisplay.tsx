@@ -5,13 +5,17 @@ import { deleteField } from 'firebase/firestore';
 import { useActionRecord } from '@hooks/useActionRecord';
 import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { formatActionRecord, formatCustomRecord } from '@utils/actions.utils';
-import { formatUsageLabel, getUsageTimes, getUsageType } from '@utils/index';
+import {
+  formatResourceUsageIncrement,
+  formatUsageLabel,
+  getUsageTimes,
+  getUsageType
+} from '@utils/character/resourceUsage.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import { MagicItem } from '@representations/abilities/magic.representation';
 import { Trait } from '@representations/abilities/trait.representation';
 import { Equipment } from '@representations/campaign/equipment.representation';
 import type { Character } from '@representations/user.representation';
-import { formatResourceUsageIncrement } from 'src/utils/resourceUsage.utils';
 
 // TODO: 'rod-of-absorption'?
 export const USAGE_EXCLUSION = ['pearl-of-power', 'arcane-recovery', 'natural-recovery'];

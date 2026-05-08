@@ -7,7 +7,7 @@ import {
   getUsageTimes,
   getUsageType,
   getUsageTypeLabel
-} from '@utils/resourceUsage.utils';
+} from '@utils/character/resourceUsage.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { ActionRecord, Character } from '@representations/user.representation';

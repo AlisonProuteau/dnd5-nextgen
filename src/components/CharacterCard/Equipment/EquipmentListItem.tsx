@@ -6,11 +6,8 @@ import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getFeature } from '@api/ressources';
 import { TooltipButton } from '@shared/TooltipButton';
-import {
-  getRelatedFeatures,
-  getUsageTimes,
-  hasRequiredStrength
-} from '@utils/character/character.utils';
+import { hasRequiredStrength } from '@utils/character/character.utils';
+import { getRelatedFeatures, getUsageTimes } from '@utils/character/resourceUsage.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';

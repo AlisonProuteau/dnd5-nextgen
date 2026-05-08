@@ -24,7 +24,12 @@ import {
   formatHealthRecord,
   formatResetHealthRecord
 } from '@utils/actions.utils';
-import { createQueryCombiner, getRelatedFeatures, getUsageTimes, getUsageType } from '@utils/index';
+import {
+  getRelatedFeatures,
+  getUsageTimes,
+  getUsageType
+} from '@utils/character/resourceUsage.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type {
   ActionRecord,

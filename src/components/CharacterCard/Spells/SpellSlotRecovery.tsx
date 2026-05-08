@@ -9,15 +9,15 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { formatActionRecord, formatRestoreSpellSlotsRecord } from '@utils/actions.utils';
 import {
-  buildSpellSlotUpdates,
   canUseResource,
-  createQueryCombiner,
+  formatResourceUsageIncrement,
   getRelatedFeatures,
   getUsageType
-} from '@utils/index';
+} from '@utils/character/resourceUsage.utils';
+import { buildSpellSlotUpdates } from '@utils/character/spells.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import { Character } from '@representations/user.representation';
-import { formatResourceUsageIncrement } from 'src/utils/resourceUsage.utils';
 import { SpellPartialRecoveryDialog } from './SpellPartialRecoveryDialog';
 
 const RECOVERY_FEATURES = ['arcane-recovery', 'natural-recovery'];

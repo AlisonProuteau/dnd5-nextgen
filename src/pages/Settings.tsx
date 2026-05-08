@@ -17,7 +17,7 @@ import { Box, Container } from '@mui/system';
 import { useFirebaseCrud } from '@hooks/index';
 import { FullPageLoader } from '@shared/Loader';
 import { type Version, VERSIONS } from '@utils/constants/versions.constants';
-import { CurrencyLabels } from '@utils/index';
+import { CurrencyLabels } from '@utils/ui/ui.utils';
 import {
   AdditionalMoneyUnits,
   type AdditionalMoneyUnitType
