@@ -163,8 +163,8 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
           record
         );
         if (Object.keys(firestoreUpdate).length > 0) {
-          await firebaseCrud.update(character.id, firestoreUpdate, false);
-          workingCharacterRef.current = updatedCharacter;
+          const updateSuccess = await firebaseCrud.update(character.id, firestoreUpdate, false);
+          if (updateSuccess) workingCharacterRef.current = updatedCharacter;
         }
       }
 

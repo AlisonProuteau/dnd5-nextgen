@@ -36,7 +36,7 @@ export function UsageDisplay({
   count,
   ...props
 }: UsageDisplayProps & Omit<BoxProps, 'resource' | 'children'>) {
-  const { logAction } = useActionRecord(character?.id || '');
+  const { logAction, isLoading } = useActionRecord(character?.id || '');
   const firebaseCrud = useFirebaseCrud<Character>({
     collectionPath: 'users/{userId}/characters',
     invalidateQueryKey: ['fetchCharacter', '{userId}', character?.id || '']
@@ -132,6 +132,7 @@ export function UsageDisplay({
             size="small"
             onClick={useResource}
             disabled={
+              isLoading ||
               firebaseCrud.isLoading ||
               mappedUsage.currentUsageAmount >=
                 mappedUsage.itemMaxUsage *
