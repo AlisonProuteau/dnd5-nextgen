@@ -1,6 +1,6 @@
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable } from 'firebase/storage';
-import { stripUndefined } from '@utils/index';
+import { stripUndefined } from '@utils/api.utils';
 import { database, storage } from 'src/firebase';
 import type { CharacterDetails } from './character';
 

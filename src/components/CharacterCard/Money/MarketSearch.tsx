@@ -5,7 +5,7 @@ import { getAllEquipment, getAllMagicItems, getEquipmentCategories } from '@api/
 import { ControledInput } from '@shared/ControledInput';
 import { FilterSelect } from '@shared/FilterSelect';
 import { Loader } from '@shared/Loader';
-import { toKey } from '@utils/index';
+import { toKey } from '@utils/ui/ui.utils';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type {
   Equipment,

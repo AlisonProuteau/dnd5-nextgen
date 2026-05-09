@@ -1,12 +1,8 @@
 import { useCallback, useMemo } from 'react';
-import toast from 'react-hot-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { deleteField, doc, increment, runTransaction, updateDoc } from 'firebase/firestore';
 import { omit } from 'lodash';
 import { formatDateType } from '@utils/date.utils';
-import type { UsageTypes } from '@representations/common.representation';
 import type { ActionRecord } from '@representations/user.representation';
-import { database } from 'src/firebase';
 import { useAuth } from 'src/providers/AuthProvider';
 import { useFirebaseCrud } from './useFirebaseCrud';
 
@@ -23,11 +19,6 @@ export const useActionRecord = (characterId: string) => {
 
   const queryKey = useMemo(
     () => ['fetchActionRecords', user?.uid, characterId],
-    [user?.uid, characterId]
-  );
-
-  const characterQueryKey = useMemo(
-    () => ['fetchCharacter', user?.uid, characterId],
     [user?.uid, characterId]
   );
 
@@ -52,38 +43,14 @@ export const useActionRecord = (characterId: string) => {
   };
 
   const logAction = useCallback(
-    async (
-      record: Omit<ActionRecord, 'id' | 'createdAt'>,
-      resourceUsageMeta?: { usage: UsageTypes | UsageTypes[] }
-    ) => {
+    async (record: Omit<ActionRecord, 'id' | 'createdAt'>) => {
       const formatted = formatActionRecord(record);
       const id = await firebaseCrud.create(formatted, false);
-      if (id) {
-        optimiticUpdateRecord((old) => [{ ...formatted, id } as ActionRecord, ...old]);
-        if (user?.uid && resourceUsageMeta) {
-          const recordIndex =
-            record.type === 'feature' || record.type === 'trait'
-              ? record.sourceIndex
-              : record.equipment?.index;
-          if (recordIndex) {
-            try {
-              await updateDoc(doc(database, `users/${user.uid}/characters`, characterId), {
-                [`resourceUsages.${recordIndex}.type`]:
-                  record.type === 'feature' || record.type === 'trait' ? record.type : 'other',
-                [`resourceUsages.${recordIndex}.usage`]: resourceUsageMeta.usage,
-                [`resourceUsages.${recordIndex}.current`]: increment(1)
-              });
-              await queryClient.invalidateQueries({ queryKey: characterQueryKey });
-            } catch (error) {
-              toast.error(`Update failed: 
-              ${(error as Error).message}`);
-            }
-          }
-        }
-      }
+      if (id) optimiticUpdateRecord((old) => [{ ...formatted, id } as ActionRecord, ...old]);
+
       return id;
     },
-    [firebaseCrud, user?.uid, characterId, queryClient, characterQueryKey, optimiticUpdateRecord]
+    [firebaseCrud, optimiticUpdateRecord]
   );
 
   const updateAction = useCallback(
@@ -97,76 +64,12 @@ export const useActionRecord = (characterId: string) => {
   );
 
   const removeAction = useCallback(
-    async (id: string, invalidate: boolean = true) => {
-      const record = queryClient.getQueryData<ActionRecord[]>(queryKey)?.find((r) => r.id === id);
+    async (id: string) => {
       const success = await firebaseCrud.remove(id, false);
-      if (success) {
-        optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
-        if (user?.uid && (record?.sourceIndex || record?.equipment?.index)) {
-          try {
-            const charDocRef = doc(database, `users/${user.uid}/characters`, characterId);
-            await runTransaction(database, async (transaction) => {
-              const snap = await transaction.get(charDocRef);
-              if (!snap.exists()) return;
-
-              if (record?.type === 'feature' || record?.type === 'trait') {
-                const current: number =
-                  snap.data()?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
-                if (current > 0)
-                  transaction.update(charDocRef, {
-                    [`resourceUsages.${record.sourceIndex}`]:
-                      current - 1 === 0
-                        ? deleteField()
-                        : {
-                            ...snap.data()?.resourceUsages?.[record.sourceIndex!],
-                            current: current - 1
-                          }
-                  });
-              }
-
-              if (record?.type === 'spell' && typeof record.value === 'number') {
-                const current: number = snap.data()?.usedSpellSlots?.[record.value] ?? 0;
-                if (current > 0)
-                  transaction.update(charDocRef, {
-                    [`usedSpellSlots.${record.value}`]:
-                      current - 1 === 0 ? deleteField() : current - 1
-                  });
-              }
-
-              if (record?.equipment?.index) {
-                const current: number =
-                  snap.data()?.resourceUsages?.[record.equipment.index]?.current ?? 0;
-                if (current > 0)
-                  transaction.update(charDocRef, {
-                    [`resourceUsages.${record.equipment.index}`]:
-                      current - 1 === 0
-                        ? deleteField()
-                        : {
-                            ...snap.data()?.resourceUsages?.[record.equipment.index],
-                            current: current - 1
-                          }
-                  });
-              }
-            });
-
-            if (invalidate) await queryClient.invalidateQueries({ queryKey: characterQueryKey });
-          } catch (error) {
-            toast.error(`Update failed: 
-            ${(error as Error).message}`);
-          }
-        }
-      }
+      if (success) optimiticUpdateRecord((old) => old.filter((r) => r.id !== id));
       return success;
     },
-    [
-      firebaseCrud,
-      user?.uid,
-      characterId,
-      queryClient,
-      queryKey,
-      characterQueryKey,
-      optimiticUpdateRecord
-    ]
+    [firebaseCrud, optimiticUpdateRecord]
   );
 
   return {

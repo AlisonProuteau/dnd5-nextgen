@@ -224,6 +224,7 @@ MIT License - see [package.json](package.json) for details.
 - [ ] Handle Level class_specific and race_specific data?
 - [ ] Spell enhancements (Manually add more cantrips/slots, cast button for ritual/cantrip?)?
 - [ ] Class archetype support?
+- [ ] Add French support
 
 #### Dev
 

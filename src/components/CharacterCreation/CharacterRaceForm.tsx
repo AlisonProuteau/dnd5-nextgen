@@ -22,8 +22,8 @@ import {
   mapDataForForm,
   mapTraits
 } from '@utils/character/creation.utils';
-import { toKey } from '@utils/index';
 import { createQueryCombiner } from '@utils/query.utils';
+import { toKey } from '@utils/ui/ui.utils';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { Subclass } from '@representations/character/class.representation';
 import type { RaceAbilityBonus } from '@representations/character/race.representation';

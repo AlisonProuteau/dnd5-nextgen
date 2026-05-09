@@ -21,13 +21,13 @@ import { getClassInfo, getFeature, getTrait } from '@api/ressources';
 import { ControledInput } from '@shared/ControledInput';
 import { FilterSelect } from '@shared/FilterSelect';
 import {
-  createQueryCombiner,
   formatUsageLabelText,
   getRelatedFeatures,
   getUsageTimes,
   getUsageType,
   getUsageTypeLabel
-} from '@utils/index';
+} from '@utils/character/resourceUsage.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import { Classes } from '@representations/character/class.representation';
 import { Usage } from '@representations/common.representation';

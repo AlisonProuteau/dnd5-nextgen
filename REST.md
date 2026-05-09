@@ -19,9 +19,14 @@ Adventurers can take short rests in the midst of an adventuring day and a long r
 
 # TODO
 
+- [ ] Add/Link notes to character equipment
 - [ ] Add Rest UI
   - Clear and clear all should handle rest
     - Inactive flag for each that was rested? (Trait & Feature usage and Spell slots)
     - Active filter in action records
   - Short rest
+    - Should also handle dice restore
   - Long rest
+- [ ] Add setting "force rest" that would hide/show the reset buttons on the app
+  - Add a feature/trait rest button
+  - Check the app for missing reset

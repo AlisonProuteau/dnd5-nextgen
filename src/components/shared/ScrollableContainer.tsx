@@ -1,7 +1,7 @@
 import { type ReactNode, useRef, useState } from 'react';
 import { KeyboardArrowUp } from '@mui/icons-material';
 import { Box, type BoxProps, Fade, IconButton } from '@mui/material';
-import { button } from '@utils/index';
+import { button } from '@utils/ui/style.utils';
 
 interface ScrollableContainerProps extends BoxProps {
   children: ReactNode;

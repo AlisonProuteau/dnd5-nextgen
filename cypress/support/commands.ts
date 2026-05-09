@@ -88,7 +88,7 @@ declare global {
        * @returns Chainable<JQuery<HTMLElement>>
        * @description Use `cy.wrap($el).getByRole(...)` when scoping inside a `within()` block.
        */
-      getByRole(role: string, name?: string): Chainable<JQuery<HTMLElement>>;
+      getByRole(role: string, name?: string | RegExp): Chainable<JQuery<HTMLElement>>;
 
       /**
        * Gets an element by test id (preferred method, supports chaining).
@@ -257,12 +257,21 @@ Cypress.Commands.add('waitForLoading', () => {
  * Gets an element by ARIA role and optional accessible name. Supports chaining.
  * @description Use `cy.wrap($el).getByRole(...)` when scoping inside a `within()` block.
  */
-Cypress.Commands.addQuery('getByRole', function (role: string, name?: string) {
+Cypress.Commands.addQuery('getByRole', function (role: string, name?: string | RegExp) {
   const nextCommand: Cypress.Command = (this as any)['attributes'].next;
 
   return (subject) => {
-    const current = name ? `[role="${role}"]:contains("${name}")` : `[role="${role}"]`;
-    const res = subject ? Cypress.$(subject).find(current) : Cypress.$(current);
+    const current = subject
+      ? Cypress.$(subject).find(`[role="${role}"]`)
+      : Cypress.$(`[role="${role}"]`);
+
+    const res = name
+      ? current.filter((_, el) => {
+          return name instanceof RegExp
+            ? name.test(el.textContent ?? '')
+            : (el.textContent ?? '').includes(name);
+        })
+      : current;
 
     if (
       res.length === 0 &&

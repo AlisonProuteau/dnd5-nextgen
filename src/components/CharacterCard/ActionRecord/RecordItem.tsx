@@ -37,7 +37,7 @@ export const TYPE_CONFIG_ICON: Record<ActionRecordType, ReactNode> = {
 interface RecordItemProps {
   record: ActionRecord;
   onEditDescription: (id: string, description: string) => Promise<boolean>;
-  onDelete: (id: string) => Promise<boolean>;
+  onDelete: (record: ActionRecord, invalidate?: boolean) => Promise<boolean>;
   showDivider: boolean;
 }
 
@@ -53,9 +53,9 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
     setIsSaving(false);
   };
 
-  const onActionDelete = async (id: string) => {
+  const onActionDelete = async (record: ActionRecord) => {
     setIsSaving(true);
-    await onDelete(id);
+    await onDelete(record, true);
     setIsSaving(false);
   };
 
@@ -110,7 +110,7 @@ export function RecordItem({ record, onDelete, onEditDescription, showDivider }:
                 size="small"
                 edge="end"
                 data-testid="record-delete"
-                onClick={async () => await onActionDelete(record.id)}
+                onClick={async () => await onActionDelete(record)}
                 disabled={isSaving}
               >
                 <Delete fontSize="small" />
