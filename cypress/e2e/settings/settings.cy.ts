@@ -1,11 +1,13 @@
-describe(`Settings Page End-to-End`, () => {
+describe('Settings Page', () => {
   beforeEach(() => {
     cy.login(Cypress.testUser.uid);
     cy.visit('/settings');
     cy.getByTestId('user-info').should('be.visible');
   });
 
-  after(() => cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] }));
+  after(() =>
+    cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] })
+  );
 
   it('should display user information, version selector and currency selector', () => {
     // Test: User info is displayed

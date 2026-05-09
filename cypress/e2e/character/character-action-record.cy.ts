@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../support/mocks/characterList';
 
-describe('Character Action Record End-to-End', () => {
+describe('Character Action Record', () => {
   const tillyData = characters.find(({ name }) => name === 'Tilly')!;
   const defaultCharData = {
     usedSpellSlots: {},

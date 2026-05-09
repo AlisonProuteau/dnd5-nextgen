@@ -1,5 +1,5 @@
 import { uniqBy } from 'lodash';
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../support/mocks/characterList';
 
 // TODO-blocked: Add leveling when implemented
 describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
@@ -93,7 +93,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('Should not display spell section for non-spellcaster', () => {
+  it('should not display spell section for non-spellcasting classes', () => {
     cy.visit('/');
     cy.waitForLoading();
 

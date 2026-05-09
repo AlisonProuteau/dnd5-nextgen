@@ -1,9 +1,9 @@
-describe(`Authentication End-to-End`, () => {
+describe('Authentication', () => {
   before(() => cy.clearAllNonDefaultUsers());
 
   beforeEach(() => cy.visit('/'));
 
-  describe('Complete Sign In Flow', () => {
+  context('Sign In', () => {
     const signInUser = {
       uid: 'existing-user-id',
       email: 'existing.user@example.com',
@@ -14,7 +14,7 @@ describe(`Authentication End-to-End`, () => {
 
     after(() => cy.clearUser(signInUser.uid));
 
-    it('should handle complete sign-in workflow with loading states, responsive design, and first-time user flow', () => {
+    it('should complete the full sign-in workflow with loading states and first-time user experience', () => {
       // Test: email validation
       cy.get('#email').type('invalid-email').should('have.value', 'invalid-email');
       cy.get('#email').should('have.attr', 'aria-invalid', 'true');
@@ -67,7 +67,7 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/settings');
     });
 
-    it('should handle authentication errors, network failures, and recovery workflows', () => {
+    it('should handle authentication errors, network failures, and recovery', () => {
       cy.callFirestore('update', `users/${signInUser.uid}`, {
         displayName: 'Sign In User',
         version: 'Legacy'
@@ -127,7 +127,7 @@ describe(`Authentication End-to-End`, () => {
     });
   });
 
-  describe('Sign Up and Onboarding Flow', () => {
+  context('Sign Up & Onboarding', () => {
     const uniqueSuffix = Date.now();
     const testUser = {
       uid: `signup-user-id-${uniqueSuffix}`,
@@ -137,7 +137,7 @@ describe(`Authentication End-to-End`, () => {
 
     afterEach(() => cy.clearUser(testUser.uid));
 
-    it('should validate form fields and test form interactions before allowing submission', () => {
+    it('should validate the registration form and complete the onboarding flow', () => {
       // Test: switch to sign-up mode
       cy.get('button[type="reset"]').click();
       cy.get('button[type="submit"]').should('contain.text', 'Sign Up');
@@ -222,14 +222,14 @@ describe(`Authentication End-to-End`, () => {
     });
   });
 
-  describe('Header Navigation and Menu', () => {
+  context('Header navigation', () => {
     beforeEach(() => {
       cy.createTestCharacter(Cypress.testUser.uid);
       cy.login(Cypress.testUser.uid);
       cy.visit('/');
     });
 
-    it('should display header elements, navigate through menu, and handle menu interactions for regular users', () => {
+    it('should navigate through the header menu for regular users', () => {
       // Test: User display name/email is shown
       cy.getByTestId('user-display-name')
         .should('be.visible')
@@ -275,7 +275,7 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/contact');
     });
 
-    it('should show admin menu items and allow navigation to admin routes', () => {
+    it('should show admin-only menu items and allow navigation to admin routes', () => {
       cy.loginAsAdmin();
       cy.visit('/');
 
@@ -302,7 +302,7 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/database');
     });
 
-    it('should redirect invalid routes to home page', () => {
+    it('should redirect invalid routes to the home page', () => {
       // Test: Invalid route redirects to home
       cy.visit('/invalid-route-that-does-not-exist');
       cy.url().should('eq', Cypress.config().baseUrl + '/');

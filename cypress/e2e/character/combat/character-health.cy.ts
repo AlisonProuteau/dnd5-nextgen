@@ -1,6 +1,6 @@
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../../support/mocks/characterList';
 
-describe('Character Health Management End-to-End', () => {
+describe('Character Health Management', () => {
   const characterData = characters.find(({ name }) => name === 'Delfy')!;
   const baseHealth = {
     hit_points: 10,

@@ -1,7 +1,7 @@
 import { Character } from '@representations/user.representation';
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../support/mocks/characterList';
 
-describe(`Character Sheet End-to-End`, () => {
+describe('Character Sheet', () => {
   const delfyData = characters.find(({ name }) => name === 'Delfy')!;
   const devyData = characters.find(({ name }) => name === 'Devy')!;
   const blackList: string[] = [

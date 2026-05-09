@@ -1,6 +1,6 @@
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../../support/mocks/characterList';
 
-describe('Character Equipment Market & Management End-to-End', () => {
+describe('Character Equipment Market', () => {
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const baseChar = characters.find(({ name }) => name === 'Willy')!;
   let characterWithEquipment: (typeof characters)[0] = {
@@ -24,7 +24,12 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.login(Cypress.testUser.uid);
   });
 
-  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithEquipment.id}`));
+  after(() =>
+    cy.callFirestore(
+      'delete',
+      `users/${Cypress.testUser.uid}/characters/${characterWithEquipment.id}`
+    )
+  );
 
   it('should complete equipment buying and selling workflow with validation and free mode', () => {
     cy.visit('/');

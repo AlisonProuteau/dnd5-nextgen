@@ -1,4 +1,4 @@
-describe(`Contact Form End-to-End`, () => {
+describe('Contact Form', () => {
   const isMobile = Cypress.config('viewportWidth') === 375;
   const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;
   const charName = 'My Test Character';

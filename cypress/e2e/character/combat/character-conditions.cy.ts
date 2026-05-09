@@ -1,6 +1,6 @@
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../../support/mocks/characterList';
 
-describe('Character Conditions Management End-to-End', () => {
+describe('Character Conditions Management', () => {
   const characterData = characters.find(({ name }) => name === 'Delfy')!;
   const conditionsChar = {
     ...characterData,

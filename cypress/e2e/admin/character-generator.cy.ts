@@ -1,4 +1,4 @@
-describe(`Character Generator End-to-End`, () => {
+describe('Character Generator', () => {
   const imageObj = {
     bucket: 'dnd5-nextgen.firebasestorage.app',
     generation: '1762736803456',

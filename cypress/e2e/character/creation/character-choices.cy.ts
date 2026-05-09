@@ -1,11 +1,11 @@
-describe('Choices', () => {
+describe('Character Choices (Creation Wizard)', () => {
   beforeEach(() => {
     cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
     cy.login(Cypress.testUser.uid);
     cy.visit('/');
   });
 
-  it('Test the choices in chearacter creation', function () {
+  it('should reset choices when the selected race is changed', function () {
     cy.visit('/create');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
 
