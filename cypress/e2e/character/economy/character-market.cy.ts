@@ -31,7 +31,7 @@ describe('Character Equipment Market', () => {
     )
   );
 
-  it('should complete equipment buying and selling workflow with validation and free mode', () => {
+  it('should complete the buy and sell workflow with validation and free mode', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
@@ -333,7 +333,7 @@ describe('Character Equipment Market', () => {
     cy.getByTestId('armor-class').should('contain.text', '14');
   });
 
-  it('should handle custom pricing for items without cost', () => {
+  it('should handle custom pricing for items without a standard cost', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();

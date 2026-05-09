@@ -15,7 +15,7 @@ describe('Character Conditions Management', () => {
 
   afterEach(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('should complete full conditions management workflow with validation and error handling', () => {
+  it('should complete the full conditions workflow including search, exhaustion levels, and condition removal', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${conditionsChar.id}`).click();
     cy.getByTestId('stats-section').should('be.visible');

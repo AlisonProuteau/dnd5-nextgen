@@ -18,7 +18,7 @@ describe('Contact Form', () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
   });
 
-  it('should handle complete feedback contact workflow with validation, anonymous mode, and submission', () => {
+  it('should complete the feedback workflow with validation, anonymous mode, and submission', () => {
     // Test: Setup & Navigation - Verify feedback form (default selection)
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('be.visible');
@@ -103,7 +103,7 @@ describe('Contact Form', () => {
     cy.get('#message').should('have.value', '');
   });
 
-  it('should handle complete bug report workflow with character selection, validation, and submission', () => {
+  it('should complete the bug report workflow with character selection, severity, area, and submission', () => {
     // Test: Setup & Navigation - Switch to Bug report
     cy.selectOption('#type', 'Bug');
     cy.get('#severity').should('be.visible');
@@ -196,7 +196,7 @@ describe('Contact Form', () => {
     cy.get('#message').should('have.value', '');
   });
 
-  it('should handle complete feature request workflow with custom areas and validation', () => {
+  it('should complete the feature request workflow with custom area and contact permission', () => {
     // Test: Setup & Navigation - Switch to Request
     cy.selectOption('#type', 'Request');
     cy.get('#requestArea').should('be.visible');

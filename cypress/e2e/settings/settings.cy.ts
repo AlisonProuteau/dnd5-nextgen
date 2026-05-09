@@ -9,7 +9,7 @@ describe('Settings Page', () => {
     cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] })
   );
 
-  it('should display user information, version selector and currency selector', () => {
+  it('should display user information, version selector, and currency toggle options', () => {
     // Test: User info is displayed
     cy.getByTestId('user-info').should('be.visible');
     cy.getByTestId('user-info').should('contain.text', `User: ${Cypress.testUser.displayName}`);
@@ -30,7 +30,7 @@ describe('Settings Page', () => {
     cy.getByTestId('helper-text').should('not.exist');
   });
 
-  it('should show warning for unavailable versions and disable submission', () => {
+  it('should warn about unavailable versions and disable the submit button', () => {
     // Test: Select unavailable version (assuming only Legacy is available)
     cy.get('#version-select').click();
     cy.get('[data-testid="version-option"]').should('have.length.at.least', 1);
@@ -51,7 +51,7 @@ describe('Settings Page', () => {
     });
   });
 
-  it('should successfully update settings and navigate to home', () => {
+  it('should update settings successfully and navigate to the home page', () => {
     // Test: Intercept successful update
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },

@@ -93,17 +93,19 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('should not display spell section for non-spellcasting classes', () => {
-    cy.visit('/');
-    cy.waitForLoading();
+  context('Section visibility', () => {
+    it('should not display the spell section for non-spellcasting classes', () => {
+      cy.visit('/');
+      cy.waitForLoading();
 
-    const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
-    cy.getByTestId(`character-card-${charID}`).click();
+      const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
+      cy.getByTestId(`character-card-${charID}`).click();
 
-    cy.getByTestId('stats-section').should('be.visible');
-    cy.get('.MuiMobileStepper-dot').should('have.length', 4);
-    cy.getByTestId('previous-step').click();
-    cy.getByTestId('spells-section').should('not.exist');
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.get('.MuiMobileStepper-dot').should('have.length', 4);
+      cy.getByTestId('previous-step').click();
+      cy.getByTestId('spells-section').should('not.exist');
+    });
   });
 
   it('should handle basic spell casting and spell search', () => {

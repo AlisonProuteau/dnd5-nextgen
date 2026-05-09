@@ -29,7 +29,7 @@ describe('Character Sheet', () => {
 
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
-  it('should complete the full character sheet happy path workflow', () => {
+  it('should display all sections with correct stats, proficiencies, equipment, and descriptions', () => {
     cy.visit('/');
     cy.waitForLoading();
     cy.getByTestId('character-card-').should('have.length.at.least', 1);
