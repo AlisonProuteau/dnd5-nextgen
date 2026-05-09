@@ -132,7 +132,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
       ? character.equipments?.find((e) => e.index === data.equipmentIndex)
       : undefined;
 
-    await logAction(
+    const success = await logAction(
       equipment
         ? {
             ...baseAction,
@@ -141,7 +141,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
         : baseAction
     );
 
-    if (resourceUsageMeta?.usage && resourceUsageMeta.index) {
+    if (success && resourceUsageMeta?.usage && resourceUsageMeta.index) {
       const recordUsage = formatResourceUsageIncrement(resourceUsageMeta);
       const successUsage = await firebaseCrud.update(character.id, recordUsage, false);
       if (successUsage)
@@ -150,7 +150,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
         });
     }
 
-    closeForm();
+    if (success) closeForm();
   };
 
   const handleRemove = async (record: ActionRecordType, invalidate?: boolean) => {

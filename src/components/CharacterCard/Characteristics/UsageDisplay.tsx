@@ -64,14 +64,15 @@ export function UsageDisplay({
     const finalUse =
       !mappedUsage.reusable && mappedUsage.currentUsageAmount + 1 === mappedUsage.itemMaxUsage;
 
+    let success = false;
     if (mappedUsage.currentUsageAmount < mappedUsage.itemMaxUsage) {
       const record = formatActionRecord(
         type === 'equipment' ? 'custom' : type,
         formatCustomRecord(resource, type, character.equipments, mappedUsage.itemMaxUsage, finalUse)
       );
-      await logAction(record);
+      success = !!(await logAction(record));
 
-      if (resource.usage && !finalUse)
+      if (success && resource.usage && !finalUse)
         await firebaseCrud.update(
           character.id,
           formatResourceUsageIncrement({
@@ -83,7 +84,7 @@ export function UsageDisplay({
         );
     }
 
-    if (finalUse) {
+    if (success && finalUse) {
       let updatedEquipments = undefined;
       if (type === 'equipment') {
         const currentItem = character.equipments?.find((eq) => eq.index === resource.index);
