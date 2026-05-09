@@ -157,15 +157,13 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
     const success = await removeAction(record.id);
 
     if (success) {
-      if (record?.sourceIndex || record?.equipment?.index) {
-        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(
-          workingCharacterRef.current,
-          record
-        );
-        if (Object.keys(firestoreUpdate).length > 0) {
-          const updateSuccess = await firebaseCrud.update(character.id, firestoreUpdate, false);
-          if (updateSuccess) workingCharacterRef.current = updatedCharacter;
-        }
+      const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(
+        workingCharacterRef.current,
+        record
+      );
+      if (Object.keys(firestoreUpdate).length > 0) {
+        const updateSuccess = await firebaseCrud.update(character.id, firestoreUpdate, false);
+        if (updateSuccess) workingCharacterRef.current = updatedCharacter;
       }
 
       if (invalidate)

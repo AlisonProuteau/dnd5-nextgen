@@ -95,21 +95,27 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
           : undefined;
 
       const formattedRecovery = formatRestoreSpellSlotsRecord(recovery);
-      await logAction(
+      const success = await logAction(
         formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment })
       );
+      if (!success) return;
 
       if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage) {
-        await logAction(
-          formatActionRecord('feature', { ...recoveryFeature, sourceIndex: recoveryFeature.index })
+        const successFeature = await logAction(
+          formatActionRecord('feature', {
+            ...recoveryFeature,
+            sourceIndex: recoveryFeature.index
+          })
         );
 
-        const featureUsageUpdate = formatResourceUsageIncrement({
-          index: recoveryFeature.index,
-          usage: getUsageType(recoveryFeature.usage, fullFeatureList),
-          type: 'feature'
-        });
-        await firebaseCrud.update(character.id, featureUsageUpdate, false);
+        if (successFeature) {
+          const featureUsageUpdate = formatResourceUsageIncrement({
+            index: recoveryFeature.index,
+            usage: getUsageType(recoveryFeature.usage, fullFeatureList),
+            type: 'feature'
+          });
+          await firebaseCrud.update(character.id, featureUsageUpdate, false);
+        }
       }
 
       if (resource) {
