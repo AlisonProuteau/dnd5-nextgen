@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Add, Clear } from '@mui/icons-material';
 import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -11,9 +11,9 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import {
   formatResourceUsageIncrement,
-  formatRevertActionRecordUsage,
   getRelatedFeatures,
-  getUsageType
+  getUsageType,
+  revertActionRecordUsage
 } from '@utils/character/resourceUsage.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type {
@@ -67,6 +67,11 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
       ),
     enabled: !!user?.uid && !!character.id
   });
+
+  const workingCharacterRef = useRef<Character>(character);
+  useEffect(() => {
+    workingCharacterRef.current = character;
+  }, [character]);
 
   useEffect(() => {
     if (!isOpen) refetchRecords();
@@ -153,9 +158,14 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
     if (success) {
       if (record?.sourceIndex || record?.equipment?.index) {
-        const updates = formatRevertActionRecordUsage(character, record);
-        if (Object.keys(updates).length > 0)
-          await firebaseCrud.update(character.id, updates, false);
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(
+          workingCharacterRef.current,
+          record
+        );
+        if (Object.keys(firestoreUpdate).length > 0) {
+          await firebaseCrud.update(character.id, firestoreUpdate, false);
+          workingCharacterRef.current = updatedCharacter;
+        }
       }
 
       if (invalidate)

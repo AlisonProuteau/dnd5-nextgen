@@ -1,9 +1,11 @@
-import { deleteField, DocumentData, increment } from 'firebase/firestore';
+import { deleteField, increment } from 'firebase/firestore';
+import { omit } from 'lodash';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { MagicItem } from '@representations/abilities/magic.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
 import type { Equipment } from '@representations/campaign/equipment.representation';
-import { ABILITIES, type Usage, UsageTypes } from '@representations/common.representation';
+import type { Usage, UsageTypes } from '@representations/common.representation';
+import { ABILITIES } from '@representations/common.representation';
 import type { ActionRecord, Character } from '@representations/user.representation';
 
 /**
@@ -22,63 +24,104 @@ export const formatResourceUsageIncrement = (resourceUsageMeta: {
 };
 
 /**
- * Computes the Firestore update payload to revert a logged action.
+ * Computes the Firestore update payload to revert a logged action and update local character state accordingly.
  * Handles spell slots, feature/trait resource usages, and equipment usages (including consumed items).
  */
-export const formatRevertActionRecordUsage = (
-  data: DocumentData,
+export const revertActionRecordUsage = (
+  character: Character,
   record: ActionRecord
-): Record<string, unknown> => {
-  const updates: Record<string, unknown> = {};
+): { firestoreUpdate: Record<string, unknown>; updatedCharacter: Character } => {
+  const firestoreUpdate: Record<string, unknown> = {};
+  let updatedCharacter = character;
 
   if (record.type === 'spell' && typeof record.value === 'number') {
-    const current: number = data?.usedSpellSlots?.[record.value] ?? 0;
-    if (current > 0)
-      updates[`usedSpellSlots.${record.value}`] = current - 1 === 0 ? deleteField() : current - 1;
-  } else if (record.type === 'feature' || record.type === 'trait') {
-    const current: number = data?.resourceUsages?.[record.sourceIndex!]?.current ?? 0;
-    if (current > 0)
-      updates[`resourceUsages.${record.sourceIndex!}`] =
-        current - 1 === 0
-          ? deleteField()
-          : { ...data?.resourceUsages?.[record.sourceIndex!], current: current - 1 };
-  } else if (record.equipment?.index) {
-    if (record.consumed && typeof record.value === 'number') {
-      const timesPerItem = record.value;
-      updates[`resourceUsages.${record.equipment.index}`] =
-        timesPerItem - 1 === 0
-          ? deleteField()
-          : { ...data?.resourceUsages?.[record.equipment.index], current: timesPerItem - 1 };
+    const current: number = character.usedSpellSlots?.[record.value] ?? 0;
 
-      const existingItem = data?.equipments?.find(
-        (eq: any) => eq.index === record.equipment!.index
-      );
-      if (existingItem) {
-        updates['equipments'] = data?.equipments?.map((eq: any) =>
-          eq.index === record.equipment!.index ? { ...eq, count: (eq.count ?? 1) + 1 } : eq
-        );
-      } else if (record.equipment.type) {
-        updates['equipments'] = [
-          ...(data?.equipments ?? []),
-          {
-            index: record.equipment.index,
-            name: record.equipment.name,
-            type: record.equipment.type,
-            count: 1
-          }
-        ];
-      }
-    } else {
-      const current: number = data?.resourceUsages?.[record.equipment.index]?.current ?? 0;
-      if (current > 0)
-        updates[`resourceUsages.${record.equipment.index}`] =
+    if (current > 0) {
+      firestoreUpdate[`usedSpellSlots.${record.value}`] =
+        current - 1 === 0 ? deleteField() : current - 1;
+
+      updatedCharacter = {
+        ...character,
+        usedSpellSlots:
           current - 1 === 0
-            ? deleteField()
-            : { ...data?.resourceUsages?.[record.equipment.index], current: current - 1 };
+            ? omit(character.usedSpellSlots, record.value)
+            : { ...character.usedSpellSlots, [record.value]: current - 1 }
+      };
+    }
+  } else if (record.type === 'feature' || record.type === 'trait') {
+    if (!record.sourceIndex) return { firestoreUpdate, updatedCharacter };
+
+    const existing = character.resourceUsages?.[record.sourceIndex];
+    if (!existing || existing.current <= 0) return { firestoreUpdate, updatedCharacter };
+
+    firestoreUpdate[`resourceUsages.${record.sourceIndex}`] =
+      existing.current - 1 === 0 ? deleteField() : { ...existing, current: existing.current - 1 };
+    updatedCharacter = {
+      ...character,
+      resourceUsages:
+        existing.current - 1 === 0
+          ? omit(character.resourceUsages, record.sourceIndex)
+          : {
+              ...character.resourceUsages,
+              [record.sourceIndex]: { ...existing, current: existing.current - 1 }
+            }
+    };
+  } else if (record.equipment && record.equipment.index) {
+    if (record.consumed && typeof record.value === 'number') {
+      const existingUsage = character.resourceUsages?.[record.equipment.index];
+
+      firestoreUpdate[`resourceUsages.${record.equipment.index}`] =
+        record.value - 1 === 0 ? deleteField() : { ...existingUsage, current: record.value - 1 };
+      const resourceUsages: Character['resourceUsages'] =
+        record.value - 1 === 0
+          ? omit(character.resourceUsages, record.equipment.index)
+          : {
+              ...character.resourceUsages,
+              [record.equipment.index]: existingUsage
+                ? { ...existingUsage, current: record.value - 1 }
+                : { type: 'other' as const, usage: [] as UsageTypes[], current: record.value - 1 }
+            };
+
+      const existingItem = character.equipments.find((eq) => eq.index === record.equipment?.index);
+      const equipments: Character['equipments'] = existingItem
+        ? character.equipments.map((eq) =>
+            eq.index === record.equipment?.index ? { ...eq, count: (eq.count ?? 1) + 1 } : eq
+          )
+        : record.equipment?.type
+          ? ([
+              ...character.equipments,
+              {
+                index: record.equipment.index,
+                name: record.equipment.name,
+                type: record.equipment.type,
+                count: 1
+              }
+            ] as Character['equipments'])
+          : character.equipments;
+
+      firestoreUpdate['equipments'] = equipments;
+      updatedCharacter = { ...character, resourceUsages, equipments };
+    } else {
+      const existing = character.resourceUsages?.[record.equipment.index];
+      if (!existing || existing.current <= 0) return { firestoreUpdate, updatedCharacter };
+
+      firestoreUpdate[`resourceUsages.${record.equipment.index}`] =
+        existing.current - 1 === 0 ? deleteField() : { ...existing, current: existing.current - 1 };
+      updatedCharacter = {
+        ...character,
+        resourceUsages:
+          existing.current - 1 === 0
+            ? omit(character.resourceUsages, record.equipment.index)
+            : {
+                ...character.resourceUsages,
+                [record.equipment.index]: { ...existing, current: existing.current - 1 }
+              }
+      };
     }
   }
 
-  return updates;
+  return { firestoreUpdate, updatedCharacter };
 };
 
 /**

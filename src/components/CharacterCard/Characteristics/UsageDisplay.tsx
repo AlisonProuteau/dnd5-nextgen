@@ -67,14 +67,7 @@ export function UsageDisplay({
     if (mappedUsage.currentUsageAmount < mappedUsage.itemMaxUsage) {
       const record = formatActionRecord(
         type === 'equipment' ? 'custom' : type,
-        formatCustomRecord(
-          resource,
-          type,
-          character.equipments,
-          mappedUsage.itemMaxUsage,
-          finalUse
-        ),
-        false
+        formatCustomRecord(resource, type, character.equipments, mappedUsage.itemMaxUsage, finalUse)
       );
       await logAction(record);
 
