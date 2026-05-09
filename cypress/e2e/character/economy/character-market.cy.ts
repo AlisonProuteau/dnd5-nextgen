@@ -24,6 +24,8 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.login(Cypress.testUser.uid);
   });
 
+  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithEquipment.id}`));
+
   it('should complete equipment buying and selling workflow with validation and free mode', () => {
     cy.visit('/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();

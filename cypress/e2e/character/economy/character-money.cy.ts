@@ -13,6 +13,8 @@ describe('Character Money Management End-to-End', () => {
     cy.login(Cypress.testUser.uid);
   });
 
+  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`));
+
   it('should complete full money management workflow with validation and error handling', () => {
     cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
 

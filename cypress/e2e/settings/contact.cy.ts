@@ -13,6 +13,11 @@ describe(`Contact Form End-to-End`, () => {
     cy.waitForLoading();
   });
 
+  after(() => {
+    cy.callFirestore('delete', 'tickets');
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
+  });
+
   it('should handle complete feedback contact workflow with validation, anonymous mode, and submission', () => {
     // Test: Setup & Navigation - Verify feedback form (default selection)
     cy.get('#type').should('contain.text', 'Feedback');
