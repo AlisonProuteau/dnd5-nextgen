@@ -198,7 +198,7 @@ describe(`Character Sheet End-to-End`, () => {
         const sectionName = $section.find('h5').text().trim();
         cy.wrap($section)
           .getByTestId(`equipment-item-`, {
-            selector: ':not([data-testid$="-info"],[data-testid$="-equip"])'
+            selector: ':not([data-testid*="-info-"],[data-testid*="-equip-"])'
           })
           .each(($item) => {
             const name = $item.find('p').first().text().trim();
@@ -685,19 +685,19 @@ describe(`Character Sheet End-to-End`, () => {
     cy.clickUntilStep('equipment');
     cy.getByTestId('inventory-weight').should('contain.text', 14);
     cy.getByTestId('-equip', { type: 'contains' }).should('have.length', 1);
-    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('equipment-item-equip-leather-armor').should('contain.text', 'Equipped');
 
     // Test: Unequip armor - AC & weight should update
-    cy.getByTestId('equipment-item-leather-armor-equip').click();
-    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Unequipped');
+    cy.getByTestId('equipment-item-equip-leather-armor').click();
+    cy.getByTestId('equipment-item-equip-leather-armor').should('contain.text', 'Unequipped');
     cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 12);
     cy.clickUntilStep('equipment');
     cy.getByTestId('inventory-weight').should('contain.text', 4);
 
     // Test: Re-equip armor - AC & weight should update back
-    cy.getByTestId('equipment-item-leather-armor-equip').click();
-    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('equipment-item-equip-leather-armor').click();
+    cy.getByTestId('equipment-item-equip-leather-armor').should('contain.text', 'Equipped');
     cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 13);
     cy.clickUntilStep('equipment');
@@ -708,7 +708,7 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('character-container').should('be.visible');
     cy.getByTestId('armor-class').should('contain.text', 13);
     cy.clickUntilStep('equipment');
-    cy.getByTestId('equipment-item-leather-armor-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('equipment-item-equip-leather-armor').should('contain.text', 'Equipped');
 
     // Test: Strength requirement warnings
     cy.visit('/');
@@ -735,21 +735,21 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByRole('tooltip', 'Minimum strength requirement not met').should('not.exist');
 
     // Test: Shield can be equipped/unequipped independently
-    cy.getByTestId('equipment-item-shield-equip').click();
-    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Unequipped');
+    cy.getByTestId('equipment-item-equip-shield').click();
+    cy.getByTestId('equipment-item-equip-shield').should('contain.text', 'Unequipped');
     cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 16);
 
     cy.clickUntilStep('equipment');
-    cy.getByTestId('equipment-item-shield-equip').click();
-    cy.getByTestId('equipment-item-shield-equip').should('contain.text', 'Equipped');
+    cy.getByTestId('equipment-item-equip-shield').click();
+    cy.getByTestId('equipment-item-equip-shield').should('contain.text', 'Equipped');
     cy.clickUntilStep('stats', 'previous');
     cy.getByTestId('armor-class').should('contain.text', 18);
 
     // Test: Unequip chain mail - still shows warning when unequipped
     cy.clickUntilStep('equipment');
-    cy.getByTestId('equipment-item-chain-mail-equip').click();
-    cy.getByTestId('equipment-item-chain-mail-equip').should('contain.text', 'Unequipped');
+    cy.getByTestId('equipment-item-equip-chain-mail').click();
+    cy.getByTestId('equipment-item-equip-chain-mail').should('contain.text', 'Unequipped');
     cy.getByTestId('equipment-item-chain-mail', { type: 'exact' })
       .getByTestId('strength-requirement-warning')
       .should('be.visible');
@@ -762,8 +762,13 @@ describe(`Character Sheet End-to-End`, () => {
     const usageTestChar = {
       ...tillyData,
       id: 'usage-test-character',
+      features: [
+        ...(tillyData.features || []),
+        { index: 'signature-spell', name: 'Signature Spell', type: 'feature' }
+      ],
       resourceUsages: {
-        'arcane-recovery': { type: 'feature', usage: 'long_rest', current: 1 }
+        'arcane-recovery': { type: 'feature', usage: 'long_rest', current: 1 },
+        'signature-spell': { type: 'feature', usage: 'long_rest', current: 2 }
       } as unknown as Character['resourceUsages']
     };
     cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
@@ -775,13 +780,19 @@ describe(`Character Sheet End-to-End`, () => {
 
     cy.clickUntilStep('characteristics');
 
-    // Test: Pre-seeded arcane-recovery is already at max (1/1) and disabled
+    // Test: Pre-seeded arcane-recovery is already at max (1/1) and non-interactable
     cy.getByTestId('feature-name-arcane-recovery')
+      .should('contain.text', '1/1')
+      .getButton(/^USE/)
+      .should('not.exist');
+
+    // Test: Pre-seeded signature-spell is already at max (2/2) and disabled
+    cy.getByTestId('feature-name-signature-spell')
       .getButton(/^USE/)
       .as('featureUseButton')
       .should('be.visible')
       .and('be.disabled')
-      .and('contain.text', '1/1');
+      .and('contain.text', '2/2');
 
     // Test: USE button visible on infernal-legacy trait
     cy.getByTestId('trait-name-infernal-legacy')
@@ -795,11 +806,15 @@ describe(`Character Sheet End-to-End`, () => {
     cy.get('@traitUseButton').click();
     cy.get('@traitUseButton').should('be.disabled').and('contain.text', '1/1');
 
-    // Test: Using infernal-legacy did not overwrite the arcane-recovery entry
+    // Test: Using infernal-legacy did not overwrite the feature entries
     cy.getByTestId('feature-name-arcane-recovery')
+      .and('contain.text', '1/1')
+      .getButton(/^USE/)
+      .should('not.exist');
+    cy.getByTestId('feature-name-signature-spell')
       .getButton(/^USE/)
       .should('be.disabled')
-      .and('contain.text', '1/1');
+      .and('contain.text', '2/2');
     cy.getByTestId('trait-name-infernal-legacy')
       .getButton(/^USE/)
       .should('be.disabled')
@@ -810,11 +825,15 @@ describe(`Character Sheet End-to-End`, () => {
     cy.getByTestId('character-container').should('be.visible');
     cy.clickUntilStep('characteristics');
 
-    cy.getByTestId('trait-name-infernal-legacy')
+    cy.getByTestId('feature-name-arcane-recovery')
+      .and('contain.text', '1/1')
+      .getButton(/^USE/)
+      .should('not.exist');
+    cy.getByTestId('feature-name-signature-spell')
       .getButton(/^USE/)
       .should('be.disabled')
-      .and('contain.text', '1/1');
-    cy.getByTestId('feature-name-arcane-recovery')
+      .and('contain.text', '2/2');
+    cy.getByTestId('trait-name-infernal-legacy')
       .getButton(/^USE/)
       .should('be.disabled')
       .and('contain.text', '1/1');

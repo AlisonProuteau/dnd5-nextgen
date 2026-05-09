@@ -8,7 +8,8 @@ describe('Character Action Record End-to-End', () => {
     health: { current: 3, temporary: 0, deathSaves: { successes: 0, failures: 0 } },
     money: { gp: 5, sp: 2, cp: 0 },
     resourceUsages: {},
-    conditions: []
+    conditions: [],
+    features: [...(tillyData.features ?? []), { index: 'signature-spell', name: 'Signature Spell' }]
   };
   const actionRecordChar = {
     ...tillyData,
@@ -97,13 +98,13 @@ describe('Character Action Record End-to-End', () => {
     cy.getButton('Cancel').click();
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
 
-    // Test: Add a Feature record (Arcane Recovery)
+    // Test: Add a Feature record (Signature Spell)
     cy.getByTestId('add-action-record').click();
     cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
       cy.wrap($dialog).getByRole('button', 'Feature').click();
       cy.wrap($dialog).getButton('Add Record').should('be.disabled');
     });
-    cy.selectOption('#source-select', 'Arcane Recovery');
+    cy.selectOption('#source-select', 'Signature Spell');
     cy.getByRole('dialog', 'Add Action Record').within(($dialog) => {
       cy.wrap($dialog).should('contain.text', 'You may push beyond your limit');
       cy.wrap($dialog).should('contain.text', 'uses');
@@ -113,14 +114,14 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('dialog', 'Add Action Record').should('not.exist');
     cy.getByTestId('record-item-')
       .should('have.length', 2)
-      .should('contain.text', 'Arcane Recovery');
+      .should('contain.text', 'Signature Spell');
 
     cy.getButton('Close').click();
     cy.clickUntilStep('characteristics');
-    cy.getByTestId('feature-name-arcane-recovery')
+    cy.getByTestId('feature-name-signature-spell')
       .getButton(/^USE/)
-      .should('be.disabled')
-      .and('contain.text', '1/1');
+      .should('not.be.disabled')
+      .and('contain.text', '1/2');
 
     // Test: Add 2 Traits record (Infernal Legacy & Hellish Resistance)
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
@@ -310,7 +311,7 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('button', 'Features').click();
     cy.getByTestId('record-item-')
       .should('have.length', 1)
-      .should('contain.text', 'Arcane Recovery');
+      .should('contain.text', 'Signature Spell');
 
     cy.getByRole('button', 'Traits').click();
     cy.getByTestId('record-item-')
@@ -346,7 +347,7 @@ describe('Character Action Record End-to-End', () => {
 
     // Test: Deleting the Feature record decrements the resource usage counter
     cy.getByTestId('record-item-')
-      .filter(':contains("Arcane Recovery")')
+      .filter(':contains("Signature Spell")')
       .getByTestId('record-delete')
       .click();
     cy.getByTestId('record-item-').should('have.length', 9);
@@ -395,15 +396,36 @@ describe('Character Action Record End-to-End', () => {
     cy.getByRole('button', 'All').click();
     cy.getByTestId('record-item-').should('have.length', 7);
     cy.getByTestId(`action-record-drawer`).should('contain.text', '7 records');
-    cy.getByTestId('clear-all-records').click();
-    cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
 
+    // Test: Clear All invalidates cache once even when last deleted record has no sourceIndex.
+    cy.callFirestore(
+      'set',
+      `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}/actionRecords/old-custom`,
+      {
+        id: 'old-custom',
+        type: 'custom',
+        name: 'Old Custom',
+        auto: false,
+        createdAt: new Date('2019-01-01')
+      }
+    );
     cy.getButton('Close').click();
     cy.clickUntilStep('characteristics');
-    cy.getByTestId('feature-name-arcane-recovery')
+    cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+    cy.getByTestId('record-item-').should('have.length', 8);
+
+    cy.getByTestId('clear-all-records').click();
+    cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
+    cy.getButton('Close').click();
+
+    cy.getByTestId('trait-name-infernal-legacy')
       .getButton(/^USE/)
       .should('be.enabled')
       .and('contain.text', '0/1');
+    cy.getByTestId('feature-name-signature-spell')
+      .getButton(/^USE/)
+      .should('be.enabled')
+      .and('contain.text', '0/2');
   });
 
   it('should auto-log records from health changes, money changes, spell casting, and USE actions', () => {
@@ -608,14 +630,14 @@ describe('Character Action Record End-to-End', () => {
     cy.getButton('Close').click();
 
     // Test: Clicking USE on a feature
-    cy.getByTestId('feature-name-arcane-recovery').getButton(/^USE/).click();
+    cy.getByTestId('feature-name-signature-spell').getButton(/^USE/).click();
 
     cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
     cy.getByRole('button', 'Features').click();
     cy.getByTestId('record-item-').should('have.length', 1);
     cy.getByTestId('record-item-')
       .first()
-      .should('contain.text', 'Arcane Recovery')
+      .should('contain.text', 'Signature Spell')
       .and('contain.text', 'auto');
 
     // Test: Delete auto-logged feature record
@@ -625,10 +647,10 @@ describe('Character Action Record End-to-End', () => {
       'Nothing to show yet'
     );
     cy.getButton('Close').click();
-    cy.getByTestId('feature-name-arcane-recovery')
+    cy.getByTestId('feature-name-signature-spell')
       .getButton(/^USE/)
       .should('be.enabled')
-      .and('contain.text', '0/1');
+      .and('contain.text', '0/2');
 
     // Test: Relentless Endurance
     cy.getByTestId(`health-${actionRecordChar.id}`).click();

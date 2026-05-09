@@ -9,12 +9,13 @@ import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
 import { formatActionRecord, formatRestoreSpellSlotsRecord } from '@utils/actions.utils';
 import {
-  buildSpellSlotUpdates,
   canUseResource,
-  createQueryCombiner,
+  formatResourceUsageIncrement,
   getRelatedFeatures,
   getUsageType
-} from '@utils/index';
+} from '@utils/character/resourceUsage.utils';
+import { buildSpellSlotUpdates } from '@utils/character/spells.utils';
+import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import { Character } from '@representations/user.representation';
 import { SpellPartialRecoveryDialog } from './SpellPartialRecoveryDialog';
@@ -94,16 +95,37 @@ export function SpellSlotRecovery({ character, disabled = false }: SpellSlotReco
           : undefined;
 
       const formattedRecovery = formatRestoreSpellSlotsRecord(recovery);
-      await logAction(
-        formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment }),
-        resource ? { usage: resource.usage } : undefined
+      const success = await logAction(
+        formatActionRecord('spell', { ...formattedRecovery, equipment: resource?.equipment })
       );
+      if (!success) return;
 
-      if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage)
-        await logAction(
-          formatActionRecord('feature', { ...recoveryFeature, sourceIndex: recoveryFeature.index }),
-          { usage: getUsageType(recoveryFeature.usage, fullFeatureList) }
+      if (!fullRecovery && canUseFeature && featureEnabled && recoveryFeature?.usage) {
+        const successFeature = await logAction(
+          formatActionRecord('feature', {
+            ...recoveryFeature,
+            sourceIndex: recoveryFeature.index
+          })
         );
+
+        if (successFeature) {
+          const featureUsageUpdate = formatResourceUsageIncrement({
+            index: recoveryFeature.index,
+            usage: getUsageType(recoveryFeature.usage, fullFeatureList),
+            type: 'feature'
+          });
+          await firebaseCrud.update(character.id, featureUsageUpdate, false);
+        }
+      }
+
+      if (resource) {
+        const itemUsageUpdate = formatResourceUsageIncrement({
+          index: resource.equipment.index,
+          usage: resource.usage,
+          type: 'other'
+        });
+        await firebaseCrud.update(character.id, itemUsageUpdate, false);
+      }
 
       closeRecovery();
     }

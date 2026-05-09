@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { Add, Clear } from '@mui/icons-material';
 import { Box, Button, Chip, IconButton, SwipeableDrawer, Typography } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -7,14 +7,20 @@ import { type Dayjs } from 'dayjs';
 import { getEquipment, getFeature, getMagicItem } from '@api/ressources';
 import { getActionRecords } from '@api/users';
 import { useActionRecord } from '@hooks/useActionRecord';
+import { useFirebaseCrud } from '@hooks/useFirebaseCrud';
 import { useToggle } from '@hooks/useToggle';
-import { getRelatedFeatures, getUsageType } from '@utils/index';
+import {
+  formatResourceUsageIncrement,
+  getRelatedFeatures,
+  getUsageType,
+  revertActionRecordUsage
+} from '@utils/character/resourceUsage.utils';
 import { Feature } from '@representations/abilities/feature.representation';
-import type { UsageTypes } from '@representations/common.representation';
 import type {
   Character,
   ActionRecordType as FilterType
 } from '@representations/user.representation';
+import { ActionRecord as ActionRecordType } from '@representations/user.representation';
 import { useAuth } from 'src/providers/AuthProvider';
 import { ActionRecordForm, type ActionRecordFormData } from './ActionRecordForm';
 import { ActionRecordList } from './ActionRecordList';
@@ -43,6 +49,8 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
   const [dateTo, setDateTo] = useState<Dayjs | null>(null);
   const { isOn: isFormOpen, turnOn: openForm, turnOff: closeForm } = useToggle(false);
 
+  const firebaseCrud = useFirebaseCrud<Character>({ collectionPath: 'users/{userId}/characters' });
+
   const {
     logAction,
     removeAction,
@@ -60,12 +68,17 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
     enabled: !!user?.uid && !!character.id
   });
 
+  const workingCharacterRef = useRef<Character>(character);
+  useEffect(() => {
+    workingCharacterRef.current = character;
+  }, [character]);
+
   useEffect(() => {
     if (!isOpen) refetchRecords();
   }, [isOpen]);
 
   const handleAddCustom = async (data: ActionRecordFormData) => {
-    let resourceUsageMeta: { usage: UsageTypes | UsageTypes[] } | undefined;
+    let resourceUsageMeta;
     const item = data.equipmentIndex
       ? await queryClient.fetchQuery({
           queryKey: ['fetchEquipment', character.version, data.equipmentIndex],
@@ -89,8 +102,17 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
       ).filter((f): f is Feature => !!f);
 
       if (data?.usage && (data.type === 'feature' || data.type === 'trait') && data.sourceIndex)
-        resourceUsageMeta = { usage: getUsageType(data.usage, fullFeatures) };
-      else if (item?.usage) resourceUsageMeta = { usage: getUsageType(item.usage, fullFeatures) };
+        resourceUsageMeta = {
+          index: data.sourceIndex,
+          usage: getUsageType(data.usage, fullFeatures),
+          type: data.type
+        };
+      else if (item?.usage)
+        resourceUsageMeta = {
+          index: item.index,
+          usage: getUsageType(item.usage, fullFeatures),
+          type: 'other' as const
+        };
     }
 
     const baseAction = {
@@ -110,16 +132,46 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
       ? character.equipments?.find((e) => e.index === data.equipmentIndex)
       : undefined;
 
-    await logAction(
+    const success = await logAction(
       equipment
         ? {
             ...baseAction,
             equipment: { index: equipment.index, name: equipment.name }
           }
-        : baseAction,
-      resourceUsageMeta
+        : baseAction
     );
-    closeForm();
+
+    if (success && resourceUsageMeta?.usage && resourceUsageMeta.index) {
+      const recordUsage = formatResourceUsageIncrement(resourceUsageMeta);
+      const successUsage = await firebaseCrud.update(character.id, recordUsage, false);
+      if (successUsage)
+        await queryClient.invalidateQueries({
+          queryKey: ['fetchCharacter', user?.uid, character.id]
+        });
+    }
+
+    if (success) closeForm();
+  };
+
+  const handleRemove = async (record: ActionRecordType, invalidate?: boolean) => {
+    const success = await removeAction(record.id);
+
+    if (success) {
+      const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(
+        workingCharacterRef.current,
+        record
+      );
+      if (Object.keys(firestoreUpdate).length > 0) {
+        const updateSuccess = await firebaseCrud.update(character.id, firestoreUpdate, false);
+        if (updateSuccess) workingCharacterRef.current = updatedCharacter;
+      }
+
+      if (invalidate)
+        await queryClient.invalidateQueries({
+          queryKey: ['fetchCharacter', user?.uid, character.id]
+        });
+    }
+    return success;
   };
 
   return (
@@ -217,7 +269,7 @@ export function ActionRecord({ isOpen, onClose, character }: ActionRecordProps) 
 
           <ActionRecordList
             records={records ?? []}
-            onDelete={removeAction}
+            onDelete={handleRemove}
             onEditDescription={async (id: string, description: string) =>
               await updateAction(id, { description: description.trim() || null })
             }

@@ -1,7 +1,3 @@
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage';
-
 describe(`Authentication End-to-End`, () => {
   before(() => cy.clearAllNonDefaultUsers());
 

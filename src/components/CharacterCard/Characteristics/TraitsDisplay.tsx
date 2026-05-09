@@ -5,7 +5,7 @@ import { useQueries } from '@tanstack/react-query';
 import { uniqBy } from 'lodash';
 import { getFeature, getTrait } from '@api/ressources';
 import { blackList } from '@utils/character/characteristics.utils';
-import { getRelatedFeatures } from '@utils/index';
+import { getRelatedFeatures } from '@utils/character/resourceUsage.utils';
 import { createQueryCombiner } from '@utils/query.utils';
 import { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';

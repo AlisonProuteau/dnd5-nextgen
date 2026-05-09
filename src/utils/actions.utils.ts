@@ -177,6 +177,31 @@ export const formatConditionRecord = (
   };
 };
 
+export const formatCustomRecord = (
+  resource: DefaultRepresentation,
+  type: string,
+  equipments?: Character['equipments'],
+  itemMaxUsage?: number,
+  finalUse?: boolean
+): Omit<ActionRecord, 'id' | 'createdAt' | 'type'> => ({
+  name: resource.name,
+  sourceIndex: resource.index,
+  consumed: finalUse && type === 'equipment',
+  value: finalUse && type === 'equipment' ? itemMaxUsage : undefined,
+  equipment:
+    type === 'equipment'
+      ? {
+          index: resource.index,
+          name: resource.name,
+          ...(equipments?.find((eq) => eq.index === resource.index)?.type
+            ? {
+                type: equipments?.find((eq) => eq.index === resource.index)?.type
+              }
+            : {})
+        }
+      : undefined
+});
+
 export const formatActionRecord = (
   type: ActionRecordType,
   ressource: Omit<ActionRecord, 'id' | 'type' | 'createdAt'>,

@@ -1,14 +1,25 @@
-import { describe, expect, it } from 'vitest';
+// @vitest-environment node
+import { describe, expect, it, vi } from 'vitest';
 import {
+  formatResourceUsageIncrement,
   formatUsageLabel,
   getRelatedFeatures,
   getUsageTimes,
   getUsageType,
-  getUsageTypeLabel
-} from '@utils/character/character.utils';
+  getUsageTypeLabel,
+  revertActionRecordUsage
+} from '@utils/character/resourceUsage.utils';
 import type { Feature } from '@representations/abilities/feature.representation';
 import type { Trait } from '@representations/abilities/trait.representation';
-import type { Character } from '@representations/user.representation';
+import type { ActionRecord, Character } from '@representations/user.representation';
+
+vi.mock('firebase/firestore', () => ({
+  deleteField: vi.fn(() => ({ __type: 'deleteField' })),
+  increment: vi.fn((n: number) => ({ __type: 'increment', value: n }))
+}));
+
+const DELETE_FIELD = { __type: 'deleteField' };
+const INCREMENT_1 = { __type: 'increment', value: 1 };
 
 describe('Resource Usage Functions', () => {
   const mockCharacter = {
@@ -451,6 +462,305 @@ describe('Resource Usage Functions', () => {
       expect(formatUsageLabel('ki', { type: 'short_rest', times: 'str' }, mockCharacter, [])).toBe(
         '0/3 (Short Rest)'
       );
+    });
+  });
+
+  describe('formatResourceUsageIncrement', () => {
+    it('single usage type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'action-surge',
+        usage: 'long_rest',
+        type: 'feature'
+      });
+
+      expect(result).toEqual({
+        'resourceUsages.action-surge.type': 'feature',
+        'resourceUsages.action-surge.usage': 'long_rest',
+        'resourceUsages.action-surge.current': INCREMENT_1
+      });
+    });
+
+    it('array of usage types', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'wild-shape',
+        usage: ['short_rest', 'long_rest'],
+        type: 'feature'
+      });
+
+      expect(result['resourceUsages.wild-shape.usage']).toEqual(['short_rest', 'long_rest']);
+    });
+
+    it('trait type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'relentless-endurance',
+        usage: 'long_rest',
+        type: 'trait'
+      });
+
+      expect(result['resourceUsages.relentless-endurance.type']).toBe('trait');
+    });
+
+    it('other type', () => {
+      const result = formatResourceUsageIncrement({
+        index: 'custom-resource',
+        usage: 'once',
+        type: 'other'
+      });
+
+      expect(result['resourceUsages.custom-resource.type']).toBe('other');
+      expect(result['resourceUsages.custom-resource.usage']).toBe('once');
+      expect(result['resourceUsages.custom-resource.current']).toEqual(INCREMENT_1);
+    });
+  });
+
+  describe('revertActionRecordUsage', () => {
+    describe('spell type', () => {
+      const record: ActionRecord = {
+        id: 'r1',
+        type: 'spell',
+        name: 'Fireball',
+        value: 2,
+        createdAt: new Date()
+      };
+
+      it('decrements slot when current > 1', () => {
+        const character = { usedSpellSlots: { 2: 3 } } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({ 'usedSpellSlots.2': 2 });
+        expect(updatedCharacter.usedSpellSlots).toEqual({ 2: 2 });
+      });
+
+      it('deletes slot when current === 1', () => {
+        const character = { usedSpellSlots: { 2: 1 } } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({ 'usedSpellSlots.2': DELETE_FIELD });
+        expect(updatedCharacter.usedSpellSlots).not.toHaveProperty('2');
+      });
+
+      it('returns no-op when current === 0', () => {
+        const character = { usedSpellSlots: { 2: 0 } } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
+
+      it('returns no-op when slot is missing', () => {
+        const character = { usedSpellSlots: {} } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
+    });
+
+    describe('feature type', () => {
+      const record: ActionRecord = {
+        id: 'r5',
+        type: 'feature',
+        name: 'Action Surge',
+        sourceIndex: 'action-surge',
+        createdAt: new Date()
+      };
+
+      it('decrements usage when current > 1', () => {
+        const character = {
+          resourceUsages: { 'action-surge': { type: 'feature', usage: 'short_rest', current: 2 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({
+          'resourceUsages.action-surge': { type: 'feature', usage: 'short_rest', current: 1 }
+        });
+        expect(updatedCharacter.resourceUsages?.['action-surge']?.current).toBe(1);
+      });
+
+      it('deletes resource usage when current === 1', () => {
+        const character = {
+          resourceUsages: { 'action-surge': { type: 'feature', usage: 'short_rest', current: 1 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({ 'resourceUsages.action-surge': DELETE_FIELD });
+        expect(updatedCharacter.resourceUsages).not.toHaveProperty('action-surge');
+      });
+
+      it('returns no-op when current === 0', () => {
+        const character = {
+          resourceUsages: { 'action-surge': { current: 0 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
+    });
+
+    describe('equipment type (not consumed)', () => {
+      const record: ActionRecord = {
+        id: 'r9',
+        type: 'custom',
+        name: 'Staff of Fire',
+        equipment: { index: 'staff-of-fire', name: 'Staff of Fire' },
+        createdAt: new Date()
+      };
+
+      it('decrements usage when current > 1', () => {
+        const character = {
+          resourceUsages: { 'staff-of-fire': { current: 5 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({ 'resourceUsages.staff-of-fire': { current: 4 } });
+        expect(updatedCharacter.resourceUsages?.['staff-of-fire']?.current).toBe(4);
+      });
+
+      it('deletes usage when current === 1', () => {
+        const character = {
+          resourceUsages: { 'staff-of-fire': { current: 1 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({ 'resourceUsages.staff-of-fire': DELETE_FIELD });
+        expect(updatedCharacter.resourceUsages).not.toHaveProperty('staff-of-fire');
+      });
+
+      it('returns no-op when current === 0', () => {
+        const character = {
+          resourceUsages: { 'staff-of-fire': { current: 0 } }
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
+    });
+
+    describe('equipment type (consumed)', () => {
+      const record: ActionRecord = {
+        id: 'r12',
+        type: 'custom',
+        name: 'Healing Potion',
+        equipment: { index: 'healing-potion', name: 'Healing Potion', type: 'potion' },
+        consumed: true,
+        value: 1,
+        createdAt: new Date()
+      };
+
+      it('deletes usage and restores equipment count when value === 1 and item exists', () => {
+        const character = {
+          resourceUsages: {},
+          equipments: [
+            { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 2 }
+          ]
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate['resourceUsages.healing-potion']).toEqual(DELETE_FIELD);
+        expect(firestoreUpdate['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 3 }
+        ]);
+        expect(updatedCharacter.resourceUsages).not.toHaveProperty('healing-potion');
+        expect(updatedCharacter.equipments?.find((e) => e.index === 'healing-potion')?.count).toBe(
+          3
+        );
+      });
+
+      it('decrements usage and restores equipment count when value > 1 and item exists', () => {
+        const character = {
+          resourceUsages: { 'healing-potion': { current: 3 } },
+          equipments: [
+            { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+          ]
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, {
+          ...record,
+          value: 3
+        });
+
+        expect(firestoreUpdate['resourceUsages.healing-potion']).toEqual({ current: 2 });
+        expect(firestoreUpdate['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 2 }
+        ]);
+        expect(updatedCharacter.resourceUsages?.['healing-potion']?.current).toBe(2);
+        expect(updatedCharacter.equipments?.find((e) => e.index === 'healing-potion')?.count).toBe(
+          2
+        );
+      });
+
+      it('adds item back to equipments when item no longer exists and type is known', () => {
+        const character = {
+          resourceUsages: {},
+          equipments: []
+        } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate['resourceUsages.healing-potion']).toEqual(DELETE_FIELD);
+        expect(firestoreUpdate['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+        ]);
+        expect(updatedCharacter.equipments).toHaveLength(1);
+        expect(updatedCharacter.equipments?.[0].count).toBe(1);
+      });
+
+      it('does not update equipments when item is missing and no type', () => {
+        const character = { resourceUsages: {}, equipments: [] } as unknown as Character;
+        const noTypeRecord: ActionRecord = {
+          ...record,
+          equipment: { index: 'mystery-item', name: 'Mystery Item' }
+        };
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(
+          character,
+          noTypeRecord
+        );
+
+        expect(firestoreUpdate['resourceUsages.mystery-item']).toEqual(DELETE_FIELD);
+        expect(firestoreUpdate['equipments']).toEqual([]);
+        expect(updatedCharacter.equipments).toEqual([]);
+      });
+
+      it('handles missing equipments array by treating it as empty', () => {
+        const character = { resourceUsages: {}, equipments: [] } as unknown as Character;
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate['equipments']).toEqual([
+          { index: 'healing-potion', name: 'Healing Potion', type: 'potion', count: 1 }
+        ]);
+        expect(updatedCharacter.equipments).toHaveLength(1);
+      });
+    });
+
+    describe('unrelated types', () => {
+      it('returns no-op for health type', () => {
+        const character = {} as Character;
+        const record: ActionRecord = {
+          id: 'r17',
+          type: 'health',
+          name: 'Healed',
+          value: 10,
+          createdAt: new Date()
+        };
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
+
+      it('returns no-op for money type', () => {
+        const character = {} as Character;
+        const record: ActionRecord = {
+          id: 'r18',
+          type: 'money',
+          name: 'Bought item',
+          createdAt: new Date()
+        };
+        const { firestoreUpdate, updatedCharacter } = revertActionRecordUsage(character, record);
+
+        expect(firestoreUpdate).toEqual({});
+        expect(updatedCharacter).toBe(character);
+      });
     });
   });
 });

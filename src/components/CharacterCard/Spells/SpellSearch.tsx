@@ -12,7 +12,7 @@ import { useToggle } from '@hooks/useToggle';
 import { ControledInput } from '@shared/ControledInput';
 import { FilterSelect } from '@shared/FilterSelect';
 import { Loader } from '@shared/Loader';
-import { toKey } from '@utils/index';
+import { toKey } from '@utils/ui/ui.utils';
 import { SpellFilters } from '@representations/abilities/magic.representation';
 import type { Character } from '@representations/user.representation';
 import type { TypeFromArray } from '@representations/utils.representation';
