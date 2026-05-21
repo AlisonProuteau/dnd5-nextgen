@@ -129,13 +129,15 @@ const characterData = characters.find(({ name }) => name === 'Delfy')!;
 ### Naming Conventions
 
 - File names: `character-<feature>.cy.ts` or `<feature>.cy.ts`
+- `describe` title: plain feature name, e.g. `'Character Health Management'` (no `End-to-End` suffix)
+- `context` title: scenario group noun, e.g. `'Core HP workflow'`, `'Special mechanics'`
 - Comprehensive flow: `it('should complete full <feature> workflow with validation and error handling')`
 - Multiple journeys: `it('should handle <journey> workflow')`
 
 ### Test File Structure
 
 ```typescript
-describe(`Feature Name End-to-End`, () => {
+describe('Feature Name', () => {
   before(() => {
     /* one-time Firestore/auth setup */
   });
@@ -149,11 +151,13 @@ describe(`Feature Name End-to-End`, () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/...`);
   });
 
-  it('should complete full [feature] workflow with validation and error handling', function () {
-    // Test: Setup — re-use before() data where possible; add any flow-specific data here
-    // Test: Validation / error states
-    // Test: Happy path
-    // Test: Post-condition assertions
+  context('Scenario group', () => {
+    it('should complete full [feature] workflow with validation and error handling', function () {
+      // Test: Setup — re-use before() data where possible; add any flow-specific data here
+      // Test: Validation / error states
+      // Test: Happy path
+      // Test: Post-condition assertions
+    });
   });
 });
 ```

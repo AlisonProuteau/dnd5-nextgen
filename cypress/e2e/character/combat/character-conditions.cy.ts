@@ -135,4 +135,66 @@ describe('Character Conditions Management', () => {
       cy.wrap($dialog).getButton('Cancel').click();
     });
   });
+
+  it('should auto-log condition changes to the action record', () => {
+    cy.visit('/');
+    cy.getByTestId(`character-card-${conditionsChar.id}`).click();
+    cy.getByTestId('character-container').should('be.visible');
+
+    // Test: Adding conditions logs a 'custom' auto record
+    cy.getByTestId(`conditions-${conditionsChar.id}`).click();
+    cy.getByRole('dialog', 'Conditions').within(($dialog) => {
+      cy.getByTestId('condition-card-blinded').click();
+      cy.getByTestId('condition-card-charmed').click();
+      cy.getByTestId('condition-card-exhaustion').click();
+      cy.getByTestId('condition-card-exhaustion').click();
+      cy.wrap($dialog).getButton('Save').click();
+    });
+    cy.getByRole('status', 'Conditions Updated').should('be.visible');
+
+    cy.getByTestId(`action-record-${conditionsChar.id}`).click();
+    cy.getByRole('button', 'Custom').click();
+    cy.getByTestId('record-item-')
+      .first()
+      .should('contain.text', 'Conditions Updated')
+      .and('contain.text', 'Added: Blinded, Charmed, Exhaustion (lvl 2)')
+      .and('contain.text', 'auto');
+    cy.getButton('Close').click();
+
+    // Test: Removing and updating conditions logs a record with both changes
+    cy.getByTestId(`conditions-${conditionsChar.id}`).click();
+    cy.getByRole('dialog', 'Conditions').within(($dialog) => {
+      cy.getByTestId('condition-remove-charmed').click();
+      cy.get('#condition-level-exhaustion').clear().type('4').blur();
+      cy.wrap($dialog).getButton('Save').click();
+    });
+    cy.getByRole('status', 'Conditions Updated').should('be.visible');
+
+    cy.getByTestId(`action-record-${conditionsChar.id}`).click();
+    cy.getByTestId('record-item-')
+      .first()
+      .should('contain.text', 'Conditions Updated')
+      .and('contain.text', 'Removed: Charmed')
+      .and('contain.text', 'Updated: Exhaustion (lvl 2 → lvl 4)')
+      .and('contain.text', 'auto');
+    cy.getButton('Close').click();
+
+    // Test: Updating then removing a condition in the same save records only removed
+    cy.getByTestId(`conditions-${conditionsChar.id}`).click();
+    cy.getByRole('dialog', 'Conditions').within(($dialog) => {
+      cy.get('#condition-level-exhaustion').clear().type('3').blur();
+      cy.getByTestId('condition-remove-exhaustion').click();
+      cy.wrap($dialog).getButton('Save').click();
+    });
+    cy.getByRole('status', 'Conditions Updated').should('be.visible');
+
+    cy.getByTestId(`action-record-${conditionsChar.id}`).click();
+    cy.getByTestId('record-item-')
+      .first()
+      .should('contain.text', 'Conditions Updated')
+      .and('contain.text', 'Removed: Exhaustion')
+      .and('not.contain.text', 'Updated:')
+      .and('contain.text', 'auto');
+    cy.getButton('Close').click();
+  });
 });

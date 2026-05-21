@@ -853,6 +853,77 @@ describe('Character Sheet', () => {
         .should('be.disabled')
         .and('contain.text', '1/1');
     });
+
+    it('should auto-log trait and feature USE button clicks to the action record', () => {
+      const tillyData = characters.find(({ name }) => name === 'Tilly')!;
+      const autoLogUseChar = {
+        ...tillyData,
+        id: 'use-auto-log-char',
+        features: [
+          ...(tillyData.features || []),
+          { index: 'signature-spell', name: 'Signature Spell', type: 'feature' }
+        ],
+        resourceUsages: {} as unknown as Character['resourceUsages']
+      };
+      cy.createTestCharacter(Cypress.testUser.uid, autoLogUseChar.id, autoLogUseChar);
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${autoLogUseChar.id}`).click();
+      cy.getByTestId('character-container').should('be.visible');
+      cy.clickUntilStep('characteristics');
+
+      // Test: Clicking USE on a trait auto-logs to action record Traits tab
+      cy.getByTestId('trait-name-infernal-legacy').getButton(/^USE/).click();
+
+      cy.getByTestId(`action-record-${autoLogUseChar.id}`).click();
+      cy.getByRole('button', 'Traits').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Infernal Legacy')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+
+      // Test: Clicking USE on a feature auto-logs to action record Features tab
+      cy.getByTestId('feature-name-signature-spell').getButton(/^USE/).click();
+
+      cy.getByTestId(`action-record-${autoLogUseChar.id}`).click();
+      cy.getByRole('button', 'Features').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Signature Spell')
+        .and('contain.text', 'auto');
+
+      // Test: Deleting the feature record restores the USE button counter
+      cy.getByTestId('record-delete').click();
+      cy.getByTestId(`action-record-drawer-${autoLogUseChar.id}`).should(
+        'contain.text',
+        'Nothing to show yet'
+      );
+      cy.getButton('Close').click();
+      cy.getByTestId('feature-name-signature-spell')
+        .getButton(/^USE/)
+        .should('be.enabled')
+        .and('contain.text', '0/2');
+
+      // Test: Deleting the trait record restores the USE button counter
+      cy.getByTestId(`action-record-${autoLogUseChar.id}`).click();
+      cy.getByRole('button', 'Traits').click();
+      cy.getByTestId('record-item-', { selector: ':contains("Infernal")' })
+        .getByTestId('record-delete')
+        .click();
+      cy.getByTestId(`action-record-drawer-${autoLogUseChar.id}`).should(
+        'contain.text',
+        'Nothing to show yet'
+      );
+      cy.getButton('Close').click();
+      cy.getByTestId('trait-name-infernal-legacy')
+        .getButton(/^USE/)
+        .should('be.enabled')
+        .and('contain.text', '0/1');
+    });
   });
 
   context('Character management', () => {

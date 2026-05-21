@@ -293,6 +293,49 @@ describe('Character Money Management', () => {
         cy.wrap($dialog).getByTestId('cp').find('svg').should('have.attr', 'fill', '#B87333');
       });
     });
+
+    it('should auto-log money gains and losses to the action record', () => {
+      cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
+      cy.getByTestId('character-container').should('be.visible');
+
+      // Test: Money gain
+      cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
+      cy.getByRole('dialog', 'Manage Money').within(($dialog) => {
+        cy.get('#money-units-gp').clear().type('3');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Money Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${characterWithMoney.id}`).click();
+      cy.getByRole('button', 'Money').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', '+3 Gold Pieces')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+
+      // Test: Money loss
+      cy.getByTestId(`coin-purse-${characterWithMoney.id}`).click();
+      cy.getByRole('dialog', 'Manage Money').within(($dialog) => {
+        cy.get('#money-units-gp').clear().type('-4');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Money Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${characterWithMoney.id}`).click();
+      cy.getByRole('button', 'Money').click();
+      cy.getByTestId('record-item-').should('have.length', 2);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', '-4 Gold Pieces')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+    });
   });
 
   context('Additional currencies', () => {

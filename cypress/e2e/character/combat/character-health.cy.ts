@@ -168,6 +168,265 @@ describe('Character Health Management', () => {
       cy.get('#currentHealth').should('have.value', '8');
       cy.get('#temporaryHealth').should('have.value', '3');
     });
+
+    it('should auto-log damage, healing, temporary HP, death saves, cancel discard, and reset to the action record', function () {
+      const tillyData = characters.find(({ name }) => name === 'Tilly')!;
+      const healthAutoLogChar = {
+        ...tillyData,
+        id: `health-auto-log-char-${this.isMobile ? 'mobile' : 'desktop'}`,
+        level: 3,
+        traits: [
+          ...(tillyData.traits ?? []),
+          { index: 'relentless-endurance', name: 'Relentless Endurance' }
+        ],
+        health: { current: 3, temporary: 0, deathSaves: { successes: 0, failures: 0 } },
+        resourceUsages: {},
+        conditions: []
+      };
+      cy.createTestCharacter(Cypress.testUser.uid, healthAutoLogChar.id, healthAutoLogChar);
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${healthAutoLogChar.id}`).click();
+      cy.getByTestId('character-container').should('be.visible');
+
+      // Test: Drawer shows empty state when no records exist
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-drawer-${healthAutoLogChar.id}`).should(
+        'contain.text',
+        'Nothing to show yet'
+      );
+      cy.getButton('Close').click();
+      cy.getByTestId(`action-record-drawer-${healthAutoLogChar.id}`).should('not.exist');
+
+      // Test: Health damage
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('1');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Took Damage')
+        .and('contain.text', '-2')
+        .and('contain.text', 'auto');
+      cy.getByTestId('record-item-')
+        .first()
+        .within(($el) => {
+          cy.wrap($el).getByTestId('record-delete').should('exist');
+          cy.wrap($el).getByTestId('record-edit').should('exist');
+        });
+
+      // Test: Health heal
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('3');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').should('have.length', 2);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Healed')
+        .and('contain.text', '+2')
+        .and('contain.text', 'auto');
+      cy.getByTestId('record-item-').last().should('contain.text', 'Took Damage');
+
+      // Test: Temporary Health gained
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#temporaryHealth').clear().type('5').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').should('have.length', 3);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Gained Temporary Health')
+        .and('contain.text', '+5')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+
+      // Test: Temporary Health lost
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#temporaryHealth').clear().type('0').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').should('have.length', 4);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Lost Temporary Health')
+        .and('contain.text', '-5')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+
+      // Test: Relentless Endurance auto-log
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('0');
+        cy.contains('racial ability').should('be.visible');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Traits').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Relentless Endurance')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
+
+      // Test: Override Hit Points
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.contains('Override Hit Points').closest('label').find('input[type="checkbox"]').check();
+        cy.get('#currentHealth').clear().type('8');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Hit points updated')
+        .and('contain.text', 'Initial: 6')
+        .and('contain.text', 'Final: 8')
+        .and('contain.text', 'auto');
+      cy.getByTestId('record-item-').first().getByTestId('record-delete').should('exist');
+
+      // Test: Death saves — HP drop and first failure in same session
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('0').blur();
+        cy.get('#deathSaveFailures').should('be.visible').clear().type('1').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-')
+        .eq(0)
+        .should('contain.text', 'Death Save')
+        .and('contain.text', 'failure');
+      cy.getByTestId('record-item-').eq(1).should('contain.text', 'Took Damage');
+
+      // Test: Failure incremented twice in the same dialog session
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#deathSaveFailures').should('be.visible').clear().type('2').blur();
+        cy.get('#deathSaveFailures').clear().type('3').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-')
+        .eq(0)
+        .should('contain.text', 'Death Save')
+        .and('contain.text', 'failure');
+      cy.getByTestId('record-item-')
+        .eq(1)
+        .should('contain.text', 'Death Save')
+        .and('contain.text', 'failure');
+      cy.getByTestId('record-item-').eq(2).should('contain.text', 'Took Damage');
+
+      // Test: Success and failure changed in the same session
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#deathSaveSuccesses').should('be.visible').clear().type('1').blur();
+        cy.get('#deathSaveFailures').clear().type('2').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-')
+        .eq(0)
+        .should('contain.text', 'Death Save')
+        .and('contain.text', 'failure');
+      cy.getByTestId('record-item-')
+        .eq(1)
+        .should('contain.text', 'Death Save')
+        .and('contain.text', 'success');
+
+      // Test: Auto-resets death saves silently on heal
+      cy.getButton('Close').click();
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('3').blur();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').eq(0).should('contain.text', 'Healed');
+
+      // Test: Cancel discards the entire backlog — no new records logged
+      cy.getByTestId('record-item-').then(($items) => {
+        const countBefore = $items.length;
+        cy.getButton('Close').click();
+        cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+        cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+          cy.get('#currentHealth').clear().type('0').blur();
+          cy.get('#deathSaveFailures').should('be.visible').clear().type('1').blur();
+          cy.wrap($dialog).getButton('Cancel').click();
+        });
+        cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+        cy.getByRole('button', 'Health').click();
+        cy.getByTestId('record-item-').should('have.length', countBefore);
+        cy.getButton('Close').click();
+      });
+
+      // Test: Reset button logs a "Reset Health" summary record
+      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').clear().type('0').blur();
+        cy.get('#deathSaveFailures').should('be.visible').clear().type('2').blur();
+        cy.getByTestId('reset-health-button').click();
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('status', 'Health Updated').should('be.visible');
+
+      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-')
+        .eq(0)
+        .should('contain.text', 'Reset Health')
+        .and('contain.text', 'Current HP: 3 -> 8')
+        .and('contain.text', 'Reset Racial Ability uses')
+        .and('contain.text', 'Pending Logs:')
+        .and('contain.text', 'Took Damage: -3 HP')
+        .and('contain.text', 'Death Save: 2 failure');
+      cy.getButton('Close').click();
+    });
   });
 
   context('Special mechanics', () => {

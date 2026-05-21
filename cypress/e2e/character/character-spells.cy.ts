@@ -108,8 +108,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
   });
 
-  context('Views & spell management', () => {
-    it('should handle basic spell casting and spell search', () => {
+  context('Views', () => {
+    it('should switch between All Spells, How It Works, and Spellbook views', () => {
       const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
       const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
 
@@ -204,6 +204,68 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       cy.getButton('How does it work ?').next().click();
       cy.getByRole('menuitem', 'Spellbook').click();
       cy.getByTestId('spells-section').contains('Spell Slots').should('be.visible');
+    });
+  });
+
+  context('Racial spells', () => {
+    it('should display racial spells without a Cast button', () => {
+      const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.createTestCharacter(Cypress.testUser.uid, charID, {
+        ...charData,
+        id: charID,
+        name: 'Test Wizard Racial',
+        version: 'Legacy',
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        temporarySpells: [],
+        equipments: [
+          ...(charData.equipments ?? []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
 
       // Test: Verify racial spells are displayed and don't have Cast button
       cy.getByTestId('spells-section')
@@ -228,6 +290,68 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         .within(() => {
           cy.getByTestId('cast-spell-faerie-fire').should('not.exist');
         });
+    });
+  });
+
+  context('Spell casting & slots', () => {
+    it('should cast, upcast, and track slot consumption — and auto-log casts to the action record', () => {
+      const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.createTestCharacter(Cypress.testUser.uid, charID, {
+        ...charData,
+        id: charID,
+        name: 'Test Wizard Racial',
+        version: 'Legacy',
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        temporarySpells: [],
+        equipments: [
+          ...(charData.equipments ?? []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
 
       // Test: Verify multiple spell slot levels are displayed
       cy.getByTestId('spells-section').within(() => {
@@ -237,7 +361,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         cy.contains('2 of 2').should('be.visible');
       });
 
-      // Test: Upast level 1 spell from details modal
+      // Test: Upcast level 1 spell from details modal
       cy.getByTestId('spells-section')
         .getByTestId('spell-list-1')
         .getByTestId('view-spell-item-magic-missile')
@@ -290,7 +414,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         cy.contains('1 of 2').should('be.visible');
       });
 
-      // Test: Verify wizard all rituat spells are displayed and don't have Cast button
+      // Test: Verify wizard all ritual spells are displayed and don't have Cast button
       cy.getByTestId('spells-section').getButton('All Ritual Spells').click();
       cy.getByTestId('spells-section')
         .getButton('All Ritual Spells')
@@ -300,47 +424,132 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         .getByTestId('cast-spell-')
         .should('not.exist');
 
-      // Test: Temporary Spells — add via manage dialog
-      const tempSpell = { index: 'hold-person', name: 'Hold Person' };
-      cy.getByTestId('spells-section').contains('Temporary Spells').click();
-      cy.getByTestId('spells-section').getButton('Manage').click();
-      cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
+      // Test: Auto-log — Cast Magic Missile at Level 1
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 1').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
 
-      cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
-        cy.get('#search').type('hold');
-        cy.wrap($dialog)
-          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
-          .click();
-        cy.wrap($dialog)
-          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
-          .should('exist');
-        cy.wrap($dialog)
-          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
-          .should('not.exist');
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByRole('button', 'Spells').click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Magic Missile')
+        .and('contain.text', '+1 slot lvl')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
 
-        // Test: toggle off then back on
-        cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).click();
-        cy.wrap($dialog)
-          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
-          .click();
-        cy.wrap($dialog)
-          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
-          .should('exist');
+      // Test: Auto-log — Upcast Magic Missile at Level 2
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 2').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
 
-        cy.wrap($dialog).getButton('Close').click();
-      });
-      cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByTestId('record-item-').should('have.length', 2);
+      cy.getByTestId('record-item-')
+        .first()
+        .should('contain.text', 'Magic Missile')
+        .and('contain.text', '+2 slot lvl')
+        .and('contain.text', 'Upcast from lvl1 spell')
+        .and('contain.text', 'auto');
+      cy.getButton('Close').click();
 
-      // Test: Spell appears in Temporary Spells section
-      cy.getByTestId('spells-section')
-        .getByTestId(`view-spell-item-${tempSpell.index}`)
-        .should('be.visible')
-        .and('contain.text', tempSpell.name);
-
-      // Test: Cast the temporary spell — direct cast (only 1 level-2 slot, no upcast possible)
-      cy.getByTestId(`cast-spell-${tempSpell.index}`).should('be.enabled').click();
+      // Test: Delete upcast record — restores Level 2 slot
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '2 of 4');
       cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
-      cy.getButton(/Recover/).should('have.length', 2);
+
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByRole('button', 'Spells').click();
+      cy.getByTestId('record-item-')
+        .filter(':contains("+2 slot lvl")')
+        .getByTestId('record-delete')
+        .click();
+      cy.getByTestId('record-item-').should('have.length', 1);
+      cy.getButton('Close').click();
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+
+      // Test: Delete cast record — restores Level 1 slot, Recover button disappears
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByRole('button', 'Spells').click();
+      cy.getByTestId('record-item-')
+        .filter(':contains("+1 slot lvl")')
+        .getByTestId('record-delete')
+        .click();
+      cy.getByTestId(`action-record-drawer-${charID}`).should('contain.text', 'Nothing to show yet');
+      cy.getButton('Close').click();
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+      cy.getByTestId('spell-slots')
+        .getButton(/Recover/)
+        .should('not.exist');
+    });
+  });
+
+  context('Spell recovery', () => {
+    it('should recover spell slots via Arcane Recovery, Pearl of Power, and Full Recover', () => {
+      const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.createTestCharacter(Cypress.testUser.uid, charID, {
+        ...charData,
+        id: charID,
+        name: 'Test Wizard Racial',
+        version: 'Legacy',
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        temporarySpells: [],
+        equipments: [
+          ...(charData.equipments ?? []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
+
+      // Consume some slots to enable recovery buttons
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 2').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
 
       // Test: Cancel and ESC both dismiss the dialog without changes
       cy.getByTestId('short-rest-restore').click();
@@ -352,8 +561,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
 
       // Test: Dialog — Arcane Recovery
-      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
-      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
       cy.getByTestId('short-rest-restore').click();
       cy.getByRole('dialog', 'Recover Spell Slots').within(($dialog) => {
         cy.wrap($dialog)
@@ -400,8 +609,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       });
       cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
       cy.getByRole('status', 'Spells slots updated').should('be.visible');
-      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
-      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '3 of 4');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '2 of 2');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
       cy.getByTestId('short-rest-restore').should('be.visible').and('not.be.disabled');
 
       // Test: Pearl of Power recovery
@@ -426,7 +635,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       });
       cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
       cy.getByRole('status', 'Spells slots updated').should('be.visible');
-      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '1 of 2');
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '2 of 2');
       cy.getByTestId('spell-slots').should('contain.text', 'Level 1').and('contain.text', '4 of 4');
       cy.getByTestId('short-rest-restore').should('not.exist');
 
@@ -443,6 +652,110 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
         .filter(':contains("Spell Slots Restored")')
         .should('not.contain.text', '0 slot');
       cy.getButton('Close').click();
+    });
+  });
+
+  context('Temporary spells', () => {
+    it('should add, cast, and remove temporary spells', () => {
+      const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.createTestCharacter(Cypress.testUser.uid, charID, {
+        ...charData,
+        id: charID,
+        name: 'Test Wizard Racial',
+        version: 'Legacy',
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        temporarySpells: [],
+        equipments: [
+          ...(charData.equipments ?? []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.get('.MuiMobileStepper-dot').should('have.length', 5);
+      cy.clickUntilStep('spells', 'previous');
+
+      // Test: Temporary Spells — add via manage dialog
+      const tempSpell = { index: 'hold-person', name: 'Hold Person' };
+      cy.getByTestId('spells-section').contains('Temporary Spells').click();
+      cy.getByTestId('spells-section').getButton('Manage').click();
+      cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
+
+      cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
+        cy.get('#search').type('hold');
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('exist');
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .should('not.exist');
+
+        // Test: toggle off then back on
+        cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('exist');
+
+        cy.wrap($dialog).getButton('Close').click();
+      });
+      cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+
+      // Test: Spell appears in Temporary Spells section
+      cy.getByTestId('spells-section')
+        .getByTestId(`view-spell-item-${tempSpell.index}`)
+        .should('be.visible')
+        .and('contain.text', tempSpell.name);
+
+      // Test: Cast the temporary spell — direct cast (only 1 level-2 slot, no upcast possible)
+      cy.getByTestId(`cast-spell-${tempSpell.index}`).should('be.enabled').click();
+      cy.getByTestId('spell-slots').should('contain.text', 'Level 2').and('contain.text', '0 of 2');
+      cy.getButton(/Recover/).should('have.length', 2);
 
       // Test: Persistence — temporary spell survives a reload
       cy.reload();
@@ -470,9 +783,71 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       cy.getByTestId('spells-section')
         .getByTestId(`view-spell-item-${tempSpell.index}`)
         .should('not.exist');
+    });
+
+    it('should filter the temporary spell search by level, school, ritual, concentration, class, and subclass', () => {
+      const charData = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const charID = `test-wizard-views-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.createTestCharacter(Cypress.testUser.uid, charID, {
+        ...charData,
+        id: charID,
+        name: 'Test Wizard Racial',
+        version: 'Legacy',
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        temporarySpells: [],
+        equipments: [
+          ...(charData.equipments ?? []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.visit('/');
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.get('.MuiMobileStepper-dot').should('have.length', 5);
+      cy.clickUntilStep('spells', 'previous');
 
       // Test: Empty state — prompt shown, no results
+      cy.getByTestId('spells-section').contains('Temporary Spells').click();
       cy.getByTestId('spells-section').getButton('Manage').click();
+      cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
       cy.getByRole('dialog', 'Temporary Spells')
         .contains('Search by name or apply a filter')
         .should('be.visible');
@@ -648,7 +1023,6 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
       cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
     });
   });
-
   context('Per-class spell workflow', () => {
     spellcastingClasses.map(
       ({
