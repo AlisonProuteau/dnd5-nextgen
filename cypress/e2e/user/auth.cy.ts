@@ -223,11 +223,14 @@ describe('Authentication', () => {
   });
 
   context('Header navigation', () => {
+    before(() => cy.createTestCharacter(Cypress.testUser.uid));
+
     beforeEach(() => {
-      cy.createTestCharacter(Cypress.testUser.uid);
       cy.login(Cypress.testUser.uid);
       cy.visit('/');
     });
+
+    after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
     it('should navigate through the header menu for regular users', () => {
       // Test: User display name/email is shown

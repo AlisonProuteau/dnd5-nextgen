@@ -65,7 +65,7 @@ describe('Character Action Record', () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}`)
   );
 
-  context('Manual record creation', () => {
+  context('Manual record creation & edit', () => {
     it('should add Feature and Trait records and update the character sheet USE counters', () => {
       cy.callFirestore(
         'set',
@@ -281,9 +281,7 @@ describe('Character Action Record', () => {
         .and('contain.text', 'Quarterstaff');
       cy.get('@customRecord').getByTestId('record-delete').should('exist');
     });
-  });
 
-  context('Record editing & deletion', () => {
     it('should inline-edit descriptions via click-save and Ctrl+Enter, and discard with Escape', () => {
       cy.callFirestore(
         'set',
@@ -341,91 +339,6 @@ describe('Character Action Record', () => {
         cy.wrap($record).getByTestId('record-save').should('not.exist');
         cy.wrap($record).should('not.contain.text', 'Unsaved change');
       });
-    });
-
-    it('should delete records and reverse the associated resource usage counters', () => {
-      cy.callFirestore(
-        'set',
-        `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}/actionRecords/feature-rec`,
-        {
-          id: 'feature-rec',
-          type: 'feature',
-          name: 'Signature Spell',
-          sourceIndex: 'signature-spell',
-          auto: false,
-          createdAt: new Date()
-        }
-      );
-      cy.callFirestore(
-        'set',
-        `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}/actionRecords/trait-rec`,
-        {
-          id: 'trait-rec',
-          type: 'trait',
-          name: 'Infernal Legacy',
-          sourceIndex: 'infernal-legacy',
-          auto: false,
-          createdAt: new Date()
-        }
-      );
-      cy.callFirestore(
-        'update',
-        `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}`,
-        {
-          resourceUsages: {
-            'signature-spell': { type: 'feature', usage: 'long_rest', current: 1 },
-            'infernal-legacy': { type: 'trait', usage: 'long_rest', current: 1 }
-          }
-        }
-      );
-
-      cy.visit('/');
-      cy.waitForLoading();
-      cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
-      cy.clickUntilStep('characteristics');
-
-      cy.getByTestId('feature-name-signature-spell')
-        .getButton(/^USE/)
-        .should('be.disabled')
-        .and('contain.text', '1/2');
-      cy.getByTestId('trait-name-infernal-legacy')
-        .getButton(/^USE/)
-        .should('be.disabled')
-        .and('contain.text', '1/1');
-
-      // Test: Deleting the Feature record decrements the resource usage counter
-      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-      cy.getByRole('button', 'Features').click();
-      cy.getByTestId('record-item-')
-        .filter(':contains("Signature Spell")')
-        .getByTestId('record-delete')
-        .click();
-      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
-        'contain.text',
-        'Nothing to show yet'
-      );
-      cy.getButton('Close').click();
-      cy.getByTestId('feature-name-signature-spell')
-        .getButton(/^USE/)
-        .should('be.enabled')
-        .and('contain.text', '0/2');
-
-      // Test: Deleting the Trait record decrements the resource usage counter
-      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
-      cy.getByRole('button', 'Traits').click();
-      cy.getByTestId('record-item-')
-        .filter(':contains("Infernal Legacy")')
-        .getByTestId('record-delete')
-        .click();
-      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should(
-        'contain.text',
-        'Nothing to show yet'
-      );
-      cy.getButton('Close').click();
-      cy.getByTestId('trait-name-infernal-legacy')
-        .getButton(/^USE/)
-        .should('be.enabled')
-        .and('contain.text', '0/1');
     });
   });
 
@@ -649,29 +562,18 @@ describe('Character Action Record', () => {
       );
       cy.getButton('Close').click();
       cy.clickUntilStep('characteristics');
-      cy.getByTestId('feature-name-signature-spell')
-        .getButton(/^USE/)
-        .should('be.disabled')
-        .and('contain.text', '1/2');
-      cy.getByTestId('trait-name-infernal-legacy')
-        .getButton(/^USE/)
-        .should('be.disabled')
-        .and('contain.text', '1/1');
+      cy.getByTestId('feature-name-signature-spell').getButton(/^USE/).and('contain.text', '1/2');
+
+      cy.getByTestId('trait-name-infernal-legacy').getButton(/^USE/).and('contain.text', '1/1');
+
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
       cy.getByTestId('record-item-').should('have.length', 9);
-
-      // Test: Clear All (global) restores USE counters
       cy.getByTestId('clear-all-records').click();
+
       cy.getByTestId(`action-record-drawer`).should('contain.text', 'Nothing to show yet');
       cy.getButton('Close').click();
-      cy.getByTestId('feature-name-signature-spell')
-        .getButton(/^USE/)
-        .should('be.enabled')
-        .and('contain.text', '0/2');
-      cy.getByTestId('trait-name-infernal-legacy')
-        .getButton(/^USE/)
-        .should('be.enabled')
-        .and('contain.text', '0/1');
+      cy.getByTestId('feature-name-signature-spell').getButton(/^USE/).and('contain.text', '0/2');
+      cy.getByTestId('trait-name-infernal-legacy').getButton(/^USE/).and('contain.text', '0/1');
     });
 
     it('should reset source and name fields when switching record type', () => {

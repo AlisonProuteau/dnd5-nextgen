@@ -8,8 +8,15 @@ describe('Character Money Management', () => {
     money: { gp: 10, sp: 5, cp: 3 }
   };
 
+  before(() =>
+    cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney)
+  );
+
   beforeEach(() => {
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`);
+    cy.callFirestore(
+      'delete',
+      `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}/actionRecords`
+    );
     cy.login(Cypress.testUser.uid);
   });
 
@@ -19,8 +26,6 @@ describe('Character Money Management', () => {
 
   context('Core workflow', () => {
     it('should manage multi-denomination currency with input validation', () => {
-      cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
-
       cy.visit('/');
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
@@ -295,8 +300,6 @@ describe('Character Money Management', () => {
     });
 
     it('should auto-log money gains and losses to the action record', () => {
-      cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney);
-
       cy.visit('/');
       cy.waitForLoading();
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
@@ -328,7 +331,6 @@ describe('Character Money Management', () => {
       cy.getByRole('status', 'Money Updated').should('be.visible');
 
       cy.getByTestId(`action-record-${characterWithMoney.id}`).click();
-      cy.getByRole('button', 'Money').click();
       cy.getByTestId('record-item-').should('have.length', 2);
       cy.getByTestId('record-item-')
         .first()
@@ -351,16 +353,19 @@ describe('Character Money Management', () => {
       };
 
       // Test: Setup & Navigation - Enable both additional currencies in user settings
-      cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, {
-        ...characterWithMoney,
-        money: {
-          pp: 2,
-          gp: 5,
-          ep: 3,
-          sp: 4,
-          cp: 7
+      cy.callFirestore(
+        'update',
+        `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`,
+        {
+          money: {
+            pp: 2,
+            gp: 5,
+            ep: 3,
+            sp: 4,
+            cp: 7
+          }
         }
-      });
+      );
       cy.visit('/');
 
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();

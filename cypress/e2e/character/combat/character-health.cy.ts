@@ -1,7 +1,7 @@
 import { characters } from '../../../support/mocks/characterList';
 
 describe('Character Health Management', () => {
-  const characterData = characters.find(({ name }) => name === 'Delfy')!;
+  const isMobile = Cypress.config('viewportWidth') === 375;
   const baseHealth = {
     hit_points: 10,
     health: {
@@ -12,29 +12,42 @@ describe('Character Health Management', () => {
     resourceUsages: {}
   };
 
-  beforeEach(() => {
-    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
-    cy.login(Cypress.testUser.uid);
-  });
-
-  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
+  beforeEach(() => cy.login(Cypress.testUser.uid));
 
   context('Core HP workflow', () => {
-    it('should manage current HP, temporary HP, and death saves with input validation', function () {
-      const healthTestChar = {
-        ...characterData,
-        ...baseHealth,
-        id: `health-test-char-${this.isMobile ? 'mobile' : 'desktop'}`
-      };
-      cy.createTestCharacter(Cypress.testUser.uid, healthTestChar.id, healthTestChar);
+    const tillyData = characters.find(({ name }) => name === 'Tilly')!;
+    const healthTestCharId = `health-test-char-${isMobile ? 'mobile' : 'desktop'}`;
 
+    before(() =>
+      cy.createTestCharacter(Cypress.testUser.uid, healthTestCharId, {
+        ...tillyData,
+        ...baseHealth,
+        id: healthTestCharId
+      })
+    );
+
+    beforeEach(() => {
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${healthTestCharId}`, {
+        ...baseHealth,
+        conditions: []
+      });
+      cy.callFirestore(
+        'delete',
+        `users/${Cypress.testUser.uid}/characters/${healthTestCharId}/actionRecords`
+      );
+    });
+
+    after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
+
+    it('should manage current HP, temporary HP, and death saves with input validation', () => {
       cy.visit('/');
-      cy.getByTestId(`character-card-${healthTestChar.id}`).click();
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId('hit-points').should('contain.text', '10');
 
       // Test: Setup & Initial State - Open, verify, test cancel and ESC
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#temporaryHealth').should('have.value', '0').and('be.visible');
         cy.get('#currentHealth').should('have.value', '10').and('be.visible');
@@ -44,12 +57,12 @@ describe('Character Health Management', () => {
       cy.getByRole('dialog', 'Manage Health').should('not.exist');
 
       // Test: ESC key also closes dialog without changes
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.press('Escape');
       cy.getByRole('dialog', 'Manage Health').should('not.exist');
 
       // Test: Temporary Health
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('label[for="temporaryHealth"]').find('button').click();
         cy.getByRole('tooltip').should('contain.text', 'Grants a protective buffer');
@@ -67,7 +80,7 @@ describe('Character Health Management', () => {
       cy.getByTestId('hit-points').should('contain.text', '15');
 
       // Test: Full cycle with all states
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#temporaryHealth').clear().type('0').blur();
 
@@ -82,7 +95,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
       cy.getByRole('dialog', 'Manage Health').should('not.exist');
 
-      cy.getByTestId(`health-${healthTestChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${healthTestCharId}`).should('be.visible').click();
       cy.getByRole('dialog', 'Manage Health')
         .should('contain.text', 'Your character is unconscious. Manage death saves below.')
         .within(($dialog) => {
@@ -111,7 +124,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
       // Test: Death saves cleared when health restored or healed
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '0');
         cy.get('#temporaryHealth').should('have.value', '0');
@@ -139,7 +152,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
       // Test: Unsaved Changes Confirmation
-      cy.getByTestId(`health-${healthTestChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${healthTestCharId}`).should('be.visible').click();
       cy.getByRole('dialog', 'Manage Health').get('#currentHealth').clear().type('8').blur();
       cy.getByRole('dialog', 'Manage Health').click();
       cy.press('Escape');
@@ -153,7 +166,7 @@ describe('Character Health Management', () => {
       cy.getByTestId('hit-points').should('contain.text', '5');
 
       // Test: Persistence - Verify data survives reload
-      cy.getByTestId(`health-${healthTestChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${healthTestCharId}`).should('be.visible').click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '5').clear().type('8').blur();
         cy.get('#temporaryHealth').clear().type('3').blur();
@@ -164,50 +177,47 @@ describe('Character Health Management', () => {
       cy.reload();
 
       cy.getByTestId('hit-points').should('contain.text', '11');
-      cy.getByTestId(`health-${healthTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.get('#currentHealth').should('have.value', '8');
       cy.get('#temporaryHealth').should('have.value', '3');
     });
 
-    it('should auto-log damage, healing, temporary HP, death saves, cancel discard, and reset to the action record', function () {
-      const tillyData = characters.find(({ name }) => name === 'Tilly')!;
-      const healthAutoLogChar = {
-        ...tillyData,
-        id: `health-auto-log-char-${this.isMobile ? 'mobile' : 'desktop'}`,
+    it('should auto-log damage, healing, temporary HP, death saves, cancel discard, and reset to the action record', () => {
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${healthTestCharId}`, {
         level: 3,
         traits: [
           ...(tillyData.traits ?? []),
           { index: 'relentless-endurance', name: 'Relentless Endurance' }
         ],
+        hit_points: 6,
         health: { current: 3, temporary: 0, deathSaves: { successes: 0, failures: 0 } },
         resourceUsages: {},
         conditions: []
-      };
-      cy.createTestCharacter(Cypress.testUser.uid, healthAutoLogChar.id, healthAutoLogChar);
+      });
 
       cy.visit('/');
       cy.waitForLoading();
-      cy.getByTestId(`character-card-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
       // Test: Drawer shows empty state when no records exist
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByTestId(`action-record-drawer-${healthAutoLogChar.id}`).should(
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
+      cy.getByTestId(`action-record-drawer-${healthTestCharId}`).should(
         'contain.text',
         'Nothing to show yet'
       );
       cy.getButton('Close').click();
-      cy.getByTestId(`action-record-drawer-${healthAutoLogChar.id}`).should('not.exist');
+      cy.getByTestId(`action-record-drawer-${healthTestCharId}`).should('not.exist');
 
       // Test: Health damage
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('1');
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Health').click();
       cy.getByTestId('record-item-').should('have.length', 1);
       cy.getByTestId('record-item-')
@@ -224,14 +234,14 @@ describe('Character Health Management', () => {
 
       // Test: Health heal
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('3');
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Health').click();
       cy.getByTestId('record-item-').should('have.length', 2);
       cy.getByTestId('record-item-')
@@ -243,14 +253,14 @@ describe('Character Health Management', () => {
 
       // Test: Temporary Health gained
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#temporaryHealth').clear().type('5').blur();
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Health').click();
       cy.getByTestId('record-item-').should('have.length', 3);
       cy.getByTestId('record-item-')
@@ -261,14 +271,14 @@ describe('Character Health Management', () => {
       cy.getButton('Close').click();
 
       // Test: Temporary Health lost
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#temporaryHealth').clear().type('0').blur();
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Health').click();
       cy.getByTestId('record-item-').should('have.length', 4);
       cy.getByTestId('record-item-')
@@ -279,7 +289,7 @@ describe('Character Health Management', () => {
       cy.getButton('Close').click();
 
       // Test: Relentless Endurance auto-log
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('0');
         cy.contains('racial ability').should('be.visible');
@@ -287,7 +297,7 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Traits').click();
       cy.getByTestId('record-item-').should('have.length', 1);
       cy.getByTestId('record-item-')
@@ -297,7 +307,7 @@ describe('Character Health Management', () => {
       cy.getButton('Close').click();
 
       // Test: Override Hit Points
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.contains('Override Hit Points').closest('label').find('input[type="checkbox"]').check();
         cy.get('#currentHealth').clear().type('8');
@@ -305,8 +315,9 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByRole('button', 'Health').click();
+      cy.getByTestId('record-item-').should('have.length', 7);
       cy.getByTestId('record-item-')
         .first()
         .should('contain.text', 'Hit points updated')
@@ -317,7 +328,7 @@ describe('Character Health Management', () => {
 
       // Test: Death saves — HP drop and first failure in same session
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('0').blur();
         cy.get('#deathSaveFailures').should('be.visible').clear().type('1').blur();
@@ -325,8 +336,7 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByRole('button', 'Health').click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByTestId('record-item-')
         .eq(0)
         .should('contain.text', 'Death Save')
@@ -335,7 +345,7 @@ describe('Character Health Management', () => {
 
       // Test: Failure incremented twice in the same dialog session
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#deathSaveFailures').should('be.visible').clear().type('2').blur();
         cy.get('#deathSaveFailures').clear().type('3').blur();
@@ -343,8 +353,7 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByRole('button', 'Health').click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByTestId('record-item-')
         .eq(0)
         .should('contain.text', 'Death Save')
@@ -357,7 +366,7 @@ describe('Character Health Management', () => {
 
       // Test: Success and failure changed in the same session
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#deathSaveSuccesses').should('be.visible').clear().type('1').blur();
         cy.get('#deathSaveFailures').clear().type('2').blur();
@@ -365,8 +374,7 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByRole('button', 'Health').click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByTestId('record-item-')
         .eq(0)
         .should('contain.text', 'Death Save')
@@ -378,35 +386,33 @@ describe('Character Health Management', () => {
 
       // Test: Auto-resets death saves silently on heal
       cy.getButton('Close').click();
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('3').blur();
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByRole('button', 'Health').click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByTestId('record-item-').eq(0).should('contain.text', 'Healed');
 
       // Test: Cancel discards the entire backlog — no new records logged
       cy.getByTestId('record-item-').then(($items) => {
         const countBefore = $items.length;
         cy.getButton('Close').click();
-        cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+        cy.getByTestId(`health-${healthTestCharId}`).click();
         cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
           cy.get('#currentHealth').clear().type('0').blur();
           cy.get('#deathSaveFailures').should('be.visible').clear().type('1').blur();
           cy.wrap($dialog).getButton('Cancel').click();
         });
-        cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-        cy.getByRole('button', 'Health').click();
+        cy.getByTestId(`action-record-${healthTestCharId}`).click();
         cy.getByTestId('record-item-').should('have.length', countBefore);
         cy.getButton('Close').click();
       });
 
       // Test: Reset button logs a "Reset Health" summary record
-      cy.getByTestId(`health-${healthAutoLogChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('0').blur();
         cy.get('#deathSaveFailures').should('be.visible').clear().type('2').blur();
@@ -415,8 +421,7 @@ describe('Character Health Management', () => {
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`action-record-${healthAutoLogChar.id}`).click();
-      cy.getByRole('button', 'Health').click();
+      cy.getByTestId(`action-record-${healthTestCharId}`).click();
       cy.getByTestId('record-item-')
         .eq(0)
         .should('contain.text', 'Reset Health')
@@ -430,21 +435,23 @@ describe('Character Health Management', () => {
   });
 
   context('Special mechanics', () => {
-    it('should handle Override Hit Points and the Relentless Endurance racial ability', function () {
-      const characterWithSaves = characters.find(({ name }) => name === 'Ravy')!;
-      const relentlessChar = {
-        ...characterWithSaves,
-        id: `relentless-test-char-${this.isMobile ? 'mobile' : 'desktop'}`,
-        ...baseHealth
-      };
-      cy.createTestCharacter(Cypress.testUser.uid, relentlessChar.id, relentlessChar);
+    after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
+
+    it('should handle Override Hit Points and the Relentless Endurance racial ability', () => {
+      const relentlessCharID = `relentless-test-char-${isMobile ? 'mobile' : 'desktop'}`;
+      cy.createTestCharacter(Cypress.testUser.uid, relentlessCharID, {
+        ...characters.find(({ name }) => name === 'Ravy')!,
+        ...baseHealth,
+        id: relentlessCharID
+      });
 
       cy.visit('/');
-      cy.getByTestId(`character-card-${relentlessChar.id}`).click();
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${relentlessCharID}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
       // Test: Enable override with validations
-      cy.getByTestId(`health-${relentlessChar.id}`).click();
+      cy.getByTestId(`health-${relentlessCharID}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '10');
         cy.contains('Override Hit Points')
@@ -473,7 +480,7 @@ describe('Character Health Management', () => {
       cy.getByTestId('hit-points').should('contain.text', '15');
 
       // Test: Reset uses new hit_points value
-      cy.getByTestId(`health-${relentlessChar.id}`).click();
+      cy.getByTestId(`health-${relentlessCharID}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '15');
         cy.get('#temporaryHealth').should('be.enabled');
@@ -489,7 +496,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
       // Test: Override with higher value keeps damage occured
-      cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${relentlessCharID}`).should('be.visible').click();
       cy.get('#currentHealth').should('have.value', '5');
       cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
       cy.getByRole('dialog', 'Unsaved Changes').should('not.exist');
@@ -514,7 +521,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
       cy.getByTestId('hit-points').should('contain.text', '1');
 
-      cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${relentlessCharID}`).should('be.visible').click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '1').clear().type('10').blur();
         cy.get('#currentHealth').should('have.value', '3');
@@ -546,7 +553,7 @@ describe('Character Health Management', () => {
       });
 
       // Test: Auto-save triggers once and restores health to 1
-      cy.getByTestId(`health-${relentlessChar.id}`).click();
+      cy.getByTestId(`health-${relentlessCharID}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '8');
         cy.getByTestId('reset-health-button').click();
@@ -577,7 +584,7 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
       // Test: Reset clears flag and ability re-triggers
-      cy.getByTestId(`health-${relentlessChar.id}`).should('be.visible').click();
+      cy.getByTestId(`health-${relentlessCharID}`).should('be.visible').click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '5');
 
@@ -601,7 +608,7 @@ describe('Character Health Management', () => {
 
       // Test: Persistence after reload
       cy.reload();
-      cy.getByTestId(`health-${relentlessChar.id}`).click();
+      cy.getByTestId(`health-${relentlessCharID}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '1');
         cy.wrap($dialog).should(
@@ -612,7 +619,7 @@ describe('Character Health Management', () => {
       });
 
       // Test: Pre-override dialog save
-      cy.getByTestId(`health-${relentlessChar.id}`).click();
+      cy.getByTestId(`health-${relentlessCharID}`).click();
       cy.get('#currentHealth').clear().type('7').blur();
       cy.contains('Override Hit Points').parent().find('input[type="checkbox"]').check();
       cy.getByRole('dialog', 'Unsaved Changes').getButton('Save').click();
@@ -646,83 +653,76 @@ describe('Character Health Management', () => {
       cy.get('#currentHealth').should('have.value', '7');
     });
 
-    it('should recalculate max HP when the Constitution modifier changes', function () {
-      // Test: Create character with initial CON modifier of +1 (CON 13), level 2
-      const conTestChar = {
-        ...characterData,
-        id: `con-change-char-${this.isMobile ? 'mobile' : 'desktop'}`,
+    it('should recalculate max HP when the Constitution modifier changes', () => {
+      const healthTestCharId = `health-test-char-${isMobile ? 'mobile' : 'desktop'}`;
+      const characterWithSaves = characters.find(({ name }) => name === 'Delfy')!;
+      const baseChar = {
+        ...characterWithSaves,
+        id: healthTestCharId,
         level: 2,
+        abilities: [],
         abilityScores: {
-          ...characterData.abilityScores,
+          ...characterWithSaves.abilityScores,
           con: { index: 'con', name: 'CON', full_name: 'Constitution', score: 13, modifier: 1 }
         },
         health: {
           current: 8,
           temporary: 0,
           deathSaves: { successes: 0, failures: 0 }
-        },
-        resourceUsages: {}
+        }
       };
-      cy.createTestCharacter(Cypress.testUser.uid, conTestChar.id, conTestChar);
+      cy.createTestCharacter(Cypress.testUser.uid, healthTestCharId, baseChar);
 
       cy.visit('/');
-      cy.getByTestId(`character-card-${conTestChar.id}`).click();
+      cy.waitForLoading();
+      cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId('ability-con').should('contain.text', '13').and('contain.text', '+1');
 
       // Test: Increase CON to 15 (modifier +2, difference of +1)
-      cy.getByTestId(`edit-points-${conTestChar.id}`).click();
+      cy.getByTestId(`edit-points-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Edit Character Points').within(() => {
         cy.get('#ability-con').should('have.value', '13');
         cy.get('#ability-con').clear().type('15').blur();
         cy.getByTestId('save-scores').click();
       });
       cy.getByRole('status', 'Character Points Updated').should('be.visible');
-      cy.getByTestId('hit-points').should(
-        'contain.text',
-        (conTestChar.health.current + 2).toString()
-      );
+      cy.getByTestId('hit-points').should('contain.text', (baseChar.health.current + 2).toString());
       cy.getByTestId('ability-con').should('contain.text', '15').and('contain.text', '+2');
 
       // Test: Decrease CON to 11 (modifier 0, difference of -1)
-      cy.getByTestId(`edit-points-${conTestChar.id}`).click();
+      cy.getByTestId(`edit-points-${healthTestCharId}`).click();
       cy.get('#ability-con').clear().type('11').blur();
       cy.getByTestId('save-scores').click();
 
       cy.getByRole('status', 'Character Points Updated').should('be.visible');
-      cy.getByTestId('hit-points').should(
-        'contain.text',
-        (conTestChar.health.current - 2).toString()
-      );
+      cy.getByTestId('hit-points').should('contain.text', (baseChar.health.current - 2).toString());
       cy.getByTestId('ability-con').should('contain.text', '11').and('contain.text', '0');
 
       // Test: Decrease CON to 9 (modifier -1, difference of -2)
-      cy.getByTestId(`edit-points-${conTestChar.id}`).click();
+      cy.getByTestId(`edit-points-${healthTestCharId}`).click();
       cy.get('#ability-con').clear().type('9').blur();
       cy.getByTestId('save-scores').click();
 
       cy.getByRole('status', 'Character Points Updated').should('be.visible');
-      cy.getByTestId('hit-points').should(
-        'contain.text',
-        (conTestChar.health.current - 4).toString()
-      );
+      cy.getByTestId('hit-points').should('contain.text', (baseChar.health.current - 4).toString());
       cy.getByTestId('ability-con').should('contain.text', '9').and('contain.text', '-1');
 
       // Test: Edge case - Negative health defaults to 1
-      cy.getByTestId(`health-${conTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').clear().type('2').blur();
         cy.wrap($dialog).getButton('Save').click();
       });
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
-      cy.getByTestId(`edit-points-${conTestChar.id}`).click();
+      cy.getByTestId(`edit-points-${healthTestCharId}`).click();
       cy.get('#ability-con').clear().type('7').blur();
       cy.getByTestId('save-scores').click();
       cy.getByRole('status', 'Character Points Updated').should('be.visible');
       cy.getByTestId('hit-points').should('contain.text', '1');
 
-      cy.getByTestId(`health-${conTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
         cy.get('#currentHealth').should('have.value', '1');
         cy.get('#currentHealth').clear().type('0').blur();
@@ -731,17 +731,17 @@ describe('Character Health Management', () => {
       cy.getByRole('status', 'Health Updated').should('be.visible');
 
       // Test: Edge case - Health stays at 0 when unconscious
-      cy.getByTestId(`edit-points-${conTestChar.id}`).click();
-      cy.get('#ability-con').clear().type(conTestChar.abilityScores.con.score.toString()).blur();
+      cy.getByTestId(`edit-points-${healthTestCharId}`).click();
+      cy.get('#ability-con').clear().type(baseChar.abilityScores.con.score.toString()).blur();
       cy.getByTestId('save-scores').click();
       cy.getByRole('status', 'Character Points Updated').should('be.visible');
       cy.getByTestId('hit-points').should('contain.text', '0');
 
-      cy.getByTestId(`health-${conTestChar.id}`).click();
+      cy.getByTestId(`health-${healthTestCharId}`).click();
       cy.get('#currentHealth').should('have.value', '0');
       cy.get('#deathSaveSuccesses').should('be.visible');
       cy.getByTestId('reset-health-button').click();
-      cy.get('#currentHealth').should('have.value', conTestChar.hit_points.toString());
+      cy.get('#currentHealth').should('have.value', baseChar.hit_points.toString());
     });
   });
 });

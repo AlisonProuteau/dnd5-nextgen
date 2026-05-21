@@ -266,8 +266,8 @@ describe('Character Sheet', () => {
                     .should('match', /Armor Class|AC: \d+( - Dexterity bonus)?$/);
                 } else {
                   cy.wrap($dialog)
-                    .find('.MuiDialogContent-root')
                     .find('p')
+                    .not('[data-testid="money-display"] p')
                     .then(($ps) =>
                       $ps.length === 1
                         ? $ps

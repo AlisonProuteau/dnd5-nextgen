@@ -3,11 +3,12 @@ describe('Contact Form', () => {
   const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;
   const charName = 'My Test Character';
 
+  before(() =>
+    cy.createTestCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName })
+  );
+
   beforeEach(() => {
     cy.callFirestore('delete', 'tickets');
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
-
-    cy.createTestCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName });
     cy.login(Cypress.testUser.uid);
     cy.visit('/contact');
     cy.waitForLoading();

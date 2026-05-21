@@ -1,17 +1,19 @@
 describe('Settings Page', () => {
+  before(() => cy.createTestCharacter(Cypress.testUser.uid));
+
   beforeEach(() => {
     cy.login(Cypress.testUser.uid);
     cy.visit('/settings');
     cy.getByTestId('user-info').should('be.visible');
   });
 
-  after(() =>
-    cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] })
-  );
+  after(() => {
+    cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] });
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`);
+  });
 
   it('should display user information, version selector, and currency toggle options', () => {
     // Test: User info is displayed
-    cy.getByTestId('user-info').should('be.visible');
     cy.getByTestId('user-info').should('contain.text', `User: ${Cypress.testUser.displayName}`);
     cy.getByTestId('user-info').should('contain.text', `Email: ${Cypress.testUser.email}`);
 

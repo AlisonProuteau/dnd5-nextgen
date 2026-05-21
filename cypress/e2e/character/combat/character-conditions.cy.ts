@@ -8,15 +8,23 @@ describe('Character Conditions Management', () => {
     conditions: [] as NonNullable<(typeof characterData)['conditions']>
   };
 
+  before(() => cy.createTestCharacter(Cypress.testUser.uid, conditionsChar.id, conditionsChar));
+
   beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, conditionsChar.id, conditionsChar);
+    cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${conditionsChar.id}`, {
+      conditions: []
+    });
     cy.login(Cypress.testUser.uid);
   });
 
-  afterEach(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
+  after(() =>
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${conditionsChar.id}`)
+  );
 
   it('should complete the full conditions workflow including search, exhaustion levels, and condition removal', () => {
     cy.visit('/');
+    cy.waitForLoading();
+
     cy.getByTestId(`character-card-${conditionsChar.id}`).click();
     cy.getByTestId('stats-section').should('be.visible');
     cy.getByTestId(`condition-chip-`).should('not.exist');
@@ -138,6 +146,8 @@ describe('Character Conditions Management', () => {
 
   it('should auto-log condition changes to the action record', () => {
     cy.visit('/');
+    cy.waitForLoading();
+
     cy.getByTestId(`character-card-${conditionsChar.id}`).click();
     cy.getByTestId('character-container').should('be.visible');
 

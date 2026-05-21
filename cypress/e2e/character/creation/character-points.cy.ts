@@ -1,6 +1,3 @@
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/compat/storage';
 import { baseCharacter } from '../../../support/mocks/baseCharacter';
 
 describe('Character Ability Scores', () => {
