@@ -3,9 +3,7 @@ describe('Contact Form', () => {
   const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;
   const charName = 'My Test Character';
 
-  before(() =>
-    cy.createTestCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName })
-  );
+  before(() => cy.seedCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName }));
 
   beforeEach(() => {
     cy.callFirestore('delete', 'tickets');

@@ -8,9 +8,7 @@ describe('Character Money Management', () => {
     money: { gp: 10, sp: 5, cp: 3 }
   };
 
-  before(() =>
-    cy.createTestCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney)
-  );
+  before(() => cy.seedCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney));
 
   beforeEach(() => {
     cy.callFirestore(

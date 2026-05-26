@@ -46,7 +46,7 @@ describe('Character Action Record', () => {
     ...defaultCharData
   };
 
-  before(() => cy.createTestCharacter(Cypress.testUser.uid, actionRecordChar.id, actionRecordChar));
+  before(() => cy.seedCharacter(Cypress.testUser.uid, actionRecordChar.id, actionRecordChar));
 
   beforeEach(() => {
     cy.callFirestore(

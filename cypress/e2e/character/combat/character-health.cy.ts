@@ -19,7 +19,7 @@ describe('Character Health Management', () => {
     const healthTestCharId = `health-test-char-${isMobile ? 'mobile' : 'desktop'}`;
 
     before(() =>
-      cy.createTestCharacter(Cypress.testUser.uid, healthTestCharId, {
+      cy.seedCharacter(Cypress.testUser.uid, healthTestCharId, {
         ...tillyData,
         ...baseHealth,
         id: healthTestCharId
@@ -439,7 +439,7 @@ describe('Character Health Management', () => {
 
     it('should handle Override Hit Points and the Relentless Endurance racial ability', () => {
       const relentlessCharID = `relentless-test-char-${isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, relentlessCharID, {
+      cy.seedCharacter(Cypress.testUser.uid, relentlessCharID, {
         ...characters.find(({ name }) => name === 'Ravy')!,
         ...baseHealth,
         id: relentlessCharID
@@ -671,7 +671,7 @@ describe('Character Health Management', () => {
           deathSaves: { successes: 0, failures: 0 }
         }
       };
-      cy.createTestCharacter(Cypress.testUser.uid, healthTestCharId, baseChar);
+      cy.seedCharacter(Cypress.testUser.uid, healthTestCharId, baseChar);
 
       cy.visit('/');
       cy.waitForLoading();

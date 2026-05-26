@@ -11,7 +11,7 @@ describe('Character Ability Scores', () => {
   context('Assignment methods', () => {
     it('should assign ability scores using the Standard Set method', function () {
       const charId = `points-test-char-${this.isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, charId, {
+      cy.seedCharacter(Cypress.testUser.uid, charId, {
         name: 'Points Test Character',
         race: { index: 'dwarf', name: 'Dwarf' },
         abilities: [
@@ -82,7 +82,7 @@ describe('Character Ability Scores', () => {
 
     it('should allocate ability scores using Point Buy within the 27-point budget', function () {
       const charId = `pointbuy-char-${this.isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, charId, {
+      cy.seedCharacter(Cypress.testUser.uid, charId, {
         name: 'Point Buy Character',
         abilityScores: undefined
       });
@@ -157,7 +157,7 @@ describe('Character Ability Scores', () => {
 
     it('should generate and assign ability scores using the Custom (Random) method', function () {
       const charId = `random-char-${this.isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, charId, {
+      cy.seedCharacter(Cypress.testUser.uid, charId, {
         name: 'Random Character',
         abilityScores: undefined
       });
@@ -229,7 +229,7 @@ describe('Character Ability Scores', () => {
   context('Guards & calculations', () => {
     it('should skip the ability score page for a character that already has scores set', function () {
       const charId = `complete-char-${this.isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, charId, {
+      cy.seedCharacter(Cypress.testUser.uid, charId, {
         name: 'Complete Character'
         // baseCharacter includes abilityScores
       });
@@ -248,7 +248,7 @@ describe('Character Ability Scores', () => {
 
     it('should calculate AC and HP correctly based on the assigned scores', function () {
       const charId = `derived-stats-char-${this.isMobile ? 'mobile' : 'desktop'}`;
-      cy.createTestCharacter(Cypress.testUser.uid, charId, {
+      cy.seedCharacter(Cypress.testUser.uid, charId, {
         name: 'Derived Stats Character',
         class: { index: 'barbarian', name: 'Barbarian' }, // d12 hit die for HP test
         equipments: [], // No armor for AC test
@@ -298,7 +298,7 @@ describe('Character Ability Scores', () => {
         abilities: [{ ability_score: { index: 'dex', name: 'DEX' }, bonus: 2 }],
         class: { index: 'wizard', name: 'Wizard' }
       };
-      cy.createTestCharacter(Cypress.testUser.uid, testCharacter.id, testCharacter);
+      cy.seedCharacter(Cypress.testUser.uid, testCharacter.id, testCharacter);
 
       cy.visit('/');
       cy.waitForLoading();

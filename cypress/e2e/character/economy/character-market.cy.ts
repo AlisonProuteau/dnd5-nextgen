@@ -20,7 +20,7 @@ describe('Character Equipment Market', () => {
   };
 
   beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
+    cy.seedCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
     cy.login(Cypress.testUser.uid);
   });
 

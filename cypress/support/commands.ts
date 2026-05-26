@@ -29,7 +29,7 @@ declare global {
        * @param character - Partial<Character> overrides.
        * @returns Chainable<string> - The character ID.
        */
-      createTestCharacter(
+      seedCharacter(
         userId: string,
         characterId?: string,
         character?: Partial<Character>
@@ -174,17 +174,14 @@ Cypress.Commands.add('loginAsAdmin', () => {
  * Cypress command: createTestCharacter
  * Creates a test character for the given user, merging baseCharacter with overrides.
  */
-Cypress.Commands.add(
-  'createTestCharacter',
-  (userId: string, characterId?: string, character = {}) => {
-    const id: string =
-      characterId ?? (character?.id as string | undefined) ?? random(10000, 99999).toString();
-    const data = { ...baseCharacter, ...character, id };
+Cypress.Commands.add('seedCharacter', (userId: string, characterId?: string, character = {}) => {
+  const id: string =
+    characterId ?? (character?.id as string | undefined) ?? random(10000, 99999).toString();
+  const data = { ...baseCharacter, ...character, id };
 
-    cy.callFirestore('set', `users/${userId}/characters/${id}`, data);
-    return cy.wrap(id);
-  }
-);
+  cy.callFirestore('set', `users/${userId}/characters/${id}`, data);
+  return cy.wrap(id);
+});
 
 /**
  * Cypress command: clearUser

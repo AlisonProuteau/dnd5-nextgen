@@ -8,7 +8,7 @@ describe('Character Conditions Management', () => {
     conditions: [] as NonNullable<(typeof characterData)['conditions']>
   };
 
-  before(() => cy.createTestCharacter(Cypress.testUser.uid, conditionsChar.id, conditionsChar));
+  before(() => cy.seedCharacter(Cypress.testUser.uid, conditionsChar.id, conditionsChar));
 
   beforeEach(() => {
     cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${conditionsChar.id}`, {

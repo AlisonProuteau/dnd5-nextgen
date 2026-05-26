@@ -1,5 +1,5 @@
 describe('Settings Page', () => {
-  before(() => cy.createTestCharacter(Cypress.testUser.uid));
+  before(() => cy.seedCharacter(Cypress.testUser.uid));
 
   beforeEach(() => {
     cy.login(Cypress.testUser.uid);

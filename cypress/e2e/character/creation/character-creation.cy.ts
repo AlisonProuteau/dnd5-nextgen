@@ -1,5 +1,5 @@
 describe('Character Creation', () => {
-  before(() => cy.createTestCharacter(Cypress.testUser.uid).as('characterId'));
+  before(() => cy.seedCharacter(Cypress.testUser.uid).as('characterId'));
 
   beforeEach(() => {
     cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');

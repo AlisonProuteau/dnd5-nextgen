@@ -21,8 +21,8 @@ describe('Character Sheet', () => {
   ];
 
   before(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, delfyData.id, delfyData);
-    cy.createTestCharacter(Cypress.testUser.uid, devyData.id, devyData);
+    cy.seedCharacter(Cypress.testUser.uid, delfyData.id, delfyData);
+    cy.seedCharacter(Cypress.testUser.uid, devyData.id, devyData);
   });
 
   beforeEach(() => cy.login(Cypress.testUser.uid));
@@ -786,7 +786,7 @@ describe('Character Sheet', () => {
           'signature-spell': { type: 'feature', usage: 'long_rest', current: 2 }
         } as unknown as Character['resourceUsages']
       };
-      cy.createTestCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
+      cy.seedCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
 
       cy.visit('/');
       cy.waitForLoading();
@@ -865,7 +865,7 @@ describe('Character Sheet', () => {
         ],
         resourceUsages: {} as unknown as Character['resourceUsages']
       };
-      cy.createTestCharacter(Cypress.testUser.uid, autoLogUseChar.id, autoLogUseChar);
+      cy.seedCharacter(Cypress.testUser.uid, autoLogUseChar.id, autoLogUseChar);
 
       cy.visit('/');
       cy.waitForLoading();
@@ -933,7 +933,7 @@ describe('Character Sheet', () => {
         id: 'delete-test-character',
         name: 'Delete Test Character'
       };
-      cy.createTestCharacter(Cypress.testUser.uid, deleteTestCharacter.id, deleteTestCharacter);
+      cy.seedCharacter(Cypress.testUser.uid, deleteTestCharacter.id, deleteTestCharacter);
 
       cy.visit('/');
       cy.waitForLoading();
