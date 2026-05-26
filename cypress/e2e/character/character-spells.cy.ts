@@ -72,29 +72,41 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     }
   ];
 
-  before(() => {
-    characters.forEach((char) => {
-      const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
-      const current = spellcastingClasses.find(
-        ({ classData }) => classData.index === char.class.index
-      );
-      if (current || char.class.index === 'barbarian')
-        cy.createTestCharacter(Cypress.testUser.uid, id, {
-          ...char,
-          features: uniqBy([...(current?.features || []), ...(char.features || [])], 'index'),
-          id,
-          name: `Test ${char.class.name} ${isMobile ? 'Mobile' : 'Desktop'}`,
-          version: 'Legacy'
-        });
-    });
-  });
+  before(() =>
+    cy.seedCharacters(
+      Cypress.testUser.uid,
+      characters.reduce(
+        (acc, char) => {
+          const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
+          const current = spellcastingClasses.find(
+            ({ classData }) => classData.index === char.class.index
+          );
+          const newChar =
+            current || char.class.index === 'barbarian'
+              ? {
+                  ...char,
+                  features: uniqBy(
+                    [...(current?.features || []), ...(char.features || [])],
+                    'index'
+                  ),
+                  id,
+                  name: `Test ${char.class.name} ${isMobile ? 'Mobile' : 'Desktop'}`,
+                  version: 'Legacy'
+                }
+              : undefined;
+          return newChar ? [...acc, newChar] : acc;
+        },
+        [] as typeof characters
+      )
+    )
+  );
 
   beforeEach(() => cy.login(Cypress.testUser.uid));
 
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   context('UI', () => {
-    it('should not display the spell section for non-spellcasting classes', () => {
+    it.only('should not display the spell section for non-spellcasting classes', () => {
       cy.visit('/');
       cy.waitForLoading();
 

@@ -60,7 +60,6 @@ it('should handle exhaustion level workflow'); // exhaustion is just a sub-path 
 ### Authentication & Setup
 
 - `cy.login(uid)` - Login as specific user
-- `cy.loginNewUser()` - Create and login as new user
 - `cy.loginAsAdmin()` - Login with admin privileges
 - `cy.logout()` - Logout current user
 - `cy.seedCharacter(uid, characterId, data)` - Create character in Firestore
