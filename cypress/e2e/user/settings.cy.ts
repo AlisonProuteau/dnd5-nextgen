@@ -2,8 +2,7 @@ describe('Settings Page', () => {
   before(() => cy.seedCharacter(Cypress.testUser.uid));
 
   beforeEach(() => {
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/settings');
+    cy.visitAs(Cypress.testUser.uid, '/settings');
     cy.getByTestId('user-info').should('be.visible');
   });
 
@@ -53,7 +52,7 @@ describe('Settings Page', () => {
     });
   });
 
-  it('should update settings successfully and navigate to the home page', () => {
+  it('updates settings successfully and navigates to the home page', () => {
     // Test: Intercept successful update
     cy.intercept(
       { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
@@ -86,10 +85,12 @@ describe('Settings Page', () => {
     // Test: Success message and navigation
     cy.getByRole('status', 'Settings updated').should('be.visible');
     cy.url().should('eq', Cypress.config().baseUrl + '/');
+  });
 
-    // Test: Settings persisted
+  it('persists currency preferences after a page reload', () => {
+    cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: ['ep'] });
     cy.reload();
-    cy.visit('/settings');
+
     cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
     cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('be.checked');
   });

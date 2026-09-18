@@ -25,19 +25,17 @@ describe('Character Sheet', () => {
     cy.seedCharacter(Cypress.testUser.uid, devyData.id, devyData);
   });
 
-  beforeEach(() => cy.login(Cypress.testUser.uid));
-
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   context('Overview', () => {
-    it('should display all sections with correct stats, proficiencies, equipment, and descriptions', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+    beforeEach(() => {
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId('character-card-').should('have.length.at.least', 1);
-
       cy.getByTestId(`character-card-${delfyData.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
+    });
 
+    it('displays character stats and ability scores', () => {
       // Test: Stats section
       cy.contains('Druid - Land').should('be.visible');
       cy.contains('Elf - High Elf').should('be.visible');
@@ -65,11 +63,8 @@ describe('Character Sheet', () => {
         cy.get(':has(>[data-testid="skill-selected"])')
           .should('have.length', 1)
           .should('have.text', 'Nature');
-        cy.get(' button').should('exist').click();
+        cy.get(' button').should('exist');
       });
-      cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
-      cy.press('Escape');
-      cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
       cy.getByTestId('ability-wis').within(($el) => {
         cy.wrap($el)
@@ -85,11 +80,8 @@ describe('Character Sheet', () => {
         cy.get(':has(>[data-testid="skill-selected"])')
           .should('have.length', 2)
           .should('have.text', 'Animal HandlingPerception');
-        cy.wrap($el).get(' button').should('exist').click();
+        cy.wrap($el).get(' button').should('exist');
       });
-      cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
-      cy.press('Escape');
-      cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
 
       cy.getByTestId('ability-dex').within(($el) => {
         cy.wrap($el)
@@ -136,7 +128,25 @@ describe('Character Sheet', () => {
         cy.get(':has(>[data-testid="skill-selected"])').should('have.length', 0);
         cy.wrap($el).get(' button').should('not.exist');
       });
+    });
 
+    it('shows and dismisses ability score tooltips', () => {
+      cy.getByTestId('ability-int').within(($el) => {
+        cy.get(' button').should('exist').click();
+      });
+      cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
+      cy.press('Escape');
+      cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
+
+      cy.getByTestId('ability-wis').within(($el) => {
+        cy.wrap($el).get(' button').should('exist').click();
+      });
+      cy.getByRole('tooltip', 'Saving Throw').should('be.visible');
+      cy.press('Escape');
+      cy.getByRole('tooltip', 'Saving Throw').should('not.exist');
+    });
+
+    it('displays proficiencies, skills, languages, features, and traits', () => {
       // Test: Traits & Features section
       cy.clickUntilStep('characteristics');
       cy.getByTestId('proficiencies-section').should(
@@ -179,7 +189,9 @@ describe('Character Sheet', () => {
           cy.getByTestId(`trait-${trait.index}`).click();
           cy.getByTestId(`trait-details-${trait.index}`).should('be.visible');
         });
+    });
 
+    it('displays equipment and item details', () => {
       // Test: Equipment section
       cy.clickUntilStep('equipment');
       cy.getByTestId('money-display').within(($purse) => {
@@ -281,7 +293,9 @@ describe('Character Sheet', () => {
               cy.getByRole('dialog').should('not.exist');
             });
         });
+    });
 
+    it('displays and edits descriptions and traits', () => {
       // Test: Description section
       cy.clickUntilStep('description');
       cy.getByTestId('description-sex-')
@@ -549,9 +563,8 @@ describe('Character Sheet', () => {
   });
 
   context('Notes', () => {
-    it('should handle notes workflow (complex)', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+    it('should handle notes workflow', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId('character-card-').should('have.length.at.least', 1);
 
       cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${delfyData.id}/notes`);
@@ -688,8 +701,7 @@ describe('Character Sheet', () => {
 
   context('Equipment', () => {
     it('should handle equipment equip/unequip with AC updates, weight tracking, and strength warnings', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${delfyData.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
@@ -724,8 +736,7 @@ describe('Character Sheet', () => {
       cy.getByTestId('equipment-item-equip-leather-armor').should('contain.text', 'Equipped');
 
       // Test: Strength requirement warnings
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${devyData.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId('armor-class').should('contain.text', 18);
@@ -788,8 +799,7 @@ describe('Character Sheet', () => {
       };
       cy.seedCharacter(Cypress.testUser.uid, usageTestChar.id, usageTestChar);
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${usageTestChar.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
@@ -867,8 +877,7 @@ describe('Character Sheet', () => {
       };
       cy.seedCharacter(Cypress.testUser.uid, autoLogUseChar.id, autoLogUseChar);
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${autoLogUseChar.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.clickUntilStep('characteristics');
@@ -935,8 +944,7 @@ describe('Character Sheet', () => {
       };
       cy.seedCharacter(Cypress.testUser.uid, deleteTestCharacter.id, deleteTestCharacter);
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${deleteTestCharacter.id}`).should('be.visible');
       cy.getByTestId(`character-card-${deleteTestCharacter.id}`).click();
       cy.getByTestId('character-container').should('be.visible');

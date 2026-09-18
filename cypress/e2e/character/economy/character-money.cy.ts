@@ -10,13 +10,12 @@ describe('Character Money Management', () => {
 
   before(() => cy.seedCharacter(Cypress.testUser.uid, characterWithMoney.id, characterWithMoney));
 
-  beforeEach(() => {
+  beforeEach(() =>
     cy.callFirestore(
       'delete',
       `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}/actionRecords`
-    );
-    cy.login(Cypress.testUser.uid);
-  });
+    )
+  );
 
   after(() =>
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`)
@@ -24,7 +23,7 @@ describe('Character Money Management', () => {
 
   context('Core workflow', () => {
     it('should manage multi-denomination currency with input validation', () => {
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.clickUntilStep('equipment');
@@ -248,8 +247,7 @@ describe('Character Money Management', () => {
         });
 
       // Test: Navigate back to home and verify persistence
-      cy.visit('/');
-      cy.reload();
+      cy.visit('/').reload();
 
       cy.getByTestId(`character-card-${characterWithMoney.id}`).should('be.visible');
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
@@ -298,7 +296,7 @@ describe('Character Money Management', () => {
     });
 
     it('should auto-log money gains and losses to the action record', () => {
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.waitForLoading();
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
@@ -364,7 +362,7 @@ describe('Character Money Management', () => {
           }
         }
       );
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
 
       cy.getByTestId(`character-card-${characterWithMoney.id}`).click();
       updateAdditionalCurrenciesAndReload(['pp', 'ep']);

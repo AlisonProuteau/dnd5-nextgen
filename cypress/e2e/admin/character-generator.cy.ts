@@ -20,16 +20,7 @@ describe('Character Generator', () => {
   beforeEach(() => cy.task('clearDownloadsFolder'));
 
   it('should complete full generation workflow with admin route protection, form validation, error handling, and accessibility', () => {
-    // Test: Admin route protection
-    cy.visit('/character-generator');
-    cy.url().should('not.include', '/character-generator');
-
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/character-generator');
-    cy.url().should('not.include', '/character-generator');
-
-    cy.loginAsAdmin();
-    cy.visit('/character-generator');
+    cy.visitAs('admin', '/character-generator');
     cy.url().should('include', '/character-generator');
     cy.getByTestId('character-form').should('be.visible');
 

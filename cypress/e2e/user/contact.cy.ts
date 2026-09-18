@@ -7,9 +7,7 @@ describe('Contact Form', () => {
 
   beforeEach(() => {
     cy.callFirestore('delete', 'tickets');
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/contact');
-    cy.waitForLoading();
+    cy.visitAs(Cypress.testUser.uid, '/contact');
   });
 
   after(() => {
@@ -17,7 +15,7 @@ describe('Contact Form', () => {
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
   });
 
-  it('should complete the feedback workflow with validation, anonymous mode, and submission', () => {
+  it('submits anonymous feedback after validating the required message', () => {
     // Test: Setup & Navigation - Verify feedback form (default selection)
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('be.visible');
@@ -64,7 +62,9 @@ describe('Contact Form', () => {
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
 
-    // Test: Submit non-anonymous feedback
+  });
+
+  it('submits non-anonymous feedback with the user id attached', () => {
     cy.get('#anonymous').should('be.checked');
     cy.get('#anonymous').uncheck();
     cy.get('#anonymous').should('not.be.checked');
@@ -97,12 +97,12 @@ describe('Contact Form', () => {
       cy.wrap(ticketData.version).should('eq', 'Legacy');
     });
 
-    // Test: Cleanup - Form should be cleared
+    // Test: Form should be cleared after submission
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
   });
 
-  it('should complete the bug report workflow with character selection, severity, area, and submission', () => {
+  it('submits a bug report with character details and custom area', () => {
     // Test: Setup & Navigation - Switch to Bug report
     cy.selectOption('#type', 'Bug');
     cy.get('#severity').should('be.visible');
@@ -195,7 +195,7 @@ describe('Contact Form', () => {
     cy.get('#message').should('have.value', '');
   });
 
-  it('should complete the feature request workflow with custom area and contact permission', () => {
+  it('submits a feature request with contact permission', () => {
     // Test: Setup & Navigation - Switch to Request
     cy.selectOption('#type', 'Request');
     cy.get('#requestArea').should('be.visible');
@@ -275,12 +275,14 @@ describe('Contact Form', () => {
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
 
-    // Test: Submit another request WITH contact permission
+  });
+
+  it('submits a feature request without contact permission', () => {
     cy.selectOption('#type', 'Request');
     cy.selectOption('#requestArea', 'Feature');
-    cy.get('#message').type('Feature request with contact permission');
+    cy.get('#message').type('Feature request without contact permission');
 
-    // Test: Uncheck anonymous and check canContact
+    // Test: Contact permission is disabled
     cy.get('#canContact').should('not.be.checked');
 
     cy.intercept(
@@ -295,9 +297,9 @@ describe('Contact Form', () => {
     cy.getByRole('status', 'Ticket created').should('be.visible');
     cy.waitForLoading();
 
-    // Test: Ticket should be saved without user Email
+    // Test: Ticket should be saved without user email
     cy.callFirestore('get', 'tickets', {
-      where: ['message', '==', 'Feature request with contact permission']
+      where: ['message', '==', 'Feature request without contact permission']
     }).then((docs) => {
       cy.wrap(docs.length).should('eq', 1);
 
@@ -310,7 +312,7 @@ describe('Contact Form', () => {
       cy.wrap(ticketData.version).should('eq', 'Legacy');
     });
 
-    // Test: Cleanup - Form should be cleared
+    // Test: Form should be cleared after submission
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
   });

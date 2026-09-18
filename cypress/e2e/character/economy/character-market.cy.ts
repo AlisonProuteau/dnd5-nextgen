@@ -19,10 +19,9 @@ describe('Character Equipment Market', () => {
     ]
   };
 
-  beforeEach(() => {
-    cy.seedCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
-    cy.login(Cypress.testUser.uid);
-  });
+  beforeEach(() =>
+    cy.seedCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment)
+  );
 
   after(() =>
     cy.callFirestore(
@@ -32,7 +31,7 @@ describe('Character Equipment Market', () => {
   );
 
   it('should complete the buy and sell workflow with validation and free mode', () => {
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -334,7 +333,7 @@ describe('Character Equipment Market', () => {
   });
 
   it('should handle custom pricing for items without a standard cost', () => {
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -448,7 +447,7 @@ describe('Character Equipment Market', () => {
   });
 
   it('should handle equipment with quantity multipliers', () => {
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');

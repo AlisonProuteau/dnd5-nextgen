@@ -1,12 +1,8 @@
 describe('Character Choices (Creation Wizard)', () => {
-  beforeEach(() => {
-    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/');
-  });
+  beforeEach(() => cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile'));
 
   it('should reset choices when the selected race is changed', function () {
-    cy.visit('/create');
+    cy.visitAs(Cypress.testUser.uid, '/create');
     cy.getByTestId('step-label').filter('.active').should('contain.text', 'Race');
 
     // Test: Select race and check choices are reset when changing race

@@ -10,20 +10,18 @@ describe('Character Conditions Management', () => {
 
   before(() => cy.seedCharacter(Cypress.testUser.uid, conditionsChar.id, conditionsChar));
 
-  beforeEach(() => {
+  beforeEach(() =>
     cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${conditionsChar.id}`, {
       conditions: []
-    });
-    cy.login(Cypress.testUser.uid);
-  });
+    })
+  );
 
   after(() =>
     cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${conditionsChar.id}`)
   );
 
   it('should complete the full conditions workflow including search, exhaustion levels, and condition removal', () => {
-    cy.visit('/');
-    cy.waitForLoading();
+    cy.visitAs(Cypress.testUser.uid, '/');
 
     cy.getByTestId(`character-card-${conditionsChar.id}`).click();
     cy.getByTestId('stats-section').should('be.visible');
@@ -145,8 +143,7 @@ describe('Character Conditions Management', () => {
   });
 
   it('should auto-log condition changes to the action record', () => {
-    cy.visit('/');
-    cy.waitForLoading();
+    cy.visitAs(Cypress.testUser.uid, '/');
 
     cy.getByTestId(`character-card-${conditionsChar.id}`).click();
     cy.getByTestId('character-container').should('be.visible');

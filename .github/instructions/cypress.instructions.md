@@ -8,85 +8,95 @@ applyTo: 'cypress/**'
 
 ### Core Principles
 
-- **Minimal Test Splitting** - Prefer complete workflows in single tests, not fragmented steps
-- **Validation-Before-Success** - Test errors, validation, and edge cases within main flows
-- **Feature-Focused** - Each test covers one feature area comprehensively
-- **Real User Journeys** - Mirror actual user behavior patterns
-- **Complex Feature Exception** - For complex features, use one E2E "happy path" test plus targeted specific tests when needed
-- **Robust Error Handling** - All test setup operations include proper error handling and meaningful context
+- **One journey per `it()`** — each test covers exactly one observable user behaviour from start to finish.
+- **Share setup via `before()`** — seed Firestore data once per `context`; tests read it, never recreate state via UI.
+- **Cached auth** — use `cy.sessionLogin` / `cy.visitAs`; never rely on a prior test having logged in.
+- **No mid-test navigation** — `cy.visit()` and `cy.reload()` only when the test is _about_ navigation or persistence.
+- **Seeded state over UI walkthroughs** — use `cy.seedCharacter(s)` / `cy.setCharacterState` instead of clicking through creation flows to set up preconditions.
+- **Test independence** — every `it()` must pass when run in isolation (e.g. `it.only`). Do not rely on state left by a previous test.
 
 ### Flow Structure
 
-**Primary:** One comprehensive test covering the complete workflow (setup → validation → errors → success → cleanup)
+**Standard:** One `before()` seeds data, one `beforeEach()` handles auth + navigation, focused `it()`s each cover one journey.
 
-**When Complex:** Add specific tests for intricate parts that need detailed validation, but keep the main E2E flow test
+**When splitting a large feature:** Create one `it()` per distinct user observable behaviour (not per sub-component). Group related `it()`s in a `context()` sharing the same `before()` data.
 
-1. Setup & Navigation → 2. Validation Testing → 3. Error Handling → 4. Success Workflow → 5. Cleanup
+```typescript
+// ✅ Preferred — focused journey, shared seeded data
+context('Character stats', () => {
+  before(() => cy.seedCharacter(uid, charId, charData));
+  beforeEach(() => cy.visitAs(uid, '/'));
 
-**Examples:**
+  it('displays basic info, stats and ability scores', () => {
+    /* verify stats display */
+  });
+  it('shows and dismisses ability score tooltips', () => {
+    /* verify saving throw tooltip */
+  });
+  it('displays proficiencies, skills, languages, features and traits', () => {
+    /* verify characteristics tab */
+  });
+});
 
-```javascript
-// ✅ Preferred - Comprehensive Flow
-it('should complete full character creation with validation and error handling');
-
-// ✅ Acceptable for Complex Features - Happy Path + Specific Tests
-it('should complete character creation workflow (E2E happy path)');
-it('should validate complex race trait selection edge cases');
-it('should handle spell slot calculation for multiclass characters');
-
-// ✅ Acceptable for Multiple Distinct Flows - Different User Journeys
+// ✅ Acceptable — multiple distinct journeys (different entry points / flows)
 it('should handle feedback contact type workflow');
 it('should handle bug report contact type workflow');
-it('should handle feature request contact type workflow');
 
-// ❌ Avoid - Basic Feature Fragmentation
-it('should validate race selection');
-it('should validate class selection');
+// ❌ Avoid — mega-it() covering multiple distinct user journeys
+it('should complete full character creation with validation and error handling');
 
-// ❌ Avoid - Sub-feature splitting within the same component
-it('should handle regular conditions workflow');
-it('should handle exhaustion level workflow'); // exhaustion is just a sub-path of conditions
+// ❌ Avoid — mid-test navigation not about routing
+it('health-workflow', () => {
+  cy.visit('/'); // ← sets up precondition: use beforeEach instead
+  // ... test
+  cy.visit('/'); // ← navigates mid-test to reach a new character: use visitAs at top
+});
 ```
 
 **Decision Guidelines:**
 
-- **Same workflow, different paths:** One comprehensive test
-- **Sub-features of the same component:** Always merge — different item types, condition types, input modes etc. within one manager/dialog are not separate journeys
-- **Completely different user journeys:** Separate tests per journey
-- **Complex features:** One E2E + specific edge case tests
+- **Same component, different observable behaviours:** Separate `it()`s sharing one `before()`.
+- **Same workflow, different data paths:** One `it()` (e.g. different item types in the same form).
+- **Completely different user journeys:** Separate `it()`s.
+- **Persistence check:** Keep exactly one `cy.reload()` per persistence `it()`, name it accordingly (e.g. `persistence-across-reload`).
 
 ## Custom Commands
 
-### Authentication & Setup
+### Auth & Navigation (new — use these)
 
-- `cy.login(uid)` - Login as specific user
-- `cy.loginAsAdmin()` - Login with admin privileges
-- `cy.logout()` - Logout current user
-- `cy.seedCharacter(uid, characterId, data)` - Create character in Firestore
+- `cy.sessionLogin(uid)` — Cached login via `cy.session`; use in `beforeEach`
+- `cy.sessionLoginAsAdmin()` — Cached admin login
+- `cy.visitAs(uid, path)` — `sessionLogin + visit + waitForLoading`; canonical test start helper
+- `cy.seedCharacter(uid, characterId, data)` — Firestore-seed one character
+- `cy.seedCharacters(uid, characters[])` — Batch-seed multiple characters
+- `cy.setCharacterState(uid, charId, partial)` — Partial Firestore update for mid-test state injection
+- `cy.logout()` — Logout current user, only for specific session testing
 
 ### Firebase Operations
 
-- `cy.callFirestore(operation, path, data)` - Firestore operations (get, set, update, delete)
-- `cy.authCreateUser(userData)` - Create auth user
-- `cy.deleteAllAuthUsers()` - Clean up auth users
+- `cy.callFirestore(operation, path, data)` — Firestore operations (get, set, update, delete)
+- `cy.authCreateUser(userData)` — Create auth user
+- `cy.clearUser(uid)` — Delete auth user + Firestore user doc
+- `cy.clearAllNonDefaultUsers()` — Clean up all non-default auth users
 
 ### Element Selection (MUI-Independent)
 
-- `cy.getByRole('button', 'Submit')` - ARIA-compliant selection
-- `cy.getByTestId('submit-button')` - Data-testid selection
-- `cy.selectOption('select', 'Option')` - Dropdown selection
-- `cy.waitForLoading()` - Loading state handling
-- `cy.selectCardAction({ text: 'Note' }, 'Edit')` - Note card actions
-- `cy.getButton('Create')` - Button by text
-- `cy.press('Escape')` - Keyboard interaction
+- `cy.getByRole('button', 'Submit')` — ARIA-compliant selection
+- `cy.getByTestId('submit-button')` — Data-testid selection
+- `cy.getByTestId('item-', { type: 'contains' })` — Prefix match on data-testid
+- `cy.selectOption('select', 'Option')` — Dropdown selection
+- `cy.waitForLoading()` — Wait for loading state to clear (included in `cy.visitAs`)
+- `cy.selectCardAction({ text: 'Note' }, 'Edit')` — Card action menu
+- `cy.getButton('Create')` — Button by text
+- `cy.press('Escape')` — Keyboard interaction
 
 ### Selector Strategy
 
-1. **Semantic HTML** - `button`, `form`, `input`
-2. **Text Content** - Button text, labels, headings
-3. **ARIA Attributes** - `[role="button"]`, `[aria-label="Close"]`
-4. **Data-TestId** - `[data-testid="submit-button"]` when needed
-5. **Form Elements** - `input[type="email"]`, `select[name="version"]`
+1. **Semantic HTML** — `button`, `form`, `input`
+2. **Text Content** — Button text, labels, headings
+3. **ARIA Attributes** — `[role="button"]`, `[aria-label="Close"]`
+4. **Data-TestId** — `[data-testid="submit-button"]` when needed
+5. **Form Elements** — `input[type="email"]`, `select[name="version"]`
 
 **Avoided:** MUI selectors (`.MuiButton-root`, `.MuiCard-root`) which break with updates.
 
@@ -98,64 +108,73 @@ it('should handle exhaustion level workflow'); // exhaustion is just a sub-path 
 
 - Firebase emulator configuration (Auth, Firestore, Storage)
 - Custom command attachments from `cypress-firebase`
-- Global test user creation in `before()` hook
-- Automatic cleanup with `cy.logout()` in `beforeEach()`
+- Global test user creation in `before()` hook via `authGetUser` (idempotent)
 - Firebase emulator warning suppression with error handling
 - Command overwrites (`visit`, `reload`) with try-catch blocks
+
+**`cypress.config.ts`:**
+
+- `retries: { runMode: 1, openMode: 0 }` — reduces transient flake noise
+- `experimentalRunAllSpecs: true` — run-all button in UI
+- `experimentalMemoryManagement: true` — reduces memory pressure across specs
 
 ### Test Data Management
 
 **Static Mock Data (`cypress/support/mocks/`):**
 
-- `characterList.ts` - Comprehensive character data with full details for all classes
-- `baseCharacter.ts` - Minimal character template
+- `characterList.ts` — Comprehensive character data (Delfy, Devy, Tilly, etc.)
+- `baseCharacter.ts` — Minimal character template
 
 Tests import character data directly from mocks:
 
-```javascript
+```typescript
 import { characters } from '../support/mocks/characterList';
-const characterData = characters.find(({ name }) => name === 'Delfy')!;
+
+const delfyData = characters.find(({ name }) => name === 'Delfy')!;
 ```
 
 ## Writing Tests
 
 ### Test Commenting Standard
 
-- **Prefix all comments in Cypress test files with `Test:`**
-  - Example: `// Test: Setup & Navigation - Verify feedback form`
-  - This ensures clarity and consistency for all contributors
+- **Prefix all comments in Cypress test files with `// Test:`**
+  - Example: `// Test: Verify stats panel shows correct armor class`
 
 ### Naming Conventions
 
 - File names: `character-<feature>.cy.ts` or `<feature>.cy.ts`
-- `describe` title: plain feature name, e.g. `'Character Health Management'` (no `End-to-End` suffix)
-- `context` title: scenario group noun, e.g. `'Core HP workflow'`, `'Special mechanics'`
-- Comprehensive flow: `it('should complete full <feature> workflow with validation and error handling')`
-- Multiple journeys: `it('should handle <journey> workflow')`
+- `describe` title: plain feature name, e.g. `'Character Health Management'`
+- `context` title: scenario group, e.g. `'Overview'`, `'Sign In'`
+- `it` title: plain-English sentence describing what the user can do or see, e.g. `'displays basic info, stats and ability scores'`, `'state persists after page reload'`, `'shows an error for invalid credentials'` — **no kebab-case slugs**
 
 ### Test File Structure
 
 ```typescript
 describe('Feature Name', () => {
-  before(() => {
-    /* one-time Firestore/auth setup */
-  });
-
-  beforeEach(() => {
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/path');
-  });
-
-  after(function () {
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/...`);
-  });
+  before(() => /* one-time global setup (e.g. clear users) */);
 
   context('Scenario group', () => {
-    it('should complete full [feature] workflow with validation and error handling', function () {
-      // Test: Setup — re-use before() data where possible; add any flow-specific data here
-      // Test: Validation / error states
-      // Test: Happy path
-      // Test: Post-condition assertions
+    before(() => {
+      cy.seedCharacter(Cypress.testUser.uid, charId, charData); // seed once
+    });
+
+    beforeEach(() => {
+      cy.visitAs(Cypress.testUser.uid, '/'); // auth + navigate every test
+      // any navigation to the specific starting point
+    });
+
+    after(() => {
+      cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`);
+    });
+
+    it('journey-name', () => {
+      // Test: one focused user journey — no cy.visit() / cy.reload() inside
+    });
+
+    it('persistence-across-reload', () => {
+      // Test: explicitly tests persistence — one cy.reload() allowed
+      cy.reload();
+      // ...
     });
   });
 });
@@ -163,19 +182,21 @@ describe('Feature Name', () => {
 
 ### Checklist
 
-1. Use existing mock data from `cypress/support/mocks/characterList.ts` for character test data
-2. Test validation before success — validate errors, edge cases, then happy path
-3. Clean up test data in `after()` hooks when necessary
-4. Use custom commands for Firebase operations and common actions
-5. Include responsive design handling only when testing breakpoint-specific behavior:
-   ```typescript
-   cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
-   // then: (this.isMobile ? cy.getByTestId('mobile-x') : cy.getByTestId('desktop-x')).click();
-   ```
+1. Use `cy.visitAs(uid, path)` at the start of every test (or in `beforeEach`)
+2. Use `cy.seedCharacter(s)` in `before()` to set up data — never via UI walkthrough
+3. One `it()` per user journey — split mega-its, keep focused its together in a `context()`
+4. No `cy.visit()` or `cy.reload()` mid-test unless the test is explicitly about navigation or persistence
+5. No `cy.logout()` calls between tests — `cy.session` and `cy.visitAs` handle isolation
+6. Clean up test data in `after()` hooks
+7. Prefix all test comments with `// Test:`
+8. Use existing mock data from `cypress/support/mocks/characterList.ts`
 
 ### Constraints
 
-- DO NOT use `cy.wait(ms)` or `sleep()` — use `cy.waitForLoading()` or `cy.intercept()`
-- DO NOT use MUI class selectors (`.MuiButton-root`, `.MuiCard-root`, etc.)
-- DO NOT split a simple workflow into multiple small tests
-- DO NOT create helpers outside `cypress/support/`
+- **NO** `cy.wait(ms)` or `sleep()` — use `cy.waitForLoading()` or `cy.intercept()`
+- **NO** MUI class selectors (`.MuiButton-root`, `.MuiCard-root`, etc.)
+- **NO** mega-`it()` blocks covering multiple user journeys
+- **NO** `cy.visit()` / `cy.reload()` mid-test (except persistence tests)
+- **NO** `cy.logout()` between tests
+- **NO** helpers outside `cypress/support/`
+- **DO** reference `cypress/REFACTOR.md` for migration status and per-spec checklist

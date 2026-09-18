@@ -3,8 +3,7 @@ describe('Character Creation', () => {
 
   beforeEach(() => {
     cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
   });
 
   after(function () {

@@ -58,7 +58,6 @@ describe('Character Action Record', () => {
       `users/${Cypress.testUser.uid}/characters/${actionRecordChar.id}`,
       defaultCharData
     );
-    cy.login(Cypress.testUser.uid);
   });
 
   after(() =>
@@ -79,8 +78,7 @@ describe('Character Action Record', () => {
         }
       );
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
@@ -164,8 +162,7 @@ describe('Character Action Record', () => {
     });
 
     it('should add Spell records — cantrip, leveled, temporary, and ritual variants', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
@@ -249,8 +246,7 @@ describe('Character Action Record', () => {
     });
 
     it('should add a Custom record with all fields and enforce the required name', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
@@ -298,8 +294,7 @@ describe('Character Action Record', () => {
         }
       );
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
       cy.getByTestId('record-item-').filter(':contains("Custom Action")').as('customRecord');
@@ -431,8 +426,7 @@ describe('Character Action Record', () => {
     });
 
     it('should filter by type, show empty state, and retain the active filter on drawer reopen', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
 
@@ -487,8 +481,7 @@ describe('Character Action Record', () => {
     });
 
     it('should filter by date range and restore all records on clear', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
       cy.getByTestId('record-item-').should('have.length', 10);
@@ -531,8 +524,7 @@ describe('Character Action Record', () => {
         }
       );
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
       cy.getByTestId('record-item-').should('have.length', 10);
@@ -577,8 +569,7 @@ describe('Character Action Record', () => {
     });
 
     it('should reset source and name fields when switching record type', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
 
@@ -596,8 +587,7 @@ describe('Character Action Record', () => {
     });
 
     it('should persist all records across a page reload', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
       cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
       cy.getByTestId('record-item-').should('have.length', 10);

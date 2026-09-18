@@ -12,8 +12,6 @@ describe('Character Health Management', () => {
     resourceUsages: {}
   };
 
-  beforeEach(() => cy.login(Cypress.testUser.uid));
-
   context('Core HP workflow', () => {
     const tillyData = characters.find(({ name }) => name === 'Tilly')!;
     const healthTestCharId = `health-test-char-${isMobile ? 'mobile' : 'desktop'}`;
@@ -40,8 +38,7 @@ describe('Character Health Management', () => {
     after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
     it('should manage current HP, temporary HP, and death saves with input validation', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId('hit-points').should('contain.text', '10');
@@ -195,8 +192,7 @@ describe('Character Health Management', () => {
         conditions: []
       });
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
@@ -445,8 +441,7 @@ describe('Character Health Management', () => {
         id: relentlessCharID
       });
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${relentlessCharID}`).click();
       cy.getByTestId('character-container').should('be.visible');
 
@@ -673,8 +668,7 @@ describe('Character Health Management', () => {
       };
       cy.seedCharacter(Cypress.testUser.uid, healthTestCharId, baseChar);
 
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${healthTestCharId}`).click();
       cy.getByTestId('character-container').should('be.visible');
       cy.getByTestId('ability-con').should('contain.text', '13').and('contain.text', '+1');

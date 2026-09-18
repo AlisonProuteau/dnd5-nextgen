@@ -1,10 +1,7 @@
 import { baseCharacter } from '../../../support/mocks/baseCharacter';
 
 describe('Character Ability Scores', () => {
-  beforeEach(() => {
-    cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
-    cy.login(Cypress.testUser.uid);
-  });
+  beforeEach(() => cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile'));
 
   afterEach(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
@@ -21,7 +18,7 @@ describe('Character Ability Scores', () => {
         abilityScores: undefined
       });
 
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charId}`).click();
 
       // Test: Should redirect to points page when abilityScores is null
@@ -87,7 +84,7 @@ describe('Character Ability Scores', () => {
         abilityScores: undefined
       });
 
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charId}`).click();
       cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
@@ -162,7 +159,7 @@ describe('Character Ability Scores', () => {
         abilityScores: undefined
       });
 
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charId}`).click();
       cy.getByRole('presentation', 'Ability Scores').should('be.visible');
 
@@ -234,7 +231,7 @@ describe('Character Ability Scores', () => {
         // baseCharacter includes abilityScores
       });
 
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charId}`).click();
 
       // Test: Should go directly to character sheet
@@ -258,7 +255,7 @@ describe('Character Ability Scores', () => {
       });
 
       // Test AC calculation and HP with Barbarian (d12 hit die, no armor)
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charId}`).click();
       cy.url().should('include', '/points');
 
@@ -300,7 +297,7 @@ describe('Character Ability Scores', () => {
       };
       cy.seedCharacter(Cypress.testUser.uid, testCharacter.id, testCharacter);
 
-      cy.visit('/');
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.waitForLoading();
       cy.getByTestId('character-card-edit-points-char').click();
       cy.getByTestId('character-container').should('be.visible');
@@ -403,8 +400,7 @@ describe('Character Ability Scores', () => {
         });
 
       // Test: Cancel edit by navigating back without saving
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId('character-card-edit-points-char').click();
 
       // Test: Verify original values are still there (previous save is persisted)

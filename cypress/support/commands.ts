@@ -10,12 +10,6 @@ declare global {
   namespace Cypress {
     interface Chainable {
       /**
-       * Logs in as the admin user.
-       * @returns Chainable<void>
-       */
-      loginAsAdmin(): Chainable<void>;
-
-      /**
        * Creates a test character for testing purposes.
        * Merges baseCharacter with any overrides.
        * @param userId - The user ID.
@@ -127,7 +121,7 @@ declare global {
        * @param userId - The user ID to authenticate as.
        * @param path - The path to visit (e.g. '/').
        */
-      visitAs(userId: string, path: string): Chainable<void>;
+      visitAs(userId: string | 'admin', path: string): Chainable<void>;
 
       /**
        * Batch-seeds multiple characters for the given user in Firestore.
@@ -151,30 +145,6 @@ declare global {
     }
   }
 }
-
-/**
- * Cypress command: loginAsAdmin
- * Logs in as the admin user for character generator access. Creates the user if not present.
- */
-Cypress.Commands.add('loginAsAdmin', () => {
-  cy.env(['FIREBASE_ADMIN_UID']).then(({ FIREBASE_ADMIN_UID }) => {
-    cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
-      if (!existingUser?.uid) {
-        const user = {
-          displayName: 'Admin User',
-          uid: FIREBASE_ADMIN_UID,
-          email: 'admin@test.com'
-        };
-        cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
-          identifier: user.email,
-          version: 'Legacy'
-        });
-      }
-
-      cy.login(FIREBASE_ADMIN_UID);
-    });
-  });
-});
 
 /**
  * Cypress command: seedCharacter
@@ -405,7 +375,9 @@ Cypress.Commands.add('shouldBeSelected', { prevSubject: true }, (subject) => {
  * Use in new specs instead of cy.login().
  */
 Cypress.Commands.add('sessionLogin', (userId: string) => {
-  cy.session([userId], () => cy.login(userId), { cacheAcrossSpecs: true });
+  return cy.session([userId], () => cy.login(userId), {
+    cacheAcrossSpecs: false
+  }) as unknown as Cypress.Chainable<void>;
 });
 
 /**
@@ -413,28 +385,30 @@ Cypress.Commands.add('sessionLogin', (userId: string) => {
  * Wraps admin login in cy.session() for cross-spec auth caching.
  */
 Cypress.Commands.add('sessionLoginAsAdmin', () => {
-  cy.env(['FIREBASE_ADMIN_UID']).then(({ FIREBASE_ADMIN_UID }) => {
-    cy.session(
-      [`admin-${FIREBASE_ADMIN_UID}`],
-      () => {
-        cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
-          if (!existingUser?.uid) {
-            const user = {
-              displayName: 'Admin User',
-              uid: FIREBASE_ADMIN_UID,
-              email: 'admin@test.com'
-            };
-            cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
-              identifier: user.email,
-              version: 'Legacy'
-            });
-          }
-          cy.login(FIREBASE_ADMIN_UID);
-        });
-      },
-      { cacheAcrossSpecs: true }
-    );
-  });
+  return cy
+    .env(['FIREBASE_ADMIN_UID'])
+    .then(({ FIREBASE_ADMIN_UID }) => {
+      return cy.session(
+        [`admin-${FIREBASE_ADMIN_UID}`],
+        () =>
+          cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
+            if (!existingUser?.uid) {
+              const user = {
+                displayName: 'Admin User',
+                uid: FIREBASE_ADMIN_UID,
+                email: 'admin@test.com'
+              };
+              cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
+                identifier: user.email,
+                version: 'Legacy'
+              });
+            }
+            return cy.login(FIREBASE_ADMIN_UID);
+          }),
+        { cacheAcrossSpecs: false }
+      );
+    })
+    .then(() => cy.wrap(undefined)) as unknown as Cypress.Chainable<void>;
 });
 
 /**
@@ -442,8 +416,7 @@ Cypress.Commands.add('sessionLoginAsAdmin', () => {
  * Canonical "start a test" helper: sessionLogin + visit + waitForLoading.
  * Eliminates the login + visit + waitForLoading boilerplate at the top of every test.
  */
-Cypress.Commands.add('visitAs', (uid: string, path: string) => {
-  cy.sessionLogin(uid);
-  cy.visit(path);
+Cypress.Commands.add('visitAs', (uid: string | 'admin', path: string) => {
+  (uid === 'admin' ? cy.sessionLoginAsAdmin() : cy.sessionLogin(uid)).visit(path);
   cy.waitForLoading();
 });

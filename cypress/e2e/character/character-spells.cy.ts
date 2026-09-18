@@ -101,14 +101,11 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     )
   );
 
-  beforeEach(() => cy.login(Cypress.testUser.uid));
-
   after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   context('UI', () => {
-    it.only('should not display the spell section for non-spellcasting classes', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+    it('should not display the spell section for non-spellcasting classes', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
 
       const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
       cy.getByTestId(`character-card-${charID}`).click();
@@ -121,8 +118,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
 
     it('should switch between All Spells, How It Works, and Spellbook views', () => {
       const charID = `test-wizard-${isMobile ? 'mobile' : 'desktop'}`;
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
 
       cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
@@ -225,8 +221,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
 
     it('should display racial spells without a Cast button', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charID}`).click();
       cy.clickUntilStep('spells', 'previous');
       cy.getButton('Spellbook').next().click();
@@ -258,8 +253,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
 
     it('should cast, upcast, and track slot consumption — and auto-log casts to the action record', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charID}`).click();
       cy.clickUntilStep('spells', 'previous');
       cy.getButton('Spellbook').next().click();
@@ -395,8 +389,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
 
     it('should recover spell slots via Arcane Recovery, Pearl of Power, and Full Recover', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charID}`).click();
       cy.clickUntilStep('spells', 'previous');
       cy.getButton('Spellbook').next().click();
@@ -557,8 +550,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
 
     it('should add, cast, and remove temporary spells', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
       cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
@@ -643,8 +635,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     });
 
     it('should filter the temporary spell search by level, school, ritual, concentration, class, and subclass', () => {
-      cy.visit('/');
-      cy.waitForLoading();
+      cy.visitAs(Cypress.testUser.uid, '/');
       cy.getByTestId(`character-card-${charID}`).click();
       cy.getByTestId('stats-section').should('be.visible');
       cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
@@ -869,8 +860,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
             .traits?.flatMap(({ spells }) => spells)
             .filter(Boolean);
 
-          cy.visit('/');
-          cy.waitForLoading();
+          cy.visitAs(Cypress.testUser.uid, '/');
 
           cy.getByTestId(`character-card-${charID}`).click();
           cy.getByTestId('stats-section').should('be.visible');
