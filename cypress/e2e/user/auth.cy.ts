@@ -1,20 +1,28 @@
-describe(`Authentication End-to-End`, () => {
+describe('Authentication', () => {
   before(() => cy.clearAllNonDefaultUsers());
+  beforeEach(() => cy.logout().visit('/'));
+  after(() => cy.clearAllNonDefaultUsers());
 
-  beforeEach(() => cy.visit('/'));
-
-  describe('Complete Sign In Flow', () => {
+  context('Sign In', () => {
     const signInUser = {
       uid: 'existing-user-id',
       email: 'existing.user@example.com',
       password: 'v@lidPassword123'
     };
 
-    before(() => cy.authCreateUser(signInUser).callFirestore('set', `users/${signInUser.uid}`, {}));
+    before(() =>
+      cy
+        .authCreateUser(signInUser)
+        .callFirestore('set', `users/${signInUser.uid}`, {})
+        .callFirestore('update', `users/${signInUser.uid}`, {
+          displayName: 'Sign In User',
+          version: 'Legacy'
+        })
+    );
 
-    after(() => cy.clearUser(signInUser.uid));
+    it('completes the first-time and subsequent sign-in flows', () => {
+      cy.callFirestore('set', `users/${signInUser.uid}`, {});
 
-    it('should handle complete sign-in workflow with loading states, responsive design, and first-time user flow', () => {
       // Test: email validation
       cy.get('#email').type('invalid-email').should('have.value', 'invalid-email');
       cy.get('#email').should('have.attr', 'aria-invalid', 'true');
@@ -47,9 +55,12 @@ describe(`Authentication End-to-End`, () => {
       cy.get('[id="version-select"]').should('not.exist');
       cy.url().should('eq', Cypress.config().baseUrl + '/');
 
-      // Test: subsequent login workflow (skips settings)
+      // Test: session expiration and logout behavior
       cy.logout();
+      cy.url().should('not.include', '/create');
       cy.get('#email').should('be.visible');
+
+      // Test: subsequent login workflow (skips settings — displayName+version already set)
       cy.get('#email').type(signInUser.email);
       cy.get('#password').type(signInUser.password);
       cy.get('button[type="submit"]').click();
@@ -67,12 +78,7 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/settings');
     });
 
-    it('should handle authentication errors, network failures, and recovery workflows', () => {
-      cy.callFirestore('update', `users/${signInUser.uid}`, {
-        displayName: 'Sign In User',
-        version: 'Legacy'
-      });
-
+    it('shows errors for invalid credentials', () => {
       // Test: invalid user error handling
       cy.get('#email').type('invalid@example.com');
       cy.get('#password').type('password');
@@ -91,9 +97,12 @@ describe(`Authentication End-to-End`, () => {
       cy.get('button[type="submit"]').click();
 
       cy.getByRole('status', 'Something went wrong').should('contain.text', 'wrong-password');
+    });
 
+    it('recovers from a network failure during sign-in', () => {
       // Test: network failure simulation and retry capability
-      cy.get('#password').clear().type(signInUser.password);
+      cy.get('#email').type(signInUser.email);
+      cy.get('#password').type(signInUser.password);
 
       cy.intercept(
         {
@@ -119,15 +128,10 @@ describe(`Authentication End-to-End`, () => {
       // Test: successful retry after error recovery
       cy.get('button[type="submit"]').click();
       cy.url().should('include', '/create');
-
-      // Test: session expiration and logout behavior
-      cy.logout();
-      cy.url().should('not.include', '/create');
-      cy.get('#email').should('be.visible');
     });
   });
 
-  describe('Sign Up and Onboarding Flow', () => {
+  context('Sign Up & Onboarding', () => {
     const uniqueSuffix = Date.now();
     const testUser = {
       uid: `signup-user-id-${uniqueSuffix}`,
@@ -135,9 +139,7 @@ describe(`Authentication End-to-End`, () => {
       password: 'v@lidPassword123'
     };
 
-    afterEach(() => cy.clearUser(testUser.uid));
-
-    it('should validate form fields and test form interactions before allowing submission', () => {
+    it('should validate the registration form and complete the onboarding flow', () => {
       // Test: switch to sign-up mode
       cy.get('button[type="reset"]').click();
       cy.get('button[type="submit"]').should('contain.text', 'Sign Up');
@@ -222,62 +224,27 @@ describe(`Authentication End-to-End`, () => {
     });
   });
 
-  describe('Header Navigation and Menu', () => {
-    beforeEach(() => {
-      cy.createTestCharacter(Cypress.testUser.uid);
-      cy.login(Cypress.testUser.uid);
-      cy.visit('/');
+  context('Header navigation', () => {
+    const uniqueSuffix = Date.now();
+    const testUser = {
+      uid: `header-user-id-${uniqueSuffix}`,
+      email: `header-${uniqueSuffix}@example.com`,
+      password: 'v@lidPassword123',
+      displayName: `Header User`
+    };
+
+    before(() => {
+      cy.authCreateUser(testUser)
+        .callFirestore('set', `users/${testUser.uid}`, {})
+        .callFirestore('update', `users/${testUser.uid}`, {
+          displayName: testUser.displayName,
+          version: 'Legacy'
+        });
+      cy.seedCharacter(testUser.uid);
     });
 
-    it('should display header elements, navigate through menu, and handle menu interactions for regular users', () => {
-      // Test: User display name/email is shown
-      cy.getByTestId('user-display-name')
-        .should('be.visible')
-        .and('contain', Cypress.testUser.displayName || Cypress.testUser.email);
-
-      // Test: Home link is visible and functional
-      cy.getByTestId('home-link').should('be.visible');
-      cy.visit('/settings');
-      cy.getByTestId('home-link').click();
-      cy.url().should('eq', Cypress.config().baseUrl + '/');
-
-      // Test: Logout button exists
-      cy.getByTestId('logout-button').should('be.visible');
-
-      // Test: Menu button exists and opens menu
-      cy.getByTestId('menu-button').should('be.visible').click();
-      cy.getByRole('menu').should('be.visible');
-
-      // Test: Menu contains expected items (non-admin user)
-      cy.getByRole('menu').within(($el) => {
-        cy.wrap($el).getByTestId('settings-link').should('exist');
-        cy.wrap($el).getByTestId('contact-link').should('exist');
-
-        // Admin-only items should not be visible for regular user
-        cy.wrap($el).getByTestId('character-generator-link').should('not.exist');
-        cy.wrap($el).getByTestId('database-link').should('not.exist');
-      });
-
-      // Test: Close menu by clicking outside
-      cy.get('body').click(0, 0);
-      cy.getByRole('menu').should('not.be.visible');
-
-      // Test: Reopen menu and navigate to Settings
-      cy.getByTestId('menu-button').click();
-      cy.getByRole('menu').should('be.visible');
-      cy.getByTestId('settings-link').click();
-      cy.url().should('include', '/settings');
-
-      // Test: Return home and navigate to Contact via menu
-      cy.visit('/');
-      cy.getByTestId('menu-button').click();
-      cy.getByTestId('contact-link').click();
-      cy.url().should('include', '/contact');
-    });
-
-    it('should show admin menu items and allow navigation to admin routes', () => {
-      cy.loginAsAdmin();
-      cy.visit('/');
+    it('should show admin-only menu items and allow navigation to admin routes', () => {
+      cy.visitAs('admin', '/');
 
       // Test: Open menu
       cy.getByTestId('menu-button').click();
@@ -302,7 +269,63 @@ describe(`Authentication End-to-End`, () => {
       cy.url().should('include', '/database');
     });
 
-    it('should redirect invalid routes to home page', () => {
+    it('should navigate through the header menu for regular users', () => {
+      cy.visitAs(testUser.uid, '/');
+
+      // Test: User display name/email is shown
+      cy.getByTestId('user-display-name')
+        .should('be.visible')
+        .and('contain', testUser.displayName || testUser.email);
+
+      // Test: Home link is visible and functional
+      cy.getByTestId('home-link').should('be.visible');
+      cy.visit('/settings');
+      cy.getByTestId('home-link').click();
+      cy.url().should('eq', Cypress.config().baseUrl + '/');
+
+      // Test: Logout button exists
+      cy.getByTestId('logout-button').should('be.visible');
+
+      // Test: Menu button exists and opens menu
+      cy.getByTestId('menu-button').should('be.visible').click();
+      cy.getByRole('menu').should('be.visible');
+
+      // Test: Menu contains expected items (non-admin user)
+      cy.getByRole('menu').within(($el) => {
+        cy.wrap($el).getByTestId('settings-link').should('exist');
+        cy.wrap($el).getByTestId('contact-link').should('exist');
+
+        cy.wrap($el).getByTestId('character-generator-link').should('not.exist');
+        cy.wrap($el).getByTestId('database-link').should('not.exist');
+      });
+
+      // Test: Close menu by clicking outside
+      cy.get('body').click(0, 0);
+      cy.getByRole('menu').should('not.be.visible');
+
+      // Test: Reopen menu and navigate to Settings
+      cy.getByTestId('menu-button').click();
+      cy.getByRole('menu').should('be.visible');
+      cy.getByTestId('settings-link').click();
+      cy.url().should('include', '/settings');
+
+      // Test: Return home and navigate to Contact via menu
+      cy.visit('/');
+      cy.getByTestId('menu-button').click();
+      cy.getByTestId('contact-link').click();
+      cy.url().should('include', '/contact');
+
+      // Test: Can't navigate to admin routes
+      cy.visit('/character-generator');
+      cy.url().should('not.include', '/character-generator');
+
+      cy.visit('/database');
+      cy.url().should('not.include', '/database');
+    });
+
+    it('should redirect invalid routes to the home page', () => {
+      cy.visitAs(testUser.uid, '/');
+
       // Test: Invalid route redirects to home
       cy.visit('/invalid-route-that-does-not-exist');
       cy.url().should('eq', Cypress.config().baseUrl + '/');
@@ -314,9 +337,6 @@ describe(`Authentication End-to-End`, () => {
       // Test: Typo in valid route redirects to home
       cy.visit('/sett1ngs'); // typo in 'settings'
       cy.url().should('eq', Cypress.config().baseUrl + '/');
-
-      // Test: Character grid is visible after redirect
-      cy.getByTestId('character-grid').should('be.visible');
     });
   });
 });

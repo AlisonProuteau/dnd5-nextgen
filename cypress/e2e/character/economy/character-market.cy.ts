@@ -1,6 +1,6 @@
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../../support/mocks/characterList';
 
-describe('Character Equipment Market & Management End-to-End', () => {
+describe('Character Equipment Market', () => {
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const baseChar = characters.find(({ name }) => name === 'Willy')!;
   let characterWithEquipment: (typeof characters)[0] = {
@@ -19,13 +19,19 @@ describe('Character Equipment Market & Management End-to-End', () => {
     ]
   };
 
-  beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
-    cy.login(Cypress.testUser.uid);
-  });
+  beforeEach(() =>
+    cy.seedCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment)
+  );
 
-  it('should complete equipment buying and selling workflow with validation and free mode', () => {
-    cy.visit('/');
+  after(() =>
+    cy.callFirestore(
+      'delete',
+      `users/${Cypress.testUser.uid}/characters/${characterWithEquipment.id}`
+    )
+  );
+
+  it('should complete the buy and sell workflow with validation and free mode', () => {
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -326,8 +332,8 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.getByTestId('armor-class').should('contain.text', '14');
   });
 
-  it('should handle custom pricing for items without cost', () => {
-    cy.visit('/');
+  it('should handle custom pricing for items without a standard cost', () => {
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -441,7 +447,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
   });
 
   it('should handle equipment with quantity multipliers', () => {
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');

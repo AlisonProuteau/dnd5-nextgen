@@ -1,0 +1,1380 @@
+import { uniqBy } from 'lodash';
+import { characters } from '../../support/mocks/characterList';
+
+// TODO-blocked: Add leveling when implemented
+describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
+  const isMobile = Cypress.config('viewportWidth') === 375;
+
+  // Test: Setup test data for spellcasting classes with ritual spells
+  const spellcastingClasses = [
+    {
+      classData: { index: 'wizard', name: 'Wizard' },
+      learnNum: 6,
+      prepareCNum: 3,
+      prepareSNum: 4,
+
+      level1Spell: { index: 'unseen-servant', name: 'Unseen Servant', ritual: true },
+      level2Spell: { index: 'invisibility', name: 'Invisibility', ritual: true },
+      expectedSlots: { '1': 2, '2': 0 },
+      features: [{ index: 'arcane-recovery', name: 'Arcane Recovery' }]
+    },
+    {
+      classData: { index: 'cleric', name: 'Cleric' },
+      learnNum: 0,
+      prepareCNum: 3,
+      prepareSNum: 3,
+
+      level1Spell: { index: 'bane', name: 'Bane' },
+      level2Spell: { index: 'hold-person', name: 'Hold Person' },
+      expectedSlots: { '1': 2, '2': 0 }
+    },
+    {
+      classData: { index: 'druid', name: 'Druid' },
+      learnNum: 0,
+      prepareCNum: 2,
+      prepareSNum: 3,
+
+      level1Spell: { index: 'charm-person', name: 'Charm Person' },
+      level2Spell: { index: 'moonbeam', name: 'Moonbeam' },
+      expectedSlots: { '1': 2, '2': 0 },
+      features: [{ index: 'natural-recovery', name: 'Natural Recovery' }]
+    },
+    {
+      classData: { index: 'bard', name: 'Bard' },
+      learnNum: 4,
+      prepareCNum: 2,
+      prepareSNum: 0,
+
+      level1Spell: { index: 'alarm', name: 'Alarm', ritual: true },
+      //   level2Spell: { index: '', name: '' },
+      expectedSlots: { '1': 2, '2': 0 }
+    },
+    {
+      classData: { index: 'warlock', name: 'Warlock' },
+      learnNum: 2,
+      prepareCNum: 2,
+      prepareSNum: 0,
+
+      level1Spell: { index: 'burning-hands', name: 'Burning Hands' },
+      //   level2Spell: { index: '', name: '' },
+      expectedSlots: { '1': 1, '2': 0 }
+    },
+    {
+      classData: { index: 'sorcerer', name: 'Sorcerer' },
+      spell: { index: 'burning-hands', name: 'Burning Hands' },
+      learnNum: 2,
+      prepareCNum: 4,
+      prepareSNum: 0,
+
+      level1Spell: { index: 'burning-hands', name: 'Burning Hands' },
+      level2Spell: { index: 'scorching-ray', name: 'Scorching Ray' },
+      expectedSlots: { '1': 2, '2': 0 }
+    }
+  ];
+
+  before(() =>
+    cy.seedCharacters(
+      Cypress.testUser.uid,
+      characters.reduce(
+        (acc, char) => {
+          const id = `test-${char.class.index}-${isMobile ? 'mobile' : 'desktop'}`;
+          const current = spellcastingClasses.find(
+            ({ classData }) => classData.index === char.class.index
+          );
+          const newChar =
+            current || char.class.index === 'barbarian'
+              ? {
+                  ...char,
+                  features: uniqBy(
+                    [...(current?.features || []), ...(char.features || [])],
+                    'index'
+                  ),
+                  id,
+                  name: `Test ${char.class.name} ${isMobile ? 'Mobile' : 'Desktop'}`,
+                  version: 'Legacy'
+                }
+              : undefined;
+          return newChar ? [...acc, newChar] : acc;
+        },
+        [] as typeof characters
+      )
+    )
+  );
+
+  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
+
+  context('UI', () => {
+    it('should not display the spell section for non-spellcasting classes', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+
+      const charID = `test-barbarian-${isMobile ? 'mobile' : 'desktop'}`;
+      cy.getByTestId(`character-card-${charID}`).click();
+
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.getByTestId('mobile-stepper-dot').should('have.length', 4);
+      cy.getByTestId('previous-step').click();
+      cy.getByTestId('spells-section').should('not.exist');
+    });
+
+    it('should switch between All Spells, How It Works, and Spellbook views', () => {
+      const charID = `test-wizard-${isMobile ? 'mobile' : 'desktop'}`;
+      cy.visitAs(Cypress.testUser.uid, '/');
+
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton(/Learn spells/).should('exist');
+
+      // Test: Search functionality in All Spells view
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'All Spells').click();
+
+      cy.get('#search').should('be.visible').type('magic');
+      cy.getByTestId('spells-section')
+        .getByTestId('view-spell-item-magic-missile')
+        .should('be.visible');
+      cy.getByTestId('spells-section')
+        .getByTestId('view-spell-item-')
+        .each(($el) => {
+          cy.wrap($el).invoke('text').should('match', /magic/i);
+        })
+        .its('length')
+        .as('filteredCount');
+
+      cy.get('#search').clear();
+      cy.get('@filteredCount').then((filteredCount) => {
+        cy.getByTestId('spells-section')
+          .getByTestId('view-spell-item-')
+          .should('have.length.greaterThan', filteredCount);
+      });
+
+      // Test: "How does it work?" view
+      cy.getButton('All Spells').next().click();
+      cy.getByRole('menuitem', 'How does it work ?').click();
+      cy.getByTestId('spells-section').contains('Spellcasting').should('be.visible');
+
+      // Test: Test Spellbook view with spell slots visible
+      cy.getButton('How does it work ?').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
+      cy.getButton(/Learn spells/).should('exist');
+    });
+  });
+
+  context('Spell casting & slots', () => {
+    const charID = `test-wizard-${isMobile ? 'mobile' : 'desktop'}`;
+
+    before(() => {
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
+        level: 3, // Level 3 has slots: 1st(4), 2nd(2)
+        traits: [
+          {
+            index: 'drow-magic',
+            name: 'Drow Magic',
+            spells: [
+              { index: 'dancing-lights', name: 'Dancing Lights' },
+              { index: 'faerie-fire', name: 'Faerie Fire' }
+            ]
+          }
+        ],
+        knownSpells: [
+          { index: 'alarm', name: 'Alarm', level: 1, ritual: true },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'comprehend-languages', name: 'Comprehend Languages', level: 1, ritual: true },
+          { index: 'silent-image', name: 'Silent Image', level: 1 },
+          { index: 'acid-arrow', name: 'Acid Arrow', level: 2 },
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'invisibility', name: 'Invisibility', level: 2 }
+        ],
+        preparedSpells: [
+          { index: 'alter-self', name: 'Alter Self', level: 2 },
+          { index: 'scorching-ray', name: 'Scorching Ray', level: 2 },
+          { index: 'alarm', name: 'Alarm', level: 1 },
+          { index: 'burning-hands', name: 'Burning Hands', level: 1 },
+          { index: 'magic-missile', name: 'Magic Missile', level: 1 },
+          { index: 'shield', name: 'Shield', level: 1 },
+          { index: 'acid-splash', name: 'Acid Splash', level: 0 },
+          { index: 'chill-touch', name: 'Chill Touch', level: 0 },
+          { index: 'dancing-lights', name: 'Dancing Lights', level: 0 }
+        ],
+        equipments: [
+          ...(characters.find((c) => c.class.index === 'wizard')?.equipments || []),
+          { index: 'pearl-of-power', name: 'Pearl of Power', type: 'equipment' as const, count: 1 }
+        ]
+      });
+    });
+
+    beforeEach(() => {
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
+        temporarySpells: [],
+        usedSpellSlots: undefined,
+        resourceUsages: undefined
+      });
+
+      cy.callFirestore(
+        'delete',
+        `users/${Cypress.testUser.uid}/characters/${charID}/actionRecords`
+      );
+    });
+
+    it('should display racial spells without a Cast button', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
+
+      // Test: Verify racial spells are displayed and don't have Cast button
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-0')
+        .within(() => {
+          cy.getByTestId('view-spell-item-dancing-lights').should('be.visible');
+        });
+
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-1')
+        .within(() => {
+          cy.getByTestId('view-spell-item-faerie-fire').should('be.visible');
+        });
+
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-1')
+        .getByTestId('view-spell-item-faerie-fire')
+        .should('contain.text', 'Racial');
+
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-1')
+        .within(() => {
+          cy.getByTestId('cast-spell-faerie-fire').should('not.exist');
+        });
+    });
+
+    it('should cast, upcast, and track slot consumption — and auto-log casts to the action record', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
+
+      // Test: Verify multiple spell slot levels are displayed
+      cy.getByTestId('spells-section').within(() => {
+        cy.contains('Level 1').should('be.visible');
+        cy.contains('4 of 4').should('be.visible');
+        cy.contains('Level 2').should('be.visible');
+        cy.contains('2 of 2').should('be.visible');
+      });
+
+      // Test: Upcast level 1 spell from details modal
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-1')
+        .getByTestId('view-spell-item-magic-missile')
+        .click();
+
+      cy.getByRole('dialog', 'Magic Missilelvl')
+        .getByTestId('cast-spell-magic-missile')
+        .should('be.enabled')
+        .click();
+
+      cy.getByRole('menu', 'Level').within(() => {
+        cy.getByRole('menuitem', 'Level 1')
+          .should('be.visible')
+          .and('contain.text', '(4 available)');
+        cy.getByRole('menuitem', 'Level 2')
+          .should('be.visible')
+          .and('contain.text', '(2 available)')
+          .and('contain.text', '(Upcast)')
+          .click();
+      });
+
+      cy.getByRole('menu', 'Level').should('not.exist');
+      cy.getByRole('dialog', 'Magic Missilelvl').should('not.exist');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '4 of 4'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '1 of 2'
+      );
+
+      // Test: Cast level 1 spell at normal level from main page
+      cy.getByTestId('spells-section')
+        .getByTestId('spell-list-1')
+        .getByTestId('cast-spell-magic-missile')
+        .click();
+
+      cy.getByRole('menu', 'Level').within(() => {
+        cy.getByRole('menuitem', 'Level 2')
+          .should('be.visible')
+          .and('contain.text', '(1 available)')
+          .and('contain.text', '(Upcast)');
+        cy.getByRole('menuitem', 'Level 1')
+          .should('be.visible')
+          .and('contain.text', '(4 available)')
+          .click();
+      });
+      cy.getByRole('menu', 'Level').should('not.exist');
+
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '3 of 4'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '1 of 2'
+      );
+
+      // Test: Verify wizard all ritual spells are displayed and don't have Cast button
+      cy.getByTestId('spells-section').getButton('All Ritual Spells').click();
+      cy.getByTestId('spells-section')
+        .getButton('All Ritual Spells')
+        .parent()
+        .parent()
+        .should('not.contain.text', 'No spells to display')
+        .getByTestId('cast-spell-')
+        .should('not.exist');
+
+      // Test: Auto-log — Verify both casts are logged with correct details, and upcast is indicated as auto-log from lvl1 spell
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByRole('button', 'Spells').click();
+      cy.getByTestId('record-item-')
+        .should('have.length', 2)
+        .then((records) => {
+          cy.wrap(records[0])
+            .should('contain.text', 'Magic Missile')
+            .and('contain.text', '+1 slot lvl')
+            .and('contain.text', 'auto');
+
+          cy.wrap(records[1])
+            .should('contain.text', 'Magic Missile')
+            .and('contain.text', '+2 slot lvl')
+            .and('contain.text', 'Upcast from lvl1 spell')
+            .and('contain.text', 'auto')
+            .getByTestId('record-delete')
+            .click();
+          cy.getByTestId('record-item-').should('have.length', 1);
+        });
+      cy.getButton('Close').click();
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '3 of 4'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '2 of 2'
+      );
+
+      // Test: Delete cast record — restores Level 1 slot, Recover button disappears
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByTestId('record-item-')
+        .filter(':contains("+1 slot lvl")')
+        .getByTestId('record-delete')
+        .click();
+      cy.getByTestId(`action-record-drawer-${charID}`).should(
+        'contain.text',
+        'Nothing to show yet'
+      );
+      cy.getButton('Close').click();
+
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '4 of 4'
+      );
+      cy.getByTestId('spell-slots')
+        .getButton(/Recover/)
+        .should('not.exist');
+    });
+
+    it('should recover spell slots via Arcane Recovery, Pearl of Power, and Full Recover', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.clickUntilStep('spells', 'previous');
+      cy.getButton('Spellbook').next().click();
+      cy.getByRole('menuitem', 'Spellbook').click();
+
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 2').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '1 of 2'
+      );
+
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 1').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '3 of 4'
+      );
+      cy.getByTestId('spell-list-1').getByTestId('cast-spell-magic-missile').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 1').click();
+      cy.getByRole('menu', 'Level').should('not.exist');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '2 of 4'
+      );
+
+      // Test: Cancel and ESC both dismiss the dialog without changes
+      cy.getByTestId('short-rest-restore').click();
+      cy.getByRole('dialog', 'Recover Spell Slots').getButton('Cancel').click();
+      cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+
+      cy.getByTestId('short-rest-restore').click();
+      cy.press('Escape');
+      cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+
+      // Test: Dialog — Arcane Recovery
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).and(
+        'contain.text',
+        '1 of 2'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).and(
+        'contain.text',
+        '2 of 4'
+      );
+      cy.getByTestId('short-rest-restore').click();
+      cy.getByRole('dialog', 'Recover Spell Slots').within(($dialog) => {
+        cy.wrap($dialog)
+          .contains('label', 'Pearl of Power')
+          .find('input[type="radio"]')
+          .should('be.checked');
+        cy.wrap($dialog)
+          .should('contain.text', 'Select 1 spell slot to recover.')
+          .and('contain.text', 'only recover spell slots up to level 1');
+
+        cy.wrap($dialog).contains('label', 'Arcane Recovery').click();
+        cy.wrap($dialog)
+          .contains('label', 'Arcane Recovery')
+          .find('input[type="radio"]')
+          .should('be.checked');
+        cy.wrap($dialog)
+          .contains('label', 'Pearl of Power')
+          .find('input[type="radio"]')
+          .should('not.be.checked');
+
+        cy.wrap($dialog)
+          .should('contain.text', 'Select spell slots to recover (total level must be 2 or less).')
+          .and('contain.text', 'only recover spell slots up to level 5');
+        cy.wrap($dialog).contains('Level 1').should('be.visible');
+        cy.wrap($dialog).contains('Level 2').should('be.visible');
+        cy.wrap($dialog).getButton('Recover').should('be.disabled');
+
+        // TEST: Validation
+        cy.get('#recover-1-increment').click();
+        cy.get('#recover-1').should('have.value', '1');
+        cy.get('#recover-1-increment').should('not.be.disabled');
+        cy.get('#recover-2-increment').should('be.disabled');
+        cy.wrap($dialog).getButton('Recover').should('be.enabled');
+
+        cy.get('#recover-1').clear().type('2').blur();
+        cy.get('#recover-1-increment').should('be.disabled');
+        cy.get('#recover-2-increment').should('be.disabled');
+        cy.wrap($dialog).getButton('Recover').should('be.enabled');
+
+        cy.get('#recover-1-decrement').click();
+        cy.get('#recover-2-increment').should('be.disabled');
+
+        cy.get('#recover-1').clear().type('0').blur();
+        cy.get('#recover-2-increment').should('not.be.disabled');
+
+        cy.get('#recover-2-increment').click();
+        cy.get('#recover-2').should('have.value', '1');
+        cy.get('#recover-1-increment').should('be.disabled');
+        cy.get('#recover-2-increment').should('be.disabled');
+        cy.wrap($dialog).getButton('Recover').should('be.enabled');
+
+        // Test: Confirm recovery
+        cy.wrap($dialog).getButton('Recover').click();
+      });
+      cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+      cy.getByRole('status', 'Spells slots updated').should('be.visible');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '2 of 2'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '2 of 4'
+      );
+      cy.getByTestId('short-rest-restore').should('be.visible').and('not.be.disabled');
+
+      // Test: Pearl of Power recovery
+      cy.getByTestId('short-rest-restore').click();
+      cy.getByRole('dialog', 'Recover Spell Slots').within(($dialog) => {
+        cy.wrap($dialog)
+          .contains('label', 'Pearl of Power')
+          .find('input[type="radio"]')
+          .should('be.checked');
+        cy.wrap($dialog)
+          .should('contain.text', 'Select 1 spell slot to recover.')
+          .and('contain.text', 'only recover spell slots up to level 1');
+
+        cy.wrap($dialog).contains('Level 1').should('be.visible');
+        cy.wrap($dialog).contains('Level 2').should('not.exist');
+        cy.wrap($dialog).getButton('Recover').should('be.disabled');
+
+        cy.get('#recover-1-increment').click();
+        cy.get('#recover-1').should('have.value', '1');
+        cy.get('#recover-1-increment').should('be.disabled');
+        cy.wrap($dialog).getButton('Recover').should('be.enabled').click();
+      });
+      cy.getByRole('dialog', 'Recover Spell Slots').should('not.exist');
+      cy.getByRole('status', 'Spells slots updated').should('be.visible');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '2 of 2'
+      );
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '3 of 4'
+      );
+      cy.getByTestId('short-rest-restore').should('not.exist');
+
+      // Test: Full Recover restores all slots and hides both recovery buttons
+      cy.getButton('Full Recover').click();
+      cy.getByRole('status', 'Spells slots updated').should('be.visible');
+      cy.getByTestId('spell-slots').should('contain.text', '4 of 4').and('contain.text', '2 of 2');
+      cy.getByTestId('short-rest-restore').should('not.exist');
+
+      // Test: Action record is updated with actual changes
+      cy.getByTestId(`action-record-${charID}`).click();
+      cy.getByRole('button', 'Spells').click();
+      cy.getByTestId('record-item-')
+        .filter(':contains("Spell Slots Restored")')
+        .should('not.contain.text', '0 slot');
+      cy.getButton('Close').click();
+    });
+
+    it('should add, cast, and remove temporary spells', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
+      cy.clickUntilStep('spells', 'previous');
+
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '2 of 2'
+      );
+
+      // Test: Temporary Spells — add via manage dialog
+      const tempSpell = { index: 'hold-person', name: 'Hold Person' };
+      cy.getByTestId('spells-section').contains('Temporary Spells').click();
+      cy.getByTestId('spells-section').getButton('Manage').click();
+      cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
+
+      cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
+        cy.get('#search').type('hold');
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('exist');
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .should('not.exist');
+
+        // Test: toggle off then back on
+        cy.wrap($dialog).getByTestId(`search-spell-item-${tempSpell.index}-selected`).click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}`, { type: 'exact' })
+          .click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('exist');
+
+        cy.wrap($dialog).getButton('Close').click();
+      });
+      cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+
+      // Test: Spell appears in Temporary Spells section
+      cy.getByTestId('spells-section')
+        .getByTestId(`view-spell-item-${tempSpell.index}`)
+        .should('be.visible')
+        .and('contain.text', tempSpell.name);
+
+      // Test: Cast the temporary spell — direct cast (only 1 level-2 slot, no upcast possible)
+      cy.getByTestId(`cast-spell-${tempSpell.index}`).should('be.enabled').click();
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 2')" }).should(
+        'contain.text',
+        '1 of 2'
+      );
+      cy.getButton(/Recover/).should('have.length', 1);
+
+      // Test: Persistence — temporary spell survives a reload
+      cy.reload();
+      cy.waitForLoading();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.clickUntilStep('spells', 'previous');
+      cy.getByTestId('spells-section').contains('Temporary Spells').click();
+      cy.getByTestId('spells-section')
+        .getByTestId(`view-spell-item-${tempSpell.index}`)
+        .should('be.visible');
+
+      // Test: Remove via manage dialog
+      cy.getByTestId('spells-section').getButton('Manage').click();
+      cy.getByRole('dialog', 'Temporary Spells').within(($dialog) => {
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('exist')
+          .click();
+        cy.wrap($dialog)
+          .getByTestId(`search-spell-item-${tempSpell.index}-selected`)
+          .should('not.exist');
+        cy.wrap($dialog).getButton('Close').click();
+      });
+      cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+      cy.getByTestId('spells-section')
+        .getByTestId(`view-spell-item-${tempSpell.index}`)
+        .should('not.exist');
+    });
+
+    it('should filter the temporary spell search by level, school, ritual, concentration, class, and subclass', () => {
+      cy.visitAs(Cypress.testUser.uid, '/');
+      cy.getByTestId(`character-card-${charID}`).click();
+      cy.getByTestId('stats-section').should('be.visible');
+      cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
+      cy.clickUntilStep('spells', 'previous');
+
+      // Test: Empty state — prompt shown, no results
+      cy.getByTestId('spells-section').contains('Temporary Spells').click();
+      cy.getByTestId('spells-section').getButton('Manage').click();
+      cy.getByRole('dialog', 'Temporary Spells').should('be.visible');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .contains('Search by name or apply a filter')
+        .should('be.visible');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('not.exist');
+
+      // Test: Known/prepared spells are excluded from temp spell search
+      cy.getByRole('dialog', 'Temporary Spells').find('#search').type('alarm');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-alarm', { type: 'exact' })
+        .should('not.exist');
+      cy.getByRole('dialog', 'Temporary Spells').find('#search').clear();
+
+      // Test: Min level filter
+      cy.selectOption('#level-min', 'Level 2');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn)
+            .parent()
+            .invoke('text')
+            .should('not.match', /Cantrip|Lv 1[ ·]/);
+        });
+      cy.get('#level-max').click();
+      cy.get('[role="option"]').each(($el) =>
+        cy
+          .wrap($el)
+          .should(
+            !$el.text().includes('Level 2') ? 'have.attr' : 'not.have.attr',
+            'aria-disabled',
+            'true'
+          )
+      );
+      cy.press('Escape');
+      cy.selectOption('#level-min', 'Cantrip');
+
+      //Test: Max level filter
+      cy.getByRole('button', 'Ritual').click(); // necessary for query
+      cy.selectOption('#level-max', 'Level 1');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn)
+            .parent()
+            .invoke('text')
+            .should('not.match', /Lv 2[ ·]/);
+        });
+      cy.get('#level-min').click();
+      cy.get('[role="option"]').each(($el) =>
+        cy
+          .wrap($el)
+          .should(
+            $el.text().includes('Level 2') ? 'have.attr' : 'not.have.attr',
+            'aria-disabled',
+            'true'
+          )
+      );
+      cy.press('Escape');
+      cy.getByRole('button', 'Ritual').click();
+      cy.selectOption('#level-max', 'Level 2');
+
+      // Test: School filter
+      cy.selectOption('#school', 'Evocation');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn).parent().invoke('text').should('contain', 'Evocation');
+        });
+      cy.selectOption('#school', 'Any');
+
+      // Test: Ritual chip
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn).parent().invoke('text').should('contain', 'Ritual');
+        });
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+
+      // Test: Concentration chip
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn).parent().invoke('text').should('contain', 'Con');
+        });
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+
+      // Test: Class filter
+      cy.selectOption('#class', 'Wizard');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .its('length')
+        .then((wizardCount: unknown) => {
+          cy.selectOption('#class', 'Cleric');
+          cy.getByRole('dialog', 'Temporary Spells')
+            .getByTestId('search-spell-item-')
+            .should('have.length.greaterThan', 0)
+            .its('length')
+            .as('clericCount', { type: 'static' })
+            .should('not.eq', wizardCount as number);
+        });
+      cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('be.visible');
+
+      // Test: Subclass filter
+      cy.selectOption('#subclass', 'Life');
+      cy.get('@clericCount').then((clericCount: unknown) =>
+        cy
+          .getByRole('dialog', 'Temporary Spells')
+          .getByTestId('search-spell-item-')
+          .should('have.length.greaterThan', 0)
+          .should('have.length.lessThan', clericCount as number)
+      );
+
+      // Test: Updating class clears the subclass dropdown
+      cy.selectOption('#class', 'Wizard');
+      cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('have.value', '');
+      cy.selectOption('#class', 'Any');
+      cy.getByRole('dialog', 'Temporary Spells').get('#subclass').should('not.exist');
+
+      // Test: Combination — Min level 1 + School Evocation
+      cy.selectOption('#level-min', 'Level 1');
+      cy.selectOption('#school', 'Evocation');
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn)
+            .parent()
+            .invoke('text')
+            .should('not.contain', 'Cantrip')
+            .and('contain', 'Evocation');
+        });
+      cy.selectOption('#level-min', 'Cantrip');
+      cy.selectOption('#school', 'Any');
+
+      // Test: Combination — Class (Wizard) + Concentration
+      cy.selectOption('#class', 'Wizard');
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn).parent().invoke('text').should('contain', 'Con');
+        });
+      cy.selectOption('#class', 'Any');
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Concentration').click();
+
+      // Test: Combination — Name + Ritual
+      cy.getByRole('dialog', 'Temporary Spells').find('#search').type('detect');
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+      cy.getByRole('dialog', 'Temporary Spells')
+        .getByTestId('search-spell-item-')
+        .should('have.length.greaterThan', 0)
+        .each(($btn) => {
+          cy.wrap($btn)
+            .parent()
+            .invoke('text')
+            .should('match', /detect/i)
+            .and('contain', 'Ritual');
+        });
+      cy.getByRole('dialog', 'Temporary Spells').find('#search').clear();
+      cy.getByRole('dialog', 'Temporary Spells').getByRole('button', 'Ritual').click();
+
+      cy.getByRole('dialog', 'Temporary Spells').getButton('Close').click();
+      cy.getByRole('dialog', 'Temporary Spells').should('not.exist');
+    });
+  });
+
+  context('Per-class spell workflow', () => {
+    before(() => {
+      // Test: Reset wizard to its base level/traits/equipments after Spell casting & slots
+      const wizardBase = characters.find(({ class: { index } }) => index === 'wizard')!;
+      const wizardID = `test-wizard-${isMobile ? 'mobile' : 'desktop'}`;
+
+      cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${wizardID}`, {
+        knownSpells: [],
+        preparedSpells: [],
+        temporarySpells: [],
+        level: 1,
+        traits: wizardBase.traits,
+        equipments: wizardBase.equipments
+      });
+    });
+
+    spellcastingClasses.map(
+      ({
+        classData,
+        learnNum,
+        prepareCNum,
+        prepareSNum,
+        level1Spell,
+        level2Spell,
+        expectedSlots
+      }) =>
+        it(`${classData.name} - should handle complete spells workflow`, { retries: 2 }, () => {
+          const charID = `test-${classData.index}-${isMobile ? 'mobile' : 'desktop'}`;
+          cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
+            knownSpells: null,
+            preparedSpells: null,
+            usedSpellSlots: null,
+            resourceUsages: {}
+          });
+          const spells = characters
+            .find((char) => char.class.index === classData.index)!
+            .traits?.flatMap(({ spells }) => spells)
+            .filter(Boolean);
+
+          cy.visitAs(Cypress.testUser.uid, '/');
+
+          cy.getByTestId(`character-card-${charID}`).click();
+          cy.getByTestId('stats-section').should('be.visible');
+          cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
+          cy.clickUntilStep('spells', 'previous');
+
+          if (learnNum > 0) {
+            cy.getButton(/Learn spells/).should('be.enabled');
+            if (prepareSNum > 0)
+              cy.getButton(/Learn spells/)
+                .next()
+                .should('be.disabled');
+            cy.getButton(/Learn spells/).click();
+            cy.getByRole('dialog', 'Learn').within(($el) => {
+              cy.get('p').contains(`0/${learnNum} spells selected`).should('be.visible');
+
+              // Test: Add/remove spell and selected count updates
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Add$/)
+                .should('exist')
+                .click();
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^(Add|Remove)$/)
+                .should('not.contain.text', 'Add');
+
+              cy.contains(`1/${learnNum} spells selected`).should('exist');
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Remove$/)
+                .should('exist')
+                .click();
+
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^(Add|Remove)$/)
+                .should('not.contain.text', 'Remove');
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Add$/)
+                .should('exist');
+            });
+
+            // Test: View spell details
+            cy.getByTestId(`edit-spell-item-${level1Spell.index}`).click();
+            cy.getByRole('dialog', `${level1Spell.name}lvl`).within(($el) => {
+              cy.wrap($el)
+                .getByTestId('spell-dialog-title')
+                .should('exist')
+                .should('contain.text', level1Spell.name);
+              cy.wrap($el)
+                .getByTestId('spell-dialog-description')
+                .should('exist')
+                .should('contain.text', 'Casting Time');
+              cy.press('Escape');
+            });
+            cy.getByRole('dialog', `${level1Spell.name}lvl`).should('not.exist');
+
+            // test wizard can search more spells
+            if (classData.index === 'wizard') {
+              cy.getByRole('dialog', 'Learn').getButton('More spells').click();
+              cy.getByRole('dialog', 'Additional spells').within(($el) => {
+                cy.get('#search').type('F');
+                cy.wrap($el)
+                  .getByTestId('search-spell-item-')
+                  .first()
+                  .next()
+                  .should('not.contain.text', 'Faerie Fire');
+                cy.wrap($el)
+                  .getByTestId('search-spell-item-faerie-fire')
+                  .should('be.visible')
+                  .click();
+                cy.wrap($el)
+                  .getByTestId('search-spell-item-')
+                  .first()
+                  .next()
+                  .should('contain.text', 'Faerie Fire');
+
+                cy.wrap($el)
+                  .getByTestId('search-spell-item-faerie-fire', { type: 'exact' })
+                  .should('not.exist');
+                cy.wrap($el)
+                  .getByTestId('search-spell-item-faerie-fire-selected', { type: 'exact' })
+                  .should('exist');
+
+                cy.wrap($el).getButton('Close').click();
+              });
+              cy.getByRole('dialog', 'Additional spells').should('not.exist');
+            }
+
+            cy.getByRole('dialog', 'Learn').within(($el) => {
+              // Test: Learn spells with 1 missing
+              // TODO-blocked: get the spell levels available and add a little in each
+              for (let i = 0; i < learnNum - 1; i++) {
+                cy.wrap($el).getByTestId('edit-spell-item-').eq(i).getButton(/^Add$/).click();
+              }
+              cy.contains(`${learnNum - 1}/${learnNum} spells selected`).should('exist');
+              cy.wrap($el).getButton('Close').click();
+            });
+            cy.getByRole('dialog').should('not.exist');
+
+            if (prepareSNum > 0)
+              cy.getButton(/Learn spells/)
+                .next()
+                .should('be.disabled');
+            cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
+
+            // Test: Learn remaining spell
+            cy.getButton(/Learn spells/)
+              .should('be.enabled')
+              .click();
+            cy.getByRole('dialog', 'Learn').within(($el) => {
+              cy.wrap($el).getByTestId('edit-spell-item-').getButton(/^Add$/).first().click();
+              cy.contains(`${learnNum}/${learnNum} spells selected`).should('exist');
+              cy.wrap($el).getButton('Close').click();
+            });
+            cy.getByRole('dialog').should('not.exist');
+          }
+
+          if (prepareSNum > 0 || prepareCNum > 0) {
+            cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
+            cy.getButton(/Prepare your spells/)
+              .should('be.enabled')
+              .click();
+            cy.getByRole('dialog', 'Prepare').within(($el) => {
+              cy.get('p').contains(`0/${prepareCNum} cantrips selected`).should('be.visible');
+              if (prepareSNum > 0)
+                cy.get('p').contains(`0/${prepareSNum} spells selected`).should('be.visible');
+
+              // Test: Add/remove cantrips and selected count updates
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Add$/)
+                .should('exist')
+                .click();
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^(Add|Remove)$/)
+                .should('not.contain.text', 'Add');
+
+              cy.get('p').contains(`1/${prepareCNum} cantrips selected`).should('exist');
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Remove$/)
+                .should('exist')
+                .click();
+
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^(Add|Remove)$/)
+                .should('not.contain.text', 'Remove');
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .first()
+                .getButton(/^Add$/)
+                .should('exist');
+
+              // Test: Add/remove spells and selected count updates
+              if (prepareSNum > 0) {
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .first()
+                  .getButton(/^Add$/)
+                  .should('exist')
+                  .click();
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .first()
+                  .getButton(/^(Add|Remove)$/)
+                  .should('not.contain.text', 'Add');
+
+                cy.wrap($el).get('p').contains(`1/${prepareSNum} spells selected`).should('exist');
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .first()
+                  .getButton(/^Remove$/)
+                  .should('exist')
+                  .click();
+
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .first()
+                  .getButton(/^(Add|Remove)$/)
+                  .should('not.contain.text', 'Remove');
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .first()
+                  .getButton(/^Add$/)
+                  .should('exist');
+              }
+            });
+
+            // Test: View spell details
+            if (learnNum === 0) {
+              cy.getByTestId(`edit-spell-item-${level1Spell.index}`).click();
+              cy.getByRole('dialog', `${level1Spell.name}lvl`).within(($el) => {
+                cy.wrap($el)
+                  .getByTestId('spell-dialog-title')
+                  .should('exist')
+                  .should('contain.text', level1Spell.name);
+                cy.wrap($el)
+                  .getByTestId('spell-dialog-description')
+                  .should('exist')
+                  .should('contain.text', 'Casting Time');
+                cy.press('Escape');
+              });
+              cy.getByRole('dialog', `${level1Spell.name}lvl`).should('not.exist');
+            }
+
+            // Test: Prepare spells with 1 missing
+            // TODO-blocked: Preparing spells with previously learned if they can learn
+            if (learnNum > 0) {
+              if (classData.index === 'wizard') cy.contains(/Faerie Fire/).should('exist');
+            }
+            // TODO-blocked: get the spell levels available and add a little in each
+            for (let i = 0; i < prepareCNum - 1; i++) {
+              cy.getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .eq(i)
+                .getButton(/^Add$/)
+                .click();
+            }
+            cy.contains(`${prepareCNum - 1}/${prepareCNum} cantrips selected`).should('exist');
+            if (prepareSNum > 0) {
+              for (let i = 0; i < prepareSNum - 1; i++) {
+                cy.getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .eq(i)
+                  .getButton(/^Add$/)
+                  .click();
+              }
+              cy.contains(`${prepareSNum - 1}/${prepareSNum} spells selected`).should('exist');
+            }
+            cy.getButton('Close').click();
+            cy.getByRole('dialog').should('not.exist');
+            cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
+
+            // Test: Learn remaining spell and verify they appears in known list
+            cy.getButton(/Prepare your spells/)
+              .should('be.enabled')
+              .click();
+            cy.getByRole('dialog', 'Prepare').within(($el) => {
+              cy.wrap($el)
+                .getByTestId('spell-list-0')
+                .getByTestId('edit-spell-item-')
+                .getButton(/^Add$/)
+                .first()
+                .click();
+              cy.contains(`${prepareCNum}/${prepareCNum} cantrips selected`).should('exist');
+              if (prepareSNum > 0) {
+                cy.wrap($el)
+                  .getByTestId('spell-list-1')
+                  .getByTestId('edit-spell-item-')
+                  .getButton(/^Add$/)
+                  .first()
+                  .click();
+                cy.wrap($el)
+                  .contains(`${prepareSNum}/${prepareSNum} spells selected`)
+                  .should('exist');
+              }
+
+              cy.wrap($el).getButton('Close').click();
+            });
+            cy.getByRole('dialog').should('not.exist');
+          }
+
+          // TODO-blocked: should test specific spell names + levels
+          cy.getByTestId('spells-section')
+            .getByTestId('spell-list-0')
+            .getByTestId('view-spell-item-')
+            .should('have.length', prepareCNum + (spells?.length ?? 0));
+
+          cy.getByTestId('spells-section')
+            .getByTestId('spell-list-')
+            .filter((_i, el) => el.dataset.testid !== 'spell-list-0')
+            .first()
+            .getByTestId('view-spell-item-')
+            .then(($spellItems) => {
+              cy.wrap($spellItems[0])
+                .find(' p')
+                .first()
+                .invoke('text')
+                .as('firstSpellName', { type: 'static' });
+              return cy.wrap($spellItems);
+            })
+            .should('have.length', prepareSNum === 0 ? learnNum : prepareSNum);
+
+          // Test: Verify prepared spells update when learned spells change (only for classes that can learn)
+          if (learnNum > 0 && prepareSNum > 0) {
+            // Test: Change learned spells (remove first spell, add a different one)
+            cy.getButton(/Learn spells/).click();
+            cy.getByRole('dialog', 'Learn').within(($el) => {
+              cy.get('@firstSpellName').then((removedSpellName: unknown) =>
+                cy
+                  .wrap($el)
+                  .getByTestId('edit-spell-item-', {
+                    selector: `:has( p:contains(${removedSpellName as string}))`
+                  })
+                  .getButton(/^Remove$/)
+                  .click()
+              );
+              cy.contains(`${learnNum - 1}/${learnNum} spells selected`).should('exist');
+              cy.wrap($el)
+                .getByTestId('edit-spell-item-')
+                .last()
+                .then(($newLearned) => {
+                  cy.wrap($newLearned)
+                    .find(' p')
+                    .first()
+                    .invoke('text')
+                    .as('newLearnedName', { type: 'static' });
+                  cy.wrap($newLearned).getButton(/^Add$/).click();
+                });
+              cy.contains(`${learnNum}/${learnNum} spells selected`).should('exist');
+              cy.wrap($el).getButton('Close').click();
+            });
+            cy.getByRole('dialog').should('not.exist');
+
+            // Test: Verify prepared spell count updated (removed spell no longer prepared)
+            cy.getByTestId('spells-section').getByTestId('spell-list-').should('not.exist');
+
+            cy.getButton(/Prepare your spells/)
+              .should('be.enabled')
+              .click();
+            cy.getByRole('dialog', 'Prepare').within(($el) => {
+              cy.wrap($el)
+                .contains(`${prepareSNum - 1}/${prepareSNum} spells selected`)
+                .should('exist');
+              cy.get('@firstSpellName').then((removedSpellName: unknown) =>
+                cy
+                  .wrap($el)
+                  .getByTestId('spell-list-')
+                  .filter((_i, el) => el.dataset.testid !== 'spell-list-0')
+                  .getByTestId('edit-spell-item-', {
+                    selector: `:has( p:contains(${removedSpellName as string}))`
+                  })
+                  .should('not.exist')
+              );
+              cy.contains(`${prepareSNum - 1}/${prepareSNum} spells selected`);
+              cy.get('@newLearnedName').then((newLearnedName: unknown) =>
+                cy
+                  .wrap($el)
+                  .getByTestId('spell-list-')
+                  .filter((_i, el) => el.dataset.testid !== 'spell-list-0')
+                  .getByTestId('edit-spell-item-', {
+                    selector: `:has( p:contains(${newLearnedName as string}))`
+                  })
+                  .getButton(/^Add$/)
+                  .click()
+              );
+              cy.contains(`${prepareSNum}/${prepareSNum} spells selected`);
+              cy.wrap($el).getButton('Close').click();
+            });
+            cy.getByRole('dialog').should('not.exist');
+            cy.getByTestId('spells-section').getByTestId('spell-list-').should('exist');
+          }
+
+          // Test: Verify spell slots display shows correct initial state
+          cy.getByTestId('spell-slots').within(($el) => {
+            cy.wrap($el).should('contain.text', 'Spell Slots');
+            Object.entries(expectedSlots).forEach(([level, total]) => {
+              if (total > 0) {
+                cy.contains(`Level ${level}`).should('be.visible');
+                cy.contains(`${total} of ${total}`).should('be.visible');
+              }
+            });
+            cy.getButton(/Recover/).should('not.exist');
+          });
+
+          // Test: Cantrips should not have Cast button (cantrips don't consume slots)
+          cy.getByTestId('spells-section')
+            .getByTestId('spell-list-0')
+            .getByTestId(`cast-spell-`)
+            .should('not.exist');
+
+          // Test: Cast level 1 spell - should consume spell slot
+          cy.getByTestId(`cast-spell-${level1Spell.index}`).click();
+          if (level1Spell.ritual || expectedSlots[2] > 0) {
+            cy.getByRole('menu', 'Level ').within(($el) => {
+              if (level1Spell.ritual) {
+                cy.wrap($el)
+                  .getByRole('menuitem', 'Ritual Cast')
+                  .should('be.visible')
+                  .and('contain.text', '(+10 minutes - no slot)');
+              }
+              if (expectedSlots[2] > 0) {
+                cy.wrap($el)
+                  .getByRole('menuitem', 'Level 2')
+                  .should('be.visible')
+                  .and('contain.text', `(${expectedSlots[2]} available)`);
+              }
+              cy.wrap($el)
+                .getByRole('menuitem', 'Level 1')
+                .should('be.visible')
+                .and('contain.text', `(${expectedSlots[1]} available)`)
+                .click();
+            });
+          }
+          cy.getByTestId('spell-slots').should(
+            'contain.text',
+            ['Level 1', `${expectedSlots[1] - 1} of ${expectedSlots[1]}`].join('')
+          );
+          cy.getButton(/Recover/).should(
+            'have.length',
+            ['wizard', 'druid'].includes(classData.index) ? 2 : 1
+          );
+
+          // Test: Consume all remaining level 1 slots
+          cy.wrap(Array(expectedSlots[1] - 1)).each(() => {
+            cy.getByTestId(`cast-spell-${level1Spell.index}`).click();
+            if (level1Spell.ritual || expectedSlots[2] > 0) {
+              cy.getByRole('menu', 'Level ')
+                .getByRole('menuitem', 'Level 1')
+                .should('be.visible')
+                .and('contain.text', `(${expectedSlots[1] - 1} available)`)
+                .click();
+            }
+          });
+          cy.getByTestId('spell-slots').should(
+            'contain.text',
+            ['Level 1', `0 of ${expectedSlots[1]}`].join('')
+          );
+
+          cy.getByTestId('spells-section')
+            .getByTestId('spell-list-1')
+            .getByTestId(`cast-spell-`)
+            .each(($btn) => cy.wrap($btn).should('be.disabled'));
+
+          // Test: Recover all spell slots
+          cy.getByTestId('spell-slots').getButton('Full Recover').click();
+          cy.getByTestId('spell-slots').within(($el) => {
+            cy.wrap($el).should(
+              'contain.text',
+              ['Level 1', `${expectedSlots[1]} of ${expectedSlots[1]}`].join('')
+            );
+            cy.wrap($el)
+              .getButton(/Recover/)
+              .should('not.exist');
+          });
+          cy.getByTestId(`cast-spell-${level1Spell.index}`).should('be.enabled');
+
+          // Test: Verify spell slot persistence after reload
+          cy.getByTestId(`cast-spell-${level1Spell.index}`).click();
+          if (level1Spell.ritual || expectedSlots[2] > 0) {
+            cy.getByRole('menu', 'Level ')
+              .getByRole('menuitem', 'Level 1')
+              .should('be.visible')
+              .and('contain.text', `(${expectedSlots[1]} available)`)
+              .click();
+          }
+          cy.getByTestId('spell-slots').should(
+            'contain.text',
+            ['Level 1', `${expectedSlots[1] - 1} of ${expectedSlots[1]}`].join('')
+          );
+
+          cy.reload();
+          cy.getByTestId('stats-section').should('be.visible');
+          cy.getByTestId('mobile-stepper-dot').should('have.length', 5);
+          cy.clickUntilStep('spells', 'previous');
+          cy.getByTestId('spell-slots').within(($el) => {
+            cy.wrap($el).should(
+              'contain.text',
+              ['Level 1', `${expectedSlots[1] - 1} of ${expectedSlots[1]}`].join('')
+            );
+            cy.wrap($el)
+              .getButton(/Recover/)
+              .should('be.visible');
+          });
+
+          // Test: Ritual casting doesn't consume a spell slot
+          if (level1Spell.ritual) {
+            cy.getByTestId('spell-slots').getButton('Full Recover').click();
+            cy.getByTestId('spell-slots').should(
+              'contain.text',
+              ['Level 1', `${expectedSlots[1]} of ${expectedSlots[1]}`].join('')
+            );
+
+            cy.getByTestId(`cast-spell-${level1Spell.index}`).should('be.enabled').click();
+            cy.getByRole('menu', 'Level ').within(($el) => {
+              cy.wrap($el).getByRole('menuitem', 'Level 1').should('be.visible');
+              cy.wrap($el)
+                .getByRole('menuitem', 'Ritual Cast')
+                .should('be.visible')
+                .and('contain.text', '+10 minutes - no slot')
+                .click();
+            });
+            cy.getByRole('menu', 'Level ').should('not.exist');
+
+            cy.getByTestId('spell-slots').should(
+              'contain.text',
+              ['Level 1', `${expectedSlots[1]} of ${expectedSlots[1]}`].join('')
+            );
+          }
+        })
+    );
+  });
+});

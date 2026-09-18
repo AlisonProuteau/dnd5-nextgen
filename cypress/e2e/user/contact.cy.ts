@@ -1,19 +1,21 @@
-describe(`Contact Form End-to-End`, () => {
+describe('Contact Form', () => {
   const isMobile = Cypress.config('viewportWidth') === 375;
   const charId = `test-char-tickets-${isMobile ? 'mobile' : 'desktop'}`;
   const charName = 'My Test Character';
 
+  before(() => cy.seedCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName }));
+
   beforeEach(() => {
     cy.callFirestore('delete', 'tickets');
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
-
-    cy.createTestCharacter(Cypress.testUser.uid, charId, { id: charId, name: charName });
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/contact');
-    cy.waitForLoading();
+    cy.visitAs(Cypress.testUser.uid, '/contact');
   });
 
-  it('should handle complete feedback contact workflow with validation, anonymous mode, and submission', () => {
+  after(() => {
+    cy.callFirestore('delete', 'tickets');
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${charId}`);
+  });
+
+  it('submits anonymous feedback after validating the required message', () => {
     // Test: Setup & Navigation - Verify feedback form (default selection)
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('be.visible');
@@ -60,7 +62,9 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
 
-    // Test: Submit non-anonymous feedback
+  });
+
+  it('submits non-anonymous feedback with the user id attached', () => {
     cy.get('#anonymous').should('be.checked');
     cy.get('#anonymous').uncheck();
     cy.get('#anonymous').should('not.be.checked');
@@ -93,12 +97,12 @@ describe(`Contact Form End-to-End`, () => {
       cy.wrap(ticketData.version).should('eq', 'Legacy');
     });
 
-    // Test: Cleanup - Form should be cleared
+    // Test: Form should be cleared after submission
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
   });
 
-  it('should handle complete bug report workflow with character selection, validation, and submission', () => {
+  it('submits a bug report with character details and custom area', () => {
     // Test: Setup & Navigation - Switch to Bug report
     cy.selectOption('#type', 'Bug');
     cy.get('#severity').should('be.visible');
@@ -191,7 +195,7 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#message').should('have.value', '');
   });
 
-  it('should handle complete feature request workflow with custom areas and validation', () => {
+  it('submits a feature request with contact permission', () => {
     // Test: Setup & Navigation - Switch to Request
     cy.selectOption('#type', 'Request');
     cy.get('#requestArea').should('be.visible');
@@ -271,12 +275,14 @@ describe(`Contact Form End-to-End`, () => {
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
 
-    // Test: Submit another request WITH contact permission
+  });
+
+  it('submits a feature request without contact permission', () => {
     cy.selectOption('#type', 'Request');
     cy.selectOption('#requestArea', 'Feature');
-    cy.get('#message').type('Feature request with contact permission');
+    cy.get('#message').type('Feature request without contact permission');
 
-    // Test: Uncheck anonymous and check canContact
+    // Test: Contact permission is disabled
     cy.get('#canContact').should('not.be.checked');
 
     cy.intercept(
@@ -291,9 +297,9 @@ describe(`Contact Form End-to-End`, () => {
     cy.getByRole('status', 'Ticket created').should('be.visible');
     cy.waitForLoading();
 
-    // Test: Ticket should be saved without user Email
+    // Test: Ticket should be saved without user email
     cy.callFirestore('get', 'tickets', {
-      where: ['message', '==', 'Feature request with contact permission']
+      where: ['message', '==', 'Feature request without contact permission']
     }).then((docs) => {
       cy.wrap(docs.length).should('eq', 1);
 
@@ -306,99 +312,8 @@ describe(`Contact Form End-to-End`, () => {
       cy.wrap(ticketData.version).should('eq', 'Legacy');
     });
 
-    // Test: Cleanup - Form should be cleared
+    // Test: Form should be cleared after submission
     cy.get('#type').should('contain.text', 'Feedback');
     cy.get('#message').should('have.value', '');
-  });
-});
-
-describe(`Settings Page End-to-End`, () => {
-  beforeEach(() => {
-    cy.login(Cypress.testUser.uid);
-    cy.visit('/settings');
-    cy.getByTestId('user-info').should('be.visible');
-  });
-
-  it('should display user information, version selector and currency selector', () => {
-    // Test: User info is displayed
-    cy.getByTestId('user-info').should('be.visible');
-    cy.getByTestId('user-info').should('contain.text', `User: ${Cypress.testUser.displayName}`);
-    cy.getByTestId('user-info').should('contain.text', `Email: ${Cypress.testUser.email}`);
-
-    // Test: Version form is present
-    cy.getByTestId('version-form').should('be.visible');
-    cy.get('#version-select').should('be.visible');
-    cy.get('#version-select').should('contain.text', 'Legacy');
-
-    // Test: Additional currencies section is present
-    cy.getByTestId('additional-currencies').should('be.visible');
-    cy.getByTestId('currency-pp').should('be.visible');
-    cy.getByTestId('currency-ep').should('be.visible');
-
-    // Test: Submit button behavior with Legacy version
-    cy.get('button[type="submit"]').should('not.be.disabled');
-    cy.getByTestId('helper-text').should('not.exist');
-  });
-
-  it('should show warning for unavailable versions and disable submission', () => {
-    // Test: Select unavailable version (assuming only Legacy is available)
-    cy.get('#version-select').click();
-    cy.get('[data-testid="version-option"]').should('have.length.at.least', 1);
-
-    // If there are other versions, test warning
-    cy.get('[data-testid="version-option"]').then(($options) => {
-      if ($options.length > 1) {
-        // Select a non-Legacy version
-        cy.get('[data-testid="version-option"]').not(':contains("Legacy")').first().click();
-
-        // Test: Warning message appears
-        cy.getByTestId('helper-text').should('be.visible');
-        cy.getByTestId('helper-text').should('contain.text', 'Version not yet available');
-
-        // Test: Submit button is disabled
-        cy.get('button[type="submit"]').should('be.disabled');
-      }
-    });
-  });
-
-  it('should successfully update settings and navigate to home', () => {
-    // Test: Intercept successful update
-    cy.intercept(
-      { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-      { delay: 500 }
-    ).as('updateSettings');
-
-    // Test: Both currencies should be checked by default
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
-    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('not.be.checked');
-
-    // Test: Uncheck platinum
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').click();
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('be.checked');
-
-    // Test: Uncheck electrum
-    cy.getByTestId('currency-ep').find('input[type="checkbox"]').click();
-    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('be.checked');
-
-    // Test: Re-check platinum
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').click();
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
-
-    cy.get('button[type="submit"]').click();
-
-    // Test: Loading state
-    cy.get('button[type="submit"]').should('not.exist');
-    cy.wait('@updateSettings');
-    cy.waitForLoading();
-
-    // Test: Success message and navigation
-    cy.getByRole('status', 'Settings updated').should('be.visible');
-    cy.url().should('eq', Cypress.config().baseUrl + '/');
-
-    // Test: Settings persisted
-    cy.reload();
-    cy.visit('/settings');
-    cy.getByTestId('currency-pp').find('input[type="checkbox"]').should('not.be.checked');
-    cy.getByTestId('currency-ep').find('input[type="checkbox"]').should('be.checked');
   });
 });

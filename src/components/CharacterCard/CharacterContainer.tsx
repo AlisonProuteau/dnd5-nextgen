@@ -128,6 +128,7 @@ export function CharacterContainer() {
             steps={steps}
             position="static"
             activeStep={activeStep}
+            data-testid="mobile-stepper"
             sx={{ paddingTop: 0 }}
             nextButton={
               <Button size="small" onClick={handleNext} data-testid="next-step">
@@ -139,6 +140,7 @@ export function CharacterContainer() {
                 <KeyboardArrowLeft />
               </Button>
             }
+            slotProps={{ dot: () => ({ 'data-testid': `mobile-stepper-dot` }) }}
           />
 
           <Box {...swipeHandlers} minHeight="70vh">
