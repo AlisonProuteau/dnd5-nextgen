@@ -1,6 +1,6 @@
-import { characters } from '../support/mocks/characterList';
+import { characters } from '../../../support/mocks/characterList';
 
-describe('Character Equipment Market & Management End-to-End', () => {
+describe('Character Equipment Market', () => {
   const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const baseChar = characters.find(({ name }) => name === 'Willy')!;
   let characterWithEquipment: (typeof characters)[0] = {
@@ -19,13 +19,19 @@ describe('Character Equipment Market & Management End-to-End', () => {
     ]
   };
 
-  beforeEach(() => {
-    cy.createTestCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment);
-    cy.login(Cypress.testUser.uid);
-  });
+  beforeEach(() =>
+    cy.seedCharacter(Cypress.testUser.uid, characterWithEquipment.id, characterWithEquipment)
+  );
 
-  it('should complete equipment buying and selling workflow with validation and free mode', () => {
-    cy.visit('/');
+  after(() =>
+    cy.callFirestore(
+      'delete',
+      `users/${Cypress.testUser.uid}/characters/${characterWithEquipment.id}`
+    )
+  );
+
+  it('should complete the buy and sell workflow with validation and free mode', () => {
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -33,6 +39,13 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.getByTestId('next-step').click();
     cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
+
+    // Test: Slow down request for disabled testing
+    cy.intercept({ method: 'POST', url: '**/google.firestore.v1.Firestore/**' }, (req) => {
+      req.continue((res) => {
+        res.delay = 800;
+      });
+    });
 
     // Test: Verify initial equipment display and money
     cy.getByTestId('money-display').within(($money) => {
@@ -237,15 +250,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
       cy.getByTestId('market-buy-')
         .should('have.length.above', 1)
         .each(($item) => cy.wrap($item.text()).should('match', /sh/i));
-      cy.wrap($dialog)
-        .getByTestId('market-buy-shield')
-        .then(($item) => {
-          cy.intercept(
-            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-            { delay: 1000 }
-          );
-          cy.wrap($item).getButton('Add').click();
-        });
+      cy.wrap($dialog).getByTestId('market-buy-shield').getButton('Add').click();
       cy.getButton('Add').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
@@ -326,8 +331,8 @@ describe('Character Equipment Market & Management End-to-End', () => {
     cy.getByTestId('armor-class').should('contain.text', '14');
   });
 
-  it('should handle custom pricing for items without cost', () => {
-    cy.visit('/');
+  it('should handle custom pricing for items without a standard cost', () => {
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -441,7 +446,7 @@ describe('Character Equipment Market & Management End-to-End', () => {
   });
 
   it('should handle equipment with quantity multipliers', () => {
-    cy.visit('/');
+    cy.visitAs(Cypress.testUser.uid, '/');
     cy.getByTestId(`character-card-${characterWithEquipment.id}`).click();
     cy.waitForLoading();
     cy.getByTestId('character-container').should('be.visible');
@@ -488,10 +493,6 @@ describe('Character Equipment Market & Management End-to-End', () => {
             .should('contain.value', '20');
 
           cy.wrap($item).get('#quantity-crossbow-bolt').clear().type('40').blur();
-          cy.intercept(
-            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-            { delay: 1000 }
-          );
           cy.wrap($item).getButton('Buy').click();
           cy.wrap($item).getButton('Buy').should('be.disabled');
 
@@ -504,6 +505,8 @@ describe('Character Equipment Market & Management End-to-End', () => {
 
     // Test: Verify successful buy transaction
     cy.getByRole('status', 'Transaction successful').should('have.length', 2);
+    cy.getByRole('status').should('not.exist');
+
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId(`equipment-item-crossbow-bolt`).should('contain.text', '80 Crossbow bolt');
@@ -536,6 +539,8 @@ describe('Character Equipment Market & Management End-to-End', () => {
 
     // Test: Verify successful sell transaction
     cy.getByRole('status', 'Transaction successful').should('be.visible');
+    cy.getByRole('status').should('not.exist');
+
     cy.getByRole('dialog', 'Market')
       .getByTestId('market-sell-crossbow-bolt')
       .should('contain.text', 'Quantity: 40');

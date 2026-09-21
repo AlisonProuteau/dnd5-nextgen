@@ -1,17 +1,25 @@
 # Cypress Tests for D&D 5e NextGen
 
-Comprehensive end-to-end tests using a **consolidated full-flow approach** - each test covers complete user workflows with validation, error handling, and success scenarios in single cohesive tests.
+End-to-end tests with **focused journeys**: each `it()` covers one user behaviour, shared `before()` data setup, and cached auth via `cy.session()`.
 
 ## Test Files
 
-- **`auth.cy.ts`** - Authentication workflows (sign in/up, validation, error handling, persistence, network failures)
-- **`character-creation.cy.ts`** - Character creation stepper (race/class/background selection, navigation, validation, edge cases)
-- **`character-generator.cy.ts`** - AI character portrait generation (admin-only, batch, error handling, download/upload)
-- **`character-market.cy.ts`** - Equipment market workflows (buying/selling items, free mode, custom pricing, validation, quantity management)
-- **`character-money.cy.ts`** - Money management workflows (adding/removing currency, validation, persistence, error handling)
-- **`character-points.cy.ts`** - Character point-buy and ability score allocation workflows
-- **`character-sheet.cy.ts`** - Character management (display, editing, notes, spell workflow, features, equipment, error recovery)
-- **`contact-settings.cy.ts`** - Contact form and settings workflows (feedback, bug report, feature request, validation, submission)
+| File                                          | What it covers                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------- |
+| `user/auth.cy.ts`                             | Sign-in flows, sign-up & onboarding, header navigation                     |
+| `user/settings.cy.ts`                         | App settings                                                               |
+| `user/contact.cy.ts`                          | Contact form                                                               |
+| `character/character-sheet.cy.ts`             | Stats, tooltips, proficiencies, equipment, descriptions, notes, management |
+| `character/character-action-record.cy.ts`     | Action record log                                                          |
+| `character/character-spells.cy.ts`            | Spell management                                                           |
+| `character/combat/character-health.cy.ts`     | HP & death saves                                                           |
+| `character/combat/character-conditions.cy.ts` | Conditions & exhaustion                                                    |
+| `character/creation/character-creation.cy.ts` | Creation stepper                                                           |
+| `character/creation/character-choices.cy.ts`  | Race/class/background choices                                              |
+| `character/creation/character-points.cy.ts`   | Point-buy allocation                                                       |
+| `character/economy/character-market.cy.ts`    | Equipment market                                                           |
+| `character/economy/character-money.cy.ts`     | Money management                                                           |
+| `admin/character-generator.cy.ts`             | AI portrait generation (admin)                                             |
 
 ## Running Tests
 
@@ -34,11 +42,12 @@ yarn cy
 # Run all tests in headless mode (CI)
 yarn cy:local
 
-# Run specific test file
-SERVICE_ACCOUNT="$(cat ./serviceAccount.json)" yarn run-p -r start:dist 'cy:base run --browser chrome --spec "cypress/e2e/auth.cy.ts"'
+# Run a specific spec
+SERVICE_ACCOUNT="$(cat ./serviceAccount.json)" yarn run-p -r start:dist \
+  'cy:base run --browser chrome --spec "cypress/e2e/user/auth.cy.ts"'
 
-# Run tests for specific viewport
-CYPRESS_VIEWPORT_WIDTH=375 CYPRESS_VIEWPORT_HEIGHT=667 yarn cy:local  # Mobile
+# Run tests for a specific viewport
+CYPRESS_VIEWPORT_WIDTH=375 CYPRESS_VIEWPORT_HEIGHT=667 yarn cy:local   # Mobile
 CYPRESS_VIEWPORT_WIDTH=1920 CYPRESS_VIEWPORT_HEIGHT=1080 yarn cy:local  # Desktop
 ```
 
@@ -49,32 +58,35 @@ Tests run automatically on pull requests via GitHub Actions:
 - Parallel execution across mobile and desktop viewports
 - Firebase emulator setup with cached data
 - Cypress Cloud recording and reporting
-- Automatic PR comments with test results (formatted with markdown)
+- Automatic PR comments with formatted test results
 
 **Report Generation:**
 
-- `yarn merge:reports` - Merge individual test reports
-- `yarn generate:reports` - Generate HTML and text reports with test summary and failure details
+- `yarn merge:reports` — Merge individual test reports
+- `yarn generate:reports` — Generate HTML and text reports
 
 ### Environment
 
 - **Emulators:** Auth (9099), Firestore (8080), Storage (9199)
-- **Viewports:** Mobile (375x667), Desktop (1920x1080)
+- **Viewports:** Mobile (375×667), Desktop (1920×1080)
 - **Browsers:** Chrome (primary), Firefox, Edge, Safari
-- **Test User:** Created in `before()` hook
+- **Test User:** Created once globally in `before()` via `authGetUser` (idempotent)
 
 ## Contributing
 
 Quick guidelines for writing new tests:
 
-- Prefer one comprehensive test per feature covering the full workflow (setup → validation → errors → success → cleanup)
-- Use custom commands for all Firebase operations and element selection
-- Import test data from `cypress/support/mocks/` rather than hardcoding
-- Prefix all test comments with `// Test:`
-- Clean up test data in `after()` hooks
-- Never use `cy.wait()` — use `cy.waitForLoading()` or `cy.intercept()`
+- Use `cy.visitAs(uid, path)` to start each test — it handles auth + visit + loading wait.
+- Seed Firestore state with `cy.seedCharacter(s)` in `before()`, not via UI walkthroughs.
+- One `it()` per user journey — split large features into focused tests sharing one `before()`.
+- No `cy.visit()` or `cy.reload()` mid-test unless explicitly testing navigation/persistence.
+- No `cy.logout()` between tests — `cy.session` isolation is automatic.
+- Clean up test data in `after()` hooks.
+- Prefix all test comments with `// Test:`.
+- Import character test data from `cypress/support/mocks/characterList.ts`.
 
 > See [`.github/instructions/cypress.instructions.md`](../.github/instructions/cypress.instructions.md) for the full conventions reference.
+> See [REFACTOR.md](REFACTOR.md) for migration status and per-spec checklist.
 
 ## Debugging
 

@@ -12,16 +12,18 @@ You are an Automation Engineer specializing in Cypress E2E testing with TypeScri
 
 1. Run `git diff $(git merge-base HEAD origin/HEAD) --name-only` to identify changed source files
 2. Read `.github/instructions/cypress.instructions.md` for test conventions, custom commands, and philosophy
-3. Read `cypress/e2e/character-sheet.cy.ts` as a style reference for mock data usage, assertion chaining, and `within()` scoping
-4. Read the changed `src/` files to understand what new or modified UI features require testing
+3. Read `cypress/e2e/user/auth.cy.ts` as a style reference for auth flows, focused `it()` structure, and `before()` data seeding
+4. Read `cypress/e2e/character/character-sheet.cy.ts` as a style reference for large feature splits, shared `beforeEach`, mock data usage, `within()` scoping
+5. Read the changed `src/` files to understand what new or modified UI features require testing
 
 ### Step 2 — Plan Tests
 
 - Identify the feature area (auth, character creation, market, etc.)
-- Decide: extend an existing spec file OR create a new `cypress/e2e/<feature>.cy.ts`
-- Plan flows using the structure: **Setup → Validation → Error Handling → Success → Cleanup**
-- Prefer one comprehensive test per feature; add targeted tests only for genuinely complex edge cases
-- **Sub-features of the same component are not separate tests.** If a single dialog/manager handles multiple modes or item types (e.g., regular conditions + exhaustion levels in `ConditionsManager`), exercise all of them within the same `it()` block using a shared `before()` setup character
+- Decide: extend an existing spec file OR create a new `cypress/e2e/<area>/<feature>.cy.ts`
+- Plan **one `it()` per user journey**: seed data in `before()`, authenticate + navigate in `beforeEach()` via `cy.visitAs(uid, path)`, assert one behaviour per `it()`
+- Group related journeys in a `context()` sharing the same `before()` data — this is the unit of test organisation
+- **Sub-features of the same component that follow the same code path are NOT separate `it()`s.** If a form handles multiple input modes (e.g. regular conditions + exhaustion levels), cover them in the same `it()`.
+- **Distinct user-visible outcomes ARE separate `it()`s.** If two journeys differ in setup, entry point, or result, give each its own `it()`.
 
 ### Step 2.5 — Add Missing `data-testid` Attributes
 
@@ -30,19 +32,72 @@ Before writing the spec, check whether the elements you need to target already h
 **Rules for adding IDs:**
 
 - Use kebab-case: `data-testid="spell-add"`
-- Don't specify type if it's clear from context: `data-testid="submit"` (not `submit-button`)
-- Prefix with the component/feature name to avoid collisions: `character-sheet-save-btn`
-- Add to the **element the user interacts with** (the button, input, or container), not a wrapper div
-- Inputs should rely on `id` not `data-testid` if possible
+- Don't include type in the name if clear from context: `data-testid="submit"` not `submit-button`
+- Prefix with the component/feature name to avoid collisions: `data-testid="character-sheet-save"`
+- Add to the **element the user interacts with** (button, input, container) — not a wrapper div
+- Inputs should rely on `id` attribute if possible, not `data-testid`
 - Only add IDs that will actually be used in the new test — do not annotate speculatively
 - Edit the minimum number of source files necessary
 
 ### Step 3 — Write Tests
 
+Use these patterns (from the pilot specs):
+
+**Auth/form flow (`auth.cy.ts` style):**
+
+```typescript
+context('Sign In', () => {
+  before(() =>
+    cy
+      .authCreateUser(user)
+      .callFirestore('set', `users/${user.uid}`, { displayName: 'X', version: 'Legacy' })
+  );
+  after(() => cy.clearUser(user.uid));
+  beforeEach(() => cy.visit('/'));
+
+  it('shows validation errors for invalid email format', () => {
+    /* form validation only */
+  });
+  it('completes first-time sign-in and redirects to settings', () => {
+    /* full first-time flow */
+  });
+  it('signs in and skips settings on subsequent login', () => {
+    /* skip settings on 2nd login */
+  });
+});
+```
+
+**Character sheet split (`character-sheet.cy.ts` style):**
+
+```typescript
+context('Feature', () => {
+  before(() => cy.seedCharacter(uid, id, data));
+  beforeEach(() => {
+    cy.visitAs(uid, '/');
+    cy.getByTestId(`character-card-${id}`).click();
+  });
+  after(() => cy.callFirestore('delete', `users/${uid}/characters`));
+
+  it('displays section data correctly', () => {
+    /* cy.clickUntilStep('section'); assertions */
+  });
+  it('edits a field and reverts the change', () => {
+    /* mutates + self-reverts; allowed in one it() */
+  });
+  it('state persists after page reload', () => {
+    /* one cy.reload() explicitly */
+  });
+});
+```
+
 ### Constraints
 
 - DO NOT modify `cypress/support/e2e.ts` global setup without flagging it explicitly
 - ONLY edit `src/` files to add `data-testid` attributes — no logic or style changes
+- DO NOT add `cy.visit()` or `cy.reload()` mid-test (except persistence tests)
+- DO NOT add `cy.logout()` between tests
+- DO NOT use legacy `cy.login()` in new tests — use `cy.sessionLogin` / `cy.visitAs`
+- `it()` names MUST be plain-English sentences (e.g. `'displays basic info, stats and ability scores'`) — NO kebab-case slugs (e.g. `'stats-section'`)
 
 ## Output
 

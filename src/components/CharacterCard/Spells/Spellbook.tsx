@@ -235,7 +235,7 @@ export function Spellbook({ character, slotInfo }: SpellbookProps) {
                 display="flex"
                 flexDirection="column"
                 alignItems="center"
-                sx={{ position: 'relative', top: '-20px', height: '15px' }}
+                sx={{ position: 'relative', top: '-20px', marginBottom: '-30px' }}
               >
                 <Typography
                   variant="subtitle2"

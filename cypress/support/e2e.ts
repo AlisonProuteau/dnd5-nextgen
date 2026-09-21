@@ -84,29 +84,20 @@ before(() => {
   cy.log('🔧 Setting up test environment...');
 
   return cy
-    .deleteAllAuthUsers()
-    .callFirestore('delete', `users/`)
-    .then(() =>
-      cy.authCreateUser(Cypress.testUser).callFirestore('set', `/users/${Cypress.testUser.uid}`, {
+    .authGetUser(Cypress.testUser.uid)
+    .then((existingUser) => {
+      if (!existingUser?.uid) cy.authCreateUser(Cypress.testUser);
+
+      cy.callFirestore('set', `/users/${Cypress.testUser.uid}`, {
         identifier: Cypress.testUser.email,
         version: 'Legacy'
-      })
-    )
+      });
+    })
     .then(() =>
       cy
         .callFirestore('get', `/users/${Cypress.testUser.uid}`)
         .should('exist', 'User data should exist in Firestore')
         .should('have.property', 'identifier', Cypress.testUser.email)
     )
-    .then(() => {
-      cy.log('🔐 Initialize firebase...');
-      cy.login(Cypress.testUser.uid);
-      cy.visit('/');
-      cy.get('[role="progressbar"], .loading, [data-testid="loading"]').should('exist', {
-        timeout: 10000
-      });
-    })
     .then(() => cy.log('✨ Test environment ready'));
 });
-
-beforeEach(() => cy.logout());

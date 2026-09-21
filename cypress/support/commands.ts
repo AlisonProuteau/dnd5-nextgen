@@ -10,18 +10,6 @@ declare global {
   namespace Cypress {
     interface Chainable {
       /**
-       * Logs in as a new user. Creates the user if not present.
-       * @returns Chainable<string> - The user ID.
-       */
-      loginNewUser(): Chainable<string>;
-
-      /**
-       * Logs in as the admin user.
-       * @returns Chainable<void>
-       */
-      loginAsAdmin(): Chainable<void>;
-
-      /**
        * Creates a test character for testing purposes.
        * Merges baseCharacter with any overrides.
        * @param userId - The user ID.
@@ -29,7 +17,7 @@ declare global {
        * @param character - Partial<Character> overrides.
        * @returns Chainable<string> - The character ID.
        */
-      createTestCharacter(
+      seedCharacter(
         userId: string,
         characterId?: string,
         character?: Partial<Character>
@@ -116,73 +104,82 @@ declare global {
        * @returns Chainable resolving to the active section element.
        */
       clickUntilStep(step: string, type?: 'previous' | 'next'): Chainable<JQuery<HTMLElement>>;
+
+      /**
+       * Logs in using cy.session() for cross-spec caching. Preferred over cy.login() in new specs.
+       * @param userId - The user ID to authenticate as.
+       */
+      sessionLogin(userId: string): Chainable<void>;
+
+      /**
+       * Logs in as the admin user using cy.session() caching.
+       */
+      sessionLoginAsAdmin(): Chainable<void>;
+
+      /**
+       * Canonical "start a test" helper: sessionLogin + visit + waitForLoading.
+       * @param userId - The user ID to authenticate as.
+       * @param path - The path to visit (e.g. '/').
+       */
+      visitAs(userId: string | 'admin', path: string): Chainable<void>;
+
+      /**
+       * Batch-seeds multiple characters for the given user in Firestore.
+       * @param userId - The user ID.
+       * @param characters - Array of Partial<Character> overrides.
+       */
+      seedCharacters(userId: string, characters: Partial<Character>[]): Chainable<void>;
+
+      /**
+       * Updates a character document in Firestore directly, bypassing the UI.
+       * Use this instead of cy.reload() chains when injecting mid-test state.
+       * @param userId - The user ID.
+       * @param charId - The character ID.
+       * @param partial - Partial<Character> fields to merge/update.
+       */
+      setCharacterState(
+        userId: string,
+        charId: string,
+        partial: Partial<Character>
+      ): Chainable<void>;
     }
   }
 }
 
 /**
- * Cypress command: loginNewUser
- * Logs in as a regular user for testing. Creates the user if not present.
- */
-Cypress.Commands.add('loginNewUser', (id?: string) => {
-  const userId = id ? id : random(10000, 99999).toString();
-
-  return cy.authGetUser(userId).then((existingUser) => {
-    if (existingUser?.uid) {
-    } else {
-      const user = {
-        displayName: `New User ${userId}`,
-        uid: userId,
-        email: 'test@test.com'
-      };
-      cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
-        identifier: user.email,
-        version: 'Legacy'
-      });
-    }
-
-    cy.login(userId);
-    return cy.wrap(userId);
-  });
-});
-
-/**
- * Cypress command: loginAsAdmin
- * Logs in as the admin user for character generator access. Creates the user if not present.
- */
-Cypress.Commands.add('loginAsAdmin', () => {
-  cy.env(['FIREBASE_ADMIN_UID']).then(({ FIREBASE_ADMIN_UID }) => {
-    cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
-      if (!existingUser?.uid) {
-        const user = {
-          displayName: 'Admin User',
-          uid: FIREBASE_ADMIN_UID,
-          email: 'admin@test.com'
-        };
-        cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
-          identifier: user.email,
-          version: 'Legacy'
-        });
-      }
-
-      cy.login(FIREBASE_ADMIN_UID);
-    });
-  });
-});
-
-/**
- * Cypress command: createTestCharacter
+ * Cypress command: seedCharacter
  * Creates a test character for the given user, merging baseCharacter with overrides.
  */
-Cypress.Commands.add(
-  'createTestCharacter',
-  (userId: string, characterId?: string, character = {}) => {
-    const id: string =
-      characterId ?? (character?.id as string | undefined) ?? random(10000, 99999).toString();
-    const data = { ...baseCharacter, ...character, id };
+Cypress.Commands.add('seedCharacter', (userId: string, characterId?: string, character = {}) => {
+  const id: string =
+    characterId ?? (character?.id as string | undefined) ?? random(10000, 99999).toString();
+  const data = { ...baseCharacter, ...character, id };
 
+  cy.callFirestore('set', `users/${userId}/characters/${id}`, data);
+  return cy.wrap(id);
+});
+
+/**
+ * Cypress command: seedCharacters
+ * Creates multiple test characters for the given user, merging baseCharacter with overrides.
+ */
+Cypress.Commands.add('seedCharacters', (userId: string, characters: Partial<Character>[]) => {
+  characters.forEach((char) => {
+    const id: string = char.id ?? random(10000, 99999).toString();
+    const data = { ...baseCharacter, ...char, id };
     cy.callFirestore('set', `users/${userId}/characters/${id}`, data);
-    return cy.wrap(id);
+  });
+});
+
+/**
+ * Cypress command: setCharacterState
+ * Updates a character document in Firestore directly.
+ * Use instead of cy.reload() chains to inject mid-test state.
+ */
+Cypress.Commands.add(
+  'setCharacterState',
+  (uid: string, charId: string, partial: Partial<Character>) => {
+    cy.callFirestore('update', `users/${uid}/characters/${charId}`, partial);
   }
 );
 
@@ -190,9 +187,9 @@ Cypress.Commands.add(
  * Cypress command: clearUser
  * Clears all data for the input user, including all characters.
  */
-Cypress.Commands.add('clearUser', (uid: string) => {
-  cy.authGetUser(uid).then((existingUser) => existingUser && cy.authDeleteUser(uid));
-  cy.callFirestore('delete', `users/${uid}`);
+Cypress.Commands.add('clearUser', (userId: string) => {
+  cy.authGetUser(userId).then((existingUser) => existingUser && cy.authDeleteUser(userId));
+  cy.callFirestore('delete', `users/${userId}`);
   cy.reload();
 });
 
@@ -368,4 +365,58 @@ Cypress.Commands.add(
 Cypress.Commands.add('shouldBeSelected', { prevSubject: true }, (subject) => {
   cy.wrap(subject).should('have.attr', 'aria-selected', 'true');
   return cy.wrap(subject);
+});
+
+// ─── Session-cached auth helpers ─────────────────────────────────────────────
+
+/**
+ * Cypress command: sessionLogin
+ * Wraps cy.login() in cy.session() for cross-spec auth caching.
+ * Use in new specs instead of cy.login().
+ */
+Cypress.Commands.add('sessionLogin', (userId: string) => {
+  return cy.session([userId], () => cy.login(userId), {
+    cacheAcrossSpecs: false
+  }) as unknown as Cypress.Chainable<void>;
+});
+
+/**
+ * Cypress command: sessionLoginAsAdmin
+ * Wraps admin login in cy.session() for cross-spec auth caching.
+ */
+Cypress.Commands.add('sessionLoginAsAdmin', () => {
+  return cy
+    .env(['FIREBASE_ADMIN_UID'])
+    .then(({ FIREBASE_ADMIN_UID }) => {
+      return cy.session(
+        [`admin-${FIREBASE_ADMIN_UID}`],
+        () =>
+          cy.authGetUser(FIREBASE_ADMIN_UID).then((existingUser) => {
+            if (!existingUser?.uid) {
+              const user = {
+                displayName: 'Admin User',
+                uid: FIREBASE_ADMIN_UID,
+                email: 'admin@test.com'
+              };
+              cy.authCreateUser(user).callFirestore('set', `/users/${user.uid}`, {
+                identifier: user.email,
+                version: 'Legacy'
+              });
+            }
+            return cy.login(FIREBASE_ADMIN_UID);
+          }),
+        { cacheAcrossSpecs: false }
+      );
+    })
+    .then(() => cy.wrap(undefined)) as unknown as Cypress.Chainable<void>;
+});
+
+/**
+ * Cypress command: visitAs
+ * Canonical "start a test" helper: sessionLogin + visit + waitForLoading.
+ * Eliminates the login + visit + waitForLoading boilerplate at the top of every test.
+ */
+Cypress.Commands.add('visitAs', (uid: string | 'admin', path: string) => {
+  (uid === 'admin' ? cy.sessionLoginAsAdmin() : cy.sessionLogin(uid)).visit(path);
+  cy.waitForLoading();
 });
