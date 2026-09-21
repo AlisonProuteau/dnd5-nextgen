@@ -6,10 +6,10 @@ End-to-end tests with **focused journeys**: each `it()` covers one user behaviou
 
 | File                                          | What it covers                                                             |
 | --------------------------------------------- | -------------------------------------------------------------------------- |
-| `user/auth.cy.ts` ✅                          | Sign-in flows, sign-up & onboarding, header navigation                     |
+| `user/auth.cy.ts`                             | Sign-in flows, sign-up & onboarding, header navigation                     |
 | `user/settings.cy.ts`                         | App settings                                                               |
 | `user/contact.cy.ts`                          | Contact form                                                               |
-| `character/character-sheet.cy.ts` ✅          | Stats, tooltips, proficiencies, equipment, descriptions, notes, management |
+| `character/character-sheet.cy.ts`             | Stats, tooltips, proficiencies, equipment, descriptions, notes, management |
 | `character/character-action-record.cy.ts`     | Action record log                                                          |
 | `character/character-spells.cy.ts`            | Spell management                                                           |
 | `character/combat/character-health.cy.ts`     | HP & death saves                                                           |
@@ -20,8 +20,6 @@ End-to-end tests with **focused journeys**: each `it()` covers one user behaviou
 | `character/economy/character-market.cy.ts`    | Equipment market                                                           |
 | `character/economy/character-money.cy.ts`     | Money management                                                           |
 | `admin/character-generator.cy.ts`             | AI portrait generation (admin)                                             |
-
-✅ = migrated to new conventions (see [REFACTOR.md](REFACTOR.md))
 
 ## Running Tests
 

@@ -1,14 +1,12 @@
 describe('Character Creation', () => {
-  before(() => cy.seedCharacter(Cypress.testUser.uid).as('characterId'));
+  before(() => cy.seedCharacter(Cypress.testUser.uid));
 
   beforeEach(() => {
     cy.wrap(Cypress.config('viewportWidth') === 375).as('isMobile');
     cy.visitAs(Cypress.testUser.uid, '/');
   });
 
-  after(function () {
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${this.characterId}`);
-  });
+  after(() => cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`));
 
   context('Browser history', () => {
     it('should preserve wizard state when navigating with browser back and forward buttons', function () {

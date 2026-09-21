@@ -17,9 +17,10 @@ describe('Character Money Management', () => {
     )
   );
 
-  after(() =>
-    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`)
-  );
+  after(() => {
+    cy.callFirestore('update', `users/${Cypress.testUser.uid}`, { additionalCurrencies: [] });
+    cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters/${characterWithMoney.id}`);
+  });
 
   context('Core workflow', () => {
     it('should manage multi-denomination currency with input validation', () => {

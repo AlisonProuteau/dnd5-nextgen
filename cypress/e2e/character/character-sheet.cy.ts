@@ -363,7 +363,8 @@ describe('Character Sheet', () => {
       cy.getButton('Next').click();
       cy.getByRole('status', 'Updated successfully').should('be.visible');
 
-      cy.contains('Updated').should('not.be.visible');
+      cy.contains('Delfy').should('be.visible');
+      cy.contains('Delfy Updated').should('not.exist');
       cy.getByTestId('description-age').should('contain.text', '23');
       cy.getByTestId('description-sex-F').should('exist');
       cy.getByTestId('description-appearance').should('contain.text', delfyData.appearance);

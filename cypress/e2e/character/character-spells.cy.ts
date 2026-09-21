@@ -210,8 +210,8 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
     beforeEach(() => {
       cy.callFirestore('update', `users/${Cypress.testUser.uid}/characters/${charID}`, {
         temporarySpells: [],
-        usedSpellSlots: undefined,
-        resourceUsages: undefined
+        usedSpellSlots: null,
+        resourceUsages: null
       });
 
       cy.callFirestore(
@@ -937,6 +937,7 @@ describe(`Character Spells`, { defaultCommandTimeout: 8000 }, () => {
                   .should('not.contain.text', 'Faerie Fire');
                 cy.wrap($el)
                   .getByTestId('search-spell-item-faerie-fire')
+                  .scrollIntoView()
                   .should('be.visible')
                   .click();
                 cy.wrap($el)

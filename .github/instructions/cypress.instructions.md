@@ -9,7 +9,7 @@ applyTo: 'cypress/**'
 ### Core Principles
 
 - **One journey per `it()`** — each test covers exactly one observable user behaviour from start to finish.
-- **Share setup via `before()`** — seed Firestore data once per `context`; tests read it, never recreate state via UI.
+- **Share setup via `before()`** — seed immutable Firestore data once per `context`; seed mutable fixtures in `beforeEach()` or restore them in `afterEach()` unless not mutated in the context. Tests must not recreate state via UI.
 - **Cached auth** — use `cy.sessionLogin` / `cy.visitAs`; never rely on a prior test having logged in.
 - **No mid-test navigation** — `cy.visit()` and `cy.reload()` only when the test is _about_ navigation or persistence.
 - **Seeded state over UI walkthroughs** — use `cy.seedCharacter(s)` / `cy.setCharacterState` instead of clicking through creation flows to set up preconditions.
@@ -167,11 +167,11 @@ describe('Feature Name', () => {
       cy.callFirestore('delete', `users/${Cypress.testUser.uid}/characters`);
     });
 
-    it('journey-name', () => {
+    it('completes the focused user journey', () => {
       // Test: one focused user journey — no cy.visit() / cy.reload() inside
     });
 
-    it('persistence-across-reload', () => {
+    it('state persists after page reload', () => {
       // Test: explicitly tests persistence — one cy.reload() allowed
       cy.reload();
       // ...
