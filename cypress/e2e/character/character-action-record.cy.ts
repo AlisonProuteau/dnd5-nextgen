@@ -337,6 +337,103 @@ describe('Character Action Record', () => {
     });
   });
 
+  context('Cross-feature auto-log interactions', () => {
+    before(() => cy.visitAs(Cypress.testUser.uid, '/'));
+
+    it('should add edit and persist auto-logs from different sources', function () {
+      cy.getByTestId(`character-card-${actionRecordChar.id}`).click();
+      cy.getByTestId('character-container').should('be.visible');
+      cy.clickUntilStep('characteristics');
+
+      // Test: Using a trait logs the action automatically
+      cy.getByTestId('trait-name-infernal-legacy')
+        .should('contain.text', '0/1')
+        .getButton(/^USE/)
+        .click();
+      cy.getByTestId('trait-name-infernal-legacy').should('contain.text', '1/1');
+
+      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).within(() => {
+        cy.getByTestId('record-item-')
+          .should('have.length', 1)
+          .and('contain.text', 'Infernal Legacy');
+        cy.getButton('Close').click();
+      });
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('not.exist');
+
+      // Test: Using a spell logs the action automatically without overriding the existing logs
+      cy.clickUntilStep('spells');
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '4 of 4'
+      );
+      cy.getByTestId('cast-spell-sleep').click();
+      cy.getByRole('menu', 'Level').getByRole('menuitem', 'Level 1').click();
+      cy.getByTestId('spell-slots', { selector: ":contains('Level 1')" }).should(
+        'contain.text',
+        '3 of 4'
+      );
+
+      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).within(() => {
+        cy.getByTestId('record-item-')
+          .should('have.length', 2)
+          .and('contain.text', 'Infernal Legacy')
+          .and('contain.text', 'Sleep');
+        cy.getButton('Close').click();
+      });
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).should('not.exist');
+
+      // Test: Gaining HP logs the action automatically without overriding the existing logs
+      cy.getByTestId(`health-${actionRecordChar.id}`).click();
+      cy.getByRole('dialog', 'Manage Health').within(($dialog) => {
+        cy.get('#currentHealth').should('have.value', '3');
+        cy.get('#currentHealth-increment').click();
+        cy.get('#currentHealth').should('have.value', '4');
+        cy.wrap($dialog).getButton('Save').click();
+      });
+      cy.getByRole('dialog', 'Manage Health').should('not.exist');
+
+      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).within(() => {
+        cy.getByTestId('record-item-')
+          .should('have.length', 3)
+          .and('contain.text', 'Infernal Legacy')
+          .and('contain.text', 'Sleep')
+          .and('contain.text', 'Healed');
+      });
+
+      //Test: Can edit an auto-logged record without impacting the others
+      cy.getByTestId('record-item-', { selector: ':contains("Sleep")' }).within(($record) => {
+        cy.wrap($record).getByTestId('record-edit').click();
+        cy.wrap($record).find('textarea').first().clear().type('Testy test');
+        cy.wrap($record).getByTestId('record-save').click();
+        cy.wrap($record).should('contain.text', 'Sleep').and('contain.text', 'Testy test');
+      });
+
+      // Test: Edits are persisted
+      cy.reload();
+      cy.getByTestId(`action-record-${actionRecordChar.id}`).click();
+      cy.getByTestId(`action-record-drawer-${actionRecordChar.id}`).within(() => {
+        cy.getByTestId('record-item-')
+          .should('have.length', 3)
+          .each(($el, i) => {
+            switch (i) {
+              case 0:
+                cy.wrap($el).should('contain.text', 'Healed');
+                break;
+              case 1:
+                cy.wrap($el).should('contain.text', 'Sleep').and('contain.text', 'Testy test');
+                break;
+              case 2:
+                cy.wrap($el).should('contain.text', 'Infernal Legacy');
+                break;
+            }
+          });
+      });
+    });
+  });
+
   context('Filtering & state', () => {
     beforeEach(() => {
       // Seed a variety of records for filtering tests

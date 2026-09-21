@@ -153,7 +153,7 @@ describe('Character Creation', () => {
       cy.get('input[name="age"], input[id="age"]').should('have.value', '500');
 
       cy.intercept('POST', '**/google.firestore.v1.Firestore/**').as('createCharacterSuccess');
-      cy.wait('@createCharacterSuccess');
+      cy.wait('@createCharacterSuccess', { timeout: 2000 });
 
       // Test: Character Creation Submission
       cy.getButton('Create').click();
