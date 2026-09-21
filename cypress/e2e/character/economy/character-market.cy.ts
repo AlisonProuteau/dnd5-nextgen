@@ -40,6 +40,13 @@ describe('Character Equipment Market', () => {
     cy.getByTestId('next-step').click();
     cy.getByTestId('equipment-section').should('be.visible');
 
+    // Test: Slow down request for disabled testing
+    cy.intercept({ method: 'POST', url: '**/google.firestore.v1.Firestore/**' }, (req) => {
+      req.continue((res) => {
+        res.delay = 800;
+      });
+    });
+
     // Test: Verify initial equipment display and money
     cy.getByTestId('money-display').within(($money) => {
       cy.wrap($money).getByTestId('gp').should('contain.text', '50');
@@ -243,15 +250,7 @@ describe('Character Equipment Market', () => {
       cy.getByTestId('market-buy-')
         .should('have.length.above', 1)
         .each(($item) => cy.wrap($item.text()).should('match', /sh/i));
-      cy.wrap($dialog)
-        .getByTestId('market-buy-shield')
-        .then(($item) => {
-          cy.intercept(
-            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-            { delay: 1000 }
-          );
-          cy.wrap($item).getButton('Add').click();
-        });
+      cy.wrap($dialog).getByTestId('market-buy-shield').getButton('Add').click();
       cy.getButton('Add').each(($item) => cy.wrap($item).should('be.disabled'));
     });
 
@@ -494,10 +493,6 @@ describe('Character Equipment Market', () => {
             .should('contain.value', '20');
 
           cy.wrap($item).get('#quantity-crossbow-bolt').clear().type('40').blur();
-          cy.intercept(
-            { method: 'POST', url: '**/google.firestore.v1.Firestore/**', times: 1 },
-            { delay: 1000 }
-          );
           cy.wrap($item).getButton('Buy').click();
           cy.wrap($item).getButton('Buy').should('be.disabled');
 
@@ -510,6 +505,8 @@ describe('Character Equipment Market', () => {
 
     // Test: Verify successful buy transaction
     cy.getByRole('status', 'Transaction successful').should('have.length', 2);
+    cy.getByRole('status').should('not.exist');
+
     cy.press('Escape');
     cy.getByRole('dialog', 'Market').should('not.exist');
     cy.getByTestId(`equipment-item-crossbow-bolt`).should('contain.text', '80 Crossbow bolt');
@@ -542,6 +539,8 @@ describe('Character Equipment Market', () => {
 
     // Test: Verify successful sell transaction
     cy.getByRole('status', 'Transaction successful').should('be.visible');
+    cy.getByRole('status').should('not.exist');
+
     cy.getByRole('dialog', 'Market')
       .getByTestId('market-sell-crossbow-bolt')
       .should('contain.text', 'Quantity: 40');

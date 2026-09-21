@@ -10,19 +10,9 @@ describe('Authentication', () => {
       password: 'v@lidPassword123'
     };
 
-    before(() =>
-      cy
-        .authCreateUser(signInUser)
-        .callFirestore('set', `users/${signInUser.uid}`, {})
-        .callFirestore('update', `users/${signInUser.uid}`, {
-          displayName: 'Sign In User',
-          version: 'Legacy'
-        })
-    );
+    before(() => cy.authCreateUser(signInUser).callFirestore('set', `users/${signInUser.uid}`, {}));
 
     it('completes the first-time and subsequent sign-in flows', () => {
-      cy.callFirestore('set', `users/${signInUser.uid}`, {});
-
       // Test: email validation
       cy.get('#email').type('invalid-email').should('have.value', 'invalid-email');
       cy.get('#email').should('have.attr', 'aria-invalid', 'true');
@@ -88,7 +78,6 @@ describe('Authentication', () => {
       cy.getByRole('status', 'Something went wrong').should('contain.text', 'user-not-found');
 
       // Test: error message clearing and wrong password handling
-      cy.wait(2000);
       cy.getByRole('status', 'Something went wrong').should('not.exist');
 
       // Test: invalid password error handling
@@ -100,6 +89,11 @@ describe('Authentication', () => {
     });
 
     it('recovers from a network failure during sign-in', () => {
+      cy.callFirestore('update', `users/${signInUser.uid}`, {
+        displayName: 'Sign In User',
+        version: 'Legacy'
+      });
+
       // Test: network failure simulation and retry capability
       cy.get('#email').type(signInUser.email);
       cy.get('#password').type(signInUser.password);
@@ -108,7 +102,7 @@ describe('Authentication', () => {
         {
           method: 'POST',
           url: '**/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword**',
-          times: 2
+          times: 1
         },
         {
           forceNetworkError: true

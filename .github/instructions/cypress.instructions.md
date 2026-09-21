@@ -116,7 +116,6 @@ it('health-workflow', () => {
 
 - `retries: { runMode: 1, openMode: 0 }` — reduces transient flake noise
 - `experimentalRunAllSpecs: true` — run-all button in UI
-- `experimentalMemoryManagement: true` — reduces memory pressure across specs
 
 ### Test Data Management
 

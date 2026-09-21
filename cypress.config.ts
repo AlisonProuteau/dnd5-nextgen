@@ -23,7 +23,6 @@ export default defineConfig({
     baseUrl: `http://${emulators.hosting.host}:${emulators.hosting.port}`,
     retries: { runMode: 1, openMode: 0 },
     experimentalRunAllSpecs: true,
-    experimentalMemoryManagement: true,
     setupNodeEvents: (on, config) => {
       process.env = {
         FIREBASE_AUTH_EMULATOR_HOST,
